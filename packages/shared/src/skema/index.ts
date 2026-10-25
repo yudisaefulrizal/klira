@@ -6,3 +6,5 @@ export * from './pengguna';
 export * from './keamanan';
 export * from './master';
 export * from './profil';
+export * from './pasien';
+export * from './kunjungan';

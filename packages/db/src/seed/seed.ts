@@ -25,15 +25,38 @@ export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv 
       update: {},
       create: { fasyankes_id: fas.id, nama: j.nama, syarat_profesi: j.syarat_profesi },
     });
-    const daftar = await prisma.izin.findMany({ where: { fitur: { in: j.fitur } } });
+    const daftar = [
+      ...(await prisma.izin.findMany({ where: { fitur: { in: j.fitur } } })),
+      ...(j.lihat_saja?.length ? await prisma.izin.findMany({ where: { fitur: { in: j.lihat_saja }, aksi: 'lihat' } }) : []),
+    ];
     await prisma.izinJenisAkun.createMany({
       data: daftar.map((i) => ({ fasyankes_id: fas.id, jenis_akun_id: jenis.id, izin_id: i.id })),
       skipDuplicates: true,
     });
   }
+  await seedTeksPersetujuan(prisma);
   await seedPimpinanPertama(prisma, fas.id, env);
   // Wilayah contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
   if ((await prisma.wilayah.count()) === 0) await seedWilayahContoh(prisma);
+}
+
+/** Teks general consent bawaan (versi 1, semua klinik); klinik dapat menambah versi sendiri. Idempoten. */
+export const TEKS_GENERAL_CONSENT_V1 = {
+  jenis: 'general' as const,
+  versi: 1,
+  judul: 'Persetujuan umum (general consent)',
+  tujuan: 'Persetujuan umum pelayanan, pengelolaan data pribadi untuk pelayanan, dan pengungkapan data kepada penjamin serta pihak berwenang sesuai peraturan.',
+  isi: [
+    'Saya menyetujui pemberian pelayanan kesehatan di klinik ini, termasuk pemeriksaan, perawatan, dan tindakan yang lazim diberikan.',
+    'Saya memahami bahwa data identitas dan data kesehatan saya dicatat dalam rekam medis elektronik dan dipakai untuk kepentingan pelayanan, penagihan, pelaporan, dan pengiriman data ke SATUSEHAT sesuai peraturan.',
+    'Saya memahami bahwa data saya dapat dibuka kepada penjamin (mis. BPJS Kesehatan) untuk klaim, dan kepada pihak berwenang sesuai ketentuan hukum.',
+    'Saya berhak bertanya, meminta salinan, dan meminta perbaikan data saya melalui klinik.',
+  ].join('\n'),
+};
+
+export async function seedTeksPersetujuan(prisma: PrismaClient): Promise<void> {
+  const ada = await prisma.teksPersetujuan.findFirst({ where: { fasyankes_id: null, jenis: 'general', versi: TEKS_GENERAL_CONSENT_V1.versi } });
+  if (!ada) await prisma.teksPersetujuan.create({ data: { ...TEKS_GENERAL_CONSENT_V1, aktif: true } });
 }
 
 /** Akun Pimpinan pertama dengan kredensial awal statis; idempoten (tidak menimpa akun yang sudah ada). */

@@ -111,3 +111,24 @@ export const STATUS_BACKUP = buat({
   gagal: { label: 'Gagal', warna: 'merah' },
   berjalan: { label: 'Berjalan', warna: 'biru' },
 });
+
+/** Status identitas pasien (4.9): lengkap, atau sementara (pasien tanpa identitas, menunggu dilengkapi). */
+export const STATUS_IDENTITAS = buat({
+  lengkap: { label: 'Identitas lengkap', warna: 'hijau' },
+  sementara: { label: 'Identitas sementara', warna: 'kuning' },
+});
+export type StatusIdentitas = keyof typeof STATUS_IDENTITAS.peta;
+
+/** Jenis kunjungan (4.2): AMB rawat jalan, IMP rawat inap. */
+export const JENIS_KUNJUNGAN = buat({
+  AMB: { label: 'Rawat jalan', warna: 'biru' },
+  IMP: { label: 'Rawat inap', warna: 'ungu' },
+});
+export type JenisKunjungan = keyof typeof JENIS_KUNJUNGAN.peta;
+
+/** Cara pembayaran kunjungan. */
+export const CARA_PEMBAYARAN = buat({
+  umum: { label: 'Umum', warna: 'abu' },
+  jkn: { label: 'JKN', warna: 'biru' },
+});
+export type CaraPembayaran = keyof typeof CARA_PEMBAYARAN.peta;

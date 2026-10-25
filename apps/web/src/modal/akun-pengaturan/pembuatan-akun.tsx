@@ -51,7 +51,7 @@ export function PembuatanAkun({ onTutup, onSelesai }: Props) {
   const [galatKatalog, setGalatKatalog] = useState<string | null>(null);
   const [drafDipulihkan, setDrafDipulihkan] = useState(false);
 
-  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanAkun>({ kunci, nilai: keadaan, awal, langkah: indeks, aktif: !hasil });
+  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanAkun>({ kunci, nilai: keadaan, awal, langkah: indeks, aktif: !hasil, sensitif: ['nik', 'nomor_sip', 'ihs_practitioner_id'] });
 
   useEffect(() => {
     if (!pulihan) return;

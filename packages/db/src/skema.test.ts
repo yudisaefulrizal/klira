@@ -10,6 +10,7 @@ d('skema basis data (klira_uji)', () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   async function bersihkan() {
     await prisma.$transaction([
+      prisma.antrean.deleteMany(), prisma.pesertaKunjungan.deleteMany(), prisma.persetujuan.deleteMany(), prisma.kunjungan.deleteMany(), prisma.urutanNomorRm.deleteMany(),
       prisma.sesi.deleteMany(), prisma.jadwalPraktik.deleteMany(), prisma.tarifLayanan.deleteMany(), prisma.riwayatProfil.deleteMany(), prisma.wilayah.deleteMany(), prisma.peringatanIzin.deleteMany(), prisma.izinPerAkun.deleteMany(), prisma.penugasanJenis.deleteMany(),
       prisma.izinJenisAkun.deleteMany(), prisma.riwayatJenisAkun.deleteMany(), prisma.jenisAkun.deleteMany(),
       prisma.profilProfesi.deleteMany(), prisma.waliKeluarga.deleteMany(), prisma.pasien.deleteMany(),
@@ -33,6 +34,10 @@ d('skema basis data (klira_uji)', () => {
     const fas = await prisma.fasyankes.findFirstOrThrow();
     expect(fas.fasyankes_id).toBe(fas.id);
     expect(await prisma.jenisAkun.count({ where: { fasyankes_id: fas.id } })).toBe(12);
+    // Teks general consent bawaan berversi, tidak ganda setelah seed berulang.
+    const teks = await prisma.teksPersetujuan.findMany({ where: { fasyankes_id: null, jenis: 'general' } });
+    expect(teks).toHaveLength(1);
+    expect(teks[0]).toMatchObject({ versi: 1, aktif: true });
   });
 
   it('seed membuat Pimpinan pertama dengan wajib ganti kredensial, hash bukan teks asli', async () => {

@@ -53,6 +53,56 @@ enum JenisKelamin {
   perempuan
 }
 
+enum StatusIdentitas {
+  lengkap
+  sementara
+}
+
+enum JenisKunjungan {
+  AMB
+  IMP
+}
+
+enum StatusKunjungan {
+  planned
+  arrived
+  in_progress @map("in-progress")
+  finished
+}
+
+enum TahapLayanan {
+  menunggu_skrining
+  pemeriksaan
+  resep
+  kasir
+  ditutup
+}
+
+enum CaraPembayaran {
+  umum
+  jkn
+}
+
+enum TipePeserta {
+  ATND
+  SPRF
+}
+
+enum StatusAntrean {
+  menunggu
+  dipanggil
+  dilayani
+  selesai
+  batal
+}
+
+enum JenisPersetujuan {
+  general
+  tindakan
+  pembukaan
+  PDP
+}
+
 model Fasyankes {
   id                     Int                  @id @default(autoincrement())
   fasyankes_id           Int                  @unique
@@ -84,6 +134,11 @@ model Fasyankes {
   jadwal_praktik         JadwalPraktik[]
   tarif_layanan          TarifLayanan[]
   riwayat_profil         RiwayatProfil[]
+  kunjungan              Kunjungan[]
+  peserta_kunjungan      PesertaKunjungan[]
+  antrean                Antrean[]
+  persetujuan            Persetujuan[]
+  urutan_nomor_rm        UrutanNomorRm?
 
   @@map("fasyankes")
 }
@@ -191,11 +246,18 @@ model Pasien {
   jkn_nomor_kartu  String?   @db.VarChar(50)
   jkn_kelas_hak    String?   @db.VarChar(20)
   jkn_fktp_terdaftar String? @db.VarChar(200)
+  status_identitas StatusIdentitas @default(lengkap)
+  jalur_identitas  String    @default("nik") @db.VarChar(20) // nik | paspor | kitas | tanpa_identitas
+  tidak_cakap      Boolean   @default(false)
   dibuat_oleh      Int?
   dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
 
   fasyankes     Fasyankes      @relation(fields: [fasyankes_id], references: [id])
   wali_keluarga WaliKeluarga[]
+  kunjungan     Kunjungan[]
+  persetujuan   Persetujuan[]
+
+  @@index([fasyankes_id, nama])
 
   @@unique([fasyankes_id, nomor_rm])
   @@unique([fasyankes_id, nik])
@@ -214,6 +276,7 @@ model WaliKeluarga {
 
   fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
   pasien    Pasien    @relation(fields: [pasien_id], references: [id])
+  persetujuan Persetujuan[]
 
   @@index([pasien_id])
   @@map("wali_keluarga")
@@ -517,4 +580,140 @@ model RiwayatProfil {
 
   @@index([fasyankes_id, dibuat_pada])
   @@map("riwayat_profil")
+}
+
+// Nomor RM berurutan per fasyankes: satu baris per fasyankes, dinaikkan di dalam transaksi registrasi.
+model UrutanNomorRm {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int      @unique
+  terakhir     Int      @default(0)
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@map("urutan_nomor_rm")
+}
+
+// Kunjungan (4.2). lokasi_id = poli (kosong untuk rawat inap langsung); mulai/selesai UTC.
+model Kunjungan {
+  id               Int             @id @default(autoincrement())
+  fasyankes_id     Int
+  pasien_id        Int
+  jenis            JenisKunjungan
+  status           StatusKunjungan @default(arrived)
+  tahap_layanan    TahapLayanan    @default(menunggu_skrining)
+  kunjungan_asal_id Int?
+  lokasi_id        Int?
+  cara_pembayaran  CaraPembayaran  @default(umum)
+  nomor_sep        String?         @db.VarChar(50)
+  keluhan_singkat  String?         @db.VarChar(500)
+  service_type     String?         @db.VarChar(100)
+  encounter_id     String?         @db.VarChar(100)
+  mulai            DateTime        @default(now()) @db.DateTime(3)
+  selesai          DateTime?       @db.DateTime(3)
+  waktu_tutup      DateTime?       @db.DateTime(3)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime        @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  pasien    Pasien    @relation(fields: [pasien_id], references: [id])
+  asal      Kunjungan?  @relation("KunjunganAsal", fields: [kunjungan_asal_id], references: [id])
+  lanjutan  Kunjungan[] @relation("KunjunganAsal")
+  peserta   PesertaKunjungan[]
+  antrean   Antrean?
+
+  @@index([fasyankes_id, tahap_layanan])
+  @@index([pasien_id])
+  @@map("kunjungan")
+}
+
+model PesertaKunjungan {
+  id            Int         @id @default(autoincrement())
+  fasyankes_id  Int
+  kunjungan_id  Int
+  pengguna_id   Int
+  tipe          TipePeserta
+  mulai         DateTime    @default(now()) @db.DateTime(3)
+  selesai       DateTime?   @db.DateTime(3)
+  dibuat_oleh   Int?
+  dibuat_pada   DateTime    @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@index([kunjungan_id])
+  @@index([pengguna_id])
+  @@map("peserta_kunjungan")
+}
+
+// Antrean otomatis per poli per hari (tanggal zona Asia/Jakarta); nomor urut 1.. diformat A-001.
+model Antrean {
+  id            Int           @id @default(autoincrement())
+  fasyankes_id  Int
+  kunjungan_id  Int           @unique
+  lokasi_id     Int
+  tanggal       DateTime      @db.Date
+  nomor         Int
+  status        StatusAntrean @default(menunggu)
+  waktu_daftar  DateTime      @default(now()) @db.DateTime(3)
+  waktu_panggil DateTime?     @db.DateTime(3)
+  waktu_mulai   DateTime?     @db.DateTime(3)
+  waktu_selesai DateTime?     @db.DateTime(3)
+  dibuat_oleh   Int?
+  dibuat_pada   DateTime      @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([fasyankes_id, lokasi_id, tanggal, nomor])
+  @@index([fasyankes_id, tanggal, status])
+  @@map("antrean")
+}
+
+// Master teks persetujuan berversi (4.9). fasyankes_id kosong = teks bawaan semua klinik.
+model TeksPersetujuan {
+  id           Int              @id @default(autoincrement())
+  fasyankes_id Int?
+  jenis        JenisPersetujuan
+  versi        Int
+  judul        String           @db.VarChar(200)
+  tujuan       String           @db.VarChar(500)
+  isi          String           @db.Text
+  aktif        Boolean          @default(true)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime         @default(now()) @db.DateTime(3)
+
+  persetujuan Persetujuan[]
+
+  @@index([jenis, aktif])
+  @@map("teks_persetujuan")
+}
+
+// Persetujuan (4.4). Teks yang disetujui disimpan lewat teks_persetujuan_id (versi teks tidak berubah).
+model Persetujuan {
+  id                    Int              @id @default(autoincrement())
+  fasyankes_id          Int
+  pasien_id             Int
+  jenis                 JenisPersetujuan
+  teks_persetujuan_id   Int?
+  versi_teks            Int
+  tujuan                String           @db.VarChar(500)
+  penjelasan            String?          @db.Text
+  bentuk                String           @db.VarChar(20) // tertulis | lisan
+  status                String           @default("diberikan") @db.VarChar(20)
+  waktu                 DateTime         @default(now()) @db.DateTime(3)
+  penandatangan         String           @db.VarChar(20) // pasien | wali
+  wali_id               Int?
+  penandatangan_nama    String           @db.VarChar(200)
+  saksi_pengguna_id     Int?
+  dibuat_oleh           Int?
+  dibuat_pada           DateTime         @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes        @relation(fields: [fasyankes_id], references: [id])
+  pasien    Pasien           @relation(fields: [pasien_id], references: [id])
+  teks      TeksPersetujuan? @relation(fields: [teks_persetujuan_id], references: [id])
+  wali      WaliKeluarga?    @relation(fields: [wali_id], references: [id])
+
+  @@index([pasien_id])
+  @@map("persetujuan")
 }

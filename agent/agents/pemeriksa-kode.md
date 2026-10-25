@@ -19,4 +19,6 @@ Keputusan:
 - Lulus: ubah baris butir itu di dokumen/progres.md, kolom Status menjadi ✔ (satu-satunya perubahan yang Anda lakukan di berkas itu). Balas "LULUS" dan satu kalimat ringkasan.
 - Tidak lulus: jangan mengubah progres.md. Balas "TOLAK" dan daftar masalah bernomor, tiap butir menyebut berkas dan alasannya, tanpa menulis perbaikan sendiri.
 
+- Server pemantauan pengguna berjalan di port 8074 (https://klira.nuscode.id). JANGAN mematikannya (tanpa pkill/kill pada proses node milik proyek) dan jangan memakai port itu untuk uji; untuk uji jalankan server sementara di port lain (mis. PORT=18074, BASE_URL=http://localhost:18074) dan matikan hanya proses yang Anda mulai (simpan PID-nya).
+
 Jangan mengubah kode. Jangan meluluskan bila ada uji yang gagal, typecheck gagal, atau penyimpangan dari rancangan.

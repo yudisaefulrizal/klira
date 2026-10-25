@@ -1,10 +1,14 @@
-import { adaPerubahan, bacaDraf, hapusDraf, kunciDraf, simpanDraf } from './draf';
+import { adaPerubahan, bacaDraf, hapusDraf, hapusSemuaDraf, kunciDraf, saringSensitif, simpanDraf } from './draf';
 import type { PenyimpananDraf } from './draf';
 import { saringTeks } from './saring-teks';
 
 function memori(): PenyimpananDraf & { isi: Map<string, string> } {
   const isi = new Map<string, string>();
-  return { isi, getItem: (k) => isi.get(k) ?? null, setItem: (k, v) => void isi.set(k, v), removeItem: (k) => void isi.delete(k) };
+  return {
+    isi, getItem: (k) => isi.get(k) ?? null, setItem: (k, v) => void isi.set(k, v), removeItem: (k) => void isi.delete(k),
+    key: (i) => [...isi.keys()][i] ?? null,
+    get length() { return isi.size; },
+  };
 }
 
 describe('draf lokal', () => {
@@ -15,7 +19,7 @@ describe('draf lokal', () => {
   it('simpan lalu baca mengembalikan nilai dan langkah; hapus menghilangkan', () => {
     const m = memori();
     expect(simpanDraf('k', { nama: 'A' }, 2, m, () => new Date('2026-10-25T01:00:00Z'))).toBe(true);
-    expect(bacaDraf<{ nama: string }>('k', m)).toEqual({ versi: 1, disimpan: '2026-10-25T01:00:00.000Z', langkah: 2, nilai: { nama: 'A' } });
+    expect(bacaDraf<{ nama: string }>('k', m, { sekarang: () => new Date('2026-10-25T01:05:00Z') })).toEqual({ versi: 1, disimpan: '2026-10-25T01:00:00.000Z', langkah: 2, nilai: { nama: 'A' } });
     hapusDraf('k', m);
     expect(bacaDraf('k', m)).toBeNull();
   });
@@ -36,6 +40,28 @@ describe('draf lokal', () => {
   it('deteksi perubahan isian', () => {
     expect(adaPerubahan({ a: 1 }, { a: 1 })).toBe(false);
     expect(adaPerubahan({ a: 1 }, { a: 2 })).toBe(true);
+  });
+});
+
+describe('draf: sensitif, kedaluwarsa, hapus semua', () => {
+  it('saringSensitif membuang bidang tingkat atas', () => {
+    expect(saringSensitif({ nik: '1', agama: 'x' }, ['nik'])).toEqual({ agama: 'x' });
+    expect(saringSensitif({ nik: '1' })).toEqual({ nik: '1' });
+  });
+  it('draf lewat masa berlaku dibuang saat dibaca', () => {
+    const m = memori();
+    simpanDraf('k', { a: 1 }, 0, m, () => new Date('2026-10-25T01:00:00Z'));
+    expect(bacaDraf('k', m, { kedaluwarsaMs: 30 * 60_000, sekarang: () => new Date('2026-10-25T01:29:00Z') })).not.toBeNull();
+    expect(bacaDraf('k', m, { kedaluwarsaMs: 30 * 60_000, sekarang: () => new Date('2026-10-25T01:31:00Z') })).toBeNull();
+    expect(m.isi.has('k')).toBe(false);
+  });
+  it('hapusSemuaDraf hanya menghapus kunci klira.draf.*', () => {
+    const m = memori();
+    m.setItem('klira.draf.a.1', 'x');
+    m.setItem('klira.draf.b', 'x');
+    m.setItem('lain', 'x');
+    hapusSemuaDraf(m);
+    expect([...m.isi.keys()]).toEqual(['lain']);
   });
 });
 

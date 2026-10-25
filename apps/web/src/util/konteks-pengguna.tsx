@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 import type { PenggunaSaya } from '@klira/shared';
 import type { MasukanGanti } from '../api-klien/akses';
+import { hapusSemuaDraf } from './draf';
 import { ambilSaya, gantiKredensial as panggilGanti, keluar as panggilKeluar, masuk as panggilMasuk } from '../api-klien/akses';
 
 type Konteks = {
@@ -27,11 +28,16 @@ export function PenyediaPengguna({ children }: { children: ReactNode }) {
 
   const masuk = useCallback(async (username: string, kataSandi: string) => {
     const hasil = await panggilMasuk(username, kataSandi);
+    hapusSemuaDraf(typeof localStorage === 'undefined' ? null : localStorage); // pengguna berganti: tidak mewarisi draf akun lain
     setPengguna(hasil);
     return hasil;
   }, []);
   const keluar = useCallback(async () => {
-    await panggilKeluar();
+    try {
+      await panggilKeluar();
+    } finally {
+      hapusSemuaDraf(typeof localStorage === 'undefined' ? null : localStorage);
+    }
     setPengguna(null);
   }, []);
 

@@ -1,4 +1,4 @@
-import { HALAMAN_MENU, halamanMenuDiizinkan, punyaIzin } from './izin';
+import { JENIS_AKUN_AWAL, HALAMAN_MENU, halamanMenuDiizinkan, punyaIzin } from './izin';
 
 describe('punyaIzin', () => {
   const p = { izin: [{ fitur: 'akses', aksi: 'lihat' as const, cakupan: 'unit' as const }] };
@@ -24,5 +24,14 @@ describe('halamanMenuDiizinkan', () => {
   it('semua halaman bila semua fitur', () => {
     const semua = HALAMAN_MENU.flatMap((h) => h.fitur ?? []);
     expect(path(semua)).toHaveLength(HALAMAN_MENU.length);
+  });
+});
+
+describe('paket awal: izin pasien', () => {
+  it('fitur pasien utuh (input) hanya untuk Petugas pendaftaran dan Perekam medis; peran lain hanya lihat', () => {
+    const penuh = JENIS_AKUN_AWAL.filter((j) => j.fitur.includes('pasien')).map((j) => j.nama).sort();
+    expect(penuh).toEqual(['Perekam Medis dan Informasi Kesehatan', 'Petugas pendaftaran']);
+    const lihat = JENIS_AKUN_AWAL.filter((j) => j.lihat_saja?.includes('pasien')).map((j) => j.nama);
+    expect(lihat).toEqual(expect.arrayContaining(['Dokter/DPJP', 'Perawat/Bidan/Nakes lain', 'Petugas klaim/kasir', 'Apoteker/tenaga kefarmasian', 'Analis lab']));
   });
 });

@@ -20,11 +20,11 @@
 | Profil klinik | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
 | Keamanan (kebijakan akses, backup) | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
 | Log audit (tampilan) | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
-| Daftar pasien | Halaman | - | Bisa dikerjakan | ☐ |
-| Registrasi pasien baru | Modal | Daftar pasien | Bisa dikerjakan | ☐ |
-| Pendaftaran kunjungan | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
+| Daftar pasien | Halaman | - | Bisa dikerjakan | ✔ |
+| Registrasi pasien baru | Modal | Daftar pasien | Bisa dikerjakan | ✔ |
+| Pendaftaran kunjungan | Modal | Daftar pasien | Menunggu bagian lain | ✔ |
 | Pengesahan catatan | Fitur | - | Bisa dikerjakan | ☐ |
-| Antrean | Fitur | Daftar pasien | Menunggu bagian lain | ☐ |
+| Antrean | Fitur | Daftar pasien | Menunggu bagian lain | ✔ |
 | Pemeriksaan klinis | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
 | Riwayat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
 | Salin dari kunjungan sebelumnya | Panel | Pemeriksaan klinis | Menunggu bagian lain | ☐ |

@@ -163,14 +163,14 @@ describe('modul akses', () => {
 
     it('selama wajib ganti: rute lain ditolak, saya/keluar/kesehatan terbuka', async () => {
       const cookie = await masukKe('awal3', 'sandi-lama-3');
-      const res = await fetch(url('/api/pasien'), { headers: { cookie } });
+      const res = await fetch(url('/api/rawat-inap'), { headers: { cookie } });
       expect(res.status).toBe(403);
       expect((await res.json()).galat.kode).toBe('wajib_ganti_kredensial');
       expect((await fetch(url('/api/saya'), { headers: { cookie } })).status).toBe(200);
       expect((await fetch(url('/api/kesehatan'), { headers: { cookie } })).status).toBe(200);
       // akun yang sudah tidak wajib tidak terblokir (404 biasa)
       const bebas = await masukKe('adminit', 'sandi-uji-2');
-      expect((await fetch(url('/api/pasien'), { headers: { cookie: bebas } })).status).toBe(404);
+      expect((await fetch(url('/api/rawat-inap'), { headers: { cookie: bebas } })).status).toBe(404);
     });
 
     it('tanpa sesi ditolak 401', async () => {
@@ -234,7 +234,7 @@ describe('modul akses', () => {
       const saya = await fetch(url('/api/saya'), { headers: { cookie: cookieBaru } });
       expect((await saya.json()).data.wajib_ganti_kredensial).toBe(false);
       // tidak lagi diblokir
-      expect((await fetch(url('/api/pasien'), { headers: { cookie: cookieBaru } })).status).toBe(404);
+      expect((await fetch(url('/api/rawat-inap'), { headers: { cookie: cookieBaru } })).status).toBe(404);
       expect(entri.some((e) => e.aksi === 'ganti_kredensial' && e.pengguna_id === 4)).toBe(true);
       // kredensial lama tidak berlaku, yang baru berlaku
       expect((await post('/api/masuk', { username: 'awal4', kata_sandi: 'sandi-lama-4' })).status).toBe(401);

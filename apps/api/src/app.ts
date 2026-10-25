@@ -26,6 +26,12 @@ import { buatRuteMaster } from './modul/master/rute';
 import { buatLayananFasyankes } from './modul/fasyankes/layanan';
 import { RepositoriFasyankesPrisma } from './modul/fasyankes/repositori';
 import { buatRuteFasyankes } from './modul/fasyankes/rute';
+import { buatLayananPasien } from './modul/pasien/layanan';
+import { RepositoriPasienPrisma } from './modul/pasien/repositori';
+import { buatRutePasien } from './modul/pasien/rute';
+import { buatLayananKunjungan } from './modul/kunjungan/layanan';
+import { RepositoriKunjunganPrisma } from './modul/kunjungan/repositori';
+import { buatRuteKunjungan } from './modul/kunjungan/rute';
 import { buatLayananPengguna } from './modul/pengguna/layanan';
 import { RepositoriPenggunaPrisma } from './modul/pengguna/repositori';
 import { buatLayananPembuatanAkun } from './modul/pengguna/pembuatan';
@@ -60,6 +66,8 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesPrisma(), audit: new PenampungAuditPrisma() })));
+  app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienPrisma(), audit: new PenampungAuditPrisma() })));
+  app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, buatLayananKunjungan({ repo: new RepositoriKunjunganPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() }),
     buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruPrisma(), repoIzin: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() })));

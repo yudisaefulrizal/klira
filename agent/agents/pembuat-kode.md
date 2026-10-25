@@ -19,5 +19,6 @@ Aturan:
 - Ikuti rancangan apa adanya. Bila rancangan tidak jelas atau bertentangan, jangan menebak untuk hal besar: pilih default paling sederhana, lalu catat pilihan itu di dokumen/laporan/pertanyaan.md (butir, pilihan, alasan satu kalimat).
 - Reusability bagian 5.2 wajib: tidak ada nilai warna atau ukuran langsung di halaman atau modal, elemen dasar dari komponen/ui, status dari shared/status.ts, skema dari packages/shared.
 - Hanya teknologi dari bagian 8.1.
+- Server pemantauan pengguna berjalan di port 8074 (https://klira.nuscode.id). JANGAN mematikannya (tanpa pkill/kill pada proses node milik proyek) dan jangan memakai port itu untuk uji; untuk uji jalankan server sementara di port lain (mis. PORT=18074, BASE_URL=http://localhost:18074) dan matikan hanya proses yang Anda mulai (simpan PID-nya).
 - Bekerja hanya di dalam folder proyek. Jangan menghapus di luar proyek (commit dan push dilakukan oleh skill, bukan Anda), jangan menaruh rahasia atau kredensial asli di kode.
 - Hasil akhir: daftar berkas yang dibuat atau diubah dan perintah uji yang lulus, singkat.

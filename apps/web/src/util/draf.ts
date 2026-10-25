@@ -1,17 +1,47 @@
-export type PenyimpananDraf = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+export type PenyimpananDraf = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> & Partial<Pick<Storage, 'key' | 'length'>>;
 export type Draf<T> = { versi: number; disimpan: string; langkah: number; nilai: T };
 
 const VERSI = 1;
+export const AWALAN_DRAF = 'klira.draf.';
+/** Masa berlaku bawaan draf (komputer klinik bersama). */
+export const KEDALUWARSA_DRAF_MS = 30 * 60 * 1000;
+
+/** Salinan nilai tanpa bidang sensitif (tingkat atas) agar tidak pernah masuk penyimpanan lokal. */
+export function saringSensitif<T>(nilai: T, sensitif: readonly string[] = []): T {
+  if (!sensitif.length || nilai === null || typeof nilai !== 'object') return nilai;
+  return Object.fromEntries(Object.entries(nilai as Record<string, unknown>).filter(([k]) => !sensitif.includes(k))) as T;
+}
+
+/** Hapus semua draf `klira.draf.*` (saat keluar atau pengguna berganti). */
+export function hapusSemuaDraf(simpanan?: PenyimpananDraf | null): void {
+  try {
+    if (!simpanan || simpanan.key === undefined || simpanan.length === undefined) return;
+    const kunci: string[] = [];
+    for (let i = 0; i < simpanan.length; i++) {
+      const k = simpanan.key(i);
+      if (k?.startsWith(AWALAN_DRAF)) kunci.push(k);
+    }
+    kunci.forEach((k) => simpanan.removeItem(k));
+  } catch {
+    /* diabaikan */
+  }
+}
 /** Kunci draf per alur dan per pemilik akun, mis. `klira.draf.pembuatan-akun.12`. */
-export const kunciDraf = (alur: string, pemilikId?: number | null): string => `klira.draf.${alur}${pemilikId != null ? `.${pemilikId}` : ''}`;
+export const kunciDraf = (alur: string, pemilikId?: number | null): string => `${AWALAN_DRAF}${alur}${pemilikId != null ? `.${pemilikId}` : ''}`;
 
 /** Draf tersimpan, atau null bila tidak ada, rusak, atau versinya berbeda. */
-export function bacaDraf<T>(kunci: string, simpanan?: PenyimpananDraf | null): Draf<T> | null {
+export function bacaDraf<T>(kunci: string, simpanan?: PenyimpananDraf | null, opsi: { kedaluwarsaMs?: number; sekarang?: () => Date } = {}): Draf<T> | null {
   try {
     const mentah = simpanan?.getItem(kunci);
     if (!mentah) return null;
     const d = JSON.parse(mentah) as Draf<T>;
-    return d && d.versi === VERSI && typeof d.langkah === 'number' && 'nilai' in d ? d : null;
+    if (!(d && d.versi === VERSI && typeof d.langkah === 'number' && 'nilai' in d)) return null;
+    const umur = (opsi.sekarang ?? (() => new Date()))().getTime() - Date.parse(d.disimpan);
+    if (!(umur <= (opsi.kedaluwarsaMs ?? KEDALUWARSA_DRAF_MS))) {
+      hapusDraf(kunci, simpanan);
+      return null;
+    }
+    return d;
   } catch {
     return null;
   }
