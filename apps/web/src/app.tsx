@@ -9,6 +9,7 @@ import { HalamanGantiKredensial } from './halaman/ganti-kredensial';
 import { HalamanKasirKlaim } from './halaman/kasir-klaim';
 import { HalamanMasuk } from './halaman/masuk';
 import { HalamanPengaturan } from './halaman/pengaturan';
+import { HalamanRawatInap } from './halaman/rawat-inap';
 import { HalamanRekamMedis } from './halaman/rekam-medis';
 import { HalamanPenunjang } from './halaman/penunjang';
 import { HalamanSementara } from './halaman/placeholder';
@@ -34,6 +35,7 @@ Object.assign(HALAMAN_MENU_ISI, {
   '/farmasi': HalamanFarmasi,
   '/kasir-klaim': HalamanKasirKlaim,
   '/rekam-medis': HalamanRekamMedis,
+  '/rawat-inap': HalamanRawatInap,
 });
 
 function Perute() {

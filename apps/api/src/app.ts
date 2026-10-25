@@ -42,6 +42,9 @@ import { buatRuteRm } from './modul/rekam-medis/rute-rm';
 import { buatLayananDokumen } from './modul/rekam-medis/layanan-dokumen';
 import { RepositoriDokumenPrisma } from './modul/rekam-medis/repositori-dokumen';
 import { buatRuteDokumen } from './modul/rekam-medis/rute-dokumen';
+import { buatLayananRawatInap } from './modul/rawat-inap/layanan';
+import { RepositoriRawatInapPrisma } from './modul/rawat-inap/repositori';
+import { buatRuteRawatInap } from './modul/rawat-inap/rute';
 import { RepositoriKlinisPrisma } from './modul/klinis/repositori';
 import { buatRuteKlinis } from './modul/klinis/rute';
 import { buatLayananAddendum } from './modul/rekam-medis/layanan-addendum';
@@ -108,8 +111,10 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteRm(layananAkses, layananIzin, buatLayananRm({
     repo: repoRm, pengesahanRepo: new RepositoriPengesahanPrisma(), pengesahan: layananPengesahan, klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));
-  app.use('/api', buatRuteDokumen(layananAkses, layananIzin, buatLayananDokumen({
-    repo: new RepositoriDokumenPrisma(), repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+  const layananDokumen = buatLayananDokumen({ repo: new RepositoriDokumenPrisma(), repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma() });
+  app.use('/api', buatRuteDokumen(layananAkses, layananIzin, layananDokumen));
+  app.use('/api', buatRuteRawatInap(layananAkses, layananIzin, buatLayananRawatInap({
+    repo: new RepositoriRawatInapPrisma(), pengesahan: layananPengesahan, audit: new PenampungAuditPrisma(), simpanResume: layananDokumen.simpanResume,
   })));
   // Addendum generik, penunjang (order, spesimen, hasil), persetujuan tindakan, dan tagihan dasar.
   const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan });

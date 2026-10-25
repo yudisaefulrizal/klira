@@ -220,3 +220,37 @@ export const LABEL_PENANDATANGAN = buat({
   wali: { label: 'Wali', warna: 'biru' },
 });
 export type PenandatanganTindakan = keyof typeof LABEL_PENANDATANGAN.peta;
+
+export const STATUS_BED = buat({
+  kosong: { label: 'Kosong', warna: 'hijau' },
+  terisi: { label: 'Terisi', warna: 'biru' },
+  tidak_operasional: { label: 'Tidak operasional', warna: 'abu' },
+});
+export type StatusBed = keyof typeof STATUS_BED.peta;
+
+export const KELAS_RAWAT = buat({
+  satu: { label: 'Kelas 1', warna: 'biru' },
+  dua: { label: 'Kelas 2', warna: 'biru' },
+  tiga: { label: 'Kelas 3', warna: 'biru' },
+  vip: { label: 'VIP', warna: 'ungu' },
+  vvip: { label: 'VVIP', warna: 'ungu' },
+});
+export type KelasRawat = keyof typeof KELAS_RAWAT.peta;
+
+export const INDIKATOR_KELAS = buat({
+  kelas_tetap: { label: 'Kelas tetap', warna: 'abu' },
+  naik_kelas: { label: 'Naik kelas', warna: 'kuning' },
+  turun_kelas: { label: 'Turun kelas', warna: 'kuning' },
+  titip_rawat: { label: 'Titip rawat', warna: 'kuning' },
+});
+export type IndikatorKelas = keyof typeof INDIKATOR_KELAS.peta;
+
+export const DISPOSISI_PULANG = buat({
+  home: { label: 'Pulang ke rumah', warna: 'hijau' },
+  aadvice: { label: 'Pulang atas permintaan sendiri', warna: 'kuning' },
+  other_hcf: { label: 'Dirujuk ke fasilitas lain', warna: 'biru' },
+  exp_lt48h: { label: 'Meninggal kurang dari 48 jam', warna: 'merah' },
+  exp_gt48h: { label: 'Meninggal lebih dari 48 jam', warna: 'merah' },
+  oth: { label: 'Lainnya', warna: 'abu' },
+});
+export type DisposisiPulang = keyof typeof DISPOSISI_PULANG.peta;

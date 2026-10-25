@@ -608,6 +608,7 @@ model Kunjungan {
   lokasi_id         Int?
   cara_pembayaran   CaraPembayaran  @default(umum)
   nomor_sep         String?         @db.VarChar(50)
+  spri              String?         @db.VarChar(100)
   keluhan_singkat   String?         @db.VarChar(500)
   service_type      String?         @db.VarChar(100)
   encounter_id      String?         @db.VarChar(100)
@@ -1501,4 +1502,83 @@ model PenyampaianRm {
   @@index([fasyankes_id, waktu])
   @@index([pasien_id])
   @@map("penyampaian_rm")
+}
+
+// ---- Rawat inap: penempatan (riwayat bed dan kelas), catatan harian (CPPT), pemulangan ----
+enum KelasRawat {
+  satu
+  dua
+  tiga
+  vip
+  vvip
+}
+
+enum IndikatorKelas {
+  kelas_tetap
+  naik_kelas
+  turun_kelas
+  titip_rawat
+}
+
+// Kode disposisi Encounter.hospitalization.dischargeDisposition (SATUSEHAT).
+enum DisposisiPulang {
+  home
+  aadvice
+  other_hcf @map("other-hcf")
+  exp_lt48h @map("exp-lt48h")
+  exp_gt48h @map("exp-gt48h")
+  oth
+}
+
+// Riwayat penempatan: satu baris per bed dan kelas yang ditempati; selesai kosong = masih dihuni. Hanya ditambah dan ditutup.
+model Penempatan {
+  id           Int            @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  lokasi_id    Int
+  kelas        KelasRawat
+  indikator    IndikatorKelas @default(kelas_tetap)
+  tarif_id     Int?
+  mulai        DateTime       @default(now()) @db.DateTime(3)
+  selesai      DateTime?      @db.DateTime(3)
+  dibuat_oleh  Int?
+
+  @@index([kunjungan_id])
+  @@index([fasyankes_id, lokasi_id, selesai])
+  @@map("penempatan")
+}
+
+// Catatan harian rawat inap (CPPT): hanya ditambah; tiap catatan disahkan (pengesahan entitas `cppt`, id = id catatan).
+model CatatanHarian {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  subjektif    String   @db.Text
+  objektif     String   @db.Text
+  asesmen      String   @db.Text
+  rencana      String   @db.Text
+  instruksi    String?  @db.Text
+  tanda_vital  Json?
+  dibuat_oleh  Int
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, kunjungan_id])
+  @@map("catatan_harian")
+}
+
+// Pemulangan rawat inap: satu per kunjungan; menutup penempatan dan memindahkan kunjungan ke kasir.
+model Pemulangan {
+  id              Int             @id @default(autoincrement())
+  fasyankes_id    Int
+  kunjungan_id    Int             @unique
+  disposisi       DisposisiPulang
+  kondisi_pulang  String          @db.VarChar(300)
+  diagnosis_akhir String          @db.VarChar(500)
+  ringkasan       String          @db.Text
+  tindak_lanjut   String?         @db.Text
+  waktu           DateTime        @default(now()) @db.DateTime(3)
+  dibuat_oleh     Int
+
+  @@index([fasyankes_id])
+  @@map("pemulangan")
 }

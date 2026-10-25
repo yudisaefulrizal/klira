@@ -151,9 +151,9 @@ export function ResumeSurat({ kunjunganId, onTutup, onSelesai }: Props) {
     <ModalBertahap
       judul={R.judul} langkah={langkah} indeks={indeks} onIndeks={setIndeks} galat={galat} onTutup={tersimpan.current ? onSelesai : onTutup} lindungiTutup={adaPerubahan(awal, k)}
       konteks={dok ? <KepalaPasien nama={dok.kunjungan.pasien_nama} nomorRm={dok.kunjungan.pasien_nomor_rm} /> : undefined}
-      labelKirim={memproses ? R.menyimpan : R.simpan} onKirim={() => void kirim()} kirimNonaktif={memproses || !dok || dok.kunjungan.tahap_layanan !== 'ditutup'}
+      labelKirim={memproses ? R.menyimpan : R.simpan} onKirim={() => void kirim()} kirimNonaktif={memproses || !dok || !['kasir', 'ditutup'].includes(dok.kunjungan.tahap_layanan)}
       hasil={hasil === undefined ? undefined : { judul: R.hasilJudul, isi: <p style={{ margin: 0 }}>{R.hasilPesan(hasil)}</p>, aksi: <Tombol type="button" onClick={onSelesai}>{TOMBOL.tutup}</Tombol> }}
-      catatan={dok && dok.kunjungan.tahap_layanan !== 'ditutup' ? <Peringatan>{R.belumDitutup}</Peringatan> : undefined}
+      catatan={dok && !['kasir', 'ditutup'].includes(dok.kunjungan.tahap_layanan) ? <Peringatan>{R.belumDitutup}</Peringatan> : undefined}
     />
   );
 }

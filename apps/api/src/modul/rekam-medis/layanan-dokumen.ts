@@ -60,11 +60,11 @@ export function buatLayananDokumen({ repo, repoRm, pengesahan, baca, audit }: De
       return h;
     },
 
-    /** Simpan resume setelah kunjungan ditutup. Mengubah resume yang sudah ada butuh alasan dan membentuk versi baru (versi lama tersimpan). */
+    /** Simpan resume setelah pelayanan selesai (tahap kasir atau ditutup). Mengubah resume yang sudah ada butuh alasan dan membentuk versi baru (versi lama tersimpan). */
     async simpanResume(p: Pelaku, kunjunganId: number, m: ResumeMasukan, alamat?: string): Promise<Hasil<DokumenKunjunganDto>> {
       const k = await repoRm.kunjungan(p.fasyankes_id, kunjunganId);
       if (!k) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-      if (k.tahap_layanan !== 'ditutup') return gagal('konflik', G.belumDitutup2);
+      if (k.tahap_layanan !== 'ditutup' && k.tahap_layanan !== 'kasir') return gagal('konflik', G.belumDitutup2);
       const { alasan, ...isi } = m;
       const siap = await pengesahan.siapkan({
         fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: 'resume_medis', entitasId: kunjunganId, isiBaru: isi, alasan: alasan ?? null, lewatiBatas: true,

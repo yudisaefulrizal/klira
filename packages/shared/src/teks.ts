@@ -952,7 +952,7 @@ export const REKAM_MEDIS = {
     memuat: 'Memuat...', gagalMuat: 'Data gagal dimuat.', tombolResume: 'Resume dan surat', tombolLaporan: 'Buat laporan', pasienCari: 'Cari pasien (nama atau nomor RM)', pasienPilih: 'Pilih pasien...', pasienKosong: 'Pasien tidak ditemukan.', pasienLabel: 'Pasien',
     resume: {
       judul: 'Resume medis dan surat', langkah: { resume: 'Resume', pulang: 'Kondisi pulang', surat: 'Surat', ringkasan: 'Ringkasan' }, ringkasan: 'Ringkasan perjalanan penyakit', diagnosis: 'Diagnosis akhir', terapi: 'Terapi', kondisi: 'Kondisi saat pulang', anjuran: 'Anjuran',
-      alasan: 'Alasan perubahan', alasanPetunjuk: 'Resume sudah disahkan; alasan wajib dan versi lama tetap tersimpan.', saran: 'Isian awal diambil dari catatan dokter dan pengkodean; periksa dan ubah bila perlu.', belumDitutup: 'Resume dibuat setelah kunjungan ditutup.',
+      alasan: 'Alasan perubahan', alasanPetunjuk: 'Resume sudah disahkan; alasan wajib dan versi lama tetap tersimpan.', saran: 'Isian awal diambil dari catatan dokter dan pengkodean; periksa dan ubah bila perlu.', belumDitutup: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
       versi: (n: number) => `Versi ${n}`, sah: 'Isi sah (hash cocok)', berubah: 'Isi berubah setelah disahkan', suratSudah: 'Surat yang sudah dibuat', suratBaru: 'Surat baru (kosongkan isi bila tidak membuat surat)', suratJenis: 'Jenis surat', suratTujuan: 'Tujuan', suratIsi: 'Isi surat',
       suratTanpa: 'Belum ada surat.', simpan: 'Simpan', menyimpan: 'Menyimpan...', tersimpan: 'Tersimpan.', gagal: 'Resume gagal disimpan.', ringkasanTanpa: 'Tanpa surat baru', jenisSurat: { rujukan: 'Surat rujukan', keterangan_sakit: 'Surat keterangan sakit', lainnya: 'Surat lainnya' } as Record<string, string>, tutup: 'Tutup',
       hasilJudul: 'Resume tersimpan', hasilPesan: (surat: string | null) => (surat ? `Resume tersimpan dan surat ${surat} dibuat.` : 'Resume tersimpan.'),
@@ -983,9 +983,46 @@ export const REKAM_MEDIS = {
     belumDisahkan: 'Bagian ini belum pernah disahkan.', penyetujuSama: 'Penyetuju harus orang lain, bukan pemohon.', sudahMenunggu: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.', belumDitutup: 'Pengkodean dilakukan setelah kunjungan ditutup.',
     bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', isiTidakSah: 'Isi perbaikan tidak sah.',
     jenisSurat: 'Pilih jenis surat.', tujuanRujukan: 'Tujuan wajib untuk surat rujukan.', dasar: 'Pilih dasar pembukaan.', alasanHukum: 'Pilih alasan hukum.', hubungan: 'Pilih hubungan penerima.', bentuk: 'Pilih bentuk penyampaian.',
-    buktiWajib: 'Bukti persetujuan pasien wajib untuk keluarga atau pihak lain.', jenisLaporan: 'Pilih jenis laporan.', rentangTerbalik: 'Tanggal akhir tidak boleh sebelum tanggal awal.', belumDitutup2: 'Resume dibuat setelah kunjungan ditutup.',
+    buktiWajib: 'Bukti persetujuan pasien wajib untuk keluarga atau pihak lain.', jenisLaporan: 'Pilih jenis laporan.', rentangTerbalik: 'Tanggal akhir tidak boleh sebelum tanggal awal.', belumDitutup2: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
     pembukaanTidakAda: 'Permintaan pembukaan tidak ditemukan.', pasienTidakAda: 'Pasien tidak ditemukan.', suratTidakAda: 'Surat tidak ditemukan.', alasanWajibUbah: 'Alasan wajib untuk mengubah resume yang sudah disahkan.',
   },
 } as const;
 
-export const TEKS = { rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const RAWAT_INAP = {
+  judul: 'Rawat inap', memuat: 'Memuat...', gagalMuat: 'Papan bed gagal dimuat.',
+  papan: {
+    ringkasan: (t: number, i: number, k: number) => `${t} bed: ${i} terisi, ${k} kosong`, ruangTanpa: 'Tanpa ruang', kosong: 'Belum ada bed. Tambahkan lokasi berjenis bed di Pengaturan > Master.', menunggu: 'Menunggu ruangan', menungguKosong: 'Tidak ada pasien yang menunggu ruangan.',
+    admisi: 'Admisi pasien', penempatan: 'Ubah penempatan', cppt: 'Catatan harian', pemulangan: 'Pemulangan', kosongBed: 'Bed kosong', sejak: (waktu: string) => `Sejak ${waktu}`, dpjp: (nama: string) => `DPJP ${nama}`, labelPapan: 'Papan bed', tindakan: 'Tindakan',
+    tempatkan: 'Tempatkan di bed', bedLabel: 'Bed',
+  },
+  admisi: {
+    judul: 'Admisi rawat inap', langkah: { pasien: 'Pasien', ruang: 'Ruang dan kelas', dpjp: 'DPJP', spri: 'SPRI', ringkasan: 'Ringkasan' }, bed: 'Bed', bedMenunggu: 'Belum ada bed (menunggu ruangan)', kelas: 'Kelas rawat', indikator: 'Indikator kelas', tarif: 'Tarif kamar per hari',
+    tarifTanpa: 'Tanpa tarif kamar', dpjpUtama: 'DPJP utama', dpjpBersama: 'DPJP bersama', pilihDpjp: 'Pilih DPJP...', spri: 'Surat perintah rawat inap (SPRI)', spriPetunjuk: 'Nomor atau keterangan SPRI dari dokter; diisi dari tindak lanjut rawat jalan bila ada.', keluhan: 'Keluhan singkat',
+    simpan: 'Admisi', menyimpan: 'Memproses...', gagal: 'Admisi gagal diproses.', hasilJudul: 'Pasien diterima',
+    hasilPesan: (menunggu: boolean) => (menunggu ? 'Pasien tercatat menunggu ruangan; tempatkan di bed lewat Ubah penempatan.' : 'Pasien diterima dan ditempatkan di bed.'),
+    asalInfo: (poli: string | null) => `Kunjungan rawat jalan${poli ? ` (${poli})` : ''} akan ditutup dan tagihannya digabung ke rawat inap.`, tanpaAsal: 'Tidak ada kunjungan berjalan; dibuat kunjungan rawat inap langsung.', sudahInap: 'Pasien sudah dirawat inap.',
+    adaPembayaran: 'Kunjungan rawat jalan sudah ada pembayaran; selesaikan di kasir sebelum admisi.', cekAsal: 'Memeriksa kunjungan pasien...',
+  },
+  penempatan: {
+    judul: 'Ubah penempatan', bed: 'Pindah ke bed', tetap: 'Tetap di bed sekarang', sekarang: 'Penempatan sekarang', riwayat: 'Riwayat penempatan', alasan: 'Alasan perpindahan', dpjpPetunjuk: 'Mengganti DPJP menutup periode DPJP lama.', simpan: 'Simpan', menyimpan: 'Menyimpan...',
+    gagal: 'Penempatan gagal diubah.', tersimpan: 'Penempatan tersimpan.', belumAda: 'Belum ditempatkan di bed.',
+  },
+  cppt: {
+    judul: 'Catatan harian (CPPT)', subjektif: 'Subjektif (keluhan)', objektif: 'Objektif (pemeriksaan)', asesmen: 'Asesmen', rencana: 'Rencana', instruksi: 'Instruksi', tandaVital: 'Tanda vital (opsional)', tambah: 'Tambah catatan', daftar: 'Catatan sebelumnya',
+    kosong: 'Belum ada catatan.', simpan: 'Simpan dan sahkan', menyimpan: 'Menyimpan...', gagal: 'Catatan gagal disimpan.', tersimpan: 'Catatan tersimpan dan disahkan.', oleh: (nama: string) => `Oleh ${nama}`, sah: 'Sah', berubah: 'Isi berubah setelah disahkan', ditutup: 'Kunjungan sudah dipulangkan; catatan baru tidak dapat ditambah.',
+  },
+  pulang: {
+    judul: 'Pemulangan rawat inap', langkah: { ringkasan: 'Ringkasan', diagnosis: 'Diagnosis akhir', kondisi: 'Kondisi pulang', tindak: 'Tindak lanjut', resume: 'Resume medis' }, ringkasan: 'Ringkasan perjalanan perawatan', diagnosis: 'Diagnosis akhir', terapi: 'Terapi selama dirawat',
+    disposisi: 'Disposisi pulang', kondisi: 'Kondisi saat pulang', tindak: 'Anjuran dan tindak lanjut', buatResume: 'Buat resume medis dari isian ini', buatResumePetunjuk: 'Resume dapat diubah kemudian di Rekam medis > Resume dan surat.', simpan: 'Pulangkan pasien', menyimpan: 'Memproses...',
+    gagal: 'Pemulangan gagal diproses.', hasilJudul: 'Pasien dipulangkan', hasilPesan: (kamar: number, resume: boolean) => `Pasien dipulangkan dan dilanjutkan ke kasir${kamar ? `; ${kamar} item kamar ditambahkan ke tagihan` : ''}${resume ? '; resume medis dibuat' : ''}.`,
+    sudah: 'Pasien sudah dipulangkan.', info: 'Setelah dipulangkan, bed dikosongkan, biaya kamar masuk tagihan, dan kunjungan dilanjutkan ke kasir.',
+  },
+  galat: {
+    kelas: 'Pilih kelas rawat.', indikator: 'Pilih indikator kelas.', disposisi: 'Pilih disposisi pulang.', dpjpBanyak: 'DPJP bersama paling banyak 10.', dpjpGanda: 'DPJP bersama tidak boleh memuat DPJP utama atau nama ganda.',
+    pasienTidakAda: 'Pasien tidak ditemukan.', kunjunganTidakAda: 'Kunjungan rawat inap tidak ditemukan.', bedTidakSah: 'Bed tidak ditemukan atau tidak operasional.', bedTerisi: 'Bed sudah terisi.', dpjpTidakSah: 'DPJP tidak sah.', tarifTidakSah: 'Tarif kamar tidak sah.',
+    sudahInap: 'Pasien sudah dirawat inap.', kunjunganBerjalan: 'Pasien masih punya kunjungan berjalan yang tidak dapat diteruskan.', adaPembayaran: 'Kunjungan rawat jalan sudah ada pembayaran; selesaikan di kasir.', bukanInap: 'Bukan kunjungan rawat inap.',
+    sudahPulang: 'Pasien sudah dipulangkan.', alasanPindah: 'Alasan wajib untuk pindah bed.', tidakTerisi: 'Pasien belum ditempatkan di bed.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', catatanTidakAda: 'Catatan tidak ditemukan.',
+  },
+} as const;
+
+export const TEKS = { rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
