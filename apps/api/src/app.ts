@@ -39,6 +39,9 @@ import { buatLayananKlinis } from './modul/klinis/layanan';
 import { buatLayananRm } from './modul/rekam-medis/layanan-rm';
 import { RepositoriRmPrisma } from './modul/rekam-medis/repositori-rm';
 import { buatRuteRm } from './modul/rekam-medis/rute-rm';
+import { buatLayananDokumen } from './modul/rekam-medis/layanan-dokumen';
+import { RepositoriDokumenPrisma } from './modul/rekam-medis/repositori-dokumen';
+import { buatRuteDokumen } from './modul/rekam-medis/rute-dokumen';
 import { RepositoriKlinisPrisma } from './modul/klinis/repositori';
 import { buatRuteKlinis } from './modul/klinis/rute';
 import { buatLayananAddendum } from './modul/rekam-medis/layanan-addendum';
@@ -101,8 +104,12 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   const repoKlinis = new RepositoriKlinisPrisma();
   const layananKlinis = buatLayananKlinis({ repo: repoKlinis, audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan });
   app.use('/api', buatRuteKlinis(layananAkses, layananIzin, layananKlinis));
+  const repoRm = new RepositoriRmPrisma();
   app.use('/api', buatRuteRm(layananAkses, layananIzin, buatLayananRm({
-    repo: new RepositoriRmPrisma(), pengesahanRepo: new RepositoriPengesahanPrisma(), pengesahan: layananPengesahan, klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+    repo: repoRm, pengesahanRepo: new RepositoriPengesahanPrisma(), pengesahan: layananPengesahan, klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+  })));
+  app.use('/api', buatRuteDokumen(layananAkses, layananIzin, buatLayananDokumen({
+    repo: new RepositoriDokumenPrisma(), repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));
   // Addendum generik, penunjang (order, spesimen, hasil), persetujuan tindakan, dan tagihan dasar.
   const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan });

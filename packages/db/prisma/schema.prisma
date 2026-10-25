@@ -1412,3 +1412,93 @@ model Pengkodean {
   @@index([fasyankes_id])
   @@map("pengkodean")
 }
+
+// ---- Rekam medis (lanjutan): resume dan surat, pembukaan tanpa persetujuan, penyampaian ----
+enum DasarPembukaan {
+  persetujuan
+  hukum
+}
+
+enum StatusPembukaan {
+  diajukan
+  disetujui
+  ditolak
+}
+
+enum BentukPenyampaian {
+  elektronik
+  cetak
+}
+
+// Resume medis (4.2 Composition): satu baris per kunjungan; riwayat versi lewat versi catatan dan pengesahan entitas `resume_medis`.
+model ResumeMedis {
+  id              Int      @id @default(autoincrement())
+  fasyankes_id    Int
+  kunjungan_id    Int      @unique
+  isi             Json
+  dibuat_oleh     Int?
+  diperbarui_pada DateTime @default(now()) @db.DateTime(3)
+  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id])
+  @@map("resume_medis")
+}
+
+// Surat klinis (rujukan, keterangan sakit, dan lain-lain): hanya ditambah, nomor berurutan per klinik.
+model Surat {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  jenis        String   @db.VarChar(30)
+  nomor_surat  String   @db.VarChar(40)
+  tujuan       String?  @db.VarChar(200)
+  isi          String   @db.Text
+  dokter_id    Int
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  @@unique([fasyankes_id, nomor_surat])
+  @@index([kunjungan_id])
+  @@map("surat")
+}
+
+// Pembukaan rekam medis tanpa persetujuan pasien atau atas permintaan pihak berwenang (4.4): ditinjau pimpinan; identitas disamarkan.
+model PembukaanRm {
+  id                   Int             @id @default(autoincrement())
+  fasyankes_id         Int
+  pasien_id            Int
+  pemohon_nama         String          @db.VarChar(200)
+  pemohon_instansi     String?         @db.VarChar(200)
+  dasar                DasarPembukaan
+  alasan_hukum         String?         @db.VarChar(50)
+  dasar_rinci          String          @db.VarChar(500)
+  cakupan              String          @db.VarChar(500)
+  identitas_disamarkan Boolean         @default(true)
+  status               StatusPembukaan @default(diajukan)
+  penyetuju_id         Int?
+  catatan_keputusan    String?         @db.VarChar(500)
+  waktu_keputusan      DateTime?       @db.DateTime(3)
+  diminta_oleh         Int
+  dibuat_pada          DateTime        @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, status])
+  @@map("pembukaan_rm")
+}
+
+// Penyampaian rekam medis ke pasien, wali, keluarga, atau pihak lain (bentuk elektronik atau cetak); selain pasien dan wali butuh bukti persetujuan.
+model PenyampaianRm {
+  id                Int               @id @default(autoincrement())
+  fasyankes_id      Int
+  pasien_id         Int
+  kunjungan_id      Int?
+  penerima_nama     String            @db.VarChar(200)
+  hubungan          String            @db.VarChar(20)
+  bentuk            BentukPenyampaian
+  bukti_persetujuan String?           @db.VarChar(300)
+  catatan           String?           @db.VarChar(500)
+  petugas_id        Int
+  waktu             DateTime          @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, waktu])
+  @@index([pasien_id])
+  @@map("penyampaian_rm")
+}

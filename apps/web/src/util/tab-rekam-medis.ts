@@ -5,6 +5,9 @@ export const TAB_REKAM_MEDIS = [
   { id: 'berkas', label: 'Berkas pasien', izin: ['rekam-medis', 'lihat'], atau: ['klinis', 'lihat'] },
   { id: 'pengkodean', label: 'Pengkodean dan laporan', izin: ['rekam-medis', 'lihat'] },
   { id: 'perbaikan', label: 'Antrean perbaikan', izin: ['rekam-medis', 'lihat'] },
+  { id: 'resume', label: 'Resume dan surat', izin: ['rekam-medis', 'lihat'], atau: ['klinis', 'lihat'] },
+  { id: 'pembukaan', label: 'Permintaan pembukaan', izin: ['rekam-medis', 'lihat'] },
+  { id: 'penyampaian', label: 'Penyampaian', izin: ['rekam-medis', 'lihat'] },
 ] as const satisfies readonly { id: string; label: string; izin: readonly [string, 'lihat']; atau?: readonly [string, 'lihat'] }[];
 
 export type IdTabRekamMedis = (typeof TAB_REKAM_MEDIS)[number]['id'];

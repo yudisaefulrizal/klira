@@ -9,12 +9,14 @@ import { useNavigasi } from '../util/navigasi';
 import { tabRekamMedisDiizinkan } from '../util/tab-rekam-medis';
 import type { IdTabRekamMedis } from '../util/tab-rekam-medis';
 import { TabBerkas } from './rekam-medis/tab-berkas';
+import { TabPembukaan } from './rekam-medis/tab-pembukaan';
+import { TabPenyampaian } from './rekam-medis/tab-penyampaian';
 import { TabPerbaikan } from './rekam-medis/tab-perbaikan';
 
 const HALAMAN = 'rekam-medis';
 const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
 
-/** Halaman Rekam medis (3.1): berkas pasien, pengkodean, dan antrean perbaikan; tab menurut izin, dari alamat (?tab=) atau tab terakhir (5.1h). */
+/** Halaman Rekam medis (3.1): berkas pasien, pengkodean dan laporan, antrean perbaikan, resume dan surat, pembukaan, dan penyampaian; tab menurut izin, dari alamat (?tab=) atau tab terakhir (5.1h). */
 export function HalamanRekamMedis() {
   const { pengguna } = usePengguna();
   const { search, ganti } = useNavigasi();
@@ -36,8 +38,11 @@ export function HalamanRekamMedis() {
         {aktif && <Tab daftar={tabBoleh} aktif={aktif} label={REKAM_MEDIS.tabLabel} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />}
       </Sebaris>
       {aktif === 'berkas' && <TabBerkas />}
-      {aktif === 'pengkodean' && <TabBerkas judulDaftar={REKAM_MEDIS.tab.pengkodean} kodeAwal="belum" />}
+      {aktif === 'pengkodean' && <TabBerkas judulDaftar={REKAM_MEDIS.tab.pengkodean} kodeAwal="belum" laporan />}
+      {aktif === 'resume' && <TabBerkas judulDaftar={REKAM_MEDIS.dok.tab.resume} />}
       {aktif === 'perbaikan' && <TabPerbaikan />}
+      {aktif === 'pembukaan' && <TabPembukaan />}
+      {aktif === 'penyampaian' && <TabPenyampaian />}
     </>
   );
 }

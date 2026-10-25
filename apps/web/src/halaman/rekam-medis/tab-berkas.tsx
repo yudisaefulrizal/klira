@@ -17,7 +17,9 @@ import { Tombol } from '../../komponen/ui/tombol';
 import { token } from '../../gaya/token';
 import { PanelRiwayat } from '../../modal/pelayanan-klinik/panel-riwayat';
 import { PengkodeanIcd } from '../../modal/pelayanan-klinik/pengkodean-icd';
+import { LaporanRm } from '../../modal/pelayanan-klinik/laporan-rm';
 import { PerbaikiCatatan } from '../../modal/pelayanan-klinik/perbaiki-catatan';
+import { ResumeSurat } from '../../modal/pelayanan-klinik/resume-surat';
 import { formatWaktu } from '../../util/penyaring-tab';
 
 const B = REKAM_MEDIS.berkas;
@@ -26,10 +28,10 @@ const KOLOM = [{ judul: B.kolom.pasien }, { judul: B.kolom.ditutup }, { judul: B
 const OPSI_KODE = [{ nilai: '', label: B.semuaKode }, { nilai: 'belum', label: STATUS_KODE.label('belum') }, { nilai: 'sudah', label: STATUS_KODE.label('sudah') }];
 type Saringan = { cari: string; kode: '' | 'belum' | 'sudah'; dari: string; sampai: string; halaman: number };
 const AWAL: Saringan = { cari: '', kode: '', dari: '', sampai: '', halaman: 1 };
-type Modal = { jenis: 'riwayat' | 'perbaiki' | 'kode'; baris: BerkasBarisDto } | null;
+type Modal = { jenis: 'riwayat' | 'perbaiki' | 'kode' | 'resume'; baris: BerkasBarisDto } | null;
 
 /** Tab Berkas pasien (3.1): kunjungan yang sudah ditutup dengan status pengkodean dan arsip; riwayat, perbaikan catatan, dan pengkodean dibuka dari baris. */
-export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 'belum' | 'sudah' }: { judulDaftar?: string; kodeAwal?: '' | 'belum' | 'sudah' }) {
+export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 'belum' | 'sudah', laporan = false }: { judulDaftar?: string; kodeAwal?: '' | 'belum' | 'sudah'; laporan?: boolean }) {
   const boleh = useIzin();
   const awal: Saringan = { ...AWAL, kode: kodeAwal };
   const [terapan, setTerapan] = useState<Saringan>(awal);
@@ -38,6 +40,7 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
   const [galat, setGalat] = useState<string | null>(null);
   const [muat, setMuat] = useState(0);
   const [modal, setModal] = useState<Modal>(null);
+  const [lapor, setLapor] = useState(false);
 
   const selesai = useCallback(() => {
     setModal(null);
@@ -68,6 +71,7 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
           <Pilihan id="berkas-kode" label={B.filterKode} opsi={OPSI_KODE} value={draf.kode} onChange={(e) => setDraf({ ...draf, kode: e.target.value as Saringan['kode'] })} />
           <Isian id="berkas-dari" label={B.dari} type="date" value={draf.dari} onChange={(e) => setDraf({ ...draf, dari: e.target.value })} />
           <Isian id="berkas-sampai" label={B.sampai} type="date" value={draf.sampai} onChange={(e) => setDraf({ ...draf, sampai: e.target.value })} galat={terbalik ? 'Tanggal akhir sebelum tanggal awal.' : undefined} />
+          {laporan && boleh('rekam-medis', 'lihat') && <Tombol type="button" varian="sekunder" onClick={() => setLapor(true)}>{REKAM_MEDIS.dok.tombolLaporan}</Tombol>}
         </BilahPenyaring>
         {galat && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galat}</Peringatan>}
         <Tabel kolom={KOLOM} label={judulDaftar}>
@@ -81,6 +85,7 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
               <SelTabel style={{ textAlign: 'right' }}>
                 <Sebaris sebaris jarak="sm" bungkus sebaran="akhir">
                   <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'riwayat', baris: b })}>{B.riwayat}</Tombol>
+                  <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'resume', baris: b })}>{REKAM_MEDIS.dok.tombolResume}</Tombol>
                   {boleh('klinis', 'perbaikan') && <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'perbaiki', baris: b })}>{B.perbaiki}</Tombol>}
                   {boleh('rekam-medis', 'input') && <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'kode', baris: b })}>{B.kodekan}</Tombol>}
                 </Sebaris>
@@ -94,6 +99,8 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
       <p style={{ margin: 0, color: token.warna.teksRedup }}>{B.catatan}</p>
       {modal?.jenis === 'riwayat' && <PanelRiwayat pasienId={modal.baris.pasien_id} nama={modal.baris.pasien_nama} onTutup={() => setModal(null)} />}
       {modal?.jenis === 'perbaiki' && <PerbaikiCatatan kunjunganId={modal.baris.kunjungan_id} pasien={{ id: modal.baris.pasien_id, nama: modal.baris.pasien_nama, nomor_rm: modal.baris.pasien_nomor_rm }} onTutup={() => setModal(null)} onSelesai={selesai} />}
+      {modal?.jenis === 'resume' && <ResumeSurat kunjunganId={modal.baris.kunjungan_id} onTutup={() => setModal(null)} onSelesai={selesai} />}
+      {lapor && <LaporanRm onTutup={() => setLapor(false)} />}
       {modal?.jenis === 'kode' && <PengkodeanIcd kunjunganId={modal.baris.kunjungan_id} onTutup={() => setModal(null)} onSelesai={selesai} />}
     </>
   );
