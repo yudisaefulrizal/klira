@@ -497,7 +497,7 @@ export const DAFTAR_PASIEN = {
   jamMenit: (j: number, m: number) => `${j} j ${m} mnt`,
   sebelumnya: 'Sebelumnya',
   berikutnya: 'Berikutnya',
-  aksi: { buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
+  aksi: { skrining: 'Skrining', periksa: 'Periksa', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
   aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',
   batalJudul: 'Batalkan antrean?',
   batalPesan: (kode: string, nama: string) => `Antrean ${kode} atas nama ${nama} akan dibatalkan.`,
@@ -648,4 +648,95 @@ export const KUNJUNGAN = {
   pilih: 'Pilih...',
 } as const;
 
-export const TEKS = { daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+/** Pemeriksaan klinis (MODAL-BERTAHAP), panel pendamping, dan catatan klinis (3.3, 4.2). */
+export const KLINIS = {
+  judul: 'Pemeriksaan klinis',
+  judulSkrining: 'Skrining',
+  langkah: {
+    anamnesis: 'Anamnesis', tandaVital: 'Tanda vital', pemeriksaan: 'Pemeriksaan', diagnosis: 'Diagnosis', tindakan: 'Tindakan', resep: 'Resep',
+    penunjang: 'Order penunjang', tindakLanjut: 'Rencana tindak lanjut', ringkasan: 'Ringkasan', ringkasanSkrining: 'Ringkasan skrining',
+  },
+  belumTersedia: {
+    resep: 'Langkah ini tersedia setelah Master obat selesai dikerjakan. Anda dapat melewatinya.',
+    penunjang: 'Langkah ini tersedia setelah Order lab selesai dikerjakan. Anda dapat melewatinya.',
+  },
+  lewati: 'Lewati langkah ini',
+  tombol: { riwayat: 'Riwayat', salin: 'Salin dari kunjungan sebelumnya', favorit: 'Favorit dan templat', keluarga: 'Family folder', simpan: 'Simpan dan sahkan', menyimpan: 'Menyimpan...', skrining: 'Skrining', periksa: 'Periksa' },
+  konteks: {
+    alergi: 'Alergi', diagnosisAktif: 'Diagnosis aktif', tandaVital: 'Tanda vital', tidakAda: 'Belum tercatat', memuat: 'Memuat data pasien...',
+    gagal: 'Data kunjungan gagal dimuat.', umum: 'Umum', jkn: 'JKN',
+  },
+  anamnesis: {
+    keluhanUtama: 'Keluhan utama', penyerta: 'Keluhan penyerta', riwayatPribadi: 'Riwayat penyakit pribadi', riwayatKeluarga: 'Riwayat penyakit keluarga',
+    alergi: 'Alergi', alergiKet: 'Pisahkan dengan koma. Tulis "Tidak ada" bila pasien tidak memiliki alergi.',
+  },
+  tandaVital: {
+    sistolik: 'Tekanan darah sistolik', diastolik: 'Tekanan darah diastolik', nadi: 'Nadi', suhu: 'Suhu', respirasi: 'Laju napas', spo2: 'Saturasi oksigen (SpO2)',
+    berat_badan: 'Berat badan', tinggi_badan: 'Tinggi badan',
+    singkat: { sistolik: 'TD', nadi: 'N', suhu: 'S', respirasi: 'RR', spo2: 'SpO2', berat_badan: 'BB', tinggi_badan: 'TB' },
+    petunjuk: 'Isi yang diukur saja. Satuan mengikuti standar (UCUM).',
+    satuan: { 'mm[Hg]': 'mmHg', '/min': 'per menit', Cel: '°C', '%': '%', kg: 'kg', cm: 'cm' } as Record<string, string>,
+  },
+  pemeriksaan: {
+    keadaan_umum: 'Keadaan umum', kepala_leher: 'Kepala dan leher', thorax: 'Thorax (jantung dan paru)', abdomen: 'Abdomen', ekstremitas: 'Ekstremitas', catatan: 'Catatan pemeriksaan lain',
+  },
+  diagnosis: {
+    cari: 'Cari diagnosis (ICD-10)', petunjukCari: 'Ketik kode atau nama diagnosis', hasil: 'Hasil pencarian', tidakAda: 'Tidak ada kode yang cocok. Anda dapat menambahkannya sebagai teks sendiri.',
+    tambahManual: 'Tambahkan sebagai teks sendiri', favoritSaya: 'Favorit saya', kunjunganIni: 'Diagnosis kunjungan ini', kosong: 'Belum ada diagnosis.',
+    peran: { utama: 'Utama', penyerta: 'Penyerta' } as Record<string, string>, jadikanUtama: 'Jadikan utama', hapus: 'Hapus', kode: 'Kode ICD-10', nama: 'Nama diagnosis',
+    contoh: 'Kode contoh', tambah: 'Tambah',
+  },
+  tindakan: {
+    cari: 'Cari tindakan (ICD-9 CM)', petunjukCari: 'Ketik kode atau nama tindakan', kunjunganIni: 'Tindakan kunjungan ini', kosong: 'Belum ada tindakan. Lewati bila tidak ada tindakan.',
+    kode: 'Kode ICD-9 CM', nama: 'Nama tindakan', performer: 'Pelaksana', mulai: 'Mulai', selesai: 'Selesai', hapus: 'Hapus', saya: 'Saya',
+  },
+  tindakLanjut: {
+    jenis: 'Rencana', jenisOpsi: [{ nilai: 'pulang', label: 'Pulang' }, { nilai: 'rujuk', label: 'Rujuk keluar' }, { nilai: 'rawat_inap', label: 'Rawat inap' }],
+    tujuan: 'Tujuan rujukan', spri: 'Nomor SPRI (bila ada)', catatan: 'Catatan', pilih: 'Pilih rencana...',
+    keterangan: 'Pilihan ini hanya mencatat rencana. Admisi rawat inap dan surat rujukan dilakukan di modal tersendiri.',
+  },
+  ringkasan: {
+    judul: 'Periksa ringkasan sebelum menyimpan', bagianBelum: 'Belum diisi', sudahSah: 'Sudah disahkan', akanDisimpan: 'Akan disimpan', tanpaPerubahan: 'Tanpa perubahan',
+    alasan: 'Alasan perbaikan', alasanKet: 'Wajib untuk bagian yang sudah disahkan. Isi lama tersimpan sebagai versi catatan.',
+    penjelasanSimpan: 'Menyimpan berarti mengesahkan catatan atas nama Anda. Perubahan setelah itu tercatat sebagai perbaikan berversi.',
+    syaratSelesai: 'Untuk menyelesaikan pemeriksaan, anamnesis, diagnosis, dan rencana tindak lanjut harus terisi.', selesaiOtomatis: 'Setelah tersimpan, kunjungan dilanjutkan ke tahap berikutnya.',
+    tahapKasir: 'Lanjut ke kasir',
+  },
+  hasil: {
+    judul: 'Catatan tersimpan', pesan: (n: number) => `${n} bagian catatan disimpan dan disahkan.`, pesanSkrining: 'Tanda vital tersimpan. Pasien siap diperiksa dokter.',
+    tahap: 'Tahap layanan sekarang', tutup: 'Selesai',
+  },
+  status: { disahkanOleh: (nama: string, jenis: string | null) => (jenis ? `Disahkan oleh ${nama} sebagai ${jenis}` : `Disahkan oleh ${nama}`), versi: (n: number) => `Versi ${n}` },
+  gagalSimpan: 'Catatan gagal disimpan.',
+  gagalSebagian: (bagian: string) => `Bagian "${bagian}" gagal disimpan. Bagian sebelumnya sudah tersimpan.`,
+  panel: {
+    riwayatJudul: 'Riwayat kunjungan', riwayatKosong: 'Belum ada kunjungan sebelumnya.', riwayatGagal: 'Riwayat gagal dimuat.', keluhan: 'Keluhan', diagnosis: 'Diagnosis', tanpaDiagnosis: 'Tanpa diagnosis tercatat',
+    tindakLanjut: 'Tindak lanjut', riwayatTercatat: 'Pembukaan riwayat tercatat di audit.',
+    salinJudul: 'Salin dari kunjungan sebelumnya', salinPilih: 'Pilih kunjungan sumber', salinBagian: 'Bagian yang disalin', salinTombol: 'Salin sebagai draf', salinKosong: 'Tidak ada kunjungan sebelumnya untuk disalin.',
+    salinPetunjuk: 'Isi disalin sebagai draf ke langkah terkait dan belum disahkan sampai Anda menyimpan. Isian yang sudah ada pada bagian itu diganti.', salinGagal: 'Gagal menyalin dari kunjungan sebelumnya.',
+    salinBerhasil: (n: number) => `${n} bagian disalin sebagai draf.`, salinTidakAda: 'Kunjungan itu tidak memiliki bagian yang dapat disalin.',
+    favoritJudul: 'Favorit dan templat', favoritDiagnosis: 'Diagnosis favorit', favoritTindakan: 'Tindakan favorit', favoritKosong: 'Belum ada favorit.', favoritTambah: 'Tambahkan dari kunjungan ini',
+    favoritNaik: 'Naikkan', favoritTurun: 'Turunkan', favoritHapus: 'Hapus', favoritPakai: 'Pakai', favoritSudah: 'Sudah menjadi favorit.', favoritGagal: 'Favorit gagal diproses.',
+    templatJudul: 'Templat catatan', templatKosong: 'Belum ada templat.', templatNama: 'Nama templat', templatSimpan: 'Simpan isi sekarang sebagai templat', templatPakai: 'Pakai',
+    templatBagian: { anamnesis: 'Anamnesis', pemeriksaan: 'Pemeriksaan' } as Record<string, string>, templatHapus: 'Hapus', templatGagal: 'Templat gagal diproses.',
+    keluargaJudul: 'Family folder', keluargaWali: 'Wali dan kontak keluarga', keluargaAnggota: 'Anggota keluarga yang juga pasien', keluargaKosong: 'Belum ada anggota keluarga tertaut.',
+    keluargaDibatasi: 'Dibatasi', keluargaTersembunyi: 'Identitas disembunyikan (privasi anggota)', keluargaBatasi: 'Batasi identitas', keluargaBuka: 'Tampilkan identitas', keluargaTambah: 'Tautkan anggota',
+    keluargaCari: 'Cari pasien (nama, nomor RM, atau NIK)', keluargaHubungan: 'Hubungan', keluargaTautkan: 'Tautkan', keluargaGagal: 'Family folder gagal diproses.', keluargaTanpaWali: 'Belum ada wali tercatat.',
+    keluargaTercatat: 'Pembukaan data keluarga tercatat di audit.', keluargaPilih: 'Pilih', keluargaHasilKosong: 'Tidak ada pasien yang cocok.', keluargaDiriSendiri: 'Pasien tidak dapat ditautkan dengan dirinya sendiri.',
+  },
+  galat: {
+    angka: 'Isi dengan angka.', rentang: (min: number, maks: number) => `Nilai harus antara ${min} dan ${maks}.`, tandaVitalKosong: 'Isi minimal satu tanda vital.',
+    pemeriksaanKosong: 'Isi minimal satu bidang pemeriksaan.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10 atau E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
+    diagnosisKosong: 'Tambahkan minimal satu diagnosis.', diagnosisUtama: 'Pilih tepat satu diagnosis utama.', kodeGanda: 'Kode tidak boleh ganda.', selesaiSebelumMulai: 'Waktu selesai tidak boleh sebelum mulai.',
+    tujuanRujuk: 'Tujuan rujukan wajib diisi.', pilihRencana: 'Pilih rencana tindak lanjut.', pencarianKosong: 'Isi kata pencarian.', tidakAdaPerubahan: 'Tidak ada perubahan.',
+    kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganTertutup: 'Kunjungan sudah melewati tahap pemeriksaan. Perubahan dilakukan lewat perbaikan catatan di Rekam medis.',
+    pelaksanaTidakSah: 'Pelaksana tindakan bukan pengguna fasyankes ini.', perbaikanButuhPersetujuan: 'Perbaikan oleh pengguna lain atau setelah 2x24 jam memerlukan persetujuan lewat permintaan perbaikan di Rekam medis.',
+    alasanPerbaikan: 'Alasan perbaikan wajib diisi karena bagian ini sudah disahkan.', bentrok: 'Catatan baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
+    syaratSelesai: 'Anamnesis, diagnosis, dan rencana tindak lanjut harus tersimpan sebelum pemeriksaan diselesaikan.', tahapSelesai: 'Pemeriksaan hanya dapat diselesaikan pada tahap pemeriksaan.',
+    sumberTidakSah: 'Kunjungan sumber harus milik pasien yang sama dan berbeda dari kunjungan ini.', entitasTidakDikenal: 'Jenis catatan tidak dikenal.', favoritGanda: 'Favorit sudah ada.',
+    favoritTidakAda: 'Favorit tidak ditemukan.', templatTidakAda: 'Templat tidak ditemukan.', anggotaTidakAda: 'Pasien anggota tidak ditemukan.', keluargaGanda: 'Anggota keluarga ini sudah tertaut.',
+    keluargaTidakAda: 'Data keluarga tidak ditemukan.', diriSendiri: 'Pasien tidak dapat ditautkan dengan dirinya sendiri.',
+  },
+} as const;
+
+export const TEKS = { daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

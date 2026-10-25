@@ -104,53 +104,53 @@ enum JenisPersetujuan {
 }
 
 model Fasyankes {
-  id                     Int                  @id @default(autoincrement())
-  fasyankes_id           Int                  @unique
-  nama                   String               @db.VarChar(200)
-  jenis                  JenisFasyankes
-  bentuk_usaha           String?              @db.VarChar(100)
-  kode_registrasi        String?              @unique @db.VarChar(50)
-  organization_id        String?              @db.VarChar(100)
-  status_akreditasi      String?              @db.VarChar(100)
-  tanggal_akreditasi     DateTime?            @db.Date
-  puskesmas_wilayah      String?              @db.VarChar(200)
-  dibuat_oleh            Int?
-  dibuat_pada            DateTime             @default(now()) @db.DateTime(3)
+  id                 Int            @id @default(autoincrement())
+  fasyankes_id       Int            @unique
+  nama               String         @db.VarChar(200)
+  jenis              JenisFasyankes
+  bentuk_usaha       String?        @db.VarChar(100)
+  kode_registrasi    String?        @unique @db.VarChar(50)
+  organization_id    String?        @db.VarChar(100)
+  status_akreditasi  String?        @db.VarChar(100)
+  tanggal_akreditasi DateTime?      @db.Date
+  puskesmas_wilayah  String?        @db.VarChar(200)
+  dibuat_oleh        Int?
+  dibuat_pada        DateTime       @default(now()) @db.DateTime(3)
 
-  kredensial_satusehat   KredensialSatusehat[]
-  lokasi                 Lokasi[]
-  pengguna               Pengguna[]
-  profil_profesi         ProfilProfesi[]
-  pasien                 Pasien[]
-  wali_keluarga          WaliKeluarga[]
-  jenis_akun             JenisAkun[]
-  penugasan_jenis        PenugasanJenis[]
-  izin_per_akun          IzinPerAkun[]
-  peringatan_izin        PeringatanIzin[]
-  riwayat_jenis_akun     RiwayatJenisAkun[]
-  izin_jenis_akun        IzinJenisAkun[]
-  pengaturan_keamanan    PengaturanKeamanan?
-  riwayat_backup         RiwayatBackup[]
-  jadwal_praktik         JadwalPraktik[]
-  tarif_layanan          TarifLayanan[]
-  riwayat_profil         RiwayatProfil[]
-  kunjungan              Kunjungan[]
-  peserta_kunjungan      PesertaKunjungan[]
-  antrean                Antrean[]
-  persetujuan            Persetujuan[]
-  urutan_nomor_rm        UrutanNomorRm?
+  kredensial_satusehat KredensialSatusehat[]
+  lokasi               Lokasi[]
+  pengguna             Pengguna[]
+  profil_profesi       ProfilProfesi[]
+  pasien               Pasien[]
+  wali_keluarga        WaliKeluarga[]
+  jenis_akun           JenisAkun[]
+  penugasan_jenis      PenugasanJenis[]
+  izin_per_akun        IzinPerAkun[]
+  peringatan_izin      PeringatanIzin[]
+  riwayat_jenis_akun   RiwayatJenisAkun[]
+  izin_jenis_akun      IzinJenisAkun[]
+  pengaturan_keamanan  PengaturanKeamanan?
+  riwayat_backup       RiwayatBackup[]
+  jadwal_praktik       JadwalPraktik[]
+  tarif_layanan        TarifLayanan[]
+  riwayat_profil       RiwayatProfil[]
+  kunjungan            Kunjungan[]
+  peserta_kunjungan    PesertaKunjungan[]
+  antrean              Antrean[]
+  persetujuan          Persetujuan[]
+  urutan_nomor_rm      UrutanNomorRm?
 
   @@map("fasyankes")
 }
 
 model KredensialSatusehat {
-  id                       Int                  @id @default(autoincrement())
-  fasyankes_id             Int
-  environment              EnvironmentSatusehat
-  client_id                String               @db.VarChar(200)
-  client_secret_terenkripsi String              @db.Text
-  dibuat_oleh              Int?
-  dibuat_pada              DateTime             @default(now()) @db.DateTime(3)
+  id                        Int                  @id @default(autoincrement())
+  fasyankes_id              Int
+  environment               EnvironmentSatusehat
+  client_id                 String               @db.VarChar(200)
+  client_secret_terenkripsi String               @db.Text
+  dibuat_oleh               Int?
+  dibuat_pada               DateTime             @default(now()) @db.DateTime(3)
 
   fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
 
@@ -159,19 +159,19 @@ model KredensialSatusehat {
 }
 
 model Lokasi {
-  id                Int               @id @default(autoincrement())
-  fasyankes_id      Int
-  nama              String            @db.VarChar(200)
-  jenis             JenisLokasi
-  induk_id          Int?
+  id                 Int               @id @default(autoincrement())
+  fasyankes_id       Int
+  nama               String            @db.VarChar(200)
+  jenis              JenisLokasi
+  induk_id           Int?
   status_operasional StatusOperasional @default(O)
-  ihs_location_id   String?           @db.VarChar(100)
-  dibuat_oleh       Int?
-  dibuat_pada       DateTime          @default(now()) @db.DateTime(3)
+  ihs_location_id    String?           @db.VarChar(100)
+  dibuat_oleh        Int?
+  dibuat_pada        DateTime          @default(now()) @db.DateTime(3)
 
-  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
-  induk     Lokasi?   @relation("LokasiInduk", fields: [induk_id], references: [id])
-  anak      Lokasi[]  @relation("LokasiInduk")
+  fasyankes      Fasyankes       @relation(fields: [fasyankes_id], references: [id])
+  induk          Lokasi?         @relation("LokasiInduk", fields: [induk_id], references: [id])
+  anak           Lokasi[]        @relation("LokasiInduk")
   jadwal_praktik JadwalPraktik[]
 
   @@index([fasyankes_id])
@@ -179,16 +179,16 @@ model Lokasi {
 }
 
 model Pengguna {
-  id                 Int      @id @default(autoincrement())
-  fasyankes_id       Int
-  nama               String   @db.VarChar(200)
-  nik                String   @db.Char(16)
-  username           String   @db.VarChar(100)
-  kata_sandi_hash    String   @db.VarChar(255)
-  aktif              Boolean  @default(true)
-  wajib_ganti_kredensial Boolean @default(true)
-  dibuat_oleh        Int?
-  dibuat_pada        DateTime @default(now()) @db.DateTime(3)
+  id                     Int      @id @default(autoincrement())
+  fasyankes_id           Int
+  nama                   String   @db.VarChar(200)
+  nik                    String   @db.Char(16)
+  username               String   @db.VarChar(100)
+  kata_sandi_hash        String   @db.VarChar(255)
+  aktif                  Boolean  @default(true)
+  wajib_ganti_kredensial Boolean  @default(true)
+  dibuat_oleh            Int?
+  dibuat_pada            DateTime @default(now()) @db.DateTime(3)
 
   fasyankes       Fasyankes        @relation(fields: [fasyankes_id], references: [id])
   profil_profesi  ProfilProfesi[]
@@ -204,16 +204,16 @@ model Pengguna {
 }
 
 model ProfilProfesi {
-  id               Int       @id @default(autoincrement())
-  fasyankes_id     Int
-  pengguna_id      Int
-  profesi          String    @db.VarChar(100)
-  nomor_sip        String?   @db.VarChar(100)
-  masa_berlaku_sip DateTime? @db.Date
-  ihs_practitioner_id String? @db.VarChar(100)
-  aktif            Boolean   @default(true)
-  dibuat_oleh      Int?
-  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+  id                  Int       @id @default(autoincrement())
+  fasyankes_id        Int
+  pengguna_id         Int
+  profesi             String    @db.VarChar(100)
+  nomor_sip           String?   @db.VarChar(100)
+  masa_berlaku_sip    DateTime? @db.Date
+  ihs_practitioner_id String?   @db.VarChar(100)
+  aktif               Boolean   @default(true)
+  dibuat_oleh         Int?
+  dibuat_pada         DateTime  @default(now()) @db.DateTime(3)
 
   fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
   pengguna  Pengguna  @relation(fields: [pengguna_id], references: [id])
@@ -223,44 +223,45 @@ model ProfilProfesi {
 }
 
 model Pasien {
-  id               Int       @id @default(autoincrement())
-  fasyankes_id     Int
-  nomor_rm         String    @db.VarChar(50)
-  nik              String?   @db.Char(16)
-  nama             String    @db.VarChar(200)
-  ibu_kandung      String?   @db.VarChar(200)
-  tempat_lahir     String?   @db.VarChar(100)
-  tanggal_lahir    DateTime  @db.Date
-  jenis_kelamin    JenisKelamin
-  agama            String?   @db.VarChar(50)
-  suku             String?   @db.VarChar(100)
-  bahasa           String?   @db.VarChar(100)
-  pekerjaan        String?   @db.VarChar(100)
-  pendidikan       String?   @db.VarChar(100)
-  status_kawin     String?   @db.VarChar(50)
-  alamat           String?   @db.Text
-  kode_wilayah     String?   @db.VarChar(20)
-  nomor_paspor     String?   @db.VarChar(50)
-  nomor_kitas      String?   @db.VarChar(50)
-  ihs_number       String?   @db.VarChar(100)
-  jkn_nomor_kartu  String?   @db.VarChar(50)
-  jkn_kelas_hak    String?   @db.VarChar(20)
-  jkn_fktp_terdaftar String? @db.VarChar(200)
-  status_identitas StatusIdentitas @default(lengkap)
-  jalur_identitas  String    @default("nik") @db.VarChar(20) // nik | paspor | kitas | tanpa_identitas
-  tidak_cakap      Boolean   @default(false)
-  dibuat_oleh      Int?
-  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+  id                 Int             @id @default(autoincrement())
+  fasyankes_id       Int
+  nomor_rm           String          @db.VarChar(50)
+  nik                String?         @db.Char(16)
+  nama               String          @db.VarChar(200)
+  ibu_kandung        String?         @db.VarChar(200)
+  tempat_lahir       String?         @db.VarChar(100)
+  tanggal_lahir      DateTime        @db.Date
+  jenis_kelamin      JenisKelamin
+  agama              String?         @db.VarChar(50)
+  suku               String?         @db.VarChar(100)
+  bahasa             String?         @db.VarChar(100)
+  pekerjaan          String?         @db.VarChar(100)
+  pendidikan         String?         @db.VarChar(100)
+  status_kawin       String?         @db.VarChar(50)
+  alamat             String?         @db.Text
+  kode_wilayah       String?         @db.VarChar(20)
+  nomor_paspor       String?         @db.VarChar(50)
+  nomor_kitas        String?         @db.VarChar(50)
+  ihs_number         String?         @db.VarChar(100)
+  jkn_nomor_kartu    String?         @db.VarChar(50)
+  jkn_kelas_hak      String?         @db.VarChar(20)
+  jkn_fktp_terdaftar String?         @db.VarChar(200)
+  status_identitas   StatusIdentitas @default(lengkap)
+  jalur_identitas    String          @default("nik") @db.VarChar(20) // nik | paspor | kitas | tanpa_identitas
+  tidak_cakap        Boolean         @default(false)
+  dibuat_oleh        Int?
+  dibuat_pada        DateTime        @default(now()) @db.DateTime(3)
 
-  fasyankes     Fasyankes      @relation(fields: [fasyankes_id], references: [id])
+  fasyankes     Fasyankes        @relation(fields: [fasyankes_id], references: [id])
   wali_keluarga WaliKeluarga[]
   kunjungan     Kunjungan[]
   persetujuan   Persetujuan[]
-
-  @@index([fasyankes_id, nama])
+  keluarga_dari KeluargaPasien[] @relation("KeluargaPasien")
+  keluarga_ke   KeluargaPasien[] @relation("KeluargaAnggota")
 
   @@unique([fasyankes_id, nomor_rm])
   @@unique([fasyankes_id, nik])
+  @@index([fasyankes_id, nama])
   @@map("pasien")
 }
 
@@ -274,8 +275,8 @@ model WaliKeluarga {
   dibuat_oleh  Int?
   dibuat_pada  DateTime @default(now()) @db.DateTime(3)
 
-  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
-  pasien    Pasien    @relation(fields: [pasien_id], references: [id])
+  fasyankes   Fasyankes     @relation(fields: [fasyankes_id], references: [id])
+  pasien      Pasien        @relation(fields: [pasien_id], references: [id])
   persetujuan Persetujuan[]
 
   @@index([pasien_id])
@@ -283,15 +284,15 @@ model WaliKeluarga {
 }
 
 model JenisAkun {
-  id              Int      @id @default(autoincrement())
-  fasyankes_id    Int
-  nama            String   @db.VarChar(150)
-  syarat_profesi  String?  @db.VarChar(200)
-  aktif           Boolean  @default(true)
-  diubah_oleh     Int?
-  alasan_perubahan String? @db.Text
-  dibuat_oleh     Int?
-  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
+  id               Int      @id @default(autoincrement())
+  fasyankes_id     Int
+  nama             String   @db.VarChar(150)
+  syarat_profesi   String?  @db.VarChar(200)
+  aktif            Boolean  @default(true)
+  diubah_oleh      Int?
+  alasan_perubahan String?  @db.Text
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime @default(now()) @db.DateTime(3)
 
   fasyankes Fasyankes          @relation(fields: [fasyankes_id], references: [id])
   izin      IzinJenisAkun[]
@@ -355,19 +356,19 @@ model Izin {
 }
 
 model PenugasanJenis {
-  id             Int       @id @default(autoincrement())
-  fasyankes_id   Int
-  pengguna_id    Int
-  jenis_akun_id  Int
-  mulai          DateTime  @db.DateTime(3)
-  selesai        DateTime? @db.DateTime(3)
+  id              Int       @id @default(autoincrement())
+  fasyankes_id    Int
+  pengguna_id     Int
+  jenis_akun_id   Int
+  mulai           DateTime  @db.DateTime(3)
+  selesai         DateTime? @db.DateTime(3)
   ditetapkan_oleh Int?
-  dibuat_oleh    Int?
-  dibuat_pada    DateTime  @default(now()) @db.DateTime(3)
+  dibuat_oleh     Int?
+  dibuat_pada     DateTime  @default(now()) @db.DateTime(3)
 
-  fasyankes  Fasyankes @relation(fields: [fasyankes_id], references: [id])
-  pengguna   Pengguna  @relation(fields: [pengguna_id], references: [id])
-  jenis_akun JenisAkun @relation(fields: [jenis_akun_id], references: [id])
+  fasyankes  Fasyankes        @relation(fields: [fasyankes_id], references: [id])
+  pengguna   Pengguna         @relation(fields: [pengguna_id], references: [id])
+  jenis_akun JenisAkun        @relation(fields: [jenis_akun_id], references: [id])
   peringatan PeringatanIzin[]
 
   @@index([pengguna_id])
@@ -396,20 +397,20 @@ model IzinPerAkun {
 }
 
 model PeringatanIzin {
-  id               Int       @id @default(autoincrement())
-  fasyankes_id     Int
-  pengguna_id      Int
-  izin_id          Int?
-  penugasan_id     Int?
-  jenis_peringatan String    @db.VarChar(100)
-  alasan_pimpinan  String    @db.Text
-  sumber           String    @default("pemberian") @db.VarChar(20) // pemberian | tindakan | terima
-  diterima_untuk_akun Boolean @default(false)
-  keterangan       String?   @db.VarChar(255)
-  ditetapkan_oleh  Int?
-  waktu            DateTime  @default(now()) @db.DateTime(3)
-  dibuat_oleh      Int?
-  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+  id                  Int      @id @default(autoincrement())
+  fasyankes_id        Int
+  pengguna_id         Int
+  izin_id             Int?
+  penugasan_id        Int?
+  jenis_peringatan    String   @db.VarChar(100)
+  alasan_pimpinan     String   @db.Text
+  sumber              String   @default("pemberian") @db.VarChar(20) // pemberian | tindakan | terima
+  diterima_untuk_akun Boolean  @default(false)
+  keterangan          String?  @db.VarChar(255)
+  ditetapkan_oleh     Int?
+  waktu               DateTime @default(now()) @db.DateTime(3)
+  dibuat_oleh         Int?
+  dibuat_pada         DateTime @default(now()) @db.DateTime(3)
 
   fasyankes Fasyankes       @relation(fields: [fasyankes_id], references: [id])
   pengguna  Pengguna        @relation(fields: [pengguna_id], references: [id])
@@ -596,31 +597,36 @@ model UrutanNomorRm {
 
 // Kunjungan (4.2). lokasi_id = poli (kosong untuk rawat inap langsung); mulai/selesai UTC.
 model Kunjungan {
-  id               Int             @id @default(autoincrement())
-  fasyankes_id     Int
-  pasien_id        Int
-  jenis            JenisKunjungan
-  status           StatusKunjungan @default(arrived)
-  tahap_layanan    TahapLayanan    @default(menunggu_skrining)
+  id                Int             @id @default(autoincrement())
+  fasyankes_id      Int
+  pasien_id         Int
+  jenis             JenisKunjungan
+  status            StatusKunjungan @default(arrived)
+  tahap_layanan     TahapLayanan    @default(menunggu_skrining)
   kunjungan_asal_id Int?
-  lokasi_id        Int?
-  cara_pembayaran  CaraPembayaran  @default(umum)
-  nomor_sep        String?         @db.VarChar(50)
-  keluhan_singkat  String?         @db.VarChar(500)
-  service_type     String?         @db.VarChar(100)
-  encounter_id     String?         @db.VarChar(100)
-  mulai            DateTime        @default(now()) @db.DateTime(3)
-  selesai          DateTime?       @db.DateTime(3)
-  waktu_tutup      DateTime?       @db.DateTime(3)
-  dibuat_oleh      Int?
-  dibuat_pada      DateTime        @default(now()) @db.DateTime(3)
+  lokasi_id         Int?
+  cara_pembayaran   CaraPembayaran  @default(umum)
+  nomor_sep         String?         @db.VarChar(50)
+  keluhan_singkat   String?         @db.VarChar(500)
+  service_type      String?         @db.VarChar(100)
+  encounter_id      String?         @db.VarChar(100)
+  mulai             DateTime        @default(now()) @db.DateTime(3)
+  selesai           DateTime?       @db.DateTime(3)
+  waktu_tutup       DateTime?       @db.DateTime(3)
+  dibuat_oleh       Int?
+  dibuat_pada       DateTime        @default(now()) @db.DateTime(3)
 
-  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
-  pasien    Pasien    @relation(fields: [pasien_id], references: [id])
-  asal      Kunjungan?  @relation("KunjunganAsal", fields: [kunjungan_asal_id], references: [id])
-  lanjutan  Kunjungan[] @relation("KunjunganAsal")
-  peserta   PesertaKunjungan[]
-  antrean   Antrean?
+  fasyankes     Fasyankes          @relation(fields: [fasyankes_id], references: [id])
+  pasien        Pasien             @relation(fields: [pasien_id], references: [id])
+  asal          Kunjungan?         @relation("KunjunganAsal", fields: [kunjungan_asal_id], references: [id])
+  lanjutan      Kunjungan[]        @relation("KunjunganAsal")
+  peserta       PesertaKunjungan[]
+  antrean       Antrean?
+  anamnesis     Anamnesis[]
+  observasi     Observasi[]
+  diagnosis     Diagnosis[]
+  tindakan      Tindakan[]
+  tindak_lanjut TindakLanjut[]
 
   @@index([fasyankes_id, tahap_layanan])
   @@index([pasien_id])
@@ -628,15 +634,15 @@ model Kunjungan {
 }
 
 model PesertaKunjungan {
-  id            Int         @id @default(autoincrement())
-  fasyankes_id  Int
-  kunjungan_id  Int
-  pengguna_id   Int
-  tipe          TipePeserta
-  mulai         DateTime    @default(now()) @db.DateTime(3)
-  selesai       DateTime?   @db.DateTime(3)
-  dibuat_oleh   Int?
-  dibuat_pada   DateTime    @default(now()) @db.DateTime(3)
+  id           Int         @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  pengguna_id  Int
+  tipe         TipePeserta
+  mulai        DateTime    @default(now()) @db.DateTime(3)
+  selesai      DateTime?   @db.DateTime(3)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime    @default(now()) @db.DateTime(3)
 
   fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
   kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
@@ -691,23 +697,23 @@ model TeksPersetujuan {
 
 // Persetujuan (4.4). Teks yang disetujui disimpan lewat teks_persetujuan_id (versi teks tidak berubah).
 model Persetujuan {
-  id                    Int              @id @default(autoincrement())
-  fasyankes_id          Int
-  pasien_id             Int
-  jenis                 JenisPersetujuan
-  teks_persetujuan_id   Int?
-  versi_teks            Int
-  tujuan                String           @db.VarChar(500)
-  penjelasan            String?          @db.Text
-  bentuk                String           @db.VarChar(20) // tertulis | lisan
-  status                String           @default("diberikan") @db.VarChar(20)
-  waktu                 DateTime         @default(now()) @db.DateTime(3)
-  penandatangan         String           @db.VarChar(20) // pasien | wali
-  wali_id               Int?
-  penandatangan_nama    String           @db.VarChar(200)
-  saksi_pengguna_id     Int?
-  dibuat_oleh           Int?
-  dibuat_pada           DateTime         @default(now()) @db.DateTime(3)
+  id                  Int              @id @default(autoincrement())
+  fasyankes_id        Int
+  pasien_id           Int
+  jenis               JenisPersetujuan
+  teks_persetujuan_id Int?
+  versi_teks          Int
+  tujuan              String           @db.VarChar(500)
+  penjelasan          String?          @db.Text
+  bentuk              String           @db.VarChar(20) // tertulis | lisan
+  status              String           @default("diberikan") @db.VarChar(20)
+  waktu               DateTime         @default(now()) @db.DateTime(3)
+  penandatangan       String           @db.VarChar(20) // pasien | wali
+  wali_id             Int?
+  penandatangan_nama  String           @db.VarChar(200)
+  saksi_pengguna_id   Int?
+  dibuat_oleh         Int?
+  dibuat_pada         DateTime         @default(now()) @db.DateTime(3)
 
   fasyankes Fasyankes        @relation(fields: [fasyankes_id], references: [id])
   pasien    Pasien           @relation(fields: [pasien_id], references: [id])
@@ -716,4 +722,236 @@ model Persetujuan {
 
   @@index([pasien_id])
   @@map("persetujuan")
+}
+
+// ---- Catatan klinis (4.2). Tiap bagian berversi: perubahan menambah baris versi baru, tidak ada UPDATE atau DELETE.
+// Versi aktif = versi tertinggi. Pengesahan dan versi catatan bersifat generik (entitas + entitas_id), dipakai ulang CPPT, resume, hasil lab.
+
+enum KelompokObservasi {
+  tanda_vital
+  pemeriksaan
+}
+
+enum PeranDiagnosis {
+  utama
+  penyerta
+}
+
+enum JenisTindakLanjut {
+  pulang
+  rujuk
+  rawat_inap
+}
+
+enum SistemTerminologi {
+  icd10
+  icd9cm
+  loinc
+  snomed
+  ucum
+}
+
+enum JenisFavorit {
+  diagnosis
+  tindakan
+  resep
+}
+
+enum BagianTemplat {
+  anamnesis
+  pemeriksaan
+}
+
+model Anamnesis {
+  id               Int      @id @default(autoincrement())
+  fasyankes_id     Int
+  kunjungan_id     Int
+  versi            Int
+  keluhan_utama    String   @db.Text
+  penyerta         String?  @db.Text
+  riwayat_pribadi  String?  @db.Text
+  riwayat_keluarga String?  @db.Text
+  alergi           String?  @db.Text
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, versi])
+  @@map("anamnesis")
+}
+
+model Observasi {
+  id           Int               @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  kelompok     KelompokObservasi
+  versi        Int
+  bidang       String            @db.VarChar(50)
+  kode_loinc   String?           @db.VarChar(20)
+  nilai        String            @db.Text
+  satuan_ucum  String?           @db.VarChar(30)
+  waktu        DateTime          @default(now()) @db.DateTime(3)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime          @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, kelompok, versi, bidang])
+  @@map("observasi")
+}
+
+model Diagnosis {
+  id           Int            @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  versi        Int
+  kode_icd10   String         @db.VarChar(20)
+  nama         String         @db.VarChar(500)
+  kode_snomed  String?        @db.VarChar(30)
+  peran        PeranDiagnosis
+  urutan       Int
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime       @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, versi, urutan])
+  @@index([fasyankes_id, kode_icd10])
+  @@map("diagnosis")
+}
+
+model Tindakan {
+  id           Int       @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  versi        Int
+  kode_icd9cm  String    @db.VarChar(20)
+  nama         String    @db.VarChar(500)
+  performer_id Int?
+  mulai        DateTime  @db.DateTime(3)
+  selesai      DateTime? @db.DateTime(3)
+  urutan       Int
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime  @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, versi, urutan])
+  @@map("tindakan")
+}
+
+model TindakLanjut {
+  id           Int               @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  versi        Int
+  jenis        JenisTindakLanjut
+  tujuan       String?           @db.VarChar(300)
+  spri         String?           @db.VarChar(100)
+  catatan      String?           @db.Text
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime          @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, versi])
+  @@map("tindak_lanjut")
+}
+
+// Versi catatan (4.2): isi lama yang digantikan beserta alasan perbaikan; disetujui_oleh kosong bila pembuat memperbaiki dalam 2x24 jam.
+model VersiCatatan {
+  id             Int      @id @default(autoincrement())
+  fasyankes_id   Int
+  entitas        String   @db.VarChar(50)
+  entitas_id     Int
+  versi          Int
+  isi_lama       Json
+  alasan         String   @db.Text
+  disetujui_oleh Int?
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime @default(now()) @db.DateTime(3)
+
+  @@unique([entitas, entitas_id, versi])
+  @@map("versi_catatan")
+}
+
+// Pengesahan catatan (4.2): pengganti tanda tangan nakes. jenis_akun_id kosong bila hak berasal dari izin tambahan akun.
+model PengesahanCatatan {
+  id              Int      @id @default(autoincrement())
+  fasyankes_id    Int
+  entitas         String   @db.VarChar(50)
+  entitas_id      Int
+  versi           Int
+  pengguna_id     Int
+  jenis_akun_id   Int?
+  jenis_akun_nama String?  @db.VarChar(150)
+  waktu           DateTime @default(now()) @db.DateTime(3)
+  hash            String   @db.Char(64)
+  dibuat_oleh     Int?
+  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
+
+  @@unique([entitas, entitas_id, versi])
+  @@index([pengguna_id])
+  @@map("pengesahan_catatan")
+}
+
+// Master terminologi sederhana (4.8), global. `contoh` menandai baris contoh; kode lengkap diimpor lewat CSV.
+model KodeTerminologi {
+  id     Int               @id @default(autoincrement())
+  sistem SistemTerminologi
+  kode   String            @db.VarChar(40)
+  nama   String            @db.VarChar(500)
+  aktif  Boolean           @default(true)
+  contoh Boolean           @default(false)
+
+  @@unique([sistem, kode])
+  @@map("kode_terminologi")
+}
+
+model FavoritDokter {
+  id           Int          @id @default(autoincrement())
+  fasyankes_id Int
+  pengguna_id  Int
+  jenis        JenisFavorit
+  kode         String       @db.VarChar(50)
+  nama         String       @db.VarChar(255)
+  urutan       Int          @default(0)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime     @default(now()) @db.DateTime(3)
+
+  @@unique([pengguna_id, jenis, kode])
+  @@map("favorit_dokter")
+}
+
+model TemplatCatatan {
+  id           Int           @id @default(autoincrement())
+  fasyankes_id Int
+  pengguna_id  Int
+  bagian       BagianTemplat
+  nama         String        @db.VarChar(100)
+  isi          Json
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime      @default(now()) @db.DateTime(3)
+
+  @@index([pengguna_id, bagian])
+  @@map("templat_catatan")
+}
+
+// Family folder (4.9): tautan antarpasien dalam satu fasyankes dengan penanda privasi per anggota.
+model KeluargaPasien {
+  id                Int      @id @default(autoincrement())
+  fasyankes_id      Int
+  pasien_id         Int
+  anggota_pasien_id Int
+  hubungan          String   @db.VarChar(100)
+  dibatasi          Boolean  @default(false)
+  dibuat_oleh       Int?
+  dibuat_pada       DateTime @default(now()) @db.DateTime(3)
+
+  pasien  Pasien @relation("KeluargaPasien", fields: [pasien_id], references: [id])
+  anggota Pasien @relation("KeluargaAnggota", fields: [anggota_pasien_id], references: [id])
+
+  @@unique([pasien_id, anggota_pasien_id])
+  @@map("keluarga_pasien")
 }

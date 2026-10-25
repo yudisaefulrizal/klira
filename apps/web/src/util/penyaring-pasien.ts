@@ -45,12 +45,13 @@ export function ubahKeadaanPasien(k: KeadaanPasien, perubahan: Partial<KeadaanPa
   return { ...k, ...perubahan, halaman: perubahan.halaman ?? (berubah ? 1 : k.halaman) };
 }
 
-export type AksiBaris = { jenis: 'buka' | 'daftarkan' | AksiAntrean };
+export type AksiBaris = { jenis: 'buka' | 'daftarkan' | 'skrining' | 'periksa' | 'riwayat' | 'keluarga' | AksiAntrean };
 type Boleh = (fitur: string, aksi: AksiIzin) => boolean;
 
 /**
  * Tindakan per baris sesuai tahap dan izin (5.1m): tindakan yang belum tersedia atau tanpa izin tidak ditampilkan.
- * Modal pemeriksaan dan lainnya (skrining, resep, kasir) muncul dari butir berikutnya.
+ * Skrining dan Periksa mengikuti tahap layanan (menunggu skrining atau pemeriksaan) dan izin klinis; Riwayat dan Family folder
+ * adalah panel pendamping. Modal resep dan kasir muncul dari butir berikutnya.
  */
 export function aksiBaris(baris: PasienBarisDto, boleh: Boleh): AksiBaris[] {
   const hasil: AksiBaris[] = [];
@@ -58,8 +59,12 @@ export function aksiBaris(baris: PasienBarisDto, boleh: Boleh): AksiBaris[] {
   if (k?.antrean && boleh('kunjungan', 'perbaikan')) {
     for (const jenis of aksiAntreanTersedia(k.antrean.status)) hasil.push({ jenis });
   }
+  if (k?.tahap_layanan === 'menunggu_skrining' && boleh('klinis', 'input')) hasil.push({ jenis: 'skrining' });
+  if (k?.tahap_layanan === 'pemeriksaan' && boleh('klinis', 'input')) hasil.push({ jenis: 'periksa' });
   if (!k && boleh('kunjungan', 'input')) hasil.push({ jenis: 'daftarkan' });
   if (boleh('pasien', 'lihat') || boleh('rekam-medis', 'lihat')) hasil.push({ jenis: 'buka' });
+  if (boleh('klinis', 'lihat') || boleh('rekam-medis', 'lihat')) hasil.push({ jenis: 'riwayat' });
+  if (boleh('pasien', 'lihat') || boleh('klinis', 'lihat') || boleh('rekam-medis', 'lihat')) hasil.push({ jenis: 'keluarga' });
   return hasil;
 }
 

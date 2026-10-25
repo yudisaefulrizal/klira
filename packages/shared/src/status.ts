@@ -132,3 +132,25 @@ export const CARA_PEMBAYARAN = buat({
   jkn: { label: 'JKN', warna: 'biru' },
 });
 export type CaraPembayaran = keyof typeof CARA_PEMBAYARAN.peta;
+
+/** Keadaan pengesahan catatan (4.2): belum disahkan, sah (hash isi cocok), atau berubah setelah disahkan (hash tidak cocok). */
+export const STATUS_PENGESAHAN = buat({
+  belum_disahkan: { label: 'Belum disahkan', warna: 'abu' },
+  sah: { label: 'Disahkan', warna: 'hijau' },
+  berubah: { label: 'Berubah setelah disahkan', warna: 'merah' },
+});
+export type StatusPengesahan = keyof typeof STATUS_PENGESAHAN.peta;
+
+/** Peran diagnosis (4.2): tepat satu utama per kunjungan, lainnya penyerta. */
+export const STATUS_PERAN_DIAGNOSIS = buat({
+  utama: { label: 'Utama', warna: 'hijau' },
+  penyerta: { label: 'Penyerta', warna: 'abu' },
+});
+
+/** Keadaan satu bagian catatan pada ringkasan akhir pemeriksaan klinis. */
+export const STATUS_RINGKASAN_BAGIAN = buat({
+  belum_diisi: { label: 'Belum diisi', warna: 'abu' },
+  tanpa_perubahan: { label: 'Tanpa perubahan', warna: 'abu' },
+  akan_disimpan: { label: 'Akan disimpan', warna: 'biru' },
+  sudah_sah: { label: 'Sudah disahkan', warna: 'hijau' },
+});

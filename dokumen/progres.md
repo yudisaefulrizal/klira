@@ -23,13 +23,13 @@
 | Daftar pasien | Halaman | - | Bisa dikerjakan | ✔ |
 | Registrasi pasien baru | Modal | Daftar pasien | Bisa dikerjakan | ✔ |
 | Pendaftaran kunjungan | Modal | Daftar pasien | Menunggu bagian lain | ✔ |
-| Pengesahan catatan | Fitur | - | Bisa dikerjakan | ☐ |
+| Pengesahan catatan | Fitur | - | Bisa dikerjakan | ✔ |
 | Antrean | Fitur | Daftar pasien | Menunggu bagian lain | ✔ |
 | Pemeriksaan klinis | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
-| Riwayat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
-| Salin dari kunjungan sebelumnya | Panel | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
-| Favorit dan templat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
-| Family folder | Panel | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
+| Riwayat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
+| Salin dari kunjungan sebelumnya | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
+| Favorit dan templat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
+| Family folder | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
 | Persetujuan tindakan | Modal | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
 | Penunjang | Halaman | - | Menunggu bagian lain | ☐ |
 | Order lab | Modal | Pemeriksaan klinis | Menunggu bagian lain | ☐ |

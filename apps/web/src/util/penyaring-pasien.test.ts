@@ -48,22 +48,33 @@ describe('tindakan per baris', () => {
   const semua: Boleh = () => true;
   const jenis = (b: PasienBarisDto, boleh: Boleh = semua) => aksiBaris(b, boleh).map((a) => a.jenis);
 
-  it('tanpa kunjungan: daftarkan lalu buka', () => {
-    expect(jenis(baris(null))).toEqual(['daftarkan', 'buka']);
+  it('tanpa kunjungan: daftarkan, buka, lalu panel pendamping', () => {
+    expect(jenis(baris(null))).toEqual(['daftarkan', 'buka', 'riwayat', 'keluarga']);
   });
-  it('antrean mengikuti status; tombol pemeriksaan/skrining belum ada', () => {
-    expect(jenis(baris(kunj('menunggu')))).toEqual(['panggil', 'batal', 'buka']);
-    expect(jenis(baris(kunj('dipanggil')))).toEqual(['panggil', 'mulai', 'batal', 'buka']);
-    expect(jenis(baris(kunj('dilayani')))).toEqual(['selesai', 'buka']);
-    expect(jenis(baris(kunj('selesai')))).toEqual(['buka']);
-    expect(jenis(baris(kunj(null)))).toEqual(['buka']);
+  it('antrean mengikuti status, diikuti tombol tahap dan panel pendamping', () => {
+    expect(jenis(baris(kunj('menunggu')))).toEqual(['panggil', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
+    expect(jenis(baris(kunj('dipanggil')))).toEqual(['panggil', 'mulai', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
+    expect(jenis(baris(kunj('dilayani')))).toEqual(['selesai', 'skrining', 'buka', 'riwayat', 'keluarga']);
+    expect(jenis(baris(kunj('selesai')))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
+    expect(jenis(baris(kunj(null)))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
+  });
+  it('Skrining hanya pada tahap menunggu skrining, Periksa hanya pada tahap pemeriksaan, keduanya butuh izin klinis input', () => {
+    const tahap = (t: 'menunggu_skrining' | 'pemeriksaan' | 'resep' | 'kasir') => ({ ...kunj(null)!, tahap_layanan: t });
+    const nama = (t: 'menunggu_skrining' | 'pemeriksaan' | 'resep' | 'kasir', boleh: Boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => j === 'skrining' || j === 'periksa');
+    expect(nama('menunggu_skrining')).toEqual(['skrining']);
+    expect(nama('pemeriksaan')).toEqual(['periksa']);
+    expect(nama('resep')).toEqual([]);
+    expect(nama('kasir')).toEqual([]);
+    const tanpaInput: Boleh = (f, a) => f === 'klinis' && a === 'lihat';
+    expect(nama('pemeriksaan', tanpaInput)).toEqual([]);
+    expect(nama('menunggu_skrining', tanpaInput)).toEqual([]);
   });
   it('tombol tanpa izin tidak ditampilkan', () => {
     const hanyaLihat = (f: string, a: string) => f === 'pasien' && a === 'lihat';
-    expect(jenis(baris(null), hanyaLihat)).toEqual(['buka']);
-    expect(jenis(baris(kunj('menunggu')), hanyaLihat)).toEqual(['buka']);
+    expect(jenis(baris(null), hanyaLihat)).toEqual(['buka', 'keluarga']);
+    expect(jenis(baris(kunj('menunggu')), hanyaLihat)).toEqual(['buka', 'keluarga']);
     expect(jenis(baris(kunj('menunggu')), () => false)).toEqual([]);
-    expect(jenis(baris(kunj('menunggu')), (f, a) => f === 'rekam-medis' && a === 'lihat')).toEqual(['buka']);
+    expect(jenis(baris(kunj('menunggu')), (f, a) => f === 'rekam-medis' && a === 'lihat')).toEqual(['buka', 'riwayat', 'keluarga']);
   });
 });
 

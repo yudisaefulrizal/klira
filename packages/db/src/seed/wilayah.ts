@@ -22,7 +22,7 @@ export const WILAYAH_CONTOH: BarisWilayah[] = [
 const tingkatDariKode = (kode: string): TingkatWilayah | null => (['provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan_desa'] as const)[kode.split('.').length - 1] ?? null;
 
 /** Pecah satu baris CSV sederhana (koma, tanda kutip ganda untuk nilai yang memuat koma). */
-function pecahBaris(baris: string): string[] {
+export function pecahBaris(baris: string): string[] {
   const hasil: string[] = [];
   let sekarang = '';
   let kutip = false;

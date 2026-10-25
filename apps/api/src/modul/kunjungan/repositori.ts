@@ -34,11 +34,11 @@ export class KunjunganBerjalanError extends Error {
 /** Bentrok yang aman diulang: keunikan nomor antrean (P2002), serialisasi/deadlock (P2034). */
 export const bisaDiulang = (e: unknown): boolean => e instanceof Prisma.PrismaClientKnownRequestError && (e.code === 'P2002' || e.code === 'P2034');
 
-type BarisKunjungan = Awaited<ReturnType<typeof ambilKunjungan>>;
-const ambilKunjungan = (tx: Prisma.TransactionClient | typeof prisma, id: number) =>
+export type BarisKunjungan = Awaited<ReturnType<typeof ambilKunjungan>>;
+export const ambilKunjungan = (tx: Prisma.TransactionClient | typeof prisma, id: number) =>
   tx.kunjungan.findUniqueOrThrow({ where: { id }, include: { antrean: true, peserta: { where: { tipe: 'ATND' }, orderBy: { id: 'asc' }, take: 1 } } });
 
-const keDto = (k: BarisKunjungan): KunjunganDto => ({
+export const keDto = (k: BarisKunjungan): KunjunganDto => ({
   id: k.id, pasien_id: k.pasien_id, jenis: k.jenis, status: statusDariDb(k.status), tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran,
   nomor_sep: k.nomor_sep, lokasi_id: k.lokasi_id, dpjp_id: k.peserta[0]?.pengguna_id ?? null, keluhan_singkat: k.keluhan_singkat, mulai: k.mulai.toISOString(),
   antrean: k.antrean ? { id: k.antrean.id, nomor: k.antrean.nomor, kode: kodeAntrean(k.antrean.nomor), status: k.antrean.status } : null,

@@ -32,6 +32,12 @@ import { buatRutePasien } from './modul/pasien/rute';
 import { buatLayananKunjungan } from './modul/kunjungan/layanan';
 import { RepositoriKunjunganPrisma } from './modul/kunjungan/repositori';
 import { buatRuteKunjungan } from './modul/kunjungan/rute';
+import { buatLayananPengesahan } from './modul/rekam-medis/layanan';
+import { RepositoriPengesahanPrisma } from './modul/rekam-medis/repositori';
+import { buatRutePengesahan } from './modul/rekam-medis/rute';
+import { buatLayananKlinis } from './modul/klinis/layanan';
+import { RepositoriKlinisPrisma } from './modul/klinis/repositori';
+import { buatRuteKlinis } from './modul/klinis/rute';
 import { buatLayananPengguna } from './modul/pengguna/layanan';
 import { RepositoriPenggunaPrisma } from './modul/pengguna/repositori';
 import { buatLayananPembuatanAkun } from './modul/pengguna/pembuatan';
@@ -67,7 +73,14 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienPrisma(), audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, buatLayananKunjungan({ repo: new RepositoriKunjunganPrisma(), audit: new PenampungAuditPrisma() })));
+  const layananKunjungan = buatLayananKunjungan({ repo: new RepositoriKunjunganPrisma(), audit: new PenampungAuditPrisma() });
+  app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
+  // Pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab nanti) dan modul klinis yang mendaftarkan penyedia isinya.
+  const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanPrisma(), audit: new PenampungAuditPrisma() });
+  app.use('/api', buatRuteKlinis(layananAkses, layananIzin, buatLayananKlinis({
+    repo: new RepositoriKlinisPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan,
+  })));
+  app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() }),
     buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruPrisma(), repoIzin: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() })));

@@ -14,7 +14,7 @@ export class GalatApi extends Error {
 
 /** Pemanggil API dasar: JSON, cookie sesi ikut terkirim, galat dipetakan ke GalatApi. */
 export async function panggilApi<T>(
-  metode: 'GET' | 'POST' | 'PATCH',
+  metode: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE',
   jalur: string,
   badan?: unknown,
   ambil: typeof fetch = fetch,

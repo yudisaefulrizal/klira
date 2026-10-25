@@ -11,7 +11,8 @@
     "migrasi:dev": "node --env-file=../../.env ../../node_modules/prisma/build/index.js migrate dev",
     "migrasi:terapkan": "node --env-file=../../.env ../../node_modules/prisma/build/index.js migrate deploy",
     "seed": "node --env-file=../../.env dist/seed/seed.js",
-    "seed:wilayah": "node --env-file=../../.env dist/seed/wilayah.js"
+    "seed:wilayah": "node --env-file=../../.env dist/seed/wilayah.js",
+    "seed:terminologi": "node --env-file=../../.env dist/seed/terminologi.js"
   },
   "dependencies": {
     "@klira/shared": "*",

@@ -8,3 +8,4 @@ export * from './master';
 export * from './profil';
 export * from './pasien';
 export * from './kunjungan';
+export * from './klinis';
