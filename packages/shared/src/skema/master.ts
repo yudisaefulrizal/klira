@@ -11,7 +11,7 @@ export type JenisMaster = (typeof JENIS_MASTER)[number];
 export const jenisMasterUbah = z.enum(JENIS_MASTER_UBAH, { error: MASTER.galat.jenisTakDikenal });
 export const jenisMaster = z.enum(JENIS_MASTER, { error: MASTER.galat.jenisTakDikenal });
 
-export const jenisTarif = z.enum(['konsultasi', 'tindakan', 'lab', 'kamar']);
+export const jenisTarif = z.enum(['konsultasi', 'tindakan', 'lab', 'kamar', 'obat']);
 export const tingkatWilayah = z.enum(['provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan_desa']);
 
 const jam = z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, MASTER.galat.waktu);

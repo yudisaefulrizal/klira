@@ -13,3 +13,4 @@ export * from './penunjang';
 export * from './persetujuan';
 export * from './addendum';
 export * from './tagihan';
+export * from './farmasi';

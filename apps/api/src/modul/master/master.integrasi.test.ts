@@ -185,7 +185,7 @@ d('master data dan profil klinik terhadap klira_uji', () => {
     expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'KON-01', nama: 'Dobel', jenis: 'tindakan', harga_umum: 1 })).status).toBe(409);
     expect((await panggil('POST', '/master/tarif', 'lain', { kode: 'KON-01', nama: 'Klinik lain', jenis: 'lab', harga_umum: 1, harga_jkn: 2 })).status).toBe(201);
     expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'X', nama: 'Negatif', jenis: 'lab', harga_umum: -1 })).status).toBe(400);
-    expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'X', nama: 'Jenis salah', jenis: 'obat', harga_umum: 1 })).status).toBe(400);
+    expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'X', nama: 'Jenis salah', jenis: 'lainnya', harga_umum: 1 })).status).toBe(400);
     const u = await panggil('PATCH', `/master/tarif/${t.badan.data.id}`, 'pimpinan', { kode: 'KON-01', nama: 'Konsultasi', jenis: 'konsultasi', harga_umum: 60000, harga_jkn: 40000 });
     expect(u.badan.data).toMatchObject({ harga_umum: 60000, harga_jkn: 40000 });
     expect((await panggil('PATCH', `/master/tarif/${t.badan.data.id}/aktif`, 'pimpinan', { aktif: false })).badan.data.aktif).toBe(false);

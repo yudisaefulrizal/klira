@@ -79,6 +79,14 @@ describe('tindakan per baris', () => {
     expect(lab('pemeriksaan', (f, a) => f === 'klinis' && a === 'input')).toEqual(['order_lab']);
     expect(lab('pemeriksaan', (f, a) => f === 'persetujuan' && a === 'input')).toEqual(['persetujuan']);
   });
+  it('Telaah resep hanya pada tahap resep dan untuk pemegang izin farmasi input', () => {
+    const tahap = (t: 'pemeriksaan' | 'resep' | 'kasir') => ({ ...kunj(null)!, tahap_layanan: t });
+    const telaah = (t: 'pemeriksaan' | 'resep' | 'kasir', boleh: Boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => j === 'telaah');
+    expect(telaah('resep')).toEqual(['telaah']);
+    expect(telaah('pemeriksaan')).toEqual([]);
+    expect(telaah('kasir')).toEqual([]);
+    expect(telaah('resep', (f, a) => f === 'farmasi' && a === 'lihat')).toEqual([]);
+  });
   it('tombol tanpa izin tidak ditampilkan', () => {
     const hanyaLihat = (f: string, a: string) => f === 'pasien' && a === 'lihat';
     expect(jenis(baris(null), hanyaLihat)).toEqual(['buka', 'keluarga']);

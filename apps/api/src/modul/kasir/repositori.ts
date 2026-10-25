@@ -9,12 +9,14 @@ export interface RepositoriTagihan {
 }
 
 export type ItemBaru = {
-  jenis: 'konsultasi' | 'tindakan' | 'lab' | 'kamar';
+  jenis: 'konsultasi' | 'tindakan' | 'lab' | 'kamar' | 'obat';
   tarifId: number | null;
   kode: string;
   nama: string;
   harga: number | null;
   orderPenunjangId: number | null;
+  jumlah?: number;
+  itemResepId?: number | null;
 };
 
 /** Status tagihan: lengkap bila semua item berharga (terpisah dari status pembayaran, 4.5). */
@@ -32,7 +34,7 @@ export async function tambahItemTagihanDalam(tx: Prisma.TransactionClient, fasya
     await tx.itemTagihan.create({
       data: {
         fasyankes_id: fasyankesId, tagihan_id: tagihan.id, jenis: i.jenis, tarif_layanan_id: i.tarifId, kode: i.kode, nama: i.nama, harga: i.harga,
-        order_penunjang_id: i.orderPenunjangId, dibuat_oleh: oleh,
+        order_penunjang_id: i.orderPenunjangId, jumlah: i.jumlah ?? 1, item_resep_id: i.itemResepId ?? null, dibuat_oleh: oleh,
       },
     });
   }

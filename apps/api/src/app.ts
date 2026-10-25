@@ -44,6 +44,9 @@ import { buatRuteAddendum } from './modul/rekam-medis/rute-addendum';
 import { buatLayananTagihan } from './modul/kasir/layanan';
 import { RepositoriTagihanPrisma } from './modul/kasir/repositori';
 import { buatRuteKasir } from './modul/kasir/rute';
+import { buatLayananFarmasi } from './modul/farmasi/layanan';
+import { RepositoriFarmasiPrisma } from './modul/farmasi/repositori';
+import { buatRuteFarmasi } from './modul/farmasi/rute';
 import { buatLayananPenunjang } from './modul/penunjang/layanan';
 import { RepositoriPenunjangPrisma } from './modul/penunjang/repositori';
 import { buatRutePenunjang } from './modul/penunjang/rute';
@@ -103,6 +106,7 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
     repo: new RepositoriPersetujuanPrisma(), audit: new PenampungAuditPrisma(),
     tindakanKunjungan: async (fas, id) => ((await repoKlinis.bacaBagian(fas, id, 'tindakan'))?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama })),
   })));
+  app.use('/api', buatRuteFarmasi(layananAkses, layananIzin, buatLayananFarmasi({ repo: new RepositoriFarmasiPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));

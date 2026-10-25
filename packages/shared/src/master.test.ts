@@ -26,7 +26,8 @@ describe('skema master', () => {
   it('tarif: jenis dan harga', () => {
     const t = { kode: 'K', nama: 'N', jenis: 'kamar', harga_umum: 100 };
     expect(SKEMA_MASTER.tarif.parse(t).harga_jkn).toBeUndefined();
-    expect(SKEMA_MASTER.tarif.safeParse({ ...t, jenis: 'obat' }).success).toBe(false);
+    expect(SKEMA_MASTER.tarif.safeParse({ ...t, jenis: 'obat' }).success).toBe(true);
+    expect(SKEMA_MASTER.tarif.safeParse({ ...t, jenis: 'lainnya' }).success).toBe(false);
     expect(SKEMA_MASTER.tarif.safeParse({ ...t, harga_umum: 1.5 }).success).toBe(false);
   });
   it('filter master: bawaan dan nilai kosong', () => {

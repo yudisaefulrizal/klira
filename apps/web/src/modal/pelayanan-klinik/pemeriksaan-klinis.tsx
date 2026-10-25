@@ -3,6 +3,7 @@ import { BAGIAN_KLINIS, GALAT, KLINIS, MODAL, TAHAP_LAYANAN } from '@klira/share
 import type { BagianKlinis, FavoritDto, JenisFavorit, KlinisKunjunganDto, KonteksKlinisDto, KunjunganDto, SalinanKunjunganDto, TemplatDto } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien';
 import { adaptorDrafServer } from '../../api-klien/draf-klinis';
+import { resepKunjungan } from '../../api-klien/farmasi';
 import { ambilKlinis, ambilKonteksKlinis, daftarFavorit, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { HanyaDenganIzin } from '../../komponen/izin-saja';
@@ -25,6 +26,7 @@ import {
   LangkahAnamnesis, LangkahDiagnosis, LangkahMenyusul, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
 } from './langkah-pemeriksaan';
 import { LangkahPenunjang } from './langkah-penunjang';
+import { LangkahResep } from './langkah-resep';
 import { PanelFavorit } from './panel-favorit';
 import { PanelKeluarga } from './panel-keluarga';
 import { PanelRiwayat } from './panel-riwayat';
@@ -140,6 +142,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       case 'pemeriksaan': return <LangkahPemeriksaan {...dasar(l.bagian)} />;
       case 'diagnosis': return <LangkahDiagnosis {...dasar(l.bagian)} favorit={favoritDari('diagnosis')} />;
       case 'tindakan': return <LangkahTindakan {...dasar(l.bagian)} favorit={favoritDari('tindakan')} />;
+      case 'resep': return <LangkahResep kunjunganId={kunjunganId} onResepDiajukan={() => { adaTersimpan.current = true; }} />;
       case 'penunjang': return <LangkahPenunjang kunjunganId={kunjunganId} cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} onOrderDipesan={() => { adaTersimpan.current = true; }} />;
       case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar(l.bagian)} />;
       default:
@@ -184,7 +187,9 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       bagianBerjalan = null;
       let kunjungan = (await ambilKlinis(kunjunganId)).kunjungan;
       if (pilihSelesai) {
-        kunjungan = await selesaikanPemeriksaan(kunjunganId, 'kasir');
+        // Resep yang belum siap mengirim kunjungan ke farmasi (tahap resep); tanpa itu langsung ke kasir.
+        const perluFarmasi = (await resepKunjungan(kunjunganId)).some((r) => r.status === 'diajukan' || r.status === 'ditelaah');
+        kunjungan = await selesaikanPemeriksaan(kunjunganId, perluFarmasi ? 'resep' : 'kasir');
         adaTersimpan.current = true;
       }
       hapus();

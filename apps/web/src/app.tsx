@@ -4,6 +4,7 @@ import { HALAMAN_AWAL, HALAMAN_MENU } from '@klira/shared';
 import { TataLetak } from './komponen/tata-letak';
 import { HalamanBerandaTugas } from './halaman/beranda-tugas';
 import { HalamanDaftarPasien } from './halaman/daftar-pasien';
+import { HalamanFarmasi } from './halaman/farmasi';
 import { HalamanGantiKredensial } from './halaman/ganti-kredensial';
 import { HalamanMasuk } from './halaman/masuk';
 import { HalamanPengaturan } from './halaman/pengaturan';
@@ -28,6 +29,7 @@ Object.assign(HALAMAN_MENU_ISI, {
   [HALAMAN_AWAL.berandaTugas]: HalamanBerandaTugas,
   '/pengaturan': HalamanPengaturan,
   '/penunjang': HalamanPenunjang,
+  '/farmasi': HalamanFarmasi,
 });
 
 function Perute() {

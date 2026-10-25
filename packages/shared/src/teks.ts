@@ -9,6 +9,7 @@ export const TOMBOL = {
   ubah: 'Ubah',
   tambah: 'Tambah',
   cari: 'Cari',
+  pilih: 'Pilih',
   konfirmasi: 'Ya, lanjutkan',
   muatUlang: 'Muat ulang',
 } as const;
@@ -497,7 +498,7 @@ export const DAFTAR_PASIEN = {
   jamMenit: (j: number, m: number) => `${j} j ${m} mnt`,
   sebelumnya: 'Sebelumnya',
   berikutnya: 'Berikutnya',
-  aksi: { skrining: 'Skrining', periksa: 'Periksa', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
+  aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
   aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',
   batalJudul: 'Batalkan antrean?',
   batalPesan: (kode: string, nama: string) => `Antrean ${kode} atas nama ${nama} akan dibatalkan.`,
@@ -835,4 +836,51 @@ export const PERSETUJUAN_TINDAKAN = {
   },
 } as const;
 
-export const TEKS = { addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const FARMASI = {
+  judul: 'Farmasi',
+  tab: { master: 'Master obat dan stok', riwayat: 'Riwayat obat' },
+  tabLabel: 'Tab Farmasi',
+  memuat: 'Memuat...',
+  master: {
+    cari: 'Cari obat atau kode KFA', tambah: 'Tambah obat dari KFA', ubah: 'Ubah', mutasi: 'Mutasi stok', nonaktifkan: 'Nonaktifkan', aktifkan: 'Aktifkan', aktif: 'Aktif', nonaktif: 'Nonaktif',
+    kosong: 'Belum ada obat di master.', gagalMuat: 'Master obat gagal dimuat.', contoh: 'Kode contoh', tersimpan: 'Obat tersimpan.',
+    kolom: { nama: 'Nama tampil', kfa: 'Kode KFA', satuan: 'Satuan', harga: 'Harga', stok: 'Stok', kedaluwarsa: 'Kedaluwarsa terdekat', status: 'Status', tindakan: 'Tindakan' },
+    catatan: 'Setiap obat tertaut satu kode KFA, tanpa obat ketik bebas. Telaah dan penyiapan resep dibuka dari Daftar pasien; serah terima obat di kasir mengurangi stok.',
+    judulTambah: 'Tambah obat dari KFA', judulUbah: 'Ubah obat', cariKfa: 'Cari di Referensi KFA', cariKfaPetunjuk: 'Ketik minimal dua huruf nama atau bahan', kfaTidakAda: 'Tidak ada hasil di Referensi KFA.',
+    kfaContohInfo: 'Referensi KFA berisi data contoh sampai berkas resmi diimpor.', pilihKfa: 'Pilih kode KFA', terpilih: 'Kode KFA terpilih',
+    bidang: { nama_tampil: 'Nama tampil', satuan: 'Satuan', harga: 'Harga per satuan (Rp)', aktif: 'Aktif' },
+  },
+  status: { aman: 'Aman', menipis: 'Menipis', kedaluwarsa_dekat: 'Kedaluwarsa dekat', habis: 'Habis' },
+  mutasi: {
+    judul: 'Mutasi stok', obat: 'Obat', jenis: 'Jenis mutasi', batch: 'Batch', batchBaru: 'Batch baru', kedaluwarsa: 'Tanggal kedaluwarsa', jumlah: 'Jumlah', alasan: 'Alasan', simpan: 'Catat mutasi', menyimpan: 'Mencatat...',
+    jenisLabel: { terima: 'Terima barang', keluar: 'Keluar (rusak, hilang, dll.)', koreksi: 'Koreksi stok opname' } as Record<string, string>,
+    petunjukTerima: 'Penerimaan menambah stok batch; batch baru perlu tanggal kedaluwarsa.', petunjukKeluar: 'Mengurangi stok batch yang ada; alasan wajib.', petunjukKoreksi: 'Jumlah diisi sebagai jumlah sebenarnya di batch itu; alasan wajib.',
+    pilihBatch: 'Pilih batch...', tersimpan: 'Mutasi tercatat.', gagal: 'Mutasi gagal dicatat.', riwayat: 'Riwayat mutasi', stokSekarang: (n: number, satuan: string) => `Stok batch sekarang ${n} ${satuan}`,
+  },
+  riwayat: {
+    kolom: { nomor: 'Nomor resep', pasien: 'Pasien', dokter: 'Dokter', item: 'Obat', status: 'Status', waktu: 'Diajukan' }, filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal',
+    kosong: 'Tidak ada resep pada penyaring ini.', gagalMuat: 'Riwayat obat gagal dimuat.', catatan: 'Telaah dan penyiapan resep dibuka dari Daftar pasien.', jumlahObat: (n: number) => `${n} obat`,
+  },
+  resep: {
+    langkah: 'Resep', judul: 'Resep kunjungan ini', kosong: 'Belum ada resep pada kunjungan ini.', petunjuk: 'Pilih obat dari master, isi jumlah dan aturan pakai. Resep tersimpan langsung dan tidak menunggu tombol Simpan pemeriksaan.',
+    cariObat: 'Cari obat', pilihObat: 'Pilih obat...', jumlah: 'Jumlah', aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute', tambahItem: 'Tambah obat', hapusItem: 'Buang',
+    ajukan: 'Ajukan resep', mengajukan: 'Mengajukan...', terajukan: (n: string) => `Resep ${n} diajukan ke farmasi.`, tagihanInfo: 'Biaya obat masuk tagihan kunjungan saat resep diajukan.',
+    tanpaStok: 'Stok belum tercatat', harga: (rp: string) => `Harga ${rp}`, gagalMuat: 'Resep gagal dimuat.', gagal: 'Resep gagal diajukan.', belumAdaMaster: 'Belum ada obat di master. Minta apoteker menambahkannya di halaman Farmasi.',
+    nomor: (n: string) => `Resep ${n}`, daftarObat: 'Obat',
+  },
+  telaah: {
+    judul: 'Telaah dan siapkan resep', resep: (n: string) => `Resep ${n}`, administratif: 'Telaah administratif (identitas pasien, dokter, tanggal, aturan lengkap)', farmasetik: 'Telaah farmasetik (bentuk, dosis, stabilitas, cara pemberian)',
+    klinis: 'Telaah klinis (indikasi, alergi, interaksi, duplikasi)', catatan: 'Catatan telaah', simpan: 'Catat telaah', siap: 'Tandai siap', memproses: 'Memproses...', siapInfo: 'Setelah siap, obat diserahkan di kasir bersama pembayaran.',
+    kosong: 'Tidak ada resep yang perlu ditelaah pada kunjungan ini.', tercatat: 'Telaah tercatat.', sudahSiap: 'Resep siap.', stokKurang: (nama: string, butuh: number, ada: number) => `Stok ${nama} kurang: butuh ${butuh}, tersedia ${ada}.`,
+    stokKurangJudul: 'Stok kurang', gagal: 'Telaah gagal dicatat.', alergiPeringatan: 'Periksa alergi pasien sebelum menyiapkan obat.', oleh: (nama: string) => `Ditelaah oleh ${nama}`, selesaiJudul: 'Resep siap', selesaiPesan: 'Resep ditandai siap; tahap kunjungan maju ke kasir.',
+  },
+  galat: {
+    angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', cariPendek: 'Ketik minimal dua huruf.', tanpaPerubahan: 'Tidak ada perubahan.', jumlahMinimal: 'Jumlah minimal 1.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
+    kedaluwarsaWajib: 'Tanggal kedaluwarsa wajib untuk batch baru.', alasanWajib: 'Alasan wajib diisi.', itemWajib: 'Pilih minimal satu obat.', obatGanda: 'Obat tidak boleh ganda dalam satu resep.', catatanTelaahWajib: 'Catatan wajib bila telaah belum terpenuhi.',
+    kfaTidakAda: 'Kode KFA tidak ditemukan.', kfaTidakAktif: 'Kode KFA tidak aktif.', obatTertaut: 'Obat dengan kode KFA ini sudah ada di master.', obatTidakAda: 'Obat tidak ditemukan atau tidak aktif.', kunjunganTidakAda: 'Kunjungan tidak ditemukan.',
+    kunjunganDitutup: 'Kunjungan sudah ditutup. Resep baru tidak dapat dibuat.', resepTidakAda: 'Resep tidak ditemukan.', statusTidakSah: 'Status resep tidak mengizinkan tindakan ini. Muat ulang data.', telaahBelumLengkap: 'Telaah belum lengkap: ketiga telaah harus terpenuhi.',
+    stokTidakCukup: 'Jumlah keluar melebihi stok batch.', batchTidakAda: 'Batch tidak ditemukan.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', dpjpTidakAda: 'Dokter penanggung jawab tidak ditemukan.',
+  },
+} as const;
+
+export const TEKS = { farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

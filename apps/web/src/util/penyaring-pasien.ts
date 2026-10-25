@@ -45,7 +45,7 @@ export function ubahKeadaanPasien(k: KeadaanPasien, perubahan: Partial<KeadaanPa
   return { ...k, ...perubahan, halaman: perubahan.halaman ?? (berubah ? 1 : k.halaman) };
 }
 
-export type AksiBaris = { jenis: 'buka' | 'daftarkan' | 'skrining' | 'periksa' | 'persetujuan' | 'order_lab' | 'spesimen' | 'hasil_lab' | 'riwayat' | 'keluarga' | AksiAntrean };
+export type AksiBaris = { jenis: 'buka' | 'daftarkan' | 'skrining' | 'periksa' | 'telaah' | 'persetujuan' | 'order_lab' | 'spesimen' | 'hasil_lab' | 'riwayat' | 'keluarga' | AksiAntrean };
 type Boleh = (fitur: string, aksi: AksiIzin) => boolean;
 
 /**
@@ -61,6 +61,7 @@ export function aksiBaris(baris: PasienBarisDto, boleh: Boleh): AksiBaris[] {
   }
   if (k?.tahap_layanan === 'menunggu_skrining' && boleh('klinis', 'input')) hasil.push({ jenis: 'skrining' });
   if (k?.tahap_layanan === 'pemeriksaan' && boleh('klinis', 'input')) hasil.push({ jenis: 'periksa' });
+  if (k?.tahap_layanan === 'resep' && boleh('farmasi', 'input')) hasil.push({ jenis: 'telaah' });
   if (!k && boleh('kunjungan', 'input')) hasil.push({ jenis: 'daftarkan' });
   const berjalan = !!k && k.tahap_layanan !== 'menunggu_skrining' && k.tahap_layanan !== 'ditutup';
   if (berjalan && boleh('persetujuan', 'input')) hasil.push({ jenis: 'persetujuan' });

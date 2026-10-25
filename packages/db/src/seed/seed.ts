@@ -3,6 +3,7 @@ import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
 import { hashKataSandi } from '../kata-sandi';
 import { seedWilayahContoh } from './wilayah';
 import { seedTerminologiContoh } from './terminologi';
+import { seedKfaContoh } from './kfa';
 import { seedPenunjangContoh } from './penunjang';
 
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
@@ -43,6 +44,8 @@ export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv 
   if ((await prisma.wilayah.count()) === 0) await seedWilayahContoh(prisma);
   // Terminologi contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
   if ((await prisma.kodeTerminologi.count()) === 0) await seedTerminologiContoh(prisma);
+  // Referensi KFA contoh hanya bila tabel kosong.
+  if ((await prisma.referensiKfa.count()) === 0) await seedKfaContoh(prisma);
 }
 
 /** Teks general consent bawaan (versi 1, semua klinik); klinik dapat menambah versi sendiri. Idempoten. */

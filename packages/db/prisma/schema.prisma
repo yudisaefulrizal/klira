@@ -498,6 +498,7 @@ enum JenisTarif {
   tindakan
   lab
   kamar
+  obat
 }
 
 enum TingkatWilayah {
@@ -616,19 +617,20 @@ model Kunjungan {
   dibuat_oleh       Int?
   dibuat_pada       DateTime        @default(now()) @db.DateTime(3)
 
-  fasyankes     Fasyankes          @relation(fields: [fasyankes_id], references: [id])
-  pasien        Pasien             @relation(fields: [pasien_id], references: [id])
-  asal          Kunjungan?         @relation("KunjunganAsal", fields: [kunjungan_asal_id], references: [id])
-  lanjutan      Kunjungan[]        @relation("KunjunganAsal")
-  peserta       PesertaKunjungan[]
-  antrean       Antrean?
-  anamnesis     Anamnesis[]
-  observasi     Observasi[]
-  diagnosis     Diagnosis[]
-  tindakan      Tindakan[]
-  tindak_lanjut TindakLanjut[]
+  fasyankes       Fasyankes          @relation(fields: [fasyankes_id], references: [id])
+  pasien          Pasien             @relation(fields: [pasien_id], references: [id])
+  asal            Kunjungan?         @relation("KunjunganAsal", fields: [kunjungan_asal_id], references: [id])
+  lanjutan        Kunjungan[]        @relation("KunjunganAsal")
+  peserta         PesertaKunjungan[]
+  antrean         Antrean?
+  anamnesis       Anamnesis[]
+  observasi       Observasi[]
+  diagnosis       Diagnosis[]
+  tindakan        Tindakan[]
+  tindak_lanjut   TindakLanjut[]
   order_penunjang OrderPenunjang[]
-  tagihan       Tagihan?
+  tagihan         Tagihan?
+  resep           Resep[]
 
   @@index([fasyankes_id, tahap_layanan])
   @@index([pasien_id])
@@ -1031,19 +1033,19 @@ model MasterPemeriksaan {
 
 // Satu baris per pemeriksaan yang dipesan; status hanya maju. Nama, kode LOINC, dan prioritas disalin saat order.
 model OrderPenunjang {
-  id                     Int                  @id @default(autoincrement())
-  fasyankes_id           Int
-  kunjungan_id           Int
-  pasien_id              Int
-  jenis                  String               @default("lab") @db.VarChar(20)
-  master_pemeriksaan_id  Int?
-  kode_loinc             String?              @db.VarChar(30)
-  nama                   String               @db.VarChar(200)
-  prioritas              String               @default("rutin") @db.VarChar(20)
-  catatan                String?              @db.VarChar(500)
-  status                 StatusOrderPenunjang @default(dipesan)
-  dibuat_oleh            Int?
-  dibuat_pada            DateTime             @default(now()) @db.DateTime(3)
+  id                    Int                  @id @default(autoincrement())
+  fasyankes_id          Int
+  kunjungan_id          Int
+  pasien_id             Int
+  jenis                 String               @default("lab") @db.VarChar(20)
+  master_pemeriksaan_id Int?
+  kode_loinc            String?              @db.VarChar(30)
+  nama                  String               @db.VarChar(200)
+  prioritas             String               @default("rutin") @db.VarChar(20)
+  catatan               String?              @db.VarChar(500)
+  status                StatusOrderPenunjang @default(dipesan)
+  dibuat_oleh           Int?
+  dibuat_pada           DateTime             @default(now()) @db.DateTime(3)
 
   kunjungan Kunjungan          @relation(fields: [kunjungan_id], references: [id])
   master    MasterPemeriksaan? @relation(fields: [master_pemeriksaan_id], references: [id])
@@ -1107,18 +1109,19 @@ model Tagihan {
 }
 
 model ItemTagihan {
-  id                  Int        @id @default(autoincrement())
-  fasyankes_id        Int
-  tagihan_id          Int
-  jenis               JenisTarif
-  tarif_layanan_id    Int?
-  kode                String     @db.VarChar(50)
-  nama                String     @db.VarChar(200)
-  jumlah              Int        @default(1)
-  harga               Int?
-  order_penunjang_id  Int?       @unique
-  dibuat_oleh         Int?
-  dibuat_pada         DateTime   @default(now()) @db.DateTime(3)
+  id                 Int        @id @default(autoincrement())
+  fasyankes_id       Int
+  tagihan_id         Int
+  jenis              JenisTarif
+  tarif_layanan_id   Int?
+  kode               String     @db.VarChar(50)
+  nama               String     @db.VarChar(200)
+  jumlah             Int        @default(1)
+  harga              Int?
+  order_penunjang_id Int?       @unique
+  item_resep_id      Int?       @unique
+  dibuat_oleh        Int?
+  dibuat_pada        DateTime   @default(now()) @db.DateTime(3)
 
   tagihan Tagihan @relation(fields: [tagihan_id], references: [id])
 
@@ -1128,21 +1131,175 @@ model ItemTagihan {
 
 // Addendum (4.2): isi susulan setelah catatan disahkan (mis. hasil lab); hanya menambah, versi per entitas. Pengesahan barunya di pengesahan_catatan (entitas `addendum`).
 model Addendum {
-  id                 Int       @id @default(autoincrement())
-  fasyankes_id       Int
-  kunjungan_id       Int
-  entitas            String    @db.VarChar(50)
-  entitas_id         Int
-  versi              Int
-  isi                Json
-  alasan             String    @db.VarChar(500)
-  waktu              DateTime  @default(now()) @db.DateTime(3)
-  perlu_kirim_ulang  Boolean   @default(true)
-  dikirim_pada       DateTime? @db.DateTime(3)
-  dibuat_oleh        Int?
-  dibuat_pada        DateTime  @default(now()) @db.DateTime(3)
+  id                Int       @id @default(autoincrement())
+  fasyankes_id      Int
+  kunjungan_id      Int
+  entitas           String    @db.VarChar(50)
+  entitas_id        Int
+  versi             Int
+  isi               Json
+  alasan            String    @db.VarChar(500)
+  waktu             DateTime  @default(now()) @db.DateTime(3)
+  perlu_kirim_ulang Boolean   @default(true)
+  dikirim_pada      DateTime? @db.DateTime(3)
+  dibuat_oleh       Int?
+  dibuat_pada       DateTime  @default(now()) @db.DateTime(3)
 
   @@unique([entitas, entitas_id, versi])
   @@index([kunjungan_id])
   @@map("addendum")
+}
+
+// ---- Farmasi (4.3): referensi KFA (global, baca-saja), master obat klinik, resep, telaah, stok sederhana ----
+enum StatusResep {
+  diajukan
+  ditelaah
+  siap
+  diserahkan
+}
+
+enum JenisMutasi {
+  terima
+  keluar
+  koreksi
+}
+
+// Referensi KFA statis (4.3): kode tingkat 91 bahan, 92 template, 93 produk, 94 kemasan. Diisi lewat impor; baris `contoh` bukan data resmi.
+model ReferensiKfa {
+  id                    Int      @id @default(autoincrement())
+  kode                  String   @unique @db.VarChar(30)
+  tingkat               Int
+  nama                  String   @db.VarChar(255)
+  bentuk_sediaan        String?  @db.VarChar(100)
+  rute                  String?  @db.VarChar(100)
+  satuan                String?  @db.VarChar(50)
+  kekuatan              String?  @db.VarChar(100)
+  nomor_izin_edar       String?  @db.VarChar(100)
+  produsen              String?  @db.VarChar(200)
+  generik               Boolean  @default(false)
+  status                String   @default("aktif") @db.VarChar(30)
+  produk_pengganti_kode String?  @db.VarChar(30)
+  contoh                Boolean  @default(false)
+  diperbarui_pada       DateTime @default(now()) @db.DateTime(3)
+
+  master MasterObat[]
+
+  @@index([tingkat])
+  @@index([nama])
+  @@map("referensi_kfa")
+}
+
+// Master obat klinik: satu kode KFA per baris (tanpa obat ketik bebas); harga dan satuan milik klinik.
+model MasterObat {
+  id           Int       @id @default(autoincrement())
+  fasyankes_id Int
+  kfa_id       Int
+  nama_tampil  String    @db.VarChar(200)
+  satuan       String    @db.VarChar(50)
+  harga        Int
+  aktif        Boolean   @default(true)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime  @default(now()) @db.DateTime(3)
+  diubah_pada  DateTime? @db.DateTime(3)
+
+  kfa  ReferensiKfa @relation(fields: [kfa_id], references: [id])
+  item ItemResep[]
+  stok StokObat[]
+
+  @@unique([fasyankes_id, kfa_id])
+  @@index([fasyankes_id])
+  @@map("master_obat")
+}
+
+model Resep {
+  id               Int            @id @default(autoincrement())
+  fasyankes_id     Int
+  kunjungan_id     Int
+  dpjp_id          Int
+  nomor_resep      String         @db.VarChar(40)
+  jenis_pembiayaan CaraPembayaran @default(umum)
+  status           StatusResep    @default(diajukan)
+  waktu_siap       DateTime?      @db.DateTime(3)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime       @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan    @relation(fields: [kunjungan_id], references: [id])
+  item      ItemResep[]
+  telaah    TelaahResep?
+
+  @@unique([fasyankes_id, nomor_resep])
+  @@index([kunjungan_id])
+  @@index([fasyankes_id, status])
+  @@map("resep")
+}
+
+model ItemResep {
+  id             Int      @id @default(autoincrement())
+  fasyankes_id   Int
+  resep_id       Int
+  master_obat_id Int
+  aturan_pakai   String   @db.VarChar(200)
+  bentuk         String?  @db.VarChar(50)
+  rute           String?  @db.VarChar(50)
+  jumlah         Int
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime @default(now()) @db.DateTime(3)
+
+  resep  Resep      @relation(fields: [resep_id], references: [id])
+  master MasterObat @relation(fields: [master_obat_id], references: [id])
+
+  @@index([resep_id])
+  @@map("item_resep")
+}
+
+model TelaahResep {
+  id            Int      @id @default(autoincrement())
+  fasyankes_id  Int
+  resep_id      Int      @unique
+  apoteker_id   Int
+  administratif Boolean
+  farmasetik    Boolean
+  klinis        Boolean
+  catatan       String?  @db.VarChar(1000)
+  waktu         DateTime @default(now()) @db.DateTime(3)
+
+  resep Resep @relation(fields: [resep_id], references: [id])
+
+  @@map("telaah_resep")
+}
+
+model StokObat {
+  id             Int       @id @default(autoincrement())
+  fasyankes_id   Int
+  master_obat_id Int
+  batch          String    @db.VarChar(60)
+  kedaluwarsa    DateTime  @db.Date
+  jumlah         Int       @default(0)
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime  @default(now()) @db.DateTime(3)
+  diubah_pada    DateTime? @db.DateTime(3)
+
+  master MasterObat   @relation(fields: [master_obat_id], references: [id])
+  mutasi MutasiStok[]
+
+  @@unique([master_obat_id, batch])
+  @@index([fasyankes_id])
+  @@map("stok_obat")
+}
+
+// Mutasi stok hanya ditambah (tanpa ubah/hapus); jumlah bertanda: terima positif, keluar negatif, koreksi sesuai selisih.
+model MutasiStok {
+  id           Int         @id @default(autoincrement())
+  fasyankes_id Int
+  stok_id      Int
+  jenis        JenisMutasi
+  jumlah       Int
+  alasan       String?     @db.VarChar(300)
+  pengguna_id  Int
+  waktu        DateTime    @default(now()) @db.DateTime(3)
+
+  stok StokObat @relation(fields: [stok_id], references: [id])
+
+  @@index([stok_id])
+  @@map("mutasi_stok")
 }
