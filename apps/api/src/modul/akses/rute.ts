@@ -8,7 +8,7 @@ import type { LayananAkses } from './layanan';
 import { NAMA_COOKIE_SESI, skemaGantiKredensial, skemaMasuk } from './skema';
 import type { AlasanGantiGagal } from './layanan';
 
-const GALAT_GANTI: Record<Exclude<AlasanGantiGagal, 'tidak_masuk' | 'username_dipakai'>, { jalur: string; pesan: string }> = {
+const GALAT_GANTI: Record<Exclude<AlasanGantiGagal, 'tidak_masuk' | 'username_dipakai' | 'kata_sandi_kurang'>, { jalur: string; pesan: string }> = {
   kata_sandi_lama_salah: { jalur: 'kata_sandi_lama', pesan: GANTI_KREDENSIAL.kataSandiLamaSalah },
   username_sama_awal: { jalur: 'username', pesan: GANTI_KREDENSIAL.usernameSamaAwal },
   kata_sandi_sama_lama: { jalur: 'kata_sandi', pesan: GANTI_KREDENSIAL.kataSandiSamaLama },
@@ -74,7 +74,9 @@ export function buatRuteAkses(layanan: LayananAkses, baseUrl: string): Router {
           };
           return void res.status(409).json(badan);
         }
-        const rincian = GALAT_GANTI[hasil.alasan];
+        const rincian = hasil.alasan === 'kata_sandi_kurang'
+          ? { jalur: 'kata_sandi', pesan: GANTI_KREDENSIAL.kataSandiKurang(hasil.minimum ?? 0) }
+          : GALAT_GANTI[hasil.alasan];
         const badan: ResponsGalat = { galat: { kode: 'tidak_valid', pesan: rincian.pesan, rincian: [rincian] } };
         return void res.status(400).json(badan);
       }

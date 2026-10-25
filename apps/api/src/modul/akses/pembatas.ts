@@ -50,12 +50,13 @@ export class PembatasPercobaan {
     }
   }
 
-  catatGagal(username: string, alamat: string): void {
+  /** `batasAkun` menimpa batas bawaan per akun (kebijakan keamanan fasyankes). */
+  catatGagal(username: string, alamat: string, batasAkun: number = this.opsi.batasAkun): void {
     const maks = this.opsi.maksCatatan ?? OPSI_PEMBATAS_BAWAAN.maksCatatan!;
     if (this.sekarang() - this.terakhirBersih >= this.opsi.jendelaMs || this.akun.size >= maks || this.alamat.size >= maks) {
       this.bersihkan();
     }
-    this.tambah(this.akun, kunciAkun(username), this.opsi.batasAkun);
+    this.tambah(this.akun, kunciAkun(username), batasAkun);
     this.tambah(this.alamat, alamat, this.opsi.batasAlamat);
   }
 

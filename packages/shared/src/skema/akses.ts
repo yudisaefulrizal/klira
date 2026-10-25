@@ -61,10 +61,33 @@ export const terimaPeringatan = z.object({
   alasan,
 });
 
-export const filterPeringatan = paginasi.extend({
-  pengguna_id: z.coerce.number().int().positive().optional(),
-  jenis_peringatan: z.enum(JENIS_PERINGATAN).optional(),
-});
+const kosongJadiTak = (v: unknown) => (v === '' ? undefined : v);
+const waktuOpsional = z.preprocess(kosongJadiTak, z.coerce.date().optional());
+
+/** Filter daftar peringatan: pengguna (id atau cari nama/username), jenis, rentang waktu (UTC) + paginasi. */
+export const filterPeringatan = paginasi
+  .extend({
+    pengguna_id: z.preprocess(kosongJadiTak, z.coerce.number().int().positive().optional()),
+    jenis_peringatan: z.preprocess(kosongJadiTak, z.enum(JENIS_PERINGATAN).optional()),
+    dari: waktuOpsional,
+    sampai: waktuOpsional,
+  })
+  .refine((f) => !f.dari || !f.sampai || f.sampai >= f.dari, { path: ['sampai'], message: IZIN.rentangTerbalik });
+export type FilterPeringatan = z.infer<typeof filterPeringatan>;
+
+/** Baris daftar peringatan izin (2.2) untuk pimpinan dan auditor. */
+export type PeringatanIzinDto = {
+  id: number;
+  pengguna_id: number;
+  pengguna_nama: string | null;
+  jenis_peringatan: string;
+  alasan_pimpinan: string;
+  sumber: string;
+  diterima_untuk_akun: boolean;
+  ditetapkan_oleh: number | null;
+  ditetapkan_oleh_nama: string | null;
+  waktu: string;
+};
 
 export const katalogIzinParam = z.object({ fitur: z.string().optional(), aksi: aksiIzin.optional(), cakupan: cakupanIzin.optional() });
 export const idPenggunaParam = z.object({ id: z.coerce.number().int().positive() });

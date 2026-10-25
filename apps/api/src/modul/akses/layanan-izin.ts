@@ -5,7 +5,7 @@ import { evaluasiPeringatan, hitungAksesEfektif, peringatanBaru, relevanUntukTin
 import type { KonteksTindakan, PeringatanInternal, SnapshotAkses } from './mesin-izin';
 import { KonflikNama } from './repositori-izin';
 import type {
-  BarisIzin, BarisIzinAkun, BarisJenisAkun, BarisPenugasan, BarisPeringatan, BarisRiwayat, EntriPeringatan, RepositoriIzin,
+  BarisIzin, BarisIzinAkun, BarisJenisAkun, BarisPenugasan, BarisPeringatan, BarisRiwayat, EntriPeringatan, FilterPeringatan, RepositoriIzin,
 } from './repositori-izin';
 
 export type DependensiIzin = { repo: RepositoriIzin; audit: PenampungAudit; sekarang?: () => Date };
@@ -100,7 +100,7 @@ export function buatLayananIzin(dep: DependensiIzin) {
 
     // --- Jenis akun ---
     daftarIzin: () => repo.daftarIzin(),
-    daftarJenisAkun: (p: Pelaku) => repo.daftarJenisAkun(p.fasyankes_id),
+    daftarJenisAkun: (p: Pelaku) => repo.daftarJenisAkun(p.fasyankes_id, sekarang()),
 
     async ambilJenisAkun(p: Pelaku, id: number): Promise<Hasil<BarisJenisAkun>> {
       const j = await repo.ambilJenisAkun(p.fasyankes_id, id);
@@ -251,7 +251,7 @@ export function buatLayananIzin(dep: DependensiIzin) {
     },
 
     // --- Peringatan ---
-    async daftarPeringatan(p: Pelaku, f: { pengguna_id?: number; jenis_peringatan?: string; halaman: number; ukuran: number }) {
+    async daftarPeringatan(p: Pelaku, f: FilterPeringatan) {
       const { data, total } = await repo.daftarPeringatan(p.fasyankes_id, f);
       return { data, halaman: f.halaman, ukuran: f.ukuran, total };
     },

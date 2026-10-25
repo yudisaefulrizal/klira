@@ -29,7 +29,11 @@ export type BarisPeringatan = {
   keterangan: string | null; ditetapkan_oleh: number | null; waktu: Date;
 };
 export type EntriPeringatan = Omit<BarisPeringatan, 'id' | 'waktu'>;
-export type FilterPeringatan = { pengguna_id?: number; jenis_peringatan?: string; halaman: number; ukuran: number };
+export type FilterPeringatan = {
+  pengguna_id?: number; jenis_peringatan?: string; cari?: string; dari?: Date; sampai?: Date; halaman: number; ukuran: number;
+};
+export type BarisPeringatanDaftar = BarisPeringatan & { pengguna_nama: string | null; ditetapkan_oleh_nama: string | null };
+export type BarisJenisAkunDaftar = BarisJenisAkun & { jumlah_pemakai?: number };
 
 export class KonflikNama extends Error {}
 
@@ -41,7 +45,7 @@ export interface RepositoriIzin {
   izinByIds(ids: number[]): Promise<BarisIzin[]>;
   cariIzin(fitur: string, aksi: string, cakupan: string): Promise<BarisIzin | null>;
 
-  daftarJenisAkun(fasyankesId: number): Promise<BarisJenisAkun[]>;
+  daftarJenisAkun(fasyankesId: number, sekarang?: Date): Promise<BarisJenisAkunDaftar[]>;
   ambilJenisAkun(fasyankesId: number, id: number): Promise<BarisJenisAkun | null>;
   buatJenisAkun(data: { fasyankes_id: number; nama: string; syarat_profesi: string | null; izin_ids: number[]; alasan: string | null; oleh: number; ringkasan: string }): Promise<BarisJenisAkun>;
   ubahJenisAkun(data: {
@@ -61,7 +65,7 @@ export interface RepositoriIzin {
   akhiriIzinAkun(id: number, selesai: Date): Promise<BarisIzinAkun>;
 
   simpanPeringatan(entri: EntriPeringatan[]): Promise<BarisPeringatan[]>;
-  daftarPeringatan(fasyankesId: number, f: FilterPeringatan): Promise<{ data: BarisPeringatan[]; total: number }>;
+  daftarPeringatan(fasyankesId: number, f: FilterPeringatan): Promise<{ data: BarisPeringatanDaftar[]; total: number }>;
   /** Catatan penerimaan terakhir untuk akun dan jenis peringatan (null bila belum diterima). */
   cariDiterima(penggunaId: number, jenis: string): Promise<BarisPeringatan | null>;
   alasanTerakhir(penggunaId: number, jenis: string): Promise<string | null>;
@@ -120,9 +124,19 @@ export class RepositoriIzinPrisma implements RepositoriIzin {
     return prisma.izin.findFirst({ where: { fitur, aksi: aksi as AksiIzin, cakupan: cakupan as CakupanIzin }, select: pilihIzin });
   }
 
-  async daftarJenisAkun(fasyankesId: number): Promise<BarisJenisAkun[]> {
-    const j = await prisma.jenisAkun.findMany({ where: { fasyankes_id: fasyankesId }, include: sertakanIzin, orderBy: { id: 'asc' } });
-    return j.map(petaJenis);
+  /** `jumlah_pemakai` = akun berbeda dengan penugasan jenis ini yang sedang berjalan (mulai sudah lewat, belum selesai). */
+  async daftarJenisAkun(fasyankesId: number, sekarang: Date = new Date()): Promise<BarisJenisAkunDaftar[]> {
+    const [j, pemakai] = await Promise.all([
+      prisma.jenisAkun.findMany({ where: { fasyankes_id: fasyankesId }, include: sertakanIzin, orderBy: { id: 'asc' } }),
+      prisma.penugasanJenis.findMany({
+        where: { fasyankes_id: fasyankesId, mulai: { lte: sekarang }, OR: [{ selesai: null }, { selesai: { gt: sekarang } }] },
+        select: { jenis_akun_id: true, pengguna_id: true },
+        distinct: ['jenis_akun_id', 'pengguna_id'],
+      }),
+    ]);
+    const hitung = new Map<number, number>();
+    for (const x of pemakai) hitung.set(x.jenis_akun_id, (hitung.get(x.jenis_akun_id) ?? 0) + 1);
+    return j.map((x) => ({ ...petaJenis(x), jumlah_pemakai: hitung.get(x.id) ?? 0 }));
   }
   async ambilJenisAkun(fasyankesId: number, id: number): Promise<BarisJenisAkun | null> {
     const j = await prisma.jenisAkun.findFirst({ where: { id, fasyankes_id: fasyankesId }, include: sertakanIzin });
@@ -226,16 +240,27 @@ export class RepositoriIzinPrisma implements RepositoriIzin {
     return hasil;
   }
 
-  async daftarPeringatan(fasyankesId: number, f: FilterPeringatan): Promise<{ data: BarisPeringatan[]; total: number }> {
-    const where = {
+  async daftarPeringatan(fasyankesId: number, f: FilterPeringatan): Promise<{ data: BarisPeringatanDaftar[]; total: number }> {
+    const where: Prisma.PeringatanIzinWhereInput = {
       fasyankes_id: fasyankesId,
       ...(f.pengguna_id ? { pengguna_id: f.pengguna_id } : {}),
       ...(f.jenis_peringatan ? { jenis_peringatan: f.jenis_peringatan } : {}),
+      ...(f.cari ? { pengguna: { OR: [{ nama: { contains: f.cari } }, { username: { contains: f.cari } }] } } : {}),
+      ...(f.dari || f.sampai ? { waktu: { ...(f.dari ? { gte: f.dari } : {}), ...(f.sampai ? { lte: f.sampai } : {}) } } : {}),
     };
-    const [data, total] = await Promise.all([
-      prisma.peringatanIzin.findMany({ where, select: kolomPeringatan, orderBy: { id: 'desc' }, skip: (f.halaman - 1) * f.ukuran, take: f.ukuran }),
+    const [baris, total] = await Promise.all([
+      prisma.peringatanIzin.findMany({
+        where, select: kolomPeringatan, orderBy: [{ waktu: 'desc' }, { id: 'desc' }], skip: (f.halaman - 1) * f.ukuran, take: f.ukuran,
+      }),
       prisma.peringatanIzin.count({ where }),
     ]);
+    const ids = [...new Set(baris.flatMap((b) => [b.pengguna_id, ...(b.ditetapkan_oleh ? [b.ditetapkan_oleh] : [])]))];
+    const nama = new Map(
+      (ids.length ? await prisma.pengguna.findMany({ where: { id: { in: ids } }, select: { id: true, nama: true } }) : []).map((x) => [x.id, x.nama]),
+    );
+    const data = baris.map((b) => ({
+      ...b, pengguna_nama: nama.get(b.pengguna_id) ?? null, ditetapkan_oleh_nama: b.ditetapkan_oleh ? (nama.get(b.ditetapkan_oleh) ?? null) : null,
+    }));
     return { data, total };
   }
 

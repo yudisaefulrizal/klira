@@ -3,3 +3,4 @@ export * from './entitas';
 export * from './akses';
 export * from './audit';
 export * from './pengguna';
+export * from './keamanan';

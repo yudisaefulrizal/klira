@@ -38,7 +38,7 @@ export const bayangan = {
   modal: '0 8px 24px rgba(23, 48, 46, 0.16)',
 } as const;
 
-export const ukuran = { kartu: '400px', isian: '40px', tombol: '40px', kolomKiri: '1fr', kolomKanan: '1fr', tinggiLayar: '100vh', garis: '1px', menuSamping: '232px', tab: '38px', tabelMin: '900px', logo: '30px', isiMin: '640px', modalKecil: '440px', modalSedang: '640px', modalBesar: '1100px', tinggiModal: '720px', maksLayar: '92vh', panelSamping: '440px', navLangkah: '232px', penandaLangkah: '22px', areaTeks: '88px' } as const;
+export const ukuran = { kartu: '400px', isian: '40px', tombol: '40px', kolomKiri: '1fr', kolomKanan: '1fr', tinggiLayar: '100vh', garis: '1px', menuSamping: '232px', tab: '38px', tabelMin: '900px', logo: '30px', isiMin: '640px', modalKecil: '440px', modalSedang: '640px', modalBesar: '1100px', tinggiModal: '720px', maksLayar: '92vh', panelSamping: '440px', navLangkah: '232px', penandaLangkah: '22px', areaTeks: '88px', kolomKelompok: '240px', kolomFilter: '180px', tinggiDaftar: '40vh' } as const;
 
 /** Urutan tumpukan lapisan (dialog di atas halaman, konfirmasi di atas dialog). */
 export const lapis = { dialog: 1000, konfirmasi: 1100 } as const;

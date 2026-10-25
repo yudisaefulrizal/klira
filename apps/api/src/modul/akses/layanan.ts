@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { cocokKataSandi, hashKataSandi } from '@klira/db';
-import { halamanAwal, kredensialAwal } from '@klira/shared';
-import type { MasukanGantiKredensial, PenggunaSaya } from '@klira/shared';
+import { halamanAwal, kredensialAwal, pengaturanKeamananEfektif } from '@klira/shared';
+import type { MasukanGantiKredensial, PengaturanKeamananMasukan, PenggunaSaya } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import type { PembatasPercobaan } from './pembatas';
 import { KonflikUsername } from './repositori';
@@ -19,12 +19,13 @@ export type AlasanGantiGagal =
   | 'kata_sandi_lama_salah'
   | 'username_sama_awal'
   | 'username_dipakai'
+  | 'kata_sandi_kurang'
   | 'kata_sandi_sama_lama'
   | 'kata_sandi_sama_awal';
 
 export type HasilGanti =
   | { ok: true; idSesi: string; kedaluwarsa: Date; pengguna: PenggunaSaya }
-  | { ok: false; alasan: AlasanGantiGagal };
+  | { ok: false; alasan: AlasanGantiGagal; minimum?: number };
 
 export type DependensiAkses = {
   /** Kredensial awal statis; bawaan dari env (USERNAME_AWAL, KATA_SANDI_AWAL) atau nilai bawaan. */
@@ -33,7 +34,10 @@ export type DependensiAkses = {
   audit: PenampungAudit;
   pembatas: PembatasPercobaan;
   sekarang?: () => Date;
+  /** Menimpa masa sesi dari pengaturan keamanan (untuk uji). */
   sesiMs?: number;
+  /** Pengaturan keamanan fasyankes; tanpa ini (atau bila kosong) dipakai bawaan aman. */
+  bacaPengaturan?: (fasyankesId: number) => Promise<PengaturanKeamananMasukan>;
 };
 
 export function hashIdSesi(id: string): string {
@@ -47,7 +51,8 @@ export function penandaUsername(username: string): string {
 
 export function buatLayananAkses(dep: DependensiAkses) {
   const sekarang = dep.sekarang ?? (() => new Date());
-  const sesiMs = dep.sesiMs ?? JAM_SESI_BAWAAN * 3_600_000;
+  const bacaPengaturan = dep.bacaPengaturan ?? (async () => pengaturanKeamananEfektif(null));
+  const sesiMsDari = (p: PengaturanKeamananMasukan) => dep.sesiMs ?? p.masa_sesi_jam * 3_600_000;
   // Hash tiruan agar waktu respons username tak dikenal setara dengan kata sandi salah.
   const awal = dep.kredensialAwal ?? kredensialAwal(process.env);
   const hashTiruan = hashKataSandi(randomBytes(16).toString('hex'));
@@ -76,8 +81,10 @@ export function buatLayananAkses(dep: DependensiAkses) {
       }
       const akun = await dep.repo.cariAkunByUsername(username);
       const cocok = await cocokKataSandi(kataSandi, akun?.kata_sandi_hash ?? (await hashTiruan));
+      const setelan = akun ? await bacaPengaturan(akun.fasyankes_id) : pengaturanKeamananEfektif(null);
       if (!akun || !cocok) {
-        dep.pembatas.catatGagal(username, alamat);
+        // Tanpa pembaca pengaturan, batas dari opsi pembatas tetap berlaku.
+        dep.pembatas.catatGagal(username, alamat, dep.bacaPengaturan ? setelan.batas_percobaan_masuk : undefined);
         await dep.audit.catat({
           fasyankes_id: akun?.fasyankes_id, pengguna_id: akun?.id, aksi: 'masuk_gagal', entitas: 'sesi',
           keterangan: akun
@@ -90,7 +97,7 @@ export function buatLayananAkses(dep: DependensiAkses) {
       dep.pembatas.catatBerhasil(username);
       await dep.repo.hapusKedaluwarsa(t);
       const idSesi = randomBytes(32).toString('base64url');
-      const kedaluwarsa = new Date(t.getTime() + sesiMs);
+      const kedaluwarsa = new Date(t.getTime() + sesiMsDari(setelan));
       await dep.repo.buatSesi({ idHash: hashIdSesi(idSesi), akun, alamat, kedaluwarsa });
       await dep.audit.catat({
         fasyankes_id: akun.fasyankes_id, pengguna_id: akun.id, aksi: 'masuk', entitas: 'sesi',
@@ -128,13 +135,18 @@ export function buatLayananAkses(dep: DependensiAkses) {
         return { ok: false, alasan };
       };
       if (!(await cocokKataSandi(masukan.kata_sandi_lama, akun.kata_sandi_hash))) return gagal('kata_sandi_lama_salah');
+      const setelan = await bacaPengaturan(akun.fasyankes_id);
+      if (masukan.kata_sandi.length < setelan.panjang_minimum_kata_sandi) {
+        await gagal('kata_sandi_kurang');
+        return { ok: false, alasan: 'kata_sandi_kurang', minimum: setelan.panjang_minimum_kata_sandi };
+      }
       if (masukan.username.toLowerCase() === awal.username.toLowerCase()) return gagal('username_sama_awal');
       if (masukan.kata_sandi === masukan.kata_sandi_lama) return gagal('kata_sandi_sama_lama');
       if (masukan.kata_sandi === awal.kataSandi) return gagal('kata_sandi_sama_awal');
       if (await dep.repo.usernameDipakai(masukan.username, akun.id)) return gagal('username_dipakai');
 
       const idBaru = randomBytes(32).toString('base64url');
-      const kedaluwarsa = new Date(t.getTime() + sesiMs);
+      const kedaluwarsa = new Date(t.getTime() + sesiMsDari(setelan));
       const akunBaru: AkunMasuk = { ...akun, username: masukan.username, wajib_ganti_kredensial: false };
       try {
         await dep.repo.gantiKredensial({

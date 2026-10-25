@@ -1,4 +1,4 @@
-import type { AksesEfektif, KonfirmasiPeringatan, Halaman } from '@klira/shared';
+import type { AksesEfektif, KonfirmasiPeringatan, Halaman, PeringatanIzinDto } from '@klira/shared';
 import { panggilApi } from './klien';
 
 export type Periode = { mulai: string; selesai?: string | null };
@@ -6,7 +6,7 @@ type DenganKonfirmasi = { konfirmasi_peringatan?: KonfirmasiPeringatan };
 
 type Izin = { id: number; fitur: string; aksi: string; cakupan: string };
 export type JenisAkunDto = {
-  id: number; nama: string; syarat_profesi: string | null; aktif: boolean; alasan_perubahan: string | null; izin: Izin[];
+  id: number; nama: string; syarat_profesi: string | null; aktif: boolean; alasan_perubahan: string | null; izin: Izin[]; jumlah_pemakai?: number;
 };
 export type RiwayatDto = { id: number; ringkasan: string; alasan: string | null; dibuat_oleh: number | null; dibuat_pada: string };
 export type PenugasanDto = { id: number; pengguna_id: number; jenis_akun_id: number; mulai: string; selesai: string | null };
@@ -42,9 +42,10 @@ export const akhiriIzinAkun = (penggunaId: number, id: number, selesai: string) 
 
 export const aksesEfektif = (penggunaId: number) => panggilApi<AksesEfektif>('GET', `/pengguna/${penggunaId}/akses-efektif`);
 
-export const daftarPeringatan = (halaman = 1, filter: { pengguna_id?: number; jenis_peringatan?: string } = {}) => {
-  const q = new URLSearchParams({ halaman: String(halaman), ...(filter.pengguna_id ? { pengguna_id: String(filter.pengguna_id) } : {}), ...(filter.jenis_peringatan ? { jenis_peringatan: filter.jenis_peringatan } : {}) });
-  return panggilApi<Halaman<PeringatanDto>>('GET', `/peringatan-izin?${q.toString()}`);
+export const daftarPeringatan = (f: { halaman: number; ukuran: number; cari?: string; jenis_peringatan?: string; dari?: string; sampai?: string }) => {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(f)) if (v !== undefined && v !== '') q.set(k, String(v));
+  return panggilApi<Halaman<PeringatanIzinDto>>('GET', `/peringatan-izin?${q.toString()}`);
 };
 export const terimaPeringatan = (m: { pengguna_id: number; jenis_peringatan: string; alasan: string }) =>
   panggilApi<PeringatanDto>('POST', '/peringatan-izin/terima', m);

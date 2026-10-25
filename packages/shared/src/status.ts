@@ -100,3 +100,9 @@ export const STATUS_PERIODE = buat({
   berjalan: { label: 'Berjalan', warna: 'hijau' },
   berakhir: { label: 'Berakhir', warna: 'abu' },
 });
+
+export const STATUS_BACKUP = buat({
+  berhasil: { label: 'Berhasil', warna: 'hijau' },
+  gagal: { label: 'Gagal', warna: 'merah' },
+  berjalan: { label: 'Berjalan', warna: 'biru' },
+});

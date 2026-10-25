@@ -78,6 +78,8 @@ model Fasyankes {
   peringatan_izin        PeringatanIzin[]
   riwayat_jenis_akun     RiwayatJenisAkun[]
   izin_jenis_akun        IzinJenisAkun[]
+  pengaturan_keamanan    PengaturanKeamanan?
+  riwayat_backup         RiwayatBackup[]
 
   @@map("fasyankes")
 }
@@ -384,4 +386,38 @@ model LogAudit {
   @@index([aksi, waktu])
   @@index([entitas, entitas_id])
   @@map("log_audit")
+}
+
+// Pengaturan keamanan fasyankes (4.9): dibaca auth untuk masa sesi, batas percobaan masuk, dan panjang kata sandi.
+model PengaturanKeamanan {
+  id                         Int      @id @default(autoincrement())
+  fasyankes_id               Int      @unique
+  masa_sesi_jam              Int      @default(12)
+  batas_percobaan_masuk      Int      @default(5)
+  panjang_minimum_kata_sandi Int      @default(8)
+  diubah_oleh                Int?
+  dibuat_oleh                Int?
+  dibuat_pada                DateTime @default(now()) @db.DateTime(3)
+  diubah_pada                DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@map("pengaturan_keamanan")
+}
+
+// Riwayat backup (4.9): hanya dibaca aplikasi web; diisi tugas backup worker.
+model RiwayatBackup {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int
+  waktu        DateTime @default(now()) @db.DateTime(3)
+  status       String   @db.VarChar(20) // berhasil | gagal | berjalan
+  ukuran_byte  BigInt?
+  lokasi       String?  @db.VarChar(500)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@index([fasyankes_id, waktu])
+  @@map("riwayat_backup")
 }

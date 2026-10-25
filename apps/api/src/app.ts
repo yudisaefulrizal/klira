@@ -14,6 +14,9 @@ import { buatLayananIzin } from './modul/akses/layanan-izin';
 import type { LayananIzin } from './modul/akses/layanan-izin';
 import { RepositoriIzinPrisma } from './modul/akses/repositori-izin';
 import { buatRuteIzin } from './modul/akses/rute-izin';
+import { bacaPengaturanKeamanan, buatLayananKeamanan } from './modul/keamanan/layanan';
+import { RepositoriKeamananPrisma } from './modul/keamanan/repositori';
+import { buatRuteKeamanan } from './modul/keamanan/rute';
 import { buatLayananAudit } from './modul/audit/layanan';
 import { RepositoriAuditPrisma } from './modul/audit/repositori';
 import { buatRuteAudit } from './modul/audit/rute';
@@ -32,12 +35,14 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   const app = express();
   app.set('trust proxy', true);
   app.use(express.json({ limit: '100kb' }));
+  const repoKeamanan = new RepositoriKeamananPrisma();
   const layananAkses =
     opsi.layananAkses ??
     buatLayananAkses({
       repo: new RepositoriAksesPrisma(),
       audit: new PenampungAuditPrisma(),
       pembatas: new PembatasPercobaan(),
+      bacaPengaturan: (fasyankesId) => bacaPengaturanKeamanan(repoKeamanan, fasyankesId),
     });
   const layananIzin = opsi.layananIzin ?? buatLayananIzin({ repo: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() });
   app.get('/api/kesehatan', (_req, res) => {
@@ -47,6 +52,7 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   // Semua rute di bawah ini ditolak selama akun wajib ganti kredensial.
   app.use('/api', blokirSelamaWajibGanti(layananAkses));
   app.use('/api', buatRuteIzin(layananAkses, layananIzin));
+  app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() }),
     buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruPrisma(), repoIzin: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() })));

@@ -242,3 +242,52 @@ describe('modul akses', () => {
     });
   });
 });
+
+describe('kebijakan keamanan dipakai auth', () => {
+  const entri: EntriAudit[] = [];
+  const audit: PenampungAudit = { catat: async (e) => void entri.push(e) };
+  const t0 = Date.parse('2026-10-25T00:00:00Z');
+  const akun = async (id: number, wajib: boolean): Promise<AkunMasuk> => ({
+    id, fasyankes_id: 1, nama: `Akun ${id}`, username: `akun${id}`, kata_sandi_hash: await hashKataSandi('sandi-uji-1'), aktif: true, wajib_ganti_kredensial: wajib,
+  });
+  const siapkan = async (opsi: Partial<Parameters<typeof buatLayananAkses>[0]> = {}) => {
+    const repo = new RepoMemori();
+    repo.akun.push(await akun(1, false), await akun(2, true));
+    const pembatas = new PembatasPercobaan({ batasAkun: 5, batasAlamat: 100, jendelaMs: 600_000, jedaMs: 120_000 }, () => t0);
+    return { repo, layanan: buatLayananAkses({ repo, audit, pembatas, sekarang: () => new Date(t0), ...opsi }) };
+  };
+
+  it('masa sesi mengikuti pengaturan fasyankes', async () => {
+    const { layanan } = await siapkan({ bacaPengaturan: async () => ({ masa_sesi_jam: 2, batas_percobaan_masuk: 5, panjang_minimum_kata_sandi: 8 }) });
+    const h = await layanan.masuk('akun1', 'sandi-uji-1');
+    expect(h.ok && h.kedaluwarsa.getTime()).toBe(t0 + 2 * 3_600_000);
+  });
+
+  it('tanpa pengaturan dipakai bawaan aman 12 jam', async () => {
+    const { layanan } = await siapkan();
+    const h = await layanan.masuk('akun1', 'sandi-uji-1');
+    expect(h.ok && h.kedaluwarsa.getTime()).toBe(t0 + 12 * 3_600_000);
+  });
+
+  it('batas percobaan masuk mengikuti pengaturan, bukan bawaan pembatas', async () => {
+    const { layanan } = await siapkan({ bacaPengaturan: async () => ({ masa_sesi_jam: 12, batas_percobaan_masuk: 3, panjang_minimum_kata_sandi: 8 }) });
+    for (let i = 0; i < 3; i++) expect(await layanan.masuk('akun1', 'salah', 'a1')).toEqual({ ok: false, alasan: 'salah' });
+    expect(await layanan.masuk('akun1', 'sandi-uji-1', 'a1')).toEqual({ ok: false, alasan: 'terkunci' });
+  });
+
+  it('batas bawaan 5 berlaku bila tidak ada pengaturan', async () => {
+    const { layanan } = await siapkan();
+    for (let i = 0; i < 3; i++) await layanan.masuk('akun1', 'salah', 'a1');
+    expect((await layanan.masuk('akun1', 'sandi-uji-1', 'a1')).ok).toBe(true);
+  });
+
+  it('panjang minimum kata sandi baru mengikuti pengaturan', async () => {
+    const { layanan } = await siapkan({ bacaPengaturan: async () => ({ masa_sesi_jam: 12, batas_percobaan_masuk: 5, panjang_minimum_kata_sandi: 12 }) });
+    const m = await layanan.masuk('akun2', 'sandi-uji-1');
+    if (!m.ok) throw new Error('masuk gagal');
+    const pendek = await layanan.gantiKredensial(m.idSesi, { username: 'baru2', kata_sandi_lama: 'sandi-uji-1', kata_sandi: 'abc12345', konfirmasi_kata_sandi: 'abc12345' });
+    expect(pendek).toEqual({ ok: false, alasan: 'kata_sandi_kurang', minimum: 12 });
+    const cukup = await layanan.gantiKredensial(m.idSesi, { username: 'baru2', kata_sandi_lama: 'sandi-uji-1', kata_sandi: 'abc123456789', konfirmasi_kata_sandi: 'abc123456789' });
+    expect(cukup.ok).toBe(true);
+  });
+});
