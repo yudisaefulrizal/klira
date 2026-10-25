@@ -8,6 +8,8 @@ import { useTutupTerlindungi } from '../konfirmasi/tutup-terlindungi';
 import { Dialog, KepalaDialog } from '../ui/dialog';
 import { Peringatan } from '../ui/peringatan';
 import { Tombol } from '../ui/tombol';
+import { Kolom, Sebaris } from '../ui/susunan';
+import { Penanda } from '../ui/penanda';
 
 export type LangkahModal = {
   id: string;
@@ -39,11 +41,6 @@ type Props = {
   /** Tahap setelah berhasil: menggantikan langkah dan tidak lagi dilindungi. */
   hasil?: { judul: string; isi: ReactNode; aksi: ReactNode };
 };
-
-const penanda = {
-  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: token.ukuran.penandaLangkah, height: token.ukuran.penandaLangkah,
-  borderRadius: token.radius.pil, fontSize: token.huruf.ukuran.kecil, flexShrink: 0,
-} as const;
 
 /**
  * MODAL-BERTAHAP (3.2, 5.1d): posisi langkah "n dari m", daftar langkah yang bisa diklik (tidak wajib berurutan),
@@ -78,8 +75,8 @@ export function ModalBertahap({
     return (
       <Dialog judul={judul} onEsc={onTutup} lebar="modalSedang">
         <KepalaDialog judul={hasil.judul} onTutup={onTutup} />
-        <div style={{ padding: token.jarak.lg, display: 'flex', flexDirection: 'column', gap: token.jarak.md, overflowY: 'auto' }}>{hasil.isi}</div>
-        <footer style={{ display: 'flex', justifyContent: 'flex-end', gap: token.jarak.sm, padding: token.jarak.md, borderTop: `${token.ukuran.garis} solid ${token.warna.garis}` }}>{hasil.aksi}</footer>
+        <Kolom jarak="md" padding="lg" style={{ overflowY: 'auto' }}>{hasil.isi}</Kolom>
+        <Sebaris tag="footer" jarak="sm" padding="md" sejajar="regang" sebaran="akhir" garis="atas">{hasil.aksi}</Sebaris>
       </Dialog>
     );
   }
@@ -88,13 +85,13 @@ export function ModalBertahap({
     <>
       <Dialog judul={judul} onEsc={() => void mintaTutup()} lebar="modalBesar" tinggi="tinggiModal">
         <KepalaDialog judul={judul} onTutup={() => void mintaTutup()}>{konteks}</KepalaDialog>
-        <div style={{ display: 'flex', flexGrow: 1, minHeight: 0 }}>
-          <nav
+        <Sebaris jarak="tanpa" sejajar="regang" style={{ flexGrow: 1, minHeight: 0 }}>
+          <Kolom
+            tag="nav"
             aria-label={MODAL.daftarLangkah}
-            style={{
-              flex: `0 0 ${token.ukuran.navLangkah}`, boxSizing: 'border-box', padding: `${token.jarak.lg} ${token.jarak.md}`, display: 'flex', flexDirection: 'column',
-              gap: token.jarak.xs, borderRight: `${token.ukuran.garis} solid ${token.warna.garis}`, overflowY: 'auto',
-            }}
+            jarak="xs"
+            garis="kanan"
+            style={{ flex: `0 0 ${token.ukuran.navLangkah}`, boxSizing: 'border-box', padding: `${token.jarak.lg} ${token.jarak.md}`, overflowY: 'auto' }}
           >
             <div style={{ fontSize: token.huruf.ukuran.kecil, fontWeight: token.huruf.berat.tebal, color: token.warna.teksMenu, padding: `0 ${token.jarak.sm} ${token.jarak.sm}`, textTransform: 'uppercase' }}>
               {MODAL.langkahLabel(pos.nomor, pos.dari)}
@@ -110,47 +107,37 @@ export function ModalBertahap({
                   aria-current={s === 'aktif' ? 'step' : undefined}
                   onClick={() => onIndeks(n)}
                 >
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      ...penanda,
-                      background: s === 'selesai' ? token.warna.utama : 'transparent',
-                      color: s === 'selesai' ? token.warna.permukaan : 'inherit',
-                      border: s === 'selesai' ? 'none' : `${token.ukuran.garis} solid ${s === 'aktif' ? token.warna.utama : token.warna.garisIsian}`,
-                    }}
-                  >
+                  <Penanda ukuran="penandaLangkah" isi={s === 'selesai' ? 'penuh' : s === 'aktif' ? 'garisUtama' : 'garis'} aria-hidden="true">
                     {s === 'selesai' ? '✓' : n + 1}
-                  </span>
+                  </Penanda>
                   {l.judul}
                 </Tombol>
               );
             })}
-          </nav>
-          <form
+          </Kolom>
+          <Kolom
+            tag="form"
+            jarak="tanpa"
             noValidate
             onSubmit={(e) => {
               e.preventDefault();
               kirimForm();
             }}
-            style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column' }}
+            style={{ flex: '1 1 0', minWidth: 0 }}
           >
-            <section ref={isiRef} aria-labelledby="judul-langkah" style={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', padding: `${token.jarak.lg} ${token.jarak.xl}`, display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+            <Kolom tag="section" jarak="md" style={{ padding: `${token.jarak.lg} ${token.jarak.xl}`, flexGrow: 1, minHeight: 0, overflowY: 'auto' }} ref={isiRef} aria-labelledby="judul-langkah">
               <h3 id="judul-langkah" style={{ margin: 0, fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal }}>{aktif.judul}</h3>
               {catatan}
               {galat && <Peringatan>{galat}</Peringatan>}
               {aktif.isi}
-            </section>
-            <footer
-              style={{
-                display: 'flex', alignItems: 'center', gap: token.jarak.md, padding: token.jarak.md, borderTop: `${token.ukuran.garis} solid ${token.warna.garis}`,
-              }}
-            >
+            </Kolom>
+            <Sebaris tag="footer" jarak="md" padding="md" garis="atas">
               <Tombol type="button" varian="sekunder" disabled={adalahPertama(i)} onClick={() => onIndeks(langkahSebelum(i, jumlah))}>{TOMBOL.kembali}</Tombol>
               <span style={{ flexGrow: 1, textAlign: 'center', color: token.warna.teksRedup }}>{MODAL.langkah(pos.nomor, pos.dari)}</span>
               <Tombol type="submit" disabled={terakhir && kirimNonaktif}>{terakhir ? labelKirim : TOMBOL.lanjut}</Tombol>
-            </footer>
-          </form>
-        </div>
+            </Sebaris>
+          </Kolom>
+        </Sebaris>
       </Dialog>
       {konfirmasi}
     </>

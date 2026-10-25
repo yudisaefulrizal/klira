@@ -8,6 +8,7 @@ import { AreaTeks } from '../ui/area-teks';
 import { KotakCentang } from '../ui/kotak-centang';
 import { Peringatan } from '../ui/peringatan';
 import { Tombol } from '../ui/tombol';
+import { Kolom, Sebaris } from '../ui/susunan';
 
 export type IsianPeringatan = { alasan: string; terima: boolean };
 export const isianPeringatanAwal: IsianPeringatan = { alasan: '', terima: false };
@@ -29,7 +30,7 @@ type FormProps = {
  */
 export function FormPeringatan({ peringatan, nilai, onUbah, opsiTerima = true, idDasar = 'peringatan' }: FormProps) {
   return (
-    <section aria-label={MODAL.peringatanJudul} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.sm }}>
+    <Kolom tag="section" jarak="sm" aria-label={MODAL.peringatanJudul}>
       <Peringatan nada="kuning">
         <strong>{MODAL.peringatanJudul}</strong>
         <ul style={{ margin: `${token.jarak.xs} 0 0`, paddingLeft: token.jarak.lg }}>
@@ -47,7 +48,7 @@ export function FormPeringatan({ peringatan, nilai, onUbah, opsiTerima = true, i
           onChange={(e) => onUbah({ ...nilai, terima: e.target.checked })}
         />
       )}
-    </section>
+    </Kolom>
   );
 }
 
@@ -66,19 +67,18 @@ export function DialogPeringatan({ peringatan, onLanjut, onBatal, opsiTerima = t
   const siap = isianPeringatanSiap(nilai) && !memproses;
   return (
     <Dialog judul={MODAL.peringatanJudul} onEsc={onBatal} lapis="konfirmasi" lebar="modalSedang">
-      <form
+      <Kolom tag="form" jarak="md" padding="lg"
         onSubmit={(e) => {
           e.preventDefault();
           if (siap) onLanjut(dariIsian(nilai));
         }}
-        style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md, padding: token.jarak.lg }}
       >
         <FormPeringatan peringatan={peringatan} nilai={nilai} onUbah={setNilai} opsiTerima={opsiTerima} idDasar="dialog-peringatan" />
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: token.jarak.sm }}>
+        <Sebaris jarak="sm" sejajar="regang" sebaran="akhir">
           <Tombol type="button" varian="sekunder" onClick={onBatal}>{MODAL.batal}</Tombol>
           <Tombol type="submit" disabled={!siap}>{labelLanjut}</Tombol>
-        </div>
-      </form>
+        </Sebaris>
+      </Kolom>
     </Dialog>
   );
 }

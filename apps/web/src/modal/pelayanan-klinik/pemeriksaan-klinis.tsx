@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BAGIAN_KLINIS, GALAT, KLINIS, MODAL, TAHAP_LAYANAN } from '@klira/shared';
 import type { BagianKlinis, FavoritDto, JenisFavorit, KlinisKunjunganDto, KonteksKlinisDto, KunjunganDto, SalinanKunjunganDto, TemplatDto } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien';
+import { adaptorDrafServer } from '../../api-klien/draf-klinis';
 import { ambilKlinis, ambilKonteksKlinis, daftarFavorit, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { HanyaDenganIzin } from '../../komponen/izin-saja';
@@ -9,15 +10,14 @@ import { ModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap';
 import type { LangkahModal } from '../../komponen/modal-bertahap/modal-bertahap';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Kolom } from '../../komponen/ui/susunan';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
-import { adaPerubahan, kunciDraf } from '../../util/draf';
+import { adaPerubahan, hapusDrafKlinisLama } from '../../util/draf';
 import { useDrafOtomatis } from '../../util/draf-otomatis';
-import { usePengguna } from '../../util/konteks-pengguna';
 import { batasi } from '../../util/langkah';
 import { KonteksKlinis } from './konteks-klinis';
 import {
-  awalKeadaan, bagianDiModal, BIDANG_SENSITIF_PEMERIKSAAN, daftarLangkah, disahkanDari, isiBagian, keadaanDariServer, LABEL_BAGIAN, pakaiTemplat, perluAlasan, rencanaSimpan, salinKeKeadaan, statusRingkasan,
+  awalKeadaan, bagianDiModal, daftarLangkah, disahkanDari, isiBagian, keadaanDariServer, LABEL_BAGIAN, pakaiTemplat, perluAlasan, pulihkanKeadaan, rencanaSimpan, salinKeKeadaan, statusRingkasan,
   syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
 } from './keadaan-pemeriksaan';
 import type { BagianSalinan, KeadaanPemeriksaan, ModePemeriksaan } from './keadaan-pemeriksaan';
@@ -47,12 +47,12 @@ const labelBagian = LABEL_BAGIAN;
 /**
  * Modal Pemeriksaan klinis (3.3, MODAL-BERTAHAP): Anamnesis > Tanda vital > Pemeriksaan > Diagnosis > Tindakan > Resep > Order penunjang >
  * Rencana tindak lanjut > Ringkasan. Daftar langkah dari konfigurasi (keadaan-pemeriksaan). Perawat memakai mode skrining (tanda vital saja).
- * Simpan = pengesahan catatan per bagian yang berubah; draf otomatis dengan bidang sensitif dikecualikan dan kedaluwarsa, dihapus saat selesai.
+ * Simpan = pengesahan catatan per bagian yang berubah. Draf otomatis disimpan di SERVER (data kesehatan tidak boleh di penyimpanan lokal
+ * komputer bersama), kedaluwarsa di server, dan dihapus saat selesai.
  */
 export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesai }: Props) {
-  const { pengguna: saya } = usePengguna();
   const konfig = useMemo(() => daftarLangkah(mode), [mode]);
-  const kunci = kunciDraf(`${mode === 'skrining' ? ALUR_SKRINING : ALUR_PEMERIKSAAN}-${kunjunganId}`, saya?.id);
+  const adaptor = useMemo(() => adaptorDrafServer<KeadaanPemeriksaan>(kunjunganId, mode === 'skrining' ? ALUR_SKRINING : ALUR_PEMERIKSAAN), [kunjunganId, mode]);
 
   const [klinis, setKlinis] = useState<KlinisKunjunganDto | null>(null);
   const [konteks, setKonteks] = useState<KonteksKlinisDto | null>(null);
@@ -73,13 +73,14 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const server = useMemo(() => (klinis ? keadaanDariServer(klinis.bagian) : awalKeadaan()), [klinis]);
   const disahkan = useMemo(() => (klinis ? disahkanDari(klinis.bagian) : ({} as Record<BagianKlinis, boolean>)), [klinis]);
 
-  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanPemeriksaan>({
-    kunci, nilai: keadaan, awal: server, langkah: indeks, aktif: !!klinis && !hasil, sensitif: BIDANG_SENSITIF_PEMERIKSAAN,
+  const [formSiap, setFormSiap] = useState(false);
+  const { pulihan, siap: drafSiap, hapus, buang } = useDrafOtomatis<KeadaanPemeriksaan>({
+    adaptor, nilai: keadaan, awal: server, langkah: indeks, aktif: formSiap && !hasil,
   });
 
-  // Muat catatan tersimpan, ringkasan pasien, dan favorit; draf yang ada menimpa isian server hanya untuk bidang tidak sensitif.
-  const dimuat = useRef(false);
+  // Muat catatan tersimpan, ringkasan pasien, dan favorit; sisa draf lokal lama dibuang (draf kini di server).
   useEffect(() => {
+    hapusDrafKlinisLama();
     let batal = false;
     Promise.all([ambilKlinis(kunjunganId), ambilKonteksKlinis(kunjunganId), daftarFavorit().catch(() => [] as FavoritDto[])])
       .then(([k, c, f]) => {
@@ -87,15 +88,6 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         setKlinis(k);
         setKonteks(c);
         setFavorit(f);
-        const dasar = keadaanDariServer(k.bagian);
-        if (pulihan && !dimuat.current) {
-          const n = batasi(pulihan.langkah, konfig.length);
-          setKeadaan({ ...dasar, ...pulihan.nilai });
-          setIndeks(n);
-          setDikunjungi(Array.from({ length: n + 1 }, (_x, i) => i));
-          setDrafDipulihkan(true);
-        } else setKeadaan(dasar);
-        dimuat.current = true;
       })
       .catch((e) => !batal && setGalatMuat(e instanceof GalatApi ? e.message : KLINIS.konteks.gagal));
     return () => {
@@ -103,6 +95,20 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     };
     // hanya sekali saat dibuka
   }, [kunjunganId]);
+
+  // Setelah catatan dan draf server sama-sama terbaca: draf yang ada menimpa isian server, sekali saja.
+  useEffect(() => {
+    if (!klinis || !drafSiap || formSiap) return;
+    const dasar = keadaanDariServer(klinis.bagian);
+    if (pulihan) {
+      const n = batasi(pulihan.langkah, konfig.length);
+      setKeadaan(pulihkanKeadaan(dasar, pulihan.nilai));
+      setIndeks(n);
+      setDikunjungi(Array.from({ length: n + 1 }, (_x, i) => i));
+      setDrafDipulihkan(true);
+    } else setKeadaan(dasar);
+    setFormSiap(true);
+  }, [klinis, drafSiap, formSiap, pulihan, konfig.length]);
 
   const ubah = useCallback((p: Partial<KeadaanPemeriksaan>) => setKeadaan((k) => ({ ...k, ...p })), []);
   const pindah = (n: number) => {
@@ -125,7 +131,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const berikut = () => pindah(indeks + 1);
 
   const isiLangkah = (l: (typeof konfig)[number]) => {
-    if (!klinis) return galatMuat ? <Peringatan>{galatMuat}</Peringatan> : <span style={{ color: token.warna.teksRedup }}>{KLINIS.konteks.memuat}</span>;
+    if (!klinis || !formSiap) return galatMuat ? <Peringatan>{galatMuat}</Peringatan> : <span style={{ color: token.warna.teksRedup }}>{KLINIS.konteks.memuat}</span>;
     if (!l.aktif) return <LangkahMenyusul langkah={l} onLewati={berikut} />;
     switch (l.id) {
       case 'anamnesis': return <LangkahAnamnesis {...dasar(l.bagian)} />;
@@ -223,14 +229,14 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         konteks={<KonteksKlinis konteks={konteks} nama={pasien.nama} nomorRm={pasien.nomor_rm} />}
         catatan={
           <Kolom jarak="sm">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm }}>
+            <Sebaris bungkus>
               {tombolPanel('riwayat', KLINIS.tombol.riwayat)}
               {mode === 'periksa' && tombolPanel('salin', KLINIS.tombol.salin)}
               {mode === 'periksa' && tombolPanel('favorit', KLINIS.tombol.favorit)}
               {tombolPanel('keluarga', KLINIS.tombol.keluarga)}
-            </div>
+            </Sebaris>
             {drafDipulihkan && (
-              <Peringatan nada="biru" style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
+              <Peringatan nada="biru" baris>
                 <span style={{ flexGrow: 1 }}>{MODAL.drafDipulihkan}</span>
                 <Tombol
                   type="button"
@@ -251,7 +257,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         }
         galat={galat}
         onTutup={hasil ? onSelesai : tutup}
-        lindungiTutup={!!klinis && adaPerubahan(server, keadaan)}
+        lindungiTutup={formSiap && adaPerubahan(server, keadaan)}
         onLanjut={(dari) => {
           const b = konfig[dari]?.bagian;
           const g = b ? rencana.find((r) => r.bagian === b)?.galat : null;
@@ -267,7 +273,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         onKirim={() => {
           if (!memproses) void kirim();
         }}
-        kirimNonaktif={memproses || !klinis || !adaYangDikirim}
+        kirimNonaktif={memproses || !formSiap || !adaYangDikirim}
         hasil={
           hasil
             ? {
@@ -275,10 +281,10 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
                 isi: (
                   <Kolom>
                     <p style={{ margin: 0 }}>{mode === 'skrining' ? KLINIS.hasil.pesanSkrining : KLINIS.hasil.pesan(hasil.jumlah)}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.sm }}>
+                    <Sebaris>
                       <span style={{ color: token.warna.teksRedup }}>{KLINIS.hasil.tahap}</span>
                       <Lencana warna={TAHAP_LAYANAN.warna(hasil.kunjungan.tahap_layanan)}>{TAHAP_LAYANAN.label(hasil.kunjungan.tahap_layanan)}</Lencana>
-                    </div>
+                    </Sebaris>
                   </Kolom>
                 ),
                 aksi: <Tombol type="button" onClick={onSelesai}>{KLINIS.hasil.tutup}</Tombol>,

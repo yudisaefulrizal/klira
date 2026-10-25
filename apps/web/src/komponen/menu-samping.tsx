@@ -2,32 +2,25 @@ import { MASUK, NAVIGASI, halamanMenuDiizinkan } from '@klira/shared';
 import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
 import { Tombol } from './ui/tombol';
+import { Kolom, Sebaris } from './ui/susunan';
+import { Penanda } from './ui/penanda';
 
 /** Menu samping tetap di kiri: hanya halaman yang diizinkan, penanda aktif, dan kotak pengguna dengan tombol keluar (5.1a). */
 export function MenuSamping({ aktif, pindah }: { aktif: string; pindah: (ke: string) => void }) {
   const { pengguna, keluar } = usePengguna();
   if (!pengguna) return null;
   return (
-    <nav
+    <Kolom
+      tag="nav"
       aria-label={NAVIGASI.menuUtama}
-      style={{
-        flex: `0 0 ${token.ukuran.menuSamping}`, boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: token.jarak.xs,
-        padding: `${token.jarak.lg} ${token.jarak.md}`, background: token.warna.permukaan,
-        borderRight: `${token.ukuran.garis} solid ${token.warna.garis}`,
-      }}
+      jarak="xs"
+      garis="kanan"
+      style={{ flex: `0 0 ${token.ukuran.menuSamping}`, boxSizing: 'border-box', padding: `${token.jarak.lg} ${token.jarak.md}`, background: token.warna.permukaan }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.sm, padding: `${token.jarak.xs} ${token.jarak.md} ${token.jarak.lg}` }}>
-        <div
-          aria-hidden="true"
-          style={{
-            width: token.ukuran.logo, height: token.ukuran.logo, borderRadius: token.radius.sedang, background: token.warna.utama,
-            color: token.warna.permukaan, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: token.huruf.berat.tebal,
-          }}
-        >
-          k
-        </div>
+      <Sebaris jarak="sm" style={{ padding: `${token.jarak.xs} ${token.jarak.md} ${token.jarak.lg}` }}>
+        <Penanda ukuran="logo" bentuk="sudut" aria-hidden="true">k</Penanda>
         <div style={{ fontWeight: token.huruf.berat.tebal, fontSize: token.huruf.ukuran.judul }}>{MASUK.judul}</div>
-      </div>
+      </Sebaris>
       {halamanMenuDiizinkan(pengguna.fitur).map((h) => {
         const on = h.path === aktif;
         return (
@@ -52,13 +45,13 @@ export function MenuSamping({ aktif, pindah }: { aktif: string; pindah: (ke: str
         );
       })}
       <div style={{ flexGrow: 1, minHeight: token.jarak.xl }} />
-      <div style={{ padding: token.jarak.md, borderTop: `${token.ukuran.garis} solid ${token.warna.garis}`, display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+      <Kolom jarak="xs" padding="md" garis="atas">
         <div style={{ fontWeight: token.huruf.berat.tebal, fontSize: token.huruf.ukuran.dasar }}>{pengguna.nama}</div>
         <div style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{pengguna.jenis_akun.join(', ')}</div>
         <Tombol varian="sekunder" onClick={() => void keluar()} style={{ marginTop: token.jarak.sm }}>
           {MASUK.keluar}
         </Tombol>
-      </div>
-    </nav>
+      </Kolom>
+    </Kolom>
   );
 }

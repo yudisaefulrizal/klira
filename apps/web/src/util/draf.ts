@@ -64,5 +64,46 @@ export function hapusDraf(kunci: string, simpanan?: PenyimpananDraf | null): voi
   }
 }
 
+/**
+ * Antarmuka penyimpan draf otomatis. Lokal untuk alur non-kesehatan (tanpa bidang sensitif); server untuk alur klinis,
+ * karena data kesehatan tidak boleh berada di penyimpanan peramban komputer klinik bersama.
+ */
+export interface AdaptorDraf<T> {
+  /** Draf tersimpan (sinkron untuk lokal, asinkron untuk server); null bila tidak ada. */
+  baca(): Draf<T> | null | Promise<Draf<T> | null>;
+  simpan(nilai: T, langkah: number): void | Promise<unknown>;
+  hapus(): void | Promise<unknown>;
+  /** Bagian nilai yang boleh disimpan (lokal membuang bidang sensitif; server menyimpan semuanya). */
+  saring(nilai: T): T;
+}
+
+/** Penyimpan di penyimpanan lokal peramban: hanya untuk alur tanpa data kesehatan. */
+export function adaptorLokal<T>(kunci: string, opsi: { simpanan?: PenyimpananDraf | null; sensitif?: readonly string[]; kedaluwarsaMs?: number } = {}): AdaptorDraf<T> {
+  const simpanan = 'simpanan' in opsi ? opsi.simpanan : typeof localStorage === 'undefined' ? null : localStorage;
+  return {
+    baca: () => bacaDraf<T>(kunci, simpanan, { kedaluwarsaMs: opsi.kedaluwarsaMs }),
+    simpan: (nilai, langkah) => void simpanDraf(kunci, saringSensitif(nilai, opsi.sensitif), langkah, simpanan),
+    hapus: () => hapusDraf(kunci, simpanan),
+    saring: (nilai) => saringSensitif(nilai, opsi.sensitif),
+  };
+}
+
+/** Awalan kunci draf lokal lama alur klinis (sebelum draf pindah ke server). */
+export const AWALAN_DRAF_KLINIS_LAMA = [`${AWALAN_DRAF}pemeriksaan-klinis`, `${AWALAN_DRAF}skrining`] as const;
+/** Buang sisa draf klinis dari penyimpanan lokal (hanya menghapus, tidak pernah menulis). */
+export function hapusDrafKlinisLama(simpanan: PenyimpananDraf | null = typeof localStorage === 'undefined' ? null : localStorage): void {
+  try {
+    if (!simpanan || simpanan.key === undefined || simpanan.length === undefined) return;
+    const kunci: string[] = [];
+    for (let i = 0; i < simpanan.length; i++) {
+      const k = simpanan.key(i);
+      if (k && AWALAN_DRAF_KLINIS_LAMA.some((a) => k.startsWith(a))) kunci.push(k);
+    }
+    kunci.forEach((k) => simpanan.removeItem(k));
+  } catch {
+    /* diabaikan */
+  }
+}
+
 /** Isian berubah dari keadaan awal? Dasar perlindungan tutup tak sengaja. */
 export const adaPerubahan = (awal: unknown, kini: unknown): boolean => JSON.stringify(awal) !== JSON.stringify(kini);

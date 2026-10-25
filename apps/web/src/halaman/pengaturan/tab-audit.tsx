@@ -16,6 +16,7 @@ import { token } from '../../gaya/token';
 import type { NilaiPenyaring } from '../../util/penyaring-tab';
 import { BAWAAN_AUDIT, bacaPenyaring, formatWaktu, penggunaIdSah, queryPenyaring, rentangTerbalik, saringanAudit, saringanEkspor, ubahPenyaring } from '../../util/penyaring-tab';
 import { unduhTeks } from '../../util/unduh';
+import { Kolom } from '../../komponen/ui/susunan';
 
 const UKURAN = 20;
 const KOLOM = [
@@ -72,7 +73,7 @@ export function TabAudit({ search, ubahAlamat }: { search: string; ubahAlamat: (
   const terbalik = rentangTerbalik(draf.dari, draf.sampai);
 
   return (
-    <section id="panel-audit" role="tabpanel" aria-labelledby="tab-audit" style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+    <Kolom tag="section" jarak="md" id="panel-audit" role="tabpanel" aria-labelledby="tab-audit">
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: `${token.jarak.md} ${token.jarak.md} 0`, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{AUDIT.judulTab}</div>
         <BilahPenyaring
@@ -126,6 +127,6 @@ export function TabAudit({ search, ubahAlamat }: { search: string; ubahAlamat: (
           }]}
         />
       )}
-    </section>
+    </Kolom>
   );
 }

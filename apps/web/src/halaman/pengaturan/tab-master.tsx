@@ -17,6 +17,7 @@ import { Tombol } from '../../komponen/ui/tombol';
 import { token } from '../../gaya/token';
 import { ModalMasterProfil } from '../../modal/akun-pengaturan/master-profil';
 import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../../util/penyaring-tab';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 
 const UKURAN = 20;
 const SUBBAGIAN = JENIS_MASTER.map((j) => ({ id: j, label: MASTER.jenis[j] }));
@@ -92,10 +93,10 @@ export function TabMaster({ search, ubahAlamat }: { search: string; ubahAlamat: 
   const namaBaris = (b: BarisMaster) => String(b.nama ?? b.pengguna_nama ?? b.kode ?? b.id);
 
   return (
-    <section id="panel-master" role="tabpanel" aria-labelledby="tab-master" style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+    <Kolom tag="section" jarak="md" id="panel-master" role="tabpanel" aria-labelledby="tab-master">
       <Tab daftar={SUBBAGIAN} aktif={jenis} label={MASTER.pilihJenis} onPilih={(j) => terapkan({ jenis: j }, true)} />
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: token.jarak.md, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: token.jarak.md }}>
+        <Sebaris jarak="md" padding="md" bungkus sejajar="akhir">
           <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{MASTER.jenis[jenis]}</div>
           <Isian id="cari-master" label={MASTER.cari} type="search" value={cari} onChange={(e) => setCari(e.target.value)} />
           {def.punyaStatus && (
@@ -117,7 +118,7 @@ export function TabMaster({ search, ubahAlamat }: { search: string; ubahAlamat: 
               <Tombol onClick={() => setModal({})}>{MASTER.tambah}</Tombol>
             </HanyaDenganIzin>
           )}
-        </div>
+        </Sebaris>
         {galat && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galat}</Peringatan>}
         <Tabel kolom={kolom} label={MASTER.jenis[jenis]}>
           {hasil?.data.map((b) => (
@@ -133,12 +134,12 @@ export function TabMaster({ search, ubahAlamat }: { search: string; ubahAlamat: 
                       : <Lencana warna={STATUS_AKUN.warna(b.aktif ? 'aktif' : 'nonaktif')}>{b.aktif ? MASTER.statusAktif : MASTER.statusNonaktif}</Lencana>}
                   </SelTabel>
                   <SelTabel style={{ textAlign: 'right' }}>
-                    <div style={{ display: 'inline-flex', gap: token.jarak.sm }}>
+                    <Sebaris sebaris jarak="sm" sejajar="regang">
                       <HanyaDenganIzin fitur="master" aksi="perbaikan">
                         <Tombol varian="teks" onClick={() => setModal({ baris: b })}>{MASTER.ubah}</Tombol>
                         <Tombol varian="teks" onClick={() => setStatus(b)}>{b.aktif ? MASTER.nonaktifkan : MASTER.aktifkan}</Tombol>
                       </HanyaDenganIzin>
-                    </div>
+                    </Sebaris>
                   </SelTabel>
                 </>
               )}
@@ -171,6 +172,6 @@ export function TabMaster({ search, ubahAlamat }: { search: string; ubahAlamat: 
           onTidak={() => setStatus(null)}
         />
       )}
-    </section>
+    </Kolom>
   );
 }

@@ -7,6 +7,7 @@ import { Peringatan } from '../komponen/ui/peringatan';
 import { Tombol } from '../komponen/ui/tombol';
 import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
+import { Baris, Kolom, Sebaris } from '../komponen/ui/susunan';
 
 export function HalamanMasuk() {
   const { masuk } = usePengguna();
@@ -28,24 +29,14 @@ export function HalamanMasuk() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `${token.ukuran.kolomKiri} ${token.ukuran.kolomKanan}`, minHeight: token.ukuran.tinggiLayar }}>
-      <div
-        style={{
-          background: token.warna.utama,
-          color: token.warna.permukaan,
-          padding: token.jarak.xl,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          gap: token.jarak.md,
-        }}
-      >
+    <Baris style={{ gap: 0, minHeight: token.ukuran.tinggiLayar }}>
+      <Kolom jarak="md" padding="xl" style={{ background: token.warna.utama, color: token.warna.permukaan, justifyContent: 'center' }}>
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.tajuk, fontWeight: token.huruf.berat.tebal }}>{MASUK.judul}</h1>
         <p style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{MASUK.keterangan}</p>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: token.jarak.xl }}>
+      </Kolom>
+      <Sebaris jarak="tanpa" padding="xl" sebaran="tengah">
         <Kartu style={{ width: token.ukuran.kartu }}>
-          <form onSubmit={kirim} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+          <Kolom tag="form" jarak="md" onSubmit={kirim}>
             <h2 style={{ margin: 0, fontSize: token.huruf.ukuran.judul }}>{MASUK.judulForm}</h2>
             {galat && <Peringatan>{galat}</Peringatan>}
             <Isian id="username" label={MASUK.username} autoFocus autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
@@ -54,9 +45,9 @@ export function HalamanMasuk() {
               {proses ? MASUK.tombolProses : MASUK.tombol}
             </Tombol>
             <Peringatan nada="biru">{MASUK.catatanGanti}</Peringatan>
-          </form>
+          </Kolom>
         </Kartu>
-      </div>
-    </div>
+      </Sebaris>
+    </Baris>
   );
 }

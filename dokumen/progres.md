@@ -25,7 +25,7 @@
 | Pendaftaran kunjungan | Modal | Daftar pasien | Menunggu bagian lain | ✔ |
 | Pengesahan catatan | Fitur | - | Bisa dikerjakan | ✔ |
 | Antrean | Fitur | Daftar pasien | Menunggu bagian lain | ✔ |
-| Pemeriksaan klinis | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
+| Pemeriksaan klinis | Modal | Daftar pasien | Menunggu bagian lain | ✔ |
 | Riwayat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
 | Salin dari kunjungan sebelumnya | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
 | Favorit dan templat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |

@@ -38,8 +38,8 @@ function Perute() {
   }, [keputusan, ganti]);
 
   if (!keputusan || keputusan.tipe === 'alihkan') return null;
-  const tanpaMenu = HALAMAN_TANPA_MENU[path];
-  if (tanpaMenu) return tanpaMenu();
+  const HalamanTanpaMenu = HALAMAN_TANPA_MENU[path];
+  if (HalamanTanpaMenu) return <HalamanTanpaMenu />;
   const Halaman = HALAMAN_MENU_ISI[path];
   return Halaman ? <TataLetak><Halaman /></TataLetak> : null;
 }

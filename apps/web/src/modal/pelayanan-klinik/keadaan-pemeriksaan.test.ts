@@ -1,9 +1,9 @@
 import type { BagianKlinis, KlinisKunjunganDto, SalinanKunjunganDto } from '@klira/shared';
 import { BAGIAN_KLINIS } from '@klira/shared';
 import {
-  adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, BIDANG_SENSITIF_PEMERIKSAAN, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
+  adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
   hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan,
-  rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
+  pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
 } from './keadaan-pemeriksaan';
 
 const bagianKosongServer = (): KlinisKunjunganDto['bagian'] =>
@@ -177,11 +177,31 @@ describe('templat', () => {
   });
 });
 
-describe('draf', () => {
-  it('bidang sensitif (riwayat, hasil pemeriksaan, alasan) dikecualikan dari draf', () => {
-    expect([...BIDANG_SENSITIF_PEMERIKSAAN].sort()).toEqual(['alasan', 'pemeriksaan', 'riwayat']);
-    const k = awalKeadaan();
-    for (const b of BIDANG_SENSITIF_PEMERIKSAAN) expect(k).toHaveProperty(b);
+describe('pemulihan draf server', () => {
+  it('semua bidang draf (termasuk riwayat dan hasil pemeriksaan) menimpa dasar', () => {
+    const dasar = awalKeadaan();
+    dasar.anamnesis.keluhan_utama = 'dari server';
+    const draf = awalKeadaan();
+    draf.anamnesis.keluhan_utama = 'dari draf';
+    draf.riwayat.alergi = 'Debu';
+    draf.pemeriksaan.catatan = 'Paru bersih';
+    draf.tanda_vital.suhu = '37,2';
+    draf.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
+    draf.alasan = 'Koreksi';
+    const hasil = pulihkanKeadaan(dasar, JSON.parse(JSON.stringify(draf)));
+    expect(hasil).toEqual(draf);
+  });
+  it('draf rusak atau bentuk tidak sesuai tidak merusak dasar', () => {
+    const dasar = awalKeadaan();
+    expect(pulihkanKeadaan(dasar, null)).toBe(dasar);
+    expect(pulihkanKeadaan(dasar, 'x')).toBe(dasar);
+    expect(pulihkanKeadaan(dasar, [])).toBe(dasar);
+    const h = pulihkanKeadaan(dasar, { anamnesis: 'bukan objek', diagnosis: [1, null, { kode: 'I10', nama: 'x', peran: 'utama', snomed: '' }], tanda_vital: { suhu: 5, nadi: '80' }, alasan: 7 });
+    expect(h.anamnesis).toEqual(dasar.anamnesis);
+    expect(h.diagnosis).toHaveLength(1);
+    expect(h.tanda_vital.suhu).toBe('');
+    expect(h.tanda_vital.nadi).toBe('80');
+    expect(h.alasan).toBe('');
   });
 });
 

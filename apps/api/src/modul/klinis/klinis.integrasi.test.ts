@@ -93,7 +93,7 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
     await prisma.peringatanIzin.deleteMany({ where });
-    for (const m of [prisma.anamnesis, prisma.observasi, prisma.diagnosis, prisma.tindakan, prisma.tindakLanjut, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.favoritDokter, prisma.templatCatatan, prisma.keluargaPasien] as any[]) {
+    for (const m of [prisma.anamnesis, prisma.observasi, prisma.diagnosis, prisma.tindakan, prisma.tindakLanjut, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.favoritDokter, prisma.templatCatatan, prisma.keluargaPasien, prisma.draf] as any[]) {
       await m.deleteMany({ where });
     }
     await prisma.kodeTerminologi.deleteMany({ where: { kode: { startsWith: awalan } } });
@@ -199,10 +199,54 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     });
   });
 
-  it('selesaikan pemeriksaan: maju ke kasir, lalu catatan baru ditolak', async () => {
+  it('draf server: satu draf per pengguna, izin, lintas fasyankes 404, tanpa audit isi, dihapus saat selesai', async () => {
+    const adr = `/kunjungan/${kunjA1}/draf/pemeriksaan-klinis`;
+    expect((await panggil('GET', adr, null)).status).toBe(401);
+    expect((await panggil('GET', adr, 'perekam')).status).toBe(403);
+    expect((await panggil('PUT', adr, 'biasa', { langkah: 0, isi: {} })).status).toBe(403);
+    expect((await panggil('GET', adr, 'lain')).status).toBe(404);
+    expect((await panggil('PUT', `/kunjungan/${kunjLain}/draf/pemeriksaan-klinis`, 'dokter', { langkah: 0, isi: {} })).status).toBe(404);
+    expect((await panggil('GET', `/kunjungan/${kunjA1}/draf/bukan-alur`, 'dokter')).status).toBe(404);
+    expect((await panggil('GET', adr, 'dokter')).badan.data).toBeNull();
+    expect((await panggil('PUT', adr, 'dokter', { langkah: 99, isi: {} })).status).toBe(400);
+    expect((await panggil('PUT', adr, 'dokter', { langkah: 1, isi: 'teks' })).status).toBe(400);
+    expect((await panggil('PUT', adr, 'dokter', { langkah: 1, isi: { besar: 'x'.repeat(90_000) } })).status).toBe(400);
+
+    const rahasia = 'KELUHAN-RAHASIA-UJI';
+    const a = await panggil('PUT', adr, 'dokter', { langkah: 2, isi: { anamnesis: { keluhan_utama: rahasia } } });
+    expect(a.status).toBe(200);
+    const b = await panggil('PUT', adr, 'dokter', { langkah: 3, isi: { anamnesis: { keluhan_utama: `${rahasia} 2` } } });
+    expect(b.badan.data).toMatchObject({ alur: 'pemeriksaan-klinis', kunjungan_id: kunjA1, langkah: 3 });
+    expect(await prisma.draf.count({ where: { pengguna_id: id.dokter, kunjungan_id: kunjA1 } })).toBe(1);
+    expect(await prisma.draf.findFirstOrThrow({ where: { pengguna_id: id.dokter } })).toMatchObject({ fasyankes_id: fas, pasien_id: pasienA, alur: 'pemeriksaan-klinis' });
+    // draf milik pengguna lain tidak terlihat
+    expect((await panggil('GET', adr, 'dokter2')).badan.data).toBeNull();
+    const milikDokter = await panggil('GET', adr, 'dokter');
+    expect(milikDokter.badan.data).toMatchObject({ langkah: 3, isi: { anamnesis: { keluhan_utama: `${rahasia} 2` } } });
+    // alur skrining terpisah
+    expect((await panggil('GET', `/kunjungan/${kunjA1}/draf/skrining`, 'dokter')).badan.data).toBeNull();
+    // isi draf tidak masuk audit
+    const audit = await prisma.logAudit.findMany({ where: { fasyankes_id: fas } });
+    expect(JSON.stringify(audit)).not.toContain(rahasia);
+    // kedaluwarsa dibuang saat dibaca
+    await prisma.draf.updateMany({ where: { pengguna_id: id.dokter }, data: { diperbarui_pada: new Date(Date.now() - 13 * 3_600_000) } });
+    expect((await panggil('GET', adr, 'dokter')).badan.data).toBeNull();
+    expect(await prisma.draf.count({ where: { pengguna_id: id.dokter } })).toBe(0);
+    // hapus
+    await panggil('PUT', adr, 'dokter', { langkah: 1, isi: { a: 1 } });
+    expect((await panggil('DELETE', adr, 'dokter')).status).toBe(200);
+    expect((await panggil('GET', adr, 'dokter')).badan.data).toBeNull();
+    // dihapus saat pemeriksaan selesai (semua pengguna untuk kunjungan itu)
+    await panggil('PUT', adr, 'dokter', { langkah: 1, isi: { a: 1 } });
+    await panggil('PUT', adr, 'dokter2', { langkah: 1, isi: { a: 2 } });
+  });
+
+  it('selesaikan pemeriksaan: maju ke kasir, draf terhapus, lalu catatan baru ditolak', async () => {
     const r = await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', { tahap: 'kasir' });
     expect(r.status).toBe(200);
     expect(r.badan.data.tahap_layanan).toBe('kasir');
+    expect(await prisma.draf.count({ where: { kunjungan_id: kunjA1 } })).toBe(0);
+    expect((await panggil('PUT', `/kunjungan/${kunjA1}/draf/pemeriksaan-klinis`, 'dokter', { langkah: 1, isi: {} })).status).toBe(409);
     expect((await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', {})).status).toBe(409);
     expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { catatan: 'Terlambat' } })).status).toBe(409);
   });

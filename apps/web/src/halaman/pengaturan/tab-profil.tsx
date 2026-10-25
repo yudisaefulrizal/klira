@@ -15,6 +15,7 @@ import { token } from '../../gaya/token';
 import { formatWaktu } from '../../util/penyaring-tab';
 import { bentukProfil, formDariProfil, galatProfil, labelJenisRiwayat, profilBerubah } from './keadaan-profil';
 import type { FormProfil } from './keadaan-profil';
+import { Baris, Kolom } from '../../komponen/ui/susunan';
 
 const UKURAN = 10;
 const KOLOM = [
@@ -100,23 +101,22 @@ export function TabProfil() {
     );
 
   return (
-    <section id="panel-profil" role="tabpanel" aria-labelledby="tab-profil" style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
-      <Kartu style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+    <Kolom tag="section" jarak="md" id="panel-profil" role="tabpanel" aria-labelledby="tab-profil">
+      <Kartu susun="md">
         <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{PROFIL_KLINIK.dataJudul}</div>
         <span style={{ color: token.warna.teksRedup }}>{PROFIL_KLINIK.dataPetunjuk}</span>
         {!bolehUbah && <Peringatan nada="biru">{PROFIL_KLINIK.bacaSaja}</Peringatan>}
         {galat && <Peringatan>{galat}</Peringatan>}
         {info && <Peringatan nada="biru">{info}</Peringatan>}
         {form && (
-          <form
+          <Kolom tag="form" jarak="md"
             noValidate
             onSubmit={(e) => {
               e.preventDefault();
               void simpan();
             }}
-            style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}
           >
-            <div style={{ display: 'grid', gridTemplateColumns: `${token.ukuran.kolomKiri} ${token.ukuran.kolomKanan}`, gap: token.jarak.md }}>
+            <Baris>
               {isian('nama', PROFIL_KLINIK.nama, { maks: 200 })}
               <Pilihan
                 id="profil-jenis" label={PROFIL_KLINIK.jenis} value={form.jenis} opsi={OPSI_JENIS} disabled={!bolehUbah}
@@ -128,20 +128,20 @@ export function TabProfil() {
               {isian('puskesmas_wilayah', PROFIL_KLINIK.puskesmasWilayah, { maks: 200 })}
               {isian('status_akreditasi', PROFIL_KLINIK.statusAkreditasi, { maks: 100 })}
               {isian('tanggal_akreditasi', PROFIL_KLINIK.tanggalAkreditasi, { tipe: 'date' })}
-            </div>
+            </Baris>
             <HanyaDenganIzin fitur="profil-klinik" aksi="perbaikan">
               <div>
                 <Tombol type="submit" disabled={memproses || !berubah}>{memproses ? PROFIL_KLINIK.menyimpan : PROFIL_KLINIK.simpan}</Tombol>
               </div>
             </HanyaDenganIzin>
-          </form>
+          </Kolom>
         )}
       </Kartu>
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: token.jarak.md, display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+        <Kolom jarak="xs" padding="md">
           <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{PROFIL_KLINIK.riwayatJudul}</div>
           <span style={{ color: token.warna.teksRedup }}>{PROFIL_KLINIK.riwayatPetunjuk}</span>
-        </div>
+        </Kolom>
         {galatRiwayat && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galatRiwayat}</Peringatan>}
         <Tabel kolom={KOLOM} label={PROFIL_KLINIK.riwayatJudul}>
           {riwayat?.data.map((r) => (
@@ -156,6 +156,6 @@ export function TabProfil() {
         {riwayat && riwayat.data.length === 0 && <div style={{ padding: token.jarak.md, color: token.warna.teksRedup }}>{PROFIL_KLINIK.riwayatKosong}</div>}
         {riwayat && <Paginasi halaman={halaman} total={riwayat.total} ukuran={riwayat.ukuran} onPindah={setHalaman} />}
       </Kartu>
-    </section>
+    </Kolom>
   );
 }

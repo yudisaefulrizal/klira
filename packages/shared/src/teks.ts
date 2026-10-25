@@ -121,7 +121,7 @@ export const MODAL = {
   drafDipulihkan: 'Draf yang belum selesai dipulihkan.',
   buangDraf: 'Buang draf',
   tutupDrafJudul: 'Tutup tanpa menyelesaikan?',
-  tutupDrafPesan: 'Isian Anda tersimpan sebagai draf di peramban ini dan dapat dilanjutkan nanti.',
+  tutupDrafPesan: 'Isian Anda tersimpan sebagai draf dan dapat dilanjutkan nanti.',
   tutupDrafYa: 'Tutup, simpan draf',
   tutupDrafTidak: 'Lanjutkan mengisi',
   alasanOpsional: 'Alasan (opsional)',

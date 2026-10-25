@@ -6,6 +6,7 @@ import { alasanSiap } from '../../util/alasan';
 import { AreaTeks } from '../ui/area-teks';
 import { Dialog } from '../ui/dialog';
 import { Tombol } from '../ui/tombol';
+import { Kolom, Sebaris } from '../ui/susunan';
 
 type Props = {
   judul: string;
@@ -25,21 +26,20 @@ export function Konfirmasi({ judul, pesan, labelYa = TOMBOL.konfirmasi, labelTid
   const siap = alasanSiap(teks, !!alasan && !!alasan.wajib) && !memproses;
   return (
     <Dialog judul={judul} onEsc={onTidak} lapis="konfirmasi" lebar="modalKecil">
-      <form
+      <Kolom tag="form" jarak="md" padding="lg"
         onSubmit={(e) => {
           e.preventDefault();
           if (siap) onYa(teks.trim());
         }}
-        style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md, padding: token.jarak.lg }}
       >
         <h2 style={{ margin: 0, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{judul}</h2>
         <div style={{ color: token.warna.teksRedup }}>{pesan}</div>
         {alasan && <AreaTeks id="alasan-konfirmasi" label={alasan.label ?? MODAL.alasanOpsional} value={teks} onChange={(e) => setTeks(e.target.value)} />}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: token.jarak.sm }}>
+        <Sebaris jarak="sm" sejajar="regang" sebaran="akhir">
           <Tombol type="button" varian="sekunder" onClick={onTidak}>{labelTidak}</Tombol>
           <Tombol type="submit" disabled={!siap}>{labelYa}</Tombol>
-        </div>
-      </form>
+        </Sebaris>
+      </Kolom>
     </Dialog>
   );
 }

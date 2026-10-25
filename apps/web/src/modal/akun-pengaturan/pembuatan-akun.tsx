@@ -1,3 +1,4 @@
+import { Tumbuh } from '../../komponen/ui/susunan';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AKUN_BARU, MODAL } from '@klira/shared';
 import type { PenggunaBaruDto, PeringatanTerdeteksi } from '@klira/shared';
@@ -10,12 +11,12 @@ import type { LangkahModal } from '../../komponen/modal-bertahap/modal-bertahap'
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { token } from '../../gaya/token';
-import { adaPerubahan, kunciDraf } from '../../util/draf';
+import { adaPerubahan, adaptorLokal, kunciDraf } from '../../util/draf';
 import { useDrafOtomatis } from '../../util/draf-otomatis';
 import { batasi, langkahBermasalah } from '../../util/langkah';
 import { usePengguna } from '../../util/konteks-pengguna';
 import { kirimAkun } from './alur-buat-akun';
-import { awalAkun, galatLangkah, hariIniLokal } from './keadaan-akun';
+import { awalAkun, BIDANG_SENSITIF_AKUN, galatLangkah, hariIniLokal } from './keadaan-akun';
 import type { IzinKatalog, JenisKatalog, KeadaanAkun } from './keadaan-akun';
 import { IsiHasilAkun, LangkahData, LangkahIzin, LangkahJenis, LangkahProfil, LangkahRingkasan } from './langkah-akun';
 
@@ -51,7 +52,8 @@ export function PembuatanAkun({ onTutup, onSelesai }: Props) {
   const [galatKatalog, setGalatKatalog] = useState<string | null>(null);
   const [drafDipulihkan, setDrafDipulihkan] = useState(false);
 
-  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanAkun>({ kunci, nilai: keadaan, awal, langkah: indeks, aktif: !hasil, sensitif: ['nik', 'nomor_sip', 'ihs_practitioner_id'] });
+  const adaptor = useMemo(() => adaptorLokal<KeadaanAkun>(kunci, { sensitif: BIDANG_SENSITIF_AKUN }), [kunci]);
+  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanAkun>({ adaptor, nilai: keadaan, awal, langkah: indeks, aktif: !hasil });
 
   useEffect(() => {
     if (!pulihan) return;
@@ -149,8 +151,8 @@ export function PembuatanAkun({ onTutup, onSelesai }: Props) {
       }
       catatan={
         drafDipulihkan ? (
-          <Peringatan nada="biru" style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
-            <span style={{ flexGrow: 1 }}>{MODAL.drafDipulihkan}</span>
+          <Peringatan nada="biru" baris>
+            <Tumbuh>{MODAL.drafDipulihkan}</Tumbuh>
             <Tombol
               type="button"
               varian="teks"

@@ -10,10 +10,11 @@ import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Pilihan } from '../../komponen/ui/pilihan';
-import { Baris, DaftarRingkasan, Kolom } from '../../komponen/ui/susunan';
+import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { hapusDiagnosis, hapusTindakan, jadikanUtama, ringkasanIsi, tambahDiagnosis, tambahTindakan } from './keadaan-pemeriksaan';
 import type { KeadaanPemeriksaan, KonfigLangkah, RencanaSimpan } from './keadaan-pemeriksaan';
+import { Bingkai } from '../../komponen/ui/kartu';
 
 type Ubah = (perubahan: Partial<KeadaanPemeriksaan>) => void;
 export type DasarLangkah = {
@@ -58,14 +59,14 @@ export function LangkahTandaVital({ k, ubah, galat, server }: DasarLangkah) {
       <InfoPengesahan bagian={server} />
       <p style={teksRedup}>{KLINIS.tandaVital.petunjuk}</p>
       <GalatBagian galat={galat} />
-      <div style={{ display: 'grid', gridTemplateColumns: `${token.ukuran.kolomKiri} ${token.ukuran.kolomKanan}`, gap: token.jarak.md }}>
+      <Baris>
         {TANDA_VITAL.map((t) => (
           <Isian
             key={t.kunci} id={`tv-${t.kunci}`} label={`${KLINIS.tandaVital[t.kunci]} (${KLINIS.tandaVital.satuan[t.satuan] ?? t.satuan})`} inputMode="decimal" autoComplete="off"
             value={k.tanda_vital[t.kunci]} onChange={(e) => ubah({ tanda_vital: { ...k.tanda_vital, [t.kunci]: e.target.value } })}
           />
         ))}
-      </div>
+      </Baris>
     </Kolom>
   );
 }
@@ -91,29 +92,29 @@ export function LangkahDiagnosis({ k, ubah, galat, server, favorit }: DasarLangk
       <GalatBagian galat={galat} />
       <PencarianKode id="diagnosis-cari" label={d.cari} petunjuk={d.petunjukCari} cari={cariIcd10} onPilih={tambah} manual teksManual={{ kode: d.kode, nama: d.nama }} />
       {favorit.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'center' }}>
+        <Sebaris bungkus>
           <span style={{ color: token.warna.teksRedup }}>{d.favoritSaya}</span>
           {favorit.map((f) => (
             <Tombol key={f.id} type="button" varian="sekunder" onClick={() => tambah(f)}>{f.kode} {f.nama}</Tombol>
           ))}
-        </div>
+        </Sebaris>
       )}
       <Kolom jarak="sm">
         <strong>{d.kunjunganIni}</strong>
         {k.diagnosis.length === 0 ? (
           <p style={teksRedup}>{d.kosong}</p>
         ) : (
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: token.jarak.sm }}>
+          <Daftar>
             {k.diagnosis.map((x) => (
-              <li key={x.kode} style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md, padding: token.jarak.sm, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang }}>
+              <Bingkai tag="li" jarak="md" key={x.kode}>
                 <strong style={{ minWidth: token.ukuran.kolomKode }}>{x.kode}</strong>
-                <span style={{ flexGrow: 1 }}>{x.nama}</span>
+                <Tumbuh>{x.nama}</Tumbuh>
                 <Lencana warna={STATUS_PERAN_DIAGNOSIS.warna(x.peran)}>{STATUS_PERAN_DIAGNOSIS.label(x.peran)}</Lencana>
                 {x.peran !== 'utama' && <Tombol type="button" varian="teks" onClick={() => ubah({ diagnosis: jadikanUtama(k.diagnosis, x.kode) })}>{d.jadikanUtama}</Tombol>}
                 <Tombol type="button" varian="teks" onClick={() => ubah({ diagnosis: hapusDiagnosis(k.diagnosis, x.kode) })}>{d.hapus}</Tombol>
-              </li>
+              </Bingkai>
             ))}
-          </ul>
+          </Daftar>
         )}
       </Kolom>
     </Kolom>
@@ -130,29 +131,29 @@ export function LangkahTindakan({ k, ubah, galat, server, favorit }: DasarLangka
       <GalatBagian galat={galat} />
       <PencarianKode id="tindakan-cari" label={t.cari} petunjuk={t.petunjukCari} cari={cariIcd9} onPilih={tambah} manual teksManual={{ kode: t.kode, nama: t.nama }} />
       {favorit.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'center' }}>
+        <Sebaris bungkus>
           <span style={{ color: token.warna.teksRedup }}>{KLINIS.diagnosis.favoritSaya}</span>
           {favorit.map((f) => (
             <Tombol key={f.id} type="button" varian="sekunder" onClick={() => tambah(f)}>{f.kode} {f.nama}</Tombol>
           ))}
-        </div>
+        </Sebaris>
       )}
       <Kolom jarak="sm">
         <strong>{t.kunjunganIni}</strong>
         {k.tindakan.length === 0 && <p style={teksRedup}>{t.kosong}</p>}
         {k.tindakan.map((x) => (
-          <div key={x.kode} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.sm, padding: token.jarak.sm, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
+          <Bingkai arah="kolom" key={x.kode}>
+            <Sebaris jarak="md">
               <strong style={{ minWidth: token.ukuran.kolomKode }}>{x.kode}</strong>
-              <span style={{ flexGrow: 1 }}>{x.nama}</span>
+              <Tumbuh>{x.nama}</Tumbuh>
               <span style={{ color: token.warna.teksRedup }}>{t.performer}: {t.saya}</span>
               <Tombol type="button" varian="teks" onClick={() => ubah({ tindakan: hapusTindakan(k.tindakan, x.kode) })}>{t.hapus}</Tombol>
-            </div>
+            </Sebaris>
             <Baris>
               <Isian id={`tindakan-mulai-${x.kode}`} label={t.mulai} type="datetime-local" value={x.mulai} onChange={(e) => ubahItem(x.kode, { mulai: e.target.value })} />
               <Isian id={`tindakan-selesai-${x.kode}`} label={t.selesai} type="datetime-local" value={x.selesai} onChange={(e) => ubahItem(x.kode, { selesai: e.target.value })} />
             </Baris>
-          </div>
+          </Bingkai>
         ))}
       </Kolom>
     </Kolom>
@@ -206,14 +207,14 @@ export function LangkahRingkasan({ k, ubah, rencana, status, bagian, labelBagian
   return (
     <Kolom>
       <p style={teksRedup}>{r.judul}</p>
-      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+      <Daftar jarak="xs">
         {bagian.map((b) => (
-          <li key={b} style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
-            <span style={{ flexGrow: 1 }}>{labelBagian[b]}</span>
+          <Sebaris tag="li" jarak="md" key={b}>
+            <Tumbuh>{labelBagian[b]}</Tumbuh>
             <Lencana warna={STATUS_RINGKASAN_BAGIAN.warna(status[b])}>{STATUS_RINGKASAN_BAGIAN.label(status[b])}</Lencana>
-          </li>
+          </Sebaris>
         ))}
-      </ul>
+      </Daftar>
       {tampilSelesai && <DaftarRingkasan bagian={ringkasanIsi(k)} />}
       {rencana.map((x) => x.galat && <Peringatan key={x.bagian}>{`${labelBagian[x.bagian]}: ${x.galat}`}</Peringatan>)}
       {perluAlasan && <AreaTeks id="ringkasan-alasan" label={r.alasan} value={k.alasan} onChange={(e) => ubah({ alasan: e.target.value })} />}

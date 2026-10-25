@@ -7,6 +7,7 @@ import { Peringatan } from '../komponen/ui/peringatan';
 import { Tombol } from '../komponen/ui/tombol';
 import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
+import { Kolom, Sebaris } from '../komponen/ui/susunan';
 
 /** Layar wajib pada login pertama akun awal (2.4); penjaga rute mengalihkan semua halaman ke sini. */
 export function HalamanGantiKredensial() {
@@ -41,9 +42,9 @@ export function HalamanGantiKredensial() {
   const lengkap = username && kataSandiLama && kataSandi && konfirmasi;
 
   return (
-    <div style={{ minHeight: token.ukuran.tinggiLayar, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: token.jarak.xl }}>
+    <Sebaris jarak="tanpa" padding="xl" sebaran="tengah" style={{ minHeight: token.ukuran.tinggiLayar }}>
       <Kartu style={{ width: token.ukuran.kartu }}>
-        <form onSubmit={kirim} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+        <Kolom tag="form" jarak="md" onSubmit={kirim}>
           <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.judul }}>{GANTI_KREDENSIAL.judul}</h1>
           <Peringatan nada="biru">{GANTI_KREDENSIAL.keterangan}</Peringatan>
           {galat && <Peringatan>{galat}</Peringatan>}
@@ -63,8 +64,8 @@ export function HalamanGantiKredensial() {
           >
             {MASUK.keluar}
           </Tombol>
-        </form>
+        </Kolom>
       </Kartu>
-    </div>
+    </Sebaris>
   );
 }

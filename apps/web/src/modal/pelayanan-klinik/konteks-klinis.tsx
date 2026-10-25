@@ -2,6 +2,7 @@ import { CARA_PEMBAYARAN, DAFTAR_PASIEN, KLINIS } from '@klira/shared';
 import type { KonteksKlinisDto } from '@klira/shared';
 import { token } from '../../gaya/token';
 import { daftarAlergi, ringkasTandaVital } from './keadaan-pemeriksaan';
+import { Sebaris } from '../../komponen/ui/susunan';
 
 const gayaBlok = { fontSize: token.huruf.ukuran.dasar, lineHeight: 1.4 } as const;
 const label = { color: token.warna.teksMenu, display: 'block' } as const;
@@ -16,7 +17,7 @@ export function KonteksKlinis({ konteks, nama, nomorRm }: { konteks: KonteksKlin
         .filter(Boolean).join(' · ')
     : `RM ${nomorRm}`;
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: token.jarak.lg, minWidth: 0 }}>
+    <Sebaris jarak="lg" bungkus style={{ minWidth: 0 }}>
       <div>
         <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{konteks?.pasien.nama ?? nama}</div>
         <div style={{ ...gayaBlok, color: token.warna.teksMenu }}>{sub}</div>
@@ -33,6 +34,6 @@ export function KonteksKlinis({ konteks, nama, nomorRm }: { konteks: KonteksKlin
         <span style={label}>{k.tandaVital}</span>
         {ttv ? <strong>{ttv}</strong> : <span style={{ color: token.warna.teksRedup }}>{k.tidakAda}</span>}
       </div>
-    </div>
+    </Sebaris>
   );
 }

@@ -1,10 +1,10 @@
-import { useEffect, useId, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useId, useRef, useSyncExternalStore } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { MODAL } from '@klira/shared';
 import { token } from '../../gaya/token';
 import { SELEKTOR_FOKUS, fokusBerikut } from '../../util/fokus';
-import { adalahAtas, keluarLapisan, langgananLapisan, masukLapisan, potretLapisan } from '../../util/lapisan';
+import { adalahAtas, adalahInert, keluarLapisan, langgananLapisan, lapisanAtas, masukLapisan, pilihTargetPemulihan, potretLapisan } from '../../util/lapisan';
 import { Tombol } from './tombol';
 
 type Props = {
@@ -20,6 +20,18 @@ type Props = {
   children: ReactNode;
 };
 
+/** Mencabut inert lapisan teratas sekarang (render ulang baru menyusul), lalu memulihkan fokus ke pemicu atau isian pertama lapisan itu. */
+function pulihkanFokus(pemicu: HTMLElement | null) {
+  const atas = lapisanAtas();
+  const elAtas = atas ? document.querySelector<HTMLElement>(`[data-lapisan="${CSS.escape(atas)}"]`) : null;
+  const ada = !!pemicu && document.contains(pemicu);
+  const lapisanPemicu = ada ? (pemicu.closest<HTMLElement>('[data-lapisan]')?.dataset.lapisan ?? null) : null;
+  const target = pilihTargetPemulihan(ada, lapisanPemicu, atas);
+  if (elAtas) elAtas.inert = false;
+  if (target === 'pemicu') pemicu?.focus();
+  else if (target === 'pertamaAtas' && elAtas) (elAtas.querySelector<HTMLElement>(SELEKTOR_FOKUS) ?? elAtas).focus();
+}
+
 const terlihat = (e: HTMLElement) => e.getClientRects().length > 0;
 
 /**
@@ -33,11 +45,18 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
   const onEscTerakhir = useRef(onEsc);
   onEscTerakhir.current = onEsc;
   useSyncExternalStore(langgananLapisan, potretLapisan);
-  const bukanAtas = !adalahAtas(id);
+  const bukanAtas = adalahInert(id);
+
+  // Didaftarkan sinkron sebelum efek pasif: render pertama tidak inert, sehingga fokus awal bisa masuk.
+  const pemicuRef = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    pemicuRef.current = document.activeElement as HTMLElement | null;
+    masukLapisan(id);
+    return () => keluarLapisan(id);
+  }, [id]);
 
   useEffect(() => {
-    masukLapisan(id);
-    const pemicu = document.activeElement as HTMLElement | null;
+    const pemicu = pemicuRef.current;
     const gulirAwal = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const el = ref.current;
@@ -59,9 +78,8 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
     document.addEventListener('keydown', tekan);
     return () => {
       document.removeEventListener('keydown', tekan);
-      keluarLapisan(id);
       document.body.style.overflow = gulirAwal;
-      if (pemicu && document.contains(pemicu)) pemicu.focus();
+      pulihkanFokus(pemicu);
     };
   }, [id]);
 
@@ -76,6 +94,7 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
     >
       <div
         ref={ref}
+        data-lapisan={id}
         role="dialog"
         aria-modal="true"
         aria-label={judul}

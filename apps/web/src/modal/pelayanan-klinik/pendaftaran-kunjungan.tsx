@@ -100,10 +100,10 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
       >
         <p style={{ margin: 0 }}>{KUNJUNGAN.berhasilPesan}</p>
         {hasil.antrean ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+          <Kolom jarak="xs">
             <span style={{ color: token.warna.teksRedup }}>{KUNJUNGAN.nomorAntrean}</span>
             <strong style={{ fontSize: token.huruf.ukuran.tajuk }} data-testid="nomor-antrean">{hasil.antrean.kode}</strong>
-          </div>
+          </Kolom>
         ) : (
           <Peringatan nada="biru">{KUNJUNGAN.tanpaAntrean}</Peringatan>
         )}

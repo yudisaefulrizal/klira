@@ -11,8 +11,9 @@ function buatDunia(tahapAwal: TahapLayanan = 'pemeriksaan') {
   const isi = new Map<string, unknown>();
   const pengesahanTersimpan = new Map<string, PengesahanTersimpan>();
   const versiCatatan: unknown[] = [];
+  const draf = new Map<string, { langkah: number; isi: Record<string, unknown>; diperbarui_pada: Date }>();
   const catatan: { aksi: string; entitas: string }[] = [];
-  const dunia = { tahap: tahapAwal, bentrok: false, ubahTahap: [] as TahapLayanan[] };
+  const dunia = { tahap: tahapAwal, bentrok: false, waktu: new Date('2026-10-25T01:00:00Z'), ubahTahap: [] as TahapLayanan[] };
   const kunjunganDto = (id: number) => ({ id, pasien_id: id === 99 ? 2 : 1, tahap_layanan: dunia.tahap }) as unknown as KunjunganDto;
 
   const repoPengesahan: RepositoriPengesahan = {
@@ -35,10 +36,24 @@ function buatDunia(tahapAwal: TahapLayanan = 'pemeriksaan') {
         jenis_akun_nama: d.pengesahan.jenisAkun?.nama ?? null, waktu: d.pengesahan.waktu, hash: d.pengesahan.hash,
       });
     }),
+    bacaDraf: async (_f: number, p: number, alur: string, id: number) => draf.get(`${p}:${alur}:${id}`) ?? null,
+    simpanDraf: jest.fn(async (d: { penggunaId: number; alur: string; kunjunganId: number; langkah: number; isi: Record<string, unknown>; sekarang: Date }) => {
+      const t = { langkah: d.langkah, isi: d.isi, diperbarui_pada: d.sekarang };
+      draf.set(`${d.penggunaId}:${d.alur}:${d.kunjunganId}`, t);
+      return t;
+    }),
+    hapusDraf: jest.fn(async (_f: number, id: number, p?: number, alur?: string) => {
+      let n = 0;
+      for (const k of [...draf.keys()]) {
+        const [kp, ka, ki] = k.split(':');
+        if (Number(ki) === id && (p === undefined || Number(kp) === p) && (!alur || ka === alur)) { draf.delete(k); n += 1; }
+      }
+      return n;
+    }),
     salinan: async (_f: number, id: number) => ({ sumber: { id, mulai: 'x' }, anamnesis: null, diagnosis: null, tindakan: null }),
   } as unknown as RepositoriKlinis;
   const l = buatLayananKlinis({
-    repo, pengesahan, audit: { catat: async (e) => void catatan.push(e) },
+    repo, pengesahan, sekarang: () => dunia.waktu, audit: { catat: async (e) => void catatan.push(e) },
     kunjungan: { ubahTahap: async (_p, _id, ke) => { dunia.tahap = ke; dunia.ubahTahap.push(ke); return { ok: true, data: kunjunganDto(10) } as never; } },
   });
   return { l, repo, dunia, catatan, isi, versiCatatan, pengesahanTersimpan };
@@ -138,5 +153,40 @@ describe('layanan klinis: selesai dan salinan', () => {
     expect(await l.salinan(saya, 10, 404)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     expect(await l.salinan(saya, 10, 11)).toMatchObject({ ok: true });
     expect(catatan).toEqual([expect.objectContaining({ aksi: 'lihat', entitas: 'catatan_klinis', entitas_id: 11 })]);
+  });
+});
+
+describe('layanan klinis: draf server', () => {
+  it('menyimpan dan membaca draf per pengguna tanpa audit, dan menimpa draf yang ada', async () => {
+    const { l, catatan, repo } = buatDunia();
+    await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 1, isi: { a: 1 } });
+    await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 2, isi: { a: 2 } });
+    expect(await l.bacaDraf(saya, 10, 'pemeriksaan-klinis')).toMatchObject({ ok: true, data: { langkah: 2, isi: { a: 2 } } });
+    expect(await l.bacaDraf({ id: 8, fasyankes_id: 1 }, 10, 'pemeriksaan-klinis')).toEqual({ ok: true, data: null });
+    expect(await l.bacaDraf(saya, 10, 'skrining')).toEqual({ ok: true, data: null });
+    expect(catatan).toEqual([]);
+    expect(repo.simpanDraf).toHaveBeenCalledTimes(2);
+  });
+
+  it('kunjungan fasyankes lain 404, tahap tertutup 409, draf kedaluwarsa dibuang', async () => {
+    const { l, dunia, repo } = buatDunia();
+    expect(await l.simpanDraf({ id: 7, fasyankes_id: 2 }, 10, 'skrining', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+    await l.simpanDraf(saya, 10, 'skrining', { langkah: 0, isi: { a: 1 } });
+    dunia.waktu = new Date(dunia.waktu.getTime() + 13 * 3_600_000);
+    expect(await l.bacaDraf(saya, 10, 'skrining')).toEqual({ ok: true, data: null });
+    expect(repo.hapusDraf).toHaveBeenCalledWith(1, 10, 7, 'skrining');
+    dunia.tahap = 'kasir';
+    expect(await l.simpanDraf(saya, 10, 'skrining', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'konflik' });
+  });
+
+  it('draf kunjungan dihapus saat pemeriksaan selesai', async () => {
+    const { l, repo } = buatDunia();
+    await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 0, isi: { a: 1 } });
+    await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
+    await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama' }] }, undefined);
+    await l.simpanBagian(saya, 10, 'tindak_lanjut', { jenis: 'pulang' }, undefined);
+    await l.selesai(saya, 10, 'kasir');
+    expect(repo.hapusDraf).toHaveBeenCalledWith(1, 10);
+    expect(await l.bacaDraf(saya, 10, 'pemeriksaan-klinis')).toEqual({ ok: true, data: null });
   });
 });

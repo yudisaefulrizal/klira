@@ -8,6 +8,7 @@ import { Lencana } from '../ui/lencana';
 import { Peringatan } from '../ui/peringatan';
 import { Baris, Kolom } from '../ui/susunan';
 import { Tombol } from '../ui/tombol';
+import { Bingkai } from '../ui/kartu';
 
 type Props = {
   id: string;
@@ -67,17 +68,17 @@ export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = fal
       {galat && <Peringatan>{galat}</Peringatan>}
       {memuat && <span style={{ color: token.warna.teksRedup }}>{NAVIGASI.memuat}</span>}
       {hasil && hasil.length > 0 && (
-        <ul aria-label={KLINIS.diagnosis.hasil} style={{ margin: 0, padding: 0, listStyle: 'none', border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang, overflow: 'hidden' }}>
+        <Bingkai tag="ul" arah="kolom" jarak="tanpa" padding="tanpa" aria-label={KLINIS.diagnosis.hasil}>
           {hasil.map((h) => (
-            <li key={h.kode} style={{ borderTop: `${token.ukuran.garis} solid ${token.warna.garisHalus}` }}>
+            <Kolom tag="li" jarak="tanpa" garis="atas" halus key={h.kode}>
               <Tombol type="button" varian="langkah" penuh onClick={() => pilih(h)}>
                 <strong style={{ minWidth: token.ukuran.kolomKode }}>{h.kode}</strong>
                 <span style={{ flexGrow: 1 }}>{h.nama}</span>
                 {h.contoh && <Lencana warna="kuning">{KLINIS.diagnosis.contoh}</Lencana>}
               </Tombol>
-            </li>
+            </Kolom>
           ))}
-        </ul>
+        </Bingkai>
       )}
       {hasil && hasil.length === 0 && !memuat && <Peringatan nada="kuning">{KLINIS.diagnosis.tidakAda}</Peringatan>}
       {manual && hasil && hasil.length === 0 && !memuat && teksManual && (

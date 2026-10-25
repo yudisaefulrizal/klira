@@ -18,6 +18,7 @@ import { hariIniLokal, opsiIzin } from './keadaan-akun';
 import type { BarisIzinForm, IzinKatalog, JenisKatalog } from './keadaan-akun';
 import { bagianAkses, bentukIzinBaru, bentukPenugasanBaru, izinAwal, izinTerpakai, jenisBerjalan, opsiJenisBaru, penugasanAwal } from './keadaan-izin';
 import type { PenugasanForm } from './keadaan-izin';
+import { Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 
 type Props = {
   pengguna: Pick<PenggunaDaftarDto, 'id' | 'nama' | 'username'>;
@@ -109,13 +110,13 @@ export function AturIzin({ pengguna, onTutup }: Props) {
         lindungiTutup={adaIsian}
         onTutup={() => onTutup(berubah)}
         konteks={
-          <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
-            <div style={{ flexGrow: 1 }}>
+          <Sebaris jarak="md">
+            <Tumbuh tag="div">
               <div style={{ fontWeight: token.huruf.berat.tebal }}>{pengguna.nama}</div>
               <div style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>{pengguna.username}</div>
-            </div>
+            </Tumbuh>
             <Tombol type="button" varian="sekunder" onClick={() => void bukaAkses()}>{ATUR_IZIN.lihatAkses}</Tombol>
-          </div>
+          </Sebaris>
         }
         aksi={<Tombol type="button" varian="sekunder" onClick={() => onTutup(berubah)}>{ATUR_IZIN.tutup}</Tombol>}
       >

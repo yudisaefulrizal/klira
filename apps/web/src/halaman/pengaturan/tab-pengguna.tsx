@@ -17,6 +17,7 @@ import { PembuatanAkun } from '../../modal/akun-pengaturan/pembuatan-akun';
 import { usePengguna } from '../../util/konteks-pengguna';
 import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from '../../util/penyaring-daftar';
 import type { KeadaanDaftar } from '../../util/penyaring-daftar';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 
 const UKURAN = 20;
 const KOLOM = [
@@ -77,9 +78,9 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
   const totalHalaman = hasil ? Math.max(1, Math.ceil(hasil.total / hasil.ukuran)) : 1;
 
   return (
-    <section id="panel-pengguna" role="tabpanel" aria-labelledby="tab-pengguna" style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+    <Kolom tag="section" jarak="md" id="panel-pengguna" role="tabpanel" aria-labelledby="tab-pengguna">
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: token.jarak.md, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: token.jarak.md }}>
+        <Sebaris jarak="md" padding="md" bungkus sejajar="akhir">
           <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{PENGGUNA.judulTab}</div>
           <Isian id="cari-pengguna" label={PENGGUNA.cari} type="search" value={cari} onChange={(e) => setCari(e.target.value)} />
           <Pilihan
@@ -92,7 +93,7 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
           <HanyaDenganIzin fitur="akses" aksi="input">
             <Tombol onClick={() => setBukaAkunBaru(true)}>{PENGGUNA.tambahAkun}</Tombol>
           </HanyaDenganIzin>
-        </div>
+        </Sebaris>
         {galat && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galat}</Peringatan>}
         <Tabel kolom={KOLOM} label={PENGGUNA.judulTab}>
           {hasil?.data.map((p) => (
@@ -112,7 +113,7 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
                 <Lencana warna={STATUS_AKUN.warna(p.aktif ? 'aktif' : 'nonaktif')}>{STATUS_AKUN.label(p.aktif ? 'aktif' : 'nonaktif')}</Lencana>
               </SelTabel>
               <SelTabel style={{ textAlign: 'right' }}>
-                <div style={{ display: 'inline-flex', gap: token.jarak.sm }}>
+                <Sebaris sebaris jarak="sm" sejajar="regang">
                   <HanyaDenganIzin fitur="akses" aksi="input">
                     <Tombol varian="teks" onClick={() => setAturUntuk(p)}>{PENGGUNA.aturIzin}</Tombol>
                   </HanyaDenganIzin>
@@ -121,18 +122,18 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
                       <Tombol varian="teks" onClick={() => void ubahAktif(p)}>{p.aktif ? PENGGUNA.nonaktifkan : PENGGUNA.aktifkan}</Tombol>
                     </HanyaDenganIzin>
                   )}
-                </div>
+                </Sebaris>
               </SelTabel>
             </BarisTabel>
           ))}
         </Tabel>
         {hasil && hasil.data.length === 0 && <div style={{ padding: token.jarak.md, color: token.warna.teksRedup }}>{PENGGUNA.kosong}</div>}
         {hasil && hasil.total > hasil.ukuran && (
-          <div style={{ padding: token.jarak.md, display: 'flex', alignItems: 'center', gap: token.jarak.md, justifyContent: 'flex-end' }}>
+          <Sebaris jarak="md" padding="md" sebaran="akhir">
             <Tombol varian="sekunder" disabled={keadaan.halaman <= 1} onClick={() => terapkan({ halaman: keadaan.halaman - 1 })}>{PENGGUNA.sebelumnya}</Tombol>
             <span>{keadaan.halaman} / {totalHalaman}</span>
             <Tombol varian="sekunder" disabled={keadaan.halaman >= totalHalaman} onClick={() => terapkan({ halaman: keadaan.halaman + 1 })}>{PENGGUNA.berikutnya}</Tombol>
-          </div>
+          </Sebaris>
         )}
       </Kartu>
       <Peringatan nada="kuning">{PENGGUNA.catatan}</Peringatan>
@@ -154,6 +155,6 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
           }}
         />
       )}
-    </section>
+    </Kolom>
   );
 }

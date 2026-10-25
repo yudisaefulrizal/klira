@@ -15,6 +15,7 @@ import { token } from '../../gaya/token';
 import { formatWaktu } from '../../util/penyaring-tab';
 import { BATAS_FORM, formDariPengaturan, bentukKeamanan, galatKeamanan, keamananBerubah } from './keadaan-keamanan';
 import type { FormKeamanan } from './keadaan-keamanan';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 
 const UKURAN = 10;
 const KOLOM = [
@@ -91,50 +92,49 @@ export function TabKeamanan() {
   const ubah = (k: keyof FormKeamanan, nilai: string) => form && setForm({ ...form, [k]: nilai });
   const bidang = (k: keyof FormKeamanan, label: string, batas: { min: number; maks: number }, petunjuk: string) =>
     form && (
-      <div key={k} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+      <Kolom jarak="xs" key={k}>
         <Isian
           id={`keamanan-${k}`} label={label} type="number" inputMode="numeric" min={batas.min} max={batas.maks} step={1}
           value={form[k]} readOnly={!bolehUbah} onChange={(e) => ubah(k, e.target.value)} galat={tampil(k)}
           style={{ maxWidth: token.ukuran.kolomFilter }}
         />
         <span style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>{petunjuk}</span>
-      </div>
+      </Kolom>
     );
 
   return (
-    <section id="panel-keamanan" role="tabpanel" aria-labelledby="tab-keamanan" style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
-      <Kartu style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+    <Kolom tag="section" jarak="md" id="panel-keamanan" role="tabpanel" aria-labelledby="tab-keamanan">
+      <Kartu susun="md">
         <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{KEAMANAN.kebijakanJudul}</div>
         <span style={{ color: token.warna.teksRedup }}>{KEAMANAN.kebijakanPetunjuk}</span>
         {bawaan && <Peringatan nada="biru">{KEAMANAN.bawaan}</Peringatan>}
         {galat && <Peringatan>{galat}</Peringatan>}
         {info && <Peringatan nada="biru">{info}</Peringatan>}
         {form && (
-          <form
+          <Kolom tag="form" jarak="md"
             onSubmit={(e) => {
               e.preventDefault();
               void simpan();
             }}
-            style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}
           >
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.lg }}>
+            <Sebaris jarak="lg" bungkus sejajar="regang">
               {bidang('masa_sesi_jam', KEAMANAN.masaSesi, BATAS_FORM.masaSesiJam, KEAMANAN.petunjukMasaSesi(BATAS_FORM.masaSesiJam.min, BATAS_FORM.masaSesiJam.maks))}
               {bidang('batas_percobaan_masuk', KEAMANAN.batasPercobaan, BATAS_FORM.batasPercobaanMasuk, KEAMANAN.petunjukBatas(BATAS_FORM.batasPercobaanMasuk.min, BATAS_FORM.batasPercobaanMasuk.maks))}
               {bidang('panjang_minimum_kata_sandi', KEAMANAN.panjangKataSandi, BATAS_FORM.panjangMinimumKataSandi, KEAMANAN.petunjukPanjang(BATAS_FORM.panjangMinimumKataSandi.min, BATAS_FORM.panjangMinimumKataSandi.maks))}
-            </div>
+            </Sebaris>
             <HanyaDenganIzin fitur="akses" aksi="perbaikan">
               <div>
                 <Tombol type="submit" disabled={memproses || !berubah}>{memproses ? KEAMANAN.menyimpan : KEAMANAN.simpan}</Tombol>
               </div>
             </HanyaDenganIzin>
-          </form>
+          </Kolom>
         )}
       </Kartu>
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: token.jarak.md, display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+        <Kolom jarak="xs" padding="md">
           <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{KEAMANAN.backupJudul}</div>
           <span style={{ color: token.warna.teksRedup }}>{KEAMANAN.backupPetunjuk}</span>
-        </div>
+        </Kolom>
         {galatBackup && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galatBackup}</Peringatan>}
         <Tabel kolom={KOLOM} label={KEAMANAN.backupJudul}>
           {backup?.data.map((b) => (
@@ -153,6 +153,6 @@ export function TabKeamanan() {
         {backup && backup.data.length === 0 && <div style={{ padding: token.jarak.md, color: token.warna.teksRedup }}>{KEAMANAN.backupKosong}</div>}
         {backup && <Paginasi halaman={halaman} total={backup.total} ukuran={backup.ukuran} onPindah={setHalaman} />}
       </Kartu>
-    </section>
+    </Kolom>
   );
 }

@@ -10,7 +10,7 @@ import { Panel } from '../../komponen/panel/panel';
 import { Isian } from '../../komponen/ui/isian';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Kolom } from '../../komponen/ui/susunan';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { useNilaiTertunda } from '../../util/tunda';
 
@@ -101,14 +101,14 @@ export function PanelKeluarga({ pasienId, nama, onTutup }: Props) {
             <strong>{p.keluargaAnggota}</strong>
             {data.anggota.length === 0 && <p style={{ margin: 0, color: token.warna.teksRedup }}>{p.keluargaKosong}</p>}
             {data.anggota.map((a) => (
-              <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: token.jarak.sm }}>
+              <Sebaris key={a.id}>
                 <span style={{ flexGrow: 1 }}>
                   <strong>{a.hubungan}</strong>:{' '}
                   {a.pasien ? `${a.pasien.nama} · ${a.pasien.nomor_rm}` : <span style={{ color: token.warna.teksRedup }}>{p.keluargaTersembunyi}</span>}
                 </span>
                 {a.dibatasi && <Lencana warna="kuning">{p.keluargaDibatasi}</Lencana>}
                 {bolehUbah && <Tombol type="button" varian="teks" disabled={sibuk} onClick={() => void ganti(a.id, !a.dibatasi)}>{a.dibatasi ? p.keluargaBuka : p.keluargaBatasi}</Tombol>}
-              </div>
+              </Sebaris>
             ))}
           </Kolom>
           {bolehUbah && (

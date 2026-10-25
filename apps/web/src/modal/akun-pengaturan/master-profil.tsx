@@ -3,7 +3,7 @@ import { MASTER } from '@klira/shared';
 import type { BarisMaster, BidangMaster, JenisMasterUbah, OpsiMasterDto, SumberOpsiMaster } from '@klira/shared';
 import { buatMaster, opsiMaster, ubahMaster } from '../../api-klien/master';
 import { GalatApi } from '../../api-klien/klien';
-import { token } from '../../gaya/token';
+import { Kisi } from '../../komponen/ui/susunan';
 import { Modal1 } from '../../komponen/modal-1/modal-1';
 import { Isian } from '../../komponen/ui/isian';
 import { Peringatan } from '../../komponen/ui/peringatan';
@@ -104,17 +104,18 @@ export function ModalMasterProfil({ jenis, baris, onTutup, onSelesai }: Props) {
       }
     >
       {galat && <Peringatan>{galat}</Peringatan>}
-      <form
+      <Kisi
+        tag="form"
+        kolom="1fr 1fr"
         id="bentuk-master"
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
           void simpan();
         }}
-        style={{ display: 'grid', gridTemplateColumns: `${token.ukuran.kolomKiri} ${token.ukuran.kolomKanan}`, gap: token.jarak.md }}
       >
         {bidang.map(kontrol)}
-      </form>
+      </Kisi>
     </Modal1>
   );
 }

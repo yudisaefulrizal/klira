@@ -3,6 +3,7 @@ import { token } from '../../gaya/token';
 import { useLapisanRiwayat } from '../../util/navigasi';
 import { useTutupTerlindungi } from '../konfirmasi/tutup-terlindungi';
 import { Dialog, KepalaDialog } from '../ui/dialog';
+import { Kolom, Sebaris } from '../ui/susunan';
 
 type Props = {
   judul: string;
@@ -25,11 +26,11 @@ export function Modal1({ judul, onTutup, lindungiTutup = false, lebar = 'modalSe
     <>
       <Dialog judul={judul} onEsc={() => void mintaTutup()} lebar={lebar}>
         <KepalaDialog judul={judul} onTutup={() => void mintaTutup()}>{konteks}</KepalaDialog>
-        <div style={{ padding: token.jarak.lg, display: 'flex', flexDirection: 'column', gap: token.jarak.md, overflowY: 'auto' }}>{children}</div>
+        <Kolom jarak="md" padding="lg" style={{ overflowY: 'auto' }}>{children}</Kolom>
         {aksi && (
-          <footer style={{ display: 'flex', justifyContent: 'flex-end', gap: token.jarak.sm, padding: token.jarak.md, borderTop: `${token.ukuran.garis} solid ${token.warna.garis}` }}>
+          <Sebaris tag="footer" jarak="sm" padding="md" sejajar="regang" sebaran="akhir" garis="atas">
             {aksi}
-          </footer>
+          </Sebaris>
         )}
       </Dialog>
       {konfirmasi}

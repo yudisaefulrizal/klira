@@ -1,4 +1,4 @@
-import { adaPerubahan, bacaDraf, hapusDraf, hapusSemuaDraf, kunciDraf, saringSensitif, simpanDraf } from './draf';
+import { adaPerubahan, adaptorLokal, bacaDraf, hapusDrafKlinisLama, hapusDraf, hapusSemuaDraf, kunciDraf, saringSensitif, simpanDraf } from './draf';
 import type { PenyimpananDraf } from './draf';
 import { saringTeks } from './saring-teks';
 
@@ -81,5 +81,25 @@ describe('alasan', () => {
     expect(alasanSiap('  ', true)).toBe(false);
     expect(alasanSiap('karena', true)).toBe(true);
     expect(alasanSiap('', false)).toBe(true);
+  });
+});
+
+describe('adaptor lokal dan sisa draf klinis lama', () => {
+  it('adaptor lokal membuang bidang sensitif saat menyimpan', () => {
+    const m = memori();
+    const a = adaptorLokal<{ nama: string; nik: string }>('k', { simpanan: m, sensitif: ['nik'] });
+    a.simpan({ nama: 'A', nik: '123' }, 1);
+    expect(m.isi.get('k')).not.toContain('123');
+    expect(a.baca()).toMatchObject({ langkah: 1, nilai: { nama: 'A' } });
+    a.hapus();
+    expect(a.baca()).toBeNull();
+  });
+  it('hapusDrafKlinisLama membuang hanya kunci pemeriksaan dan skrining', () => {
+    const m = memori();
+    m.setItem('klira.draf.pemeriksaan-klinis-3.7', '{}');
+    m.setItem('klira.draf.skrining-3.7', '{}');
+    m.setItem('klira.draf.pembuatan-akun.7', '{}');
+    hapusDrafKlinisLama(m);
+    expect([...m.isi.keys()]).toEqual(['klira.draf.pembuatan-akun.7']);
   });
 });

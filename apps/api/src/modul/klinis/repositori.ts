@@ -1,7 +1,7 @@
 import { prisma, Prisma } from '@klira/db';
 import { PEMERIKSAAN_BIDANG, TANDA_VITAL, umurTahun } from '@klira/shared';
 import type {
-  AnggotaKeluargaDto, AnamnesisIsi, BagianKlinis, BagianTemplat, DiagnosisIsi, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KodeTerminologiDto, KonteksKlinisDto, KunjunganDto,
+  AlurDrafKlinis, AnggotaKeluargaDto, AnamnesisIsi, BagianKlinis, BagianTemplat, DiagnosisIsi, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KodeTerminologiDto, KonteksKlinisDto, KunjunganDto,
   PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi, TindakLanjutIsi,
 } from '@klira/shared';
 import { ambilKunjungan, keDto } from '../kunjungan/repositori';
@@ -42,7 +42,15 @@ export interface RepositoriKlinis {
   folderKeluarga(fasyankesId: number, pasienId: number): Promise<FolderKeluargaDto>;
   tautkanKeluarga(fasyankesId: number, oleh: number, pasienId: number, d: { anggota_pasien_id: number; hubungan: string }): Promise<AnggotaKeluargaDto | null>;
   ubahKeluarga(fasyankesId: number, pasienId: number, id: number, d: { hubungan?: string; dibatasi?: boolean }): Promise<AnggotaKeluargaDto | null>;
+  /** Draf aktif satu pengguna untuk alur dan kunjungan itu (null bila tidak ada). */
+  bacaDraf(fasyankesId: number, penggunaId: number, alur: AlurDrafKlinis, kunjunganId: number): Promise<DrafTersimpan | null>;
+  /** Satu draf aktif per pengguna, alur, dan kunjungan: menimpa yang ada. */
+  simpanDraf(d: { fasyankesId: number; penggunaId: number; alur: AlurDrafKlinis; kunjunganId: number; pasienId: number; langkah: number; isi: Record<string, unknown>; sekarang: Date }): Promise<DrafTersimpan>;
+  /** Hapus draf; tanpa `penggunaId` semua draf kunjungan itu (pemeriksaan selesai). Mengembalikan jumlah terhapus. */
+  hapusDraf(fasyankesId: number, kunjunganId: number, penggunaId?: number, alur?: AlurDrafKlinis): Promise<number>;
 }
+
+export type DrafTersimpan = { langkah: number; isi: Record<string, unknown>; diperbarui_pada: Date };
 
 const angka = (v: string): number | null => (Number.isFinite(Number(v)) ? Number(v) : null);
 
@@ -340,5 +348,27 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
     const hasil = await prisma.keluargaPasien.updateMany({ where: { id, fasyankes_id: fasyankesId, pasien_id: pasienId }, data: d });
     if (!hasil.count) return null;
     return folderKeDto(await prisma.keluargaPasien.findUniqueOrThrow({ where: { id }, include: { anggota: sorotAnggota } }));
+  }
+
+  async bacaDraf(fasyankesId: number, penggunaId: number, alur: AlurDrafKlinis, kunjunganId: number): Promise<DrafTersimpan | null> {
+    const d = await prisma.draf.findFirst({ where: { fasyankes_id: fasyankesId, pengguna_id: penggunaId, alur, kunjungan_id: kunjunganId } });
+    return d ? { langkah: d.langkah_terakhir, isi: d.isi as Record<string, unknown>, diperbarui_pada: d.diperbarui_pada } : null;
+  }
+
+  async simpanDraf(d: { fasyankesId: number; penggunaId: number; alur: AlurDrafKlinis; kunjunganId: number; pasienId: number; langkah: number; isi: Record<string, unknown>; sekarang: Date }): Promise<DrafTersimpan> {
+    const isi = d.isi as Prisma.InputJsonObject;
+    const r = await prisma.draf.upsert({
+      where: { pengguna_id_alur_kunjungan_id: { pengguna_id: d.penggunaId, alur: d.alur, kunjungan_id: d.kunjunganId } },
+      create: { fasyankes_id: d.fasyankesId, pengguna_id: d.penggunaId, alur: d.alur, kunjungan_id: d.kunjunganId, pasien_id: d.pasienId, langkah_terakhir: d.langkah, isi, diperbarui_pada: d.sekarang, dibuat_oleh: d.penggunaId },
+      update: { langkah_terakhir: d.langkah, isi, diperbarui_pada: d.sekarang },
+    });
+    return { langkah: r.langkah_terakhir, isi: r.isi as Record<string, unknown>, diperbarui_pada: r.diperbarui_pada };
+  }
+
+  async hapusDraf(fasyankesId: number, kunjunganId: number, penggunaId?: number, alur?: AlurDrafKlinis): Promise<number> {
+    const h = await prisma.draf.deleteMany({
+      where: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, ...(penggunaId !== undefined ? { pengguna_id: penggunaId } : {}), ...(alur ? { alur } : {}) },
+    });
+    return h.count;
   }
 }

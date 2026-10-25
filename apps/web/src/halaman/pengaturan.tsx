@@ -14,6 +14,7 @@ import { TabProfil } from './pengaturan/tab-profil';
 import { TabKeamanan } from './pengaturan/tab-keamanan';
 import { TabPengguna } from './pengaturan/tab-pengguna';
 import { TabPeringatan } from './pengaturan/tab-peringatan';
+import { Sebaris } from '../komponen/ui/susunan';
 
 const HALAMAN = 'pengaturan';
 const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
@@ -37,10 +38,10 @@ export function HalamanPengaturan() {
 
   return (
     <>
-      <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: token.jarak.md }}>
+      <Sebaris tag="header" jarak="md" bungkus>
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{PENGGUNA.judulHalaman}</h1>
         {aktif && <Tab daftar={tabBoleh} aktif={aktif} label={PENGGUNA.judulHalaman} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />}
-      </header>
+      </Sebaris>
       {aktif === 'pengguna' && <TabPengguna search={dariAlamat === 'pengguna' ? search : ''} ubahAlamat={ubahAlamat} />}
       {aktif === 'jenis-akun' && <TabJenisAkun />}
       {aktif === 'peringatan' && <TabPeringatan search={dariAlamat === 'peringatan' ? search : ''} ubahAlamat={ubahAlamat} />}

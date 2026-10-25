@@ -1,5 +1,5 @@
 import type {
-  AnggotaKeluargaDto, BagianKlinis, BagianKlinisDto, BagianTemplat, FavoritDto, FolderKeluargaDto, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto, KonteksKlinisDto,
+  AlurDrafKlinis, AnggotaKeluargaDto, BagianKlinis, BagianKlinisDto, BagianTemplat, DrafKlinisDto, FavoritDto, FolderKeluargaDto, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto, KonteksKlinisDto,
   KunjunganDto, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TemplatDto, TemplatMasukan,
 } from '@klira/shared';
 import { panggilApi } from './klien';
@@ -32,3 +32,9 @@ export const hapusTemplat = (id: number) => panggilApi<{ id: number }>('DELETE',
 export const ambilFolderKeluarga = (pasienId: number) => panggilApi<FolderKeluargaDto>('GET', `/pasien/${pasienId}/keluarga`);
 export const tautkanKeluarga = (pasienId: number, m: { anggota_pasien_id: number; hubungan: string }) => panggilApi<AnggotaKeluargaDto>('POST', `/pasien/${pasienId}/keluarga`, m);
 export const ubahKeluarga = (pasienId: number, id: number, m: { hubungan?: string; dibatasi?: boolean }) => panggilApi<AnggotaKeluargaDto>('PATCH', `/pasien/${pasienId}/keluarga/${id}`, m);
+
+// Draf alur klinis di server (bukan penyimpanan lokal): satu draf per alur, pengguna, dan kunjungan.
+export const bacaDrafKlinis = (kunjunganId: number, alur: AlurDrafKlinis) => panggilApi<DrafKlinisDto | null>('GET', `/kunjungan/${kunjunganId}/draf/${alur}`);
+export const simpanDrafKlinis = (kunjunganId: number, alur: AlurDrafKlinis, langkah: number, isi: Record<string, unknown>) =>
+  panggilApi<DrafKlinisDto>('PUT', `/kunjungan/${kunjunganId}/draf/${alur}`, { langkah, isi });
+export const hapusDrafKlinis = (kunjunganId: number, alur: AlurDrafKlinis) => panggilApi<{ kunjungan_id: number }>('DELETE', `/kunjungan/${kunjunganId}/draf/${alur}`);

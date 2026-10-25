@@ -13,10 +13,9 @@ import { labelIzin } from './keadaan-akun';
 import type { BarisIzinForm, IzinKatalog, JenisKatalog } from './keadaan-akun';
 import { galatIzinBaru, galatPenugasanBaru, galatUbahPeriode, periodeTeks, statusPeriode, tanggalSaja } from './keadaan-izin';
 import type { PenugasanForm } from './keadaan-izin';
+import { Baris, Kisi, Kolom, Sebaris } from '../../komponen/ui/susunan';
+import { Bingkai } from '../../komponen/ui/kartu';
 
-const kolom = { display: 'flex', flexDirection: 'column', gap: token.jarak.md } as const;
-const baris = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: token.jarak.md } as const;
-const kotak = { ...kolom, gap: token.jarak.sm, padding: token.jarak.md, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang } as const;
 const judulBagian = { margin: 0, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal } as const;
 
 export type Aksi = { memproses: boolean };
@@ -30,19 +29,19 @@ function AksiPeriode({ id, mulai, selesai, hariIni, memproses, onSimpan }: Perio
   const galat = ubah ? galatUbahPeriode(mulai, nilai) : null;
   if (ubah) {
     return (
-      <div style={{ display: 'inline-flex', alignItems: 'flex-end', gap: token.jarak.sm }}>
+      <Sebaris sebaris sejajar="akhir">
         <Isian id={`${id}-selesai`} label={ATUR_IZIN.selesai} type="date" value={nilai} onChange={(e) => setNilai(e.target.value)} galat={galat ?? undefined} />
         <Tombol type="button" disabled={memproses || !!galat} onClick={() => { onSimpan(nilai); setUbah(false); }}>{ATUR_IZIN.simpanPeriode}</Tombol>
         <Tombol type="button" varian="sekunder" onClick={() => setUbah(false)}>{ATUR_IZIN.batalUbah}</Tombol>
-      </div>
+      </Sebaris>
     );
   }
   const berakhir = statusPeriode(mulai, selesai, hariIni) === 'berakhir';
   return (
-    <div style={{ display: 'inline-flex', gap: token.jarak.sm }}>
+    <Sebaris sebaris sejajar="regang">
       <Tombol type="button" varian="teks" disabled={memproses} onClick={() => setUbah(true)}>{ATUR_IZIN.ubahPeriode}</Tombol>
       {!berakhir && <Tombol type="button" varian="teks" disabled={memproses || galatUbahPeriode(mulai, hariIni) !== null} onClick={() => onSimpan(hariIni)}>{ATUR_IZIN.akhiri}</Tombol>}
-    </div>
+    </Sebaris>
   );
 }
 
@@ -62,7 +61,7 @@ export function BagianPenugasan({ data, jenis, opsiJenis, hariIni, form, onForm,
   const g = coba ? galatPenugasanBaru(form) : {};
   const nama = (id: number) => jenis.find((j) => j.id === id)?.nama ?? `#${id}`;
   return (
-    <section style={kolom} aria-label={ATUR_IZIN.penugasanJudul}>
+    <Kolom tag="section" aria-label={ATUR_IZIN.penugasanJudul}>
       <h3 style={judulBagian}>{ATUR_IZIN.penugasanJudul}</h3>
       {data.length === 0 && <p style={{ margin: 0, color: token.warna.teksRedup }}>{ATUR_IZIN.penugasanKosong}</p>}
       {data.length > 0 && (
@@ -85,9 +84,9 @@ export function BagianPenugasan({ data, jenis, opsiJenis, hariIni, form, onForm,
         </Tabel>
       )}
       <HanyaDenganIzin fitur="akses" aksi="input">
-        <div style={kotak}>
+        <Bingkai arah="kolom" padding="md">
           <div style={{ fontWeight: token.huruf.berat.sedang }}>{ATUR_IZIN.penugasanTambah}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: token.jarak.md }}>
+          <Kisi kolom="2fr 1fr 1fr">
             <Pilihan
               id="penugasan-jenis"
               label={ATUR_IZIN.jenisPilih}
@@ -98,7 +97,7 @@ export function BagianPenugasan({ data, jenis, opsiJenis, hariIni, form, onForm,
             />
             <Isian id="penugasan-mulai" label={ATUR_IZIN.mulai} type="date" value={form.mulai} onChange={(e) => onForm({ ...form, mulai: e.target.value })} galat={g.mulai} />
             <Isian id="penugasan-selesai" label={ATUR_IZIN.selesaiOpsional} type="date" value={form.selesai} onChange={(e) => onForm({ ...form, selesai: e.target.value })} galat={g.selesai} />
-          </div>
+          </Kisi>
           <div>
             <Tombol
               type="button"
@@ -114,9 +113,9 @@ export function BagianPenugasan({ data, jenis, opsiJenis, hariIni, form, onForm,
               {ATUR_IZIN.tambahkan}
             </Tombol>
           </div>
-        </div>
+        </Bingkai>
       </HanyaDenganIzin>
-    </section>
+    </Kolom>
   );
 }
 
@@ -142,7 +141,7 @@ export function BagianIzin({ data, katalog, opsi, hariIni, form, kata, onForm, o
     return i ? labelIzin(i) : `#${id}`;
   };
   return (
-    <section style={kolom} aria-label={ATUR_IZIN.izinJudul}>
+    <Kolom tag="section" aria-label={ATUR_IZIN.izinJudul}>
       <h3 style={judulBagian}>{ATUR_IZIN.izinJudul}</h3>
       {data.length === 0 && <p style={{ margin: 0, color: token.warna.teksRedup }}>{ATUR_IZIN.izinKosong}</p>}
       {data.length > 0 && (
@@ -170,9 +169,9 @@ export function BagianIzin({ data, katalog, opsi, hariIni, form, kata, onForm, o
         </Tabel>
       )}
       <HanyaDenganIzin fitur="akses" aksi="input">
-        <div style={kotak}>
+        <Bingkai arah="kolom" padding="md">
           <div style={{ fontWeight: token.huruf.berat.sedang }}>{ATUR_IZIN.izinTambah}</div>
-          <div style={baris}>
+          <Baris>
             <Pilihan
               id="atur-izin-tipe"
               label={ATUR_IZIN.tipe}
@@ -181,7 +180,7 @@ export function BagianIzin({ data, katalog, opsi, hariIni, form, kata, onForm, o
               opsi={[{ nilai: 'tambah', label: ATUR_IZIN.tipeOpsi.tambah }, { nilai: 'kurang', label: ATUR_IZIN.tipeOpsi.kurang }]}
             />
             <Isian id="atur-izin-cari" label={ATUR_IZIN.cariIzin} type="search" value={kata} onChange={(e) => onKata(e.target.value)} />
-          </div>
+          </Baris>
           <Pilihan
             id="atur-izin-pilih"
             label={ATUR_IZIN.pilihIzin}
@@ -192,10 +191,10 @@ export function BagianIzin({ data, katalog, opsi, hariIni, form, kata, onForm, o
           />
           <AreaTeks id="atur-izin-alasan" label={ATUR_IZIN.alasan} required value={form.alasan} onChange={(e) => onForm({ ...form, alasan: e.target.value })} />
           {g.alasan && <PesanGalat id="atur-izin-alasan-galat">{g.alasan}</PesanGalat>}
-          <div style={baris}>
+          <Baris>
             <Isian id="atur-izin-mulai" label={ATUR_IZIN.mulai} type="date" value={form.mulai} onChange={(e) => onForm({ ...form, mulai: e.target.value })} galat={g.mulai} />
             <Isian id="atur-izin-selesai" label={ATUR_IZIN.selesaiOpsional} type="date" value={form.selesai} onChange={(e) => onForm({ ...form, selesai: e.target.value })} galat={g.selesai} />
-          </div>
+          </Baris>
           <div>
             <Tombol
               type="button"
@@ -211,9 +210,9 @@ export function BagianIzin({ data, katalog, opsi, hariIni, form, kata, onForm, o
               {ATUR_IZIN.tambahkan}
             </Tombol>
           </div>
-        </div>
+        </Bingkai>
       </HanyaDenganIzin>
-    </section>
+    </Kolom>
   );
 }
 

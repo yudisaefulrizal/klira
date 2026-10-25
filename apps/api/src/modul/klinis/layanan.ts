@@ -1,6 +1,6 @@
-import { BAGIAN_KLINIS, GALAT, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
+import { BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import type {
-  AnggotaKeluargaDto, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto,
+  AlurDrafKlinis, AnggotaKeluargaDto, DrafKlinisDto, DrafMasukan, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto,
   KonteksKlinisDto, KunjunganDto, PenggunaSaya, RiwayatKunjunganDto, SalinanKunjunganDto, TahapLayanan, TemplatDto, TemplatMasukan, TindakanIsi,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
@@ -17,6 +17,8 @@ export type DependensiKlinis = {
   audit: PenampungAudit;
   pengesahan: LayananPengesahan;
   kunjungan: Pick<LayananKunjungan, 'ubahTahap'>;
+  /** Penyedia waktu (uji). */
+  sekarang?: () => Date;
 };
 type Pelaku = Pick<PenggunaSaya, 'id' | 'fasyankes_id'>;
 
@@ -30,7 +32,8 @@ export type HasilSimpan = { bagian: BagianKlinisDto; kunjungan: KunjunganDto; te
 const ADA_ISI = (bagian: BagianKlinis, isi: unknown): boolean =>
   bagian === 'diagnosis' || bagian === 'tindakan' ? ((isi as { item: unknown[] } | null)?.item.length ?? 0) > 0 : isi !== null;
 
-export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan }: DependensiKlinis) {
+export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang = () => new Date() }: DependensiKlinis) {
+  const kedaluwarsaMs = KEDALUWARSA_DRAF_KLINIS_JAM * 3_600_000;
   // Penyedia isi untuk deteksi perubahan setelah pengesahan: entitas = nama bagian, entitas_id = id kunjungan.
   for (const bagian of BAGIAN_KLINIS) pengesahan.daftarkanPenyedia(bagian, (fas, id) => repo.bacaBagian(fas, id, bagian));
 
@@ -109,7 +112,35 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan }: Depend
       for (const b of BAGIAN_WAJIB_SELESAI) {
         if ((await pengesahan.keadaan(p.fasyankes_id, b, kunjunganId)).status === 'belum_disahkan') return gagal('konflik', KLINIS.galat.syaratSelesai);
       }
-      return kunjungan.ubahTahap(p, kunjunganId, tahap, alamat);
+      const hasil = await kunjungan.ubahTahap(p, kunjunganId, tahap, alamat);
+      if (hasil.ok) await repo.hapusDraf(p.fasyankes_id, kunjunganId); // pemeriksaan selesai: draf tidak lagi berguna
+      return hasil;
+    },
+
+    /** Draf alur klinis milik pengguna ini; kedaluwarsa dibuang. Isi draf sengaja tidak dicatat di audit. */
+    async bacaDraf(p: Pelaku, kunjunganId: number, alur: AlurDrafKlinis): Promise<Hasil<DrafKlinisDto | null>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+      const d = await repo.bacaDraf(p.fasyankes_id, p.id, alur, kunjunganId);
+      if (!d) return { ok: true, data: null };
+      if (sekarang().getTime() - d.diperbarui_pada.getTime() > kedaluwarsaMs) {
+        await repo.hapusDraf(p.fasyankes_id, kunjunganId, p.id, alur);
+        return { ok: true, data: null };
+      }
+      return { ok: true, data: { alur, kunjungan_id: kunjunganId, langkah: d.langkah, isi: d.isi, diperbarui_pada: d.diperbarui_pada.toISOString() } };
+    },
+
+    async simpanDraf(p: Pelaku, kunjunganId: number, alur: AlurDrafKlinis, m: DrafMasukan): Promise<Hasil<DrafKlinisDto>> {
+      const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+      if (!k) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+      if (!TAHAP_BOLEH_CATAT.includes(k.tahap_layanan)) return gagal('konflik', KLINIS.galat.kunjunganTertutup);
+      const d = await repo.simpanDraf({ fasyankesId: p.fasyankes_id, penggunaId: p.id, alur, kunjunganId, pasienId: k.pasien_id, langkah: m.langkah, isi: m.isi, sekarang: sekarang() });
+      return { ok: true, data: { alur, kunjungan_id: kunjunganId, langkah: d.langkah, isi: d.isi, diperbarui_pada: d.diperbarui_pada.toISOString() } };
+    },
+
+    async hapusDraf(p: Pelaku, kunjunganId: number, alur: AlurDrafKlinis): Promise<Hasil<{ kunjungan_id: number }>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+      await repo.hapusDraf(p.fasyankes_id, kunjunganId, p.id, alur);
+      return { ok: true, data: { kunjungan_id: kunjunganId } };
     },
 
     /** Ringkasan pasien untuk kepala modal (identitas, alergi, diagnosis aktif, tanda vital terakhir); dicatat `lihat`. */

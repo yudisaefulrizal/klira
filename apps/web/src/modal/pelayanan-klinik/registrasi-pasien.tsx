@@ -10,7 +10,7 @@ import { Peringatan } from '../../komponen/ui/peringatan';
 import { Kolom } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { usePengguna } from '../../util/konteks-pengguna';
-import { adaPerubahan, kunciDraf } from '../../util/draf';
+import { adaPerubahan, adaptorLokal, kunciDraf } from '../../util/draf';
 import { useDrafOtomatis } from '../../util/draf-otomatis';
 import { batasi, langkahBermasalah } from '../../util/langkah';
 import {
@@ -56,7 +56,8 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
   const [galatTeks, setGalatTeks] = useState<string | null>(null);
   const [drafDipulihkan, setDrafDipulihkan] = useState(false);
 
-  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanRegistrasi>({ kunci, nilai: keadaan, awal, langkah: indeks, aktif: !hasil, sensitif: BIDANG_SENSITIF_REGISTRASI });
+  const adaptor = useMemo(() => adaptorLokal<KeadaanRegistrasi>(kunci, { sensitif: BIDANG_SENSITIF_REGISTRASI }), [kunci]);
+  const { pulihan, hapus, buang } = useDrafOtomatis<KeadaanRegistrasi>({ adaptor, nilai: keadaan, awal, langkah: indeks, aktif: !hasil });
 
   useEffect(() => {
     if (!pulihan) return;
@@ -172,7 +173,7 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
       konteks={<KonteksPasien keadaan={keadaan} />}
       catatan={
         drafDipulihkan ? (
-          <Peringatan nada="biru" style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
+          <Peringatan nada="biru" baris>
             <span style={{ flexGrow: 1 }}>{MODAL.drafDipulihkan}</span>
             <Tombol
               type="button"
@@ -215,10 +216,10 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
               isi: (
                 <Kolom>
                   <p style={{ margin: 0 }}>{REGISTRASI.berhasilPesan(hasil.nama)}</p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+                  <Kolom jarak="xs">
                     <span style={{ color: token.warna.teksRedup }}>{REGISTRASI.nomorRm}</span>
                     <strong style={{ fontSize: token.huruf.ukuran.judul }} data-testid="nomor-rm-baru">{hasil.nomor_rm}</strong>
-                  </div>
+                  </Kolom>
                 </Kolom>
               ),
               aksi: (

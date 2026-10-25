@@ -19,6 +19,9 @@ export function keluarLapisan(id: string): void {
 }
 export const lapisanAtas = (): string | null => tumpukan[tumpukan.length - 1] ?? null;
 export const adaLapisan = (): boolean => tumpukan.length > 0;
+/** Murni: apakah lapisan `id` harus inert pada tumpukan tertentu. Lapisan yang belum terdaftar (render pertama) dianggap teratas. */
+export const inertDalam = (daftar: readonly string[], id: string): boolean => daftar.includes(id) && daftar[daftar.length - 1] !== id;
+export const adalahInert = (id: string): boolean => inertDalam(tumpukan, id);
 export const adalahAtas = (id: string): boolean => lapisanAtas() === id;
 export function langgananLapisan(p: Pendengar): () => void {
   pendengar.add(p);
@@ -29,4 +32,15 @@ export const potretLapisan = (): string => tumpukan.join('|');
 export function setelUlangLapisan(): void {
   tumpukan = [];
   beri();
+}
+
+export type TargetPemulihan = 'pemicu' | 'pertamaAtas' | 'tidak';
+/**
+ * Murni: ke mana fokus dikembalikan saat sebuah lapisan keluar.
+ * `lapisanPemicu` = id lapisan yang memuat pemicu (null bila di luar semua lapisan), `atasSetelah` = lapisan teratas sesudah keluar.
+ */
+export function pilihTargetPemulihan(pemicuAda: boolean, lapisanPemicu: string | null, atasSetelah: string | null): TargetPemulihan {
+  if (!atasSetelah) return pemicuAda ? 'pemicu' : 'tidak';
+  if (pemicuAda && lapisanPemicu === atasSetelah) return 'pemicu';
+  return 'pertamaAtas';
 }

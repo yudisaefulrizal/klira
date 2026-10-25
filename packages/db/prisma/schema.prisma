@@ -938,6 +938,25 @@ model TemplatCatatan {
   @@map("templat_catatan")
 }
 
+// Draf alur klinis (4.2): isi sementara per alur, pengguna, dan kunjungan; satu draf aktif. Tidak pernah masuk audit atau dikirim ke SATUSEHAT.
+model Draf {
+  id               Int      @id @default(autoincrement())
+  fasyankes_id     Int
+  pengguna_id      Int
+  alur             String   @db.VarChar(50)
+  kunjungan_id     Int
+  pasien_id        Int
+  langkah_terakhir Int      @default(0)
+  isi              Json
+  diperbarui_pada  DateTime @default(now()) @db.DateTime(3)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime @default(now()) @db.DateTime(3)
+
+  @@unique([pengguna_id, alur, kunjungan_id])
+  @@index([kunjungan_id])
+  @@map("draf")
+}
+
 // Family folder (4.9): tautan antarpasien dalam satu fasyankes dengan penanda privasi per anggota.
 model KeluargaPasien {
   id                Int      @id @default(autoincrement())

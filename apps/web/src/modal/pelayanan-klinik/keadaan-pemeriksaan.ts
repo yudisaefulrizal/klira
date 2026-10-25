@@ -13,7 +13,7 @@ export type ItemDiagnosis = { kode: string; nama: string; peran: PeranDiagnosis;
 export type ItemTindakan = { kode: string; nama: string; mulai: string; selesai: string };
 export type KeadaanPemeriksaan = {
   anamnesis: { keluhan_utama: string; penyerta: string };
-  /** Riwayat kesehatan pribadi: dikecualikan dari draf lokal. */
+  /** Riwayat kesehatan pribadi. */
   riwayat: { riwayat_pribadi: string; riwayat_keluarga: string; alergi: string };
   tanda_vital: Record<KunciTandaVital, string>;
   pemeriksaan: Record<BidangPemeriksaan, string>;
@@ -24,8 +24,27 @@ export type KeadaanPemeriksaan = {
   alasan: string;
 };
 
-/** Bidang tingkat atas yang tidak pernah masuk draf lokal (komputer klinik bersama). */
-export const BIDANG_SENSITIF_PEMERIKSAAN = ['riwayat', 'pemeriksaan', 'alasan'] as const;
+/**
+ * Keadaan dari draf server di atas dasar (catatan tersimpan): hanya bidang yang bentuknya sesuai yang diambil, sisanya tetap dari dasar,
+ * sehingga draf lama atau rusak tidak merusak formulir.
+ */
+export function pulihkanKeadaan(dasar: KeadaanPemeriksaan, nilai: unknown): KeadaanPemeriksaan {
+  if (!nilai || typeof nilai !== 'object' || Array.isArray(nilai)) return dasar;
+  const n = nilai as Record<string, unknown>;
+  const hasil: Record<string, unknown> = { ...dasar };
+  for (const [kunci, d] of Object.entries(dasar)) {
+    const v = n[kunci];
+    if (typeof d === 'string') {
+      if (typeof v === 'string') hasil[kunci] = v;
+    } else if (Array.isArray(d)) {
+      if (Array.isArray(v)) hasil[kunci] = v.filter((x) => !!x && typeof x === 'object' && typeof (x as { kode?: unknown }).kode === 'string');
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      const vv = v as Record<string, unknown>;
+      hasil[kunci] = Object.fromEntries(Object.entries(d as Record<string, unknown>).map(([k, dv]) => [k, typeof vv[k] === typeof dv ? vv[k] : dv]));
+    }
+  }
+  return hasil as KeadaanPemeriksaan;
+}
 
 const kosongTeks = <K extends string>(kunci: readonly K[]) => Object.fromEntries(kunci.map((k) => [k, ''])) as Record<K, string>;
 

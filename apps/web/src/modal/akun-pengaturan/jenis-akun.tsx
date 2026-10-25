@@ -15,6 +15,8 @@ import {
   adaPerubahanJenis, alihIzin, awalJenis, bentukBuat, bentukUbah, galatJenis, kelompokkanIzin, labelAksiCakupan, semuaTerpilih, setKelompok,
 } from './keadaan-jenis-akun';
 import type { FormJenis } from './keadaan-jenis-akun';
+import { Kisi, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
+import { Bingkai } from '../../komponen/ui/kartu';
 
 type Props = {
   /** Tanpa `jenis` = buat baru; dengan `jenis` = ubah (alasan perubahan wajib). */
@@ -88,17 +90,17 @@ export function ModalJenisAkun({ jenis, onTutup, onSelesai }: Props) {
         <Isian id="jenis-syarat" label={JENIS_AKUN.syarat} value={form.syarat} maxLength={200} onChange={(e) => setForm({ ...form, syarat: e.target.value })} />
         <small style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{JENIS_AKUN.syaratPetunjuk}</small>
       </div>
-      <section aria-label={JENIS_AKUN.izinJudul} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.sm }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: token.jarak.md }}>
-          <h3 style={{ margin: 0, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{JENIS_AKUN.izinJudul}</h3>
+      <Kolom tag="section" jarak="sm" aria-label={JENIS_AKUN.izinJudul}>
+        <Sebaris jarak="md" sejajar="dasar">
+          <Tumbuh tag="div"><h3 style={{ margin: 0, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{JENIS_AKUN.izinJudul}</h3></Tumbuh>
           <span style={{ color: token.warna.teksRedup }}>{JENIS_AKUN.izinTerpilih(form.izin.length, katalog?.length ?? 0)}</span>
-        </div>
+        </Sebaris>
         <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{JENIS_AKUN.izinPetunjuk}</span>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${token.ukuran.kolomKelompok}, 1fr))`, gap: token.jarak.sm, maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }}>
+        <Kisi kolom={`repeat(auto-fill, minmax(${token.ukuran.kolomKelompok}, 1fr))`} jarak="sm" style={{ maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }}>
           {kelompok.map((k) => {
             const semua = semuaTerpilih(form.izin, k);
             return (
-              <fieldset key={k.fitur} style={{ margin: 0, padding: token.jarak.sm, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang, display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+              <Bingkai tag="fieldset" arah="kolom" jarak="xs" key={k.fitur}>
                 <legend style={{ fontWeight: token.huruf.berat.tebal, padding: `0 ${token.jarak.xs}` }}>{JENIS_AKUN.izinFitur(k.label)}</legend>
                 <Tombol type="button" varian="teks" style={{ alignSelf: 'flex-start' }} onClick={() => setForm({ ...form, izin: setKelompok(form.izin, k, !semua) })}>
                   {semua ? JENIS_AKUN.lepasSemuaFitur : JENIS_AKUN.pilihSemuaFitur}
@@ -106,11 +108,11 @@ export function ModalJenisAkun({ jenis, onTutup, onSelesai }: Props) {
                 {k.izin.map((i) => (
                   <KotakCentang key={i.id} id={`izin-${i.id}`} label={labelAksiCakupan(i)} checked={form.izin.includes(i.id)} onChange={() => setForm({ ...form, izin: alihIzin(form.izin, i.id) })} />
                 ))}
-              </fieldset>
+              </Bingkai>
             );
           })}
-        </div>
-      </section>
+        </Kisi>
+      </Kolom>
       <AreaTeks id="jenis-alasan" label={ubah ? JENIS_AKUN.alasan : JENIS_AKUN.alasanBuat} value={form.alasan} maxLength={1000} onChange={(e) => setForm({ ...form, alasan: e.target.value })} aria-required={ubah} />
       {tampil('alasan_perubahan') && <Peringatan>{tampil('alasan_perubahan')}</Peringatan>}
     </Modal1>

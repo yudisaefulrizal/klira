@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { KLINIS } from '../teks';
+import { GALAT, KLINIS } from '../teks';
 import type { CaraPembayaran, JenisKunjungan, StatusPengesahan, TahapLayanan } from '../status';
 import {
   BAGIAN_KLINIS, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_TINDAK_LANJUT, PEMERIKSAAN_BIDANG, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL,
@@ -98,6 +98,20 @@ export type IsiBagian = {
 export const simpanBagianMasukan = z.object({ isi: z.unknown(), alasan: z.string().trim().max(500).optional() });
 export const bagianParam = z.object({ id: z.coerce.number().int().positive(), bagian: bagianKlinis });
 export const selesaiPemeriksaanMasukan = z.object({ tahap: z.enum(['resep', 'kasir']).default('kasir') });
+
+// Draf alur klinis (4.2 Draf): isi sementara disimpan di server, bukan di peramban klinik bersama.
+export const ALUR_DRAF_KLINIS = ['pemeriksaan-klinis', 'skrining'] as const;
+export type AlurDrafKlinis = (typeof ALUR_DRAF_KLINIS)[number];
+/** Masa berlaku draf klinis di server sejak pembaruan terakhir. */
+export const KEDALUWARSA_DRAF_KLINIS_JAM = 12;
+export const BATAS_ISI_DRAF_KLINIS = 80_000;
+export const drafParam = z.object({ id: z.coerce.number().int().positive(), alur: z.enum(ALUR_DRAF_KLINIS) });
+export const drafMasukan = z.object({
+  langkah: z.number().int().min(0).max(20),
+  isi: z.record(z.string(), z.unknown()).refine((v) => JSON.stringify(v).length <= BATAS_ISI_DRAF_KLINIS, { message: GALAT.tidakValid }),
+});
+export type DrafMasukan = z.infer<typeof drafMasukan>;
+export type DrafKlinisDto = { alur: AlurDrafKlinis; kunjungan_id: number; langkah: number; isi: Record<string, unknown>; diperbarui_pada: string };
 
 // Respons
 export type PengesahanDto = {

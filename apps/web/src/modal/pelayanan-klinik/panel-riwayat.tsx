@@ -8,7 +8,7 @@ import { Panel } from '../../komponen/panel/panel';
 import { Kartu } from '../../komponen/ui/kartu';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Kolom } from '../../komponen/ui/susunan';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { tanggalPendek } from '../../util/format';
 
@@ -39,11 +39,11 @@ export function PanelRiwayat({ pasienId, nama, kecualiKunjunganId, onTutup }: Pr
       {data?.map((r) => (
         <Kartu key={r.id}>
           <Kolom jarak="sm">
-            <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.sm }}>
+            <Sebaris>
               <strong style={{ flexGrow: 1 }}>{tanggalPendek(r.mulai)}</strong>
               <span style={{ color: token.warna.teksRedup }}>{r.poli_nama ?? ''}</span>
               <Lencana warna={JENIS_KUNJUNGAN.warna(r.jenis)}>{JENIS_KUNJUNGAN.label(r.jenis)}</Lencana>
-            </div>
+            </Sebaris>
             <div><span style={{ color: token.warna.teksRedup }}>{p.keluhan}: </span>{r.keluhan_utama ?? '-'}</div>
             <div>
               <span style={{ color: token.warna.teksRedup }}>{p.diagnosis}: </span>

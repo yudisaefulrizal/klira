@@ -9,6 +9,9 @@ export type JenisKatalog = { id: number; nama: string; syarat_profesi: string | 
 export type PeriodeForm = { mulai: string; selesai: string };
 export type BarisIzinForm = { izin_id: number; tipe: 'tambah' | 'kurang'; alasan: string; mulai: string; selesai: string };
 
+/** Bidang yang tidak pernah masuk draf lokal (komputer klinik bersama). */
+export const BIDANG_SENSITIF_AKUN = ['nik', 'nomor_sip', 'ihs_practitioner_id'] as const;
+
 /** Seluruh isian modal pembuatan akun; semuanya teks agar mudah disimpan sebagai draf. */
 export type KeadaanAkun = {
   nama: string;

@@ -8,10 +8,11 @@ import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Pilihan } from '../../komponen/ui/pilihan';
-import { Baris, DaftarRingkasan, Kolom } from '../../komponen/ui/susunan';
+import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { hapusWali, ringkasanRegistrasi, ubahJalur, ubahTidakCakap } from './keadaan-registrasi';
 import type { KeadaanRegistrasi } from './keadaan-registrasi';
+import { Bingkai } from '../../komponen/ui/kartu';
 
 type Ubah = (perubahan: Partial<KeadaanRegistrasi>) => void;
 type Dasar = { keadaan: KeadaanRegistrasi; ubah: Ubah; galat: Record<string, string>; tampilGalat: boolean };
@@ -53,27 +54,27 @@ export function LangkahDuplikat({ kandidat, mencari, bisaCari, galatCari, onCari
     <Kolom>
       <p style={teksRedup}>{REGISTRASI.duplikatPetunjuk}</p>
       <BidangKunci {...dasar} awalan="dup" />
-      <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
+      <Sebaris jarak="md">
         <Tombol type="button" varian="sekunder" disabled={!bisaCari || mencari} onClick={onCari}>{mencari ? REGISTRASI.duplikatMencari : REGISTRASI.duplikatCari}</Tombol>
         {!bisaCari && <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{REGISTRASI.duplikatBelumCukup}</span>}
-      </div>
+      </Sebaris>
       {galatCari && <Peringatan>{galatCari}</Peringatan>}
       {kandidat && kandidat.length === 0 && <Peringatan nada="biru">{REGISTRASI.duplikatTidakAda}</Peringatan>}
       {kandidat && kandidat.length > 0 && (
         <Kolom jarak="sm">
           <Peringatan nada="kuning">{nikSama ? REGISTRASI.duplikatNikBlokir : REGISTRASI.duplikatDitemukan}</Peringatan>
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: token.jarak.sm }}>
+          <Daftar>
             {kandidat.map((c) => (
-              <li key={c.id} style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md, padding: token.jarak.sm, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang }}>
-                <span style={{ flexGrow: 1 }}>
+              <Bingkai tag="li" jarak="md" key={c.id}>
+                <Tumbuh>
                   <strong>{c.nama}</strong>
                   <span style={{ color: token.warna.teksRedup }}> · {c.nomor_rm} · {c.tanggal_lahir}</span>
-                </span>
+                </Tumbuh>
                 <Lencana warna={c.alasan === 'nik' ? 'merah' : 'kuning'}>{REGISTRASI.duplikatAlasan[c.alasan]}</Lencana>
                 <Tombol type="button" varian="sekunder" onClick={() => onPakai(c)}>{REGISTRASI.duplikatPakai}</Tombol>
-              </li>
+              </Bingkai>
             ))}
-          </ul>
+          </Daftar>
           {!nikSama && (
             <KotakCentang id="reg-lanjut-duplikat" label={REGISTRASI.duplikatLanjut} checked={k.konfirmasi_duplikat} onChange={(e) => ubah({ konfirmasi_duplikat: e.target.checked })} />
           )}
@@ -159,24 +160,24 @@ export function LangkahWali({ keadaan: k, ubah, galat, tampilGalat }: Dasar) {
     <Kolom>
       <p style={teksRedup}>{REGISTRASI.waliPetunjuk}</p>
       {tampilGalat && galat.wali && <Peringatan nada="kuning">{galat.wali}</Peringatan>}
-      <div onKeyDown={enterTambah} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.sm, padding: token.jarak.md, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang }}>
+      <Bingkai arah="kolom" padding="md" onKeyDown={enterTambah}>
         <Baris>
           <Isian id="wali-hubungan" label={REGISTRASI.waliHubungan} value={hubungan} onChange={(e) => setHubungan(e.target.value)} galat={coba && !hubungan.trim() ? GALAT.wajibDiisi : undefined} autoComplete="off" />
           <Isian id="wali-nama" label={REGISTRASI.waliNama} value={nama} onChange={(e) => setNama(e.target.value)} galat={coba && !nama.trim() ? GALAT.wajibDiisi : undefined} autoComplete="off" />
         </Baris>
         <Isian id="wali-kontak" label={REGISTRASI.waliKontak} value={kontak} onChange={(e) => setKontak(e.target.value)} autoComplete="off" />
         <div><Tombol type="button" varian="sekunder" onClick={tambah}>{REGISTRASI.waliTambah}</Tombol></div>
-      </div>
+      </Bingkai>
       {k.wali.length === 0 && <p style={teksRedup}>{REGISTRASI.waliKosong}</p>}
-      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: token.jarak.sm }}>
+      <Daftar>
         {k.wali.map((w, n) => (
-          <li key={`${w.nama}-${n}`} style={{ display: 'flex', alignItems: 'center', gap: token.jarak.sm, padding: token.jarak.sm, border: `${token.ukuran.garis} solid ${token.warna.garisHalus}`, borderRadius: token.radius.sedang }}>
+          <Bingkai tag="li" halus key={`${w.nama}-${n}`}>
             <Lencana warna="biru">{w.hubungan}</Lencana>
-            <span style={{ flexGrow: 1 }}><strong>{w.nama}</strong>{w.kontak && <span style={{ color: token.warna.teksRedup }}> · {w.kontak}</span>}</span>
+            <Tumbuh><strong>{w.nama}</strong>{w.kontak && <span style={{ color: token.warna.teksRedup }}> · {w.kontak}</span>}</Tumbuh>
             <Tombol type="button" varian="teks" onClick={() => ubah(hapusWali(k, n))}>{REGISTRASI.waliHapus}</Tombol>
-          </li>
+          </Bingkai>
         ))}
-      </ul>
+      </Daftar>
     </Kolom>
   );
 }
@@ -208,9 +209,9 @@ export function LangkahConsent({ teks, memuat, galatMuat, ...dasar }: PropsConse
         <strong>{teks.judul}</strong>
         <span style={{ color: token.warna.teksRedup }}> · {REGISTRASI.consentVersi(teks.versi)}</span>
       </div>
-      <div style={{ whiteSpace: 'pre-line', padding: token.jarak.md, background: token.warna.kepalaTabel, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang, maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }}>
+      <Bingkai arah="kolom" padding="md" style={{ display: 'block', whiteSpace: 'pre-line', background: token.warna.kepalaTabel, maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }}>
         {teks.isi}
-      </div>
+      </Bingkai>
       <Baris>
         <Pilihan id="reg-bentuk" label={REGISTRASI.consentBentuk} value={k.bentuk} onChange={(e) => ubah({ bentuk: e.target.value as KeadaanRegistrasi['bentuk'] })} opsi={REGISTRASI.consentBentukOpsi} />
         <Pilihan
@@ -239,12 +240,12 @@ export function LangkahRingkasan({ keadaan, teks }: { keadaan: KeadaanRegistrasi
 export function KonteksPasien({ keadaan: k }: { keadaan: KeadaanRegistrasi }) {
   const status = statusIdentitasDari(k.jalur_identitas);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
+    <Sebaris jarak="md">
       <div>
         <div style={{ fontWeight: token.huruf.berat.tebal }}>{k.nama.trim() || REGISTRASI.kosongStrip}</div>
         <div style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>{k.tanggal_lahir || REGISTRASI.kosongStrip}</div>
       </div>
       <Lencana warna={STATUS_IDENTITAS.warna(status)}>{STATUS_IDENTITAS.label(status)}</Lencana>
-    </div>
+    </Sebaris>
   );
 }

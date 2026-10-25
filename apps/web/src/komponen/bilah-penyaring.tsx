@@ -1,6 +1,6 @@
 import type { FormEvent, ReactNode } from 'react';
-import { token } from '../gaya/token';
 import { Tombol } from './ui/tombol';
+import { Sebaris } from './ui/susunan';
 
 type Props = { children: ReactNode; labelTerapkan: string; labelAturUlang: string; onTerapkan: () => void; onAturUlang: () => void; tombolLain?: ReactNode; nonaktif?: boolean };
 
@@ -11,11 +11,11 @@ export function BilahPenyaring({ children, labelTerapkan, labelAturUlang, onTera
     if (!nonaktif) onTerapkan();
   };
   return (
-    <form onSubmit={kirim} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: token.jarak.md, padding: token.jarak.md }}>
+    <Sebaris tag="form" jarak="md" padding="md" bungkus sejajar="akhir" onSubmit={kirim}>
       {children}
       <Tombol type="submit" disabled={nonaktif}>{labelTerapkan}</Tombol>
       <Tombol type="button" varian="sekunder" onClick={onAturUlang}>{labelAturUlang}</Tombol>
       {tombolLain}
-    </form>
+    </Sebaris>
   );
 }

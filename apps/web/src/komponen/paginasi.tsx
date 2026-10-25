@@ -1,7 +1,7 @@
 import { KEAMANAN } from '@klira/shared';
-import { token } from '../gaya/token';
 import { totalHalaman } from '../util/penyaring-tab';
 import { Tombol } from './ui/tombol';
+import { Sebaris } from './ui/susunan';
 
 type Props = { halaman: number; total: number; ukuran: number; onPindah: (halaman: number) => void };
 
@@ -10,10 +10,10 @@ export function Paginasi({ halaman, total, ukuran, onPindah }: Props) {
   if (total <= ukuran) return null;
   const jumlah = totalHalaman(total, ukuran);
   return (
-    <nav aria-label="Paginasi" style={{ padding: token.jarak.md, display: 'flex', alignItems: 'center', gap: token.jarak.md, justifyContent: 'flex-end' }}>
+    <Sebaris tag="nav" jarak="md" padding="md" sebaran="akhir" aria-label="Paginasi">
       <Tombol varian="sekunder" disabled={halaman <= 1} onClick={() => onPindah(halaman - 1)}>{KEAMANAN.sebelumnya}</Tombol>
       <span>{halaman} / {jumlah}</span>
       <Tombol varian="sekunder" disabled={halaman >= jumlah} onClick={() => onPindah(halaman + 1)}>{KEAMANAN.berikutnya}</Tombol>
-    </nav>
+    </Sebaris>
   );
 }

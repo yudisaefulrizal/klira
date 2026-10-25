@@ -15,6 +15,7 @@ import { token } from '../../gaya/token';
 import { barisRiwayat } from '../../modal/akun-pengaturan/keadaan-jenis-akun';
 import { ModalJenisAkun } from '../../modal/akun-pengaturan/jenis-akun';
 import { formatWaktu } from '../../util/penyaring-tab';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 
 const KOLOM = [
   { judul: JENIS_AKUN.kolom.nama }, { judul: JENIS_AKUN.kolom.syarat }, { judul: JENIS_AKUN.kolom.izin }, { judul: JENIS_AKUN.kolom.aktif },
@@ -69,14 +70,14 @@ export function TabJenisAkun() {
   }
 
   return (
-    <section id="panel-jenis-akun" role="tabpanel" aria-labelledby="tab-jenis-akun" style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.md }}>
+    <Kolom tag="section" jarak="md" id="panel-jenis-akun" role="tabpanel" aria-labelledby="tab-jenis-akun">
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: token.jarak.md, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: token.jarak.md }}>
+        <Sebaris jarak="md" padding="md" bungkus>
           <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{JENIS_AKUN.judulTab}</div>
           <HanyaDenganIzin fitur="akses" aksi="input">
             <Tombol onClick={() => setModal({})}>{JENIS_AKUN.buat}</Tombol>
           </HanyaDenganIzin>
-        </div>
+        </Sebaris>
         {galat && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galat}</Peringatan>}
         <Tabel kolom={KOLOM} label={JENIS_AKUN.judulTab}>
           {data?.map((j) => (
@@ -89,13 +90,13 @@ export function TabJenisAkun() {
               </SelTabel>
               <SelTabel>{j.jumlah_pemakai ?? 0}</SelTabel>
               <SelTabel style={{ textAlign: 'right' }}>
-                <div style={{ display: 'inline-flex', gap: token.jarak.sm }}>
+                <Sebaris sebaris jarak="sm" sejajar="regang">
                   <HanyaDenganIzin fitur="akses" aksi="perbaikan">
                     <Tombol varian="teks" onClick={() => setModal({ jenis: j })}>{JENIS_AKUN.ubah}</Tombol>
                     <Tombol varian="teks" onClick={() => setStatus(j)}>{j.aktif ? JENIS_AKUN.nonaktifkan : JENIS_AKUN.aktifkan}</Tombol>
                   </HanyaDenganIzin>
                   <Tombol varian="teks" onClick={() => void bukaRiwayat(j)}>{JENIS_AKUN.riwayat}</Tombol>
-                </div>
+                </Sebaris>
               </SelTabel>
             </BarisTabel>
           ))}
@@ -144,6 +145,6 @@ export function TabJenisAkun() {
           {riwayat.data?.length === 0 && <span style={{ color: token.warna.teksRedup }}>{JENIS_AKUN.riwayatKosong}</span>}
         </PanelDetail>
       )}
-    </section>
+    </Kolom>
   );
 }

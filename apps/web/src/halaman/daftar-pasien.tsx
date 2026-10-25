@@ -27,6 +27,7 @@ import { usePengguna } from '../util/konteks-pengguna';
 import { useNavigasi } from '../util/navigasi';
 import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, tahapBawaan, ubahKeadaanPasien } from '../util/penyaring-pasien';
 import type { KeadaanPasien } from '../util/penyaring-pasien';
+import { Sebaris } from '../komponen/ui/susunan';
 
 const UKURAN = 20;
 const INGATAN = 'pasien-tahap';
@@ -148,7 +149,7 @@ export function HalamanDaftarPasien() {
 
   return (
     <>
-      <header style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: token.jarak.md }}>
+      <Sebaris tag="header" jarak="md" bungkus sejajar="akhir">
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{DAFTAR_PASIEN.judul}</h1>
         <div ref={kotakCari}>
           <Isian id="cari-pasien" label={DAFTAR_PASIEN.cari} type="search" placeholder={DAFTAR_PASIEN.petunjukCari} value={cari} onChange={(e) => setCari(e.target.value)} autoComplete="off" />
@@ -159,9 +160,9 @@ export function HalamanDaftarPasien() {
         <HanyaDenganIzin fitur="pasien" aksi="input">
           <Tombol type="button" onClick={() => setTerbuka({ jenis: 'registrasi' })}>{DAFTAR_PASIEN.registrasi}</Tombol>
         </HanyaDenganIzin>
-      </header>
+      </Sebaris>
 
-      <div role="group" aria-label={DAFTAR_PASIEN.filterTahap} style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm }}>
+      <Sebaris jarak="sm" bungkus sejajar="regang" role="group" aria-label={DAFTAR_PASIEN.filterTahap}>
         {TAHAP_CHIP.map((t) => {
           const n = jumlah(t);
           return (
@@ -171,7 +172,7 @@ export function HalamanDaftarPasien() {
             </Tombol>
           );
         })}
-      </div>
+      </Sebaris>
 
       {galat && <Peringatan>{galat}</Peringatan>}
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
@@ -212,7 +213,7 @@ export function HalamanDaftarPasien() {
                   {tunggu ? (tunggu.jam ? DAFTAR_PASIEN.jamMenit(tunggu.jam, tunggu.menit) : DAFTAR_PASIEN.menit(tunggu.menit)) : '-'}
                 </SelTabel>
                 <SelTabel style={{ textAlign: 'right' }}>
-                  <div style={{ display: 'inline-flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: token.jarak.sm }}>
+                  <Sebaris sebaris jarak="sm" bungkus sejajar="regang" sebaran="akhir">
                     {aksi.map(({ jenis }) => {
                       if (jenis === 'buka') return <Tombol key="buka" type="button" varian="teks" onClick={() => setTerbuka({ jenis: 'detail', pasien: pasienDari(b) })}>{DAFTAR_PASIEN.aksi.buka}</Tombol>;
                       if (jenis === 'skrining' || jenis === 'periksa') {
@@ -233,7 +234,7 @@ export function HalamanDaftarPasien() {
                         </Tombol>
                       );
                     })}
-                  </div>
+                  </Sebaris>
                 </SelTabel>
               </BarisTabel>
             );

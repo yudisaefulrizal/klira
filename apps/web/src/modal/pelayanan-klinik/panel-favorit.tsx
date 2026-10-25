@@ -7,7 +7,7 @@ import { token } from '../../gaya/token';
 import { Panel } from '../../komponen/panel/panel';
 import { Isian } from '../../komponen/ui/isian';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Kolom } from '../../komponen/ui/susunan';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { isiTemplatDari } from './keadaan-pemeriksaan';
 import type { KeadaanPemeriksaan } from './keadaan-pemeriksaan';
@@ -21,7 +21,6 @@ type Props = {
   onTutup: () => void;
 };
 
-const baris = { display: 'flex', alignItems: 'center', gap: token.jarak.sm } as const;
 
 /** PANEL Favorit dan templat: favorit diagnosis dan tindakan per dokter (urut, tambah, hapus) serta templat catatan pribadi. */
 export function PanelFavorit({ k, favorit, onFavorit, onPakaiKode, onPakaiTemplat, onTutup }: Props) {
@@ -93,19 +92,19 @@ export function PanelFavorit({ k, favorit, onFavorit, onPakaiKode, onPakaiTempla
         <strong>{judul}</strong>
         {daftar.length === 0 && <p style={{ margin: 0, color: token.warna.teksRedup }}>{p.favoritKosong}</p>}
         {daftar.map((f, i) => (
-          <div key={f.id} style={baris}>
+          <Sebaris key={f.id}>
             <span style={{ flexGrow: 1 }}><strong>{f.kode}</strong> {f.nama}</span>
             <Tombol type="button" varian="sekunder" onClick={() => onPakaiKode(jenis, f)}>{p.favoritPakai}</Tombol>
             <Tombol type="button" varian="teks" disabled={i === 0 || sibuk} aria-label={p.favoritNaik} title={p.favoritNaik} onClick={() => void geser(jenis, i, -1)}>↑</Tombol>
             <Tombol type="button" varian="teks" disabled={i === daftar.length - 1 || sibuk} aria-label={p.favoritTurun} title={p.favoritTurun} onClick={() => void geser(jenis, i, 1)}>↓</Tombol>
             <Tombol type="button" varian="teks" disabled={sibuk} onClick={() => void hapus(f)}>{p.favoritHapus}</Tombol>
-          </div>
+          </Sebaris>
         ))}
         {baru.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'center' }}>
+          <Sebaris bungkus>
             <span style={{ color: token.warna.teksRedup }}>{p.favoritTambah}</span>
             {baru.map((u) => <Tombol key={u.kode} type="button" varian="sekunder" disabled={sibuk} onClick={() => void tambah(jenis, u)}>+ {u.kode} {u.nama}</Tombol>)}
-          </div>
+          </Sebaris>
         )}
       </Kolom>
     );
@@ -121,7 +120,7 @@ export function PanelFavorit({ k, favorit, onFavorit, onPakaiKode, onPakaiTempla
         {!templat && !galat && <span style={{ color: token.warna.teksRedup }}>{NAVIGASI.memuat}</span>}
         {templat?.length === 0 && <p style={{ margin: 0, color: token.warna.teksRedup }}>{p.templatKosong}</p>}
         {templat?.map((t) => (
-          <div key={t.id} style={baris}>
+          <Sebaris key={t.id}>
             <span style={{ flexGrow: 1 }}><strong>{t.nama}</strong> <span style={{ color: token.warna.teksRedup }}>({p.templatBagian[t.bagian]})</span></span>
             <Tombol type="button" varian="sekunder" onClick={() => onPakaiTemplat(t)}>{p.templatPakai}</Tombol>
             <Tombol
@@ -130,14 +129,14 @@ export function PanelFavorit({ k, favorit, onFavorit, onPakaiKode, onPakaiTempla
             >
               {p.templatHapus}
             </Tombol>
-          </div>
+          </Sebaris>
         ))}
         <Isian id="templat-nama" label={p.templatNama} value={nama} onChange={(e) => setNama(e.target.value)} autoComplete="off" />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm }}>
+        <Sebaris bungkus>
           {(['anamnesis', 'pemeriksaan'] as const).map((b) => (
             <Tombol key={b} type="button" varian="sekunder" disabled={sibuk || !nama.trim()} onClick={() => void simpanTemplat(b)}>{p.templatSimpan}: {p.templatBagian[b]}</Tombol>
           ))}
-        </div>
+        </Sebaris>
       </Kolom>
     </Panel>
   );

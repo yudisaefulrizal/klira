@@ -7,7 +7,7 @@ import { token } from '../../gaya/token';
 import { Panel } from '../../komponen/panel/panel';
 import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Kolom } from '../../komponen/ui/susunan';
+import { Kolom, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { tanggalPendek } from '../../util/format';
 import { bagianDapatDisalin } from './keadaan-pemeriksaan';
@@ -74,7 +74,7 @@ export function PanelSalin({ kunjunganId, pasienId, onSalin, onTutup }: Props) {
           <strong>{p.salinPilih}</strong>
           {daftar.map((r) => (
             <Tombol key={r.id} type="button" varian="langkah" penuh terpilih={sumber === r.id} onClick={() => void pilihSumber(r.id)}>
-              <span style={{ flexGrow: 1 }}>{tanggalPendek(r.mulai)} · {r.keluhan_utama ?? '-'}</span>
+              <Tumbuh>{tanggalPendek(r.mulai)} · {r.keluhan_utama ?? '-'}</Tumbuh>
             </Tombol>
           ))}
         </Kolom>

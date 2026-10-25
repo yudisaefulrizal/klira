@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 import {
-  bagianParam, cariTerminologiMasukan, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan,
+  bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan,
   ubahFavoritMasukan, ubahKeluargaMasukan,
 } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
@@ -54,6 +54,25 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
     const m = selesaiPemeriksaanMasukan.safeParse(req.body ?? {});
     if (!m.success) return galatValidasi(res, m.error);
     kirimHasil(res, await layanan.selesai(pengguna(res), id.data.id, m.data.tahap, alamatDari(req)));
+  }));
+
+  // Draf alur klinis di server (bukan penyimpanan lokal komputer bersama); isi tidak pernah dicatat di audit.
+  rute.get('/kunjungan/:id/draf/:alur', masuk, tulisKlinis, bungkus(async (req, res) => {
+    const p = drafParam.safeParse(req.params);
+    if (!p.success) return tidakAda(res);
+    kirimHasil(res, await layanan.bacaDraf(pengguna(res), p.data.id, p.data.alur));
+  }));
+  rute.put('/kunjungan/:id/draf/:alur', masuk, tulisKlinis, bungkus(async (req, res) => {
+    const p = drafParam.safeParse(req.params);
+    if (!p.success) return tidakAda(res);
+    const m = drafMasukan.safeParse(req.body ?? {});
+    if (!m.success) return galatValidasi(res, m.error);
+    kirimHasil(res, await layanan.simpanDraf(pengguna(res), p.data.id, p.data.alur, m.data));
+  }));
+  rute.delete('/kunjungan/:id/draf/:alur', masuk, tulisKlinis, bungkus(async (req, res) => {
+    const p = drafParam.safeParse(req.params);
+    if (!p.success) return tidakAda(res);
+    kirimHasil(res, await layanan.hapusDraf(pengguna(res), p.data.id, p.data.alur));
   }));
 
   rute.get('/kunjungan/:id/konteks-klinis', masuk, lihatKlinis, bungkus(async (req, res) => {
