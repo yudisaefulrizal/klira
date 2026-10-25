@@ -503,3 +503,9 @@ d. Rekam medis: versi, perbaikan, addendum, pengkodean, arsip
 e. Rawat inap
 f. Pihak ketiga: kirim SATUSEHAT, lalu klaim BPJS
 g. PDP dan pengaturan lanjutan
+
+### 8.4 Port dan alamat pengembangan
+a. Port default aplikasi: 8074 (satu port; API melayani `/api`, dan antarmuka hasil build dilayani dari port yang sama).
+b. Alamat pengembangan: https://klira.nuscode.id lewat tunnel ke `localhost:8074`.
+c. HTTPS diakhiri di tunnel; aplikasi berjalan HTTP di lokal dan memercayai proxy (cookie sesi `secure`, alamat dasar dari konfigurasi).
+d. Port dan alamat dasar dibaca dari konfigurasi lingkungan, bukan ditulis di kode.
