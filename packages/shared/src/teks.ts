@@ -1070,7 +1070,7 @@ export const PDP = {
     ajukan: 'Catat', mencatat: 'Mencatat...', gagal: 'Permintaan gagal dicatat.', hasilJudul: 'Permintaan tercatat', hasilPesan: (tgl: string) => `Permintaan tercatat. Selesaikan paling lambat ${tgl}.`,
     proses: 'Proses', prosesJudul: 'Proses permintaan hak', langkahProses: { tinjau: 'Tinjau', keputusan: 'Keputusan', pelaksanaan: 'Pelaksanaan', notifikasi: 'Notifikasi' }, setujui: 'Setujui', tolak: 'Tolak', keputusan: 'Keputusan', alasanTolak: 'Alasan penolakan',
     alasanTolakPetunjuk: 'Alasan wajib. Untuk hak hapus, rekam medis tetap disimpan sampai masa retensi 25 tahun habis (PMK 24/2022 P39).', pelaksanaan: 'Pelaksanaan (apa yang dilakukan, termasuk pada prosesor dan cadangan)', notifikasi: 'Catatan notifikasi ke pemohon', notifikasiPetunjuk: 'Catat bahwa hasil sudah diberitahukan ke pemohon.',
-    simpanProses: 'Simpan tahap ini', memproses: 'Memproses...', gagalProses: 'Tahap gagal disimpan.', selesai: 'Permintaan selesai: pemohon sudah diberi tahu.', tahapBerikut: { keputusan: 'Menunggu keputusan', pelaksanaan: 'Menunggu pelaksanaan', notifikasi: 'Menunggu notifikasi' } as Record<string, string>,
+    simpanProses: 'Simpan tahap ini', tahapTersimpan: 'Tahap tersimpan.', memproses: 'Memproses...', gagalProses: 'Tahap gagal disimpan.', selesai: 'Permintaan selesai: pemohon sudah diberi tahu.', tahapBerikut: { keputusan: 'Menunggu keputusan', pelaksanaan: 'Menunggu pelaksanaan', notifikasi: 'Menunggu notifikasi' } as Record<string, string>,
     diterima: (tgl: string) => `Diterima ${tgl}`, tinjauInfo: 'Periksa identitas pemohon dan cakupan data, lalu putuskan.', oleh: (nama: string) => `Diputuskan oleh ${nama}`,
   },
   ropa: {

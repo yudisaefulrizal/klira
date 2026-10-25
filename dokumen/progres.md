@@ -67,12 +67,12 @@
 | Sinkronisasi master dan KFA | Fitur | - | Menunggu pihak ketiga | ☐ |
 | Verifikasi pengguna SATUSEHAT Mobile (KYC) | Modal | SATUSEHAT | Menunggu pihak ketiga | ☐ |
 | Registrasi sistem | Modal | SATUSEHAT | Menunggu pihak ketiga | ☐ |
-| Pelindungan data | Halaman | - | Bisa dikerjakan | ☐ |
-| Permintaan hak pasien | Modal | Pelindungan data | Menunggu bagian lain | ☐ |
-| Versi teks pemberitahuan dan Catat tarik persetujuan | Modal | Pelindungan data | Bisa dikerjakan | ☐ |
-| ROPA | Modal | Pelindungan data | Bisa dikerjakan | ☐ |
-| DPIA | Modal | Pelindungan data | Bisa dikerjakan | ☐ |
-| Insiden kebocoran | Modal | Pelindungan data | Menunggu bagian lain | ☐ |
-| Pemusnahan | Modal | Pelindungan data | Menunggu bagian lain | ☐ |
-| Prosesor | Modal | Pelindungan data | Bisa dikerjakan | ☐ |
+| Pelindungan data | Halaman | - | Sudah dibangun | ✔ |
+| Permintaan hak pasien | Modal | Pelindungan data | Sudah dibangun | ✔ |
+| Versi teks pemberitahuan dan Catat tarik persetujuan | Modal | Pelindungan data | Sudah dibangun | ✔ |
+| ROPA | Modal | Pelindungan data | Sudah dibangun | ✔ |
+| DPIA | Modal | Pelindungan data | Sudah dibangun | ✔ |
+| Insiden kebocoran | Modal | Pelindungan data | Sudah dibangun | ✔ |
+| Pemusnahan | Modal | Pelindungan data | Sudah dibangun | ✔ |
+| Prosesor | Modal | Pelindungan data | Sudah dibangun | ✔ |
 | Beranda tugas | Halaman | - | Menunggu bagian lain | ☐ |

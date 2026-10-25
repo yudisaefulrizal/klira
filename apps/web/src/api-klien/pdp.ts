@@ -1,6 +1,6 @@
 import type {
   DpiaDto, DpiaForm, HakForm, HakDto, HalamanHakDto, HalamanPdp, HalamanPersetujuanPdpDto, InsidenDto, InsidenForm, KebijakanRetensiDto, PemberitahuanMasukan, PemusnahanDto, PemusnahanForm, ProsesHakForm, ProsesorDto, ProsesorForm, ProsesPemusnahanForm, RopaDto,
-  RopaMasukan, TeksPemberitahuanDto,
+  TeksPemberitahuanDto,
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
@@ -21,7 +21,7 @@ export const daftarPersetujuanPdp = (f: { status?: string; cari?: string; halama
 export const tarikPersetujuan = (m: { persetujuan_id: number; alasan: string }) => panggilApi<{ batas_henti: string }>('POST', '/pdp/persetujuan/tarik', m);
 
 export const daftarRopa = (halaman: number) => panggilApi<HalamanPdp<RopaDto>>('GET', `/pdp/ropa?${hal(halaman)}`);
-export const simpanRopa = (id: number | null, m: Partial<RopaMasukan>) => panggilApi<{ id: number }>(id ? 'PUT' : 'POST', id ? `/pdp/ropa/${id}` : '/pdp/ropa', m);
+export const simpanRopa = (id: number | null, m: Record<string, string>) => panggilApi<{ id: number }>(id ? 'PUT' : 'POST', id ? `/pdp/ropa/${id}` : '/pdp/ropa', m);
 export const daftarDpia = (halaman: number) => panggilApi<HalamanPdp<DpiaDto>>('GET', `/pdp/dpia?${hal(halaman)}`);
 export const simpanDpia = (id: number | null, m: DpiaForm) => panggilApi<{ id: number }>(id ? 'PUT' : 'POST', id ? `/pdp/dpia/${id}` : '/pdp/dpia', m);
 export const daftarInsiden = (halaman: number) => panggilApi<HalamanPdp<InsidenDto>>('GET', `/pdp/insiden?${hal(halaman)}`);
