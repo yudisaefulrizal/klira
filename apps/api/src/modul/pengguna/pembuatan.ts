@@ -97,7 +97,7 @@ export function buatLayananPembuatanAkun(dep: DependensiPembuatan) {
           peringatan,
         });
       } catch (galat) {
-        if (galat instanceof KonflikAkun) return { ok: false, kode: 'konflik', pesan: AKUN_BARU.duplikatUsername };
+        if (galat instanceof KonflikAkun) return { ok: false, kode: 'konflik', pesan: galat.bidang === 'nik' ? AKUN_BARU.duplikatNik : AKUN_BARU.duplikatUsername };
         throw galat;
       }
 

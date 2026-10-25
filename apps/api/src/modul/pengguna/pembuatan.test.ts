@@ -1,8 +1,8 @@
-import { penggunaBaru } from '@klira/shared';
+import { AKUN_BARU, penggunaBaru } from '@klira/shared';
 import type { EntriAudit } from '../../middleware/audit';
 import { buatKataSandiAwal } from './kata-sandi-awal';
 import { buatLayananPembuatanAkun } from './pembuatan';
-import { KonflikAkun } from './repositori-baru';
+import { KonflikAkun, bidangKonflik } from './repositori-baru';
 import type { DataAkunBaru, RepositoriAkunBaru } from './repositori-baru';
 
 const SANDI = 'Rahasia-Uji-77';
@@ -16,14 +16,14 @@ const jenis = [
   { id: 12, fasyankes_id: 7, nama: 'Nonaktif', syarat_profesi: null, aktif: false, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [] },
 ];
 
-function siapkan(opsi: { dupUsername?: boolean; dupNik?: boolean; konflikSimpan?: boolean } = {}) {
+function siapkan(opsi: { dupUsername?: boolean; dupNik?: boolean; konflikSimpan?: 'username' | 'nik' | boolean } = {}) {
   const audit: EntriAudit[] = [];
   const disimpan: DataAkunBaru[] = [];
   let hashDari = '';
   const repo: RepositoriAkunBaru = {
     cekDuplikat: async () => ({ username: !!opsi.dupUsername, nik: !!opsi.dupNik }),
     buatAkun: async (d) => {
-      if (opsi.konflikSimpan) throw new KonflikAkun();
+      if (opsi.konflikSimpan) throw new KonflikAkun(opsi.konflikSimpan === 'nik' ? 'nik' : 'username');
       disimpan.push(d);
       return {
         id: 50, profil_id: d.profil ? 60 : null,
@@ -131,10 +131,22 @@ describe('pembuatan akun', () => {
     expect(await siapkan({ dupUsername: true }).layanan.buat(pelaku, parse({}))).toMatchObject({ ok: false, kode: 'konflik' });
     expect(await siapkan({ dupNik: true }).layanan.buat(pelaku, parse({}))).toMatchObject({ ok: false, kode: 'konflik' });
     expect(await siapkan({ konflikSimpan: true }).layanan.buat(pelaku, parse({}))).toMatchObject({ ok: false, kode: 'konflik' });
+    expect(await siapkan({ konflikSimpan: 'nik' }).layanan.buat(pelaku, parse({}))).toMatchObject({ ok: false, kode: 'konflik', pesan: AKUN_BARU.duplikatNik });
+    expect(await siapkan({ konflikSimpan: 'username' }).layanan.buat(pelaku, parse({}))).toMatchObject({ ok: false, kode: 'konflik', pesan: AKUN_BARU.duplikatUsername });
     const s = siapkan();
     expect(await s.layanan.buat(pelaku, parse({ penugasan: [{ jenis_akun_id: 12, mulai: '2026-10-01' }] }))).toMatchObject({ ok: false, kode: 'tidak_valid' });
     expect(await s.layanan.buat(pelaku, parse({ penugasan: [{ jenis_akun_id: 99, mulai: '2026-10-01' }] }))).toMatchObject({ ok: false, kode: 'tidak_valid' });
     expect(await s.layanan.buat(pelaku, parse({ izin_akun: [{ izin_id: 999, tipe: 'tambah', alasan: 'x', mulai: '2026-10-01' }] }))).toMatchObject({ ok: false, kode: 'tidak_valid' });
     expect(s.disimpan).toHaveLength(0);
+  });
+});
+
+describe('bidangKonflik (target galat P2002 Prisma)', () => {
+  it('mengenali NIK dari nama indeks maupun daftar kolom, selain itu username', () => {
+    expect(bidangKonflik({ target: 'pengguna_fasyankes_id_nik_key' })).toBe('nik');
+    expect(bidangKonflik({ target: ['fasyankes_id', 'nik'] })).toBe('nik');
+    expect(bidangKonflik({ target: 'pengguna_fasyankes_id_username_key' })).toBe('username');
+    expect(bidangKonflik({ target: ['fasyankes_id', 'username'] })).toBe('username');
+    expect(bidangKonflik(undefined)).toBe('username');
   });
 });

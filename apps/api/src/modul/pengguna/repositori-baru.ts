@@ -25,7 +25,21 @@ export type HasilAkunBaru = {
 };
 
 /** Username atau NIK bentrok saat menyimpan (balapan setelah pemeriksaan awal). */
-export class KonflikAkun extends Error {}
+export class KonflikAkun extends Error {
+  constructor(public readonly bidang: 'username' | 'nik' = 'username') {
+    super(`konflik ${bidang}`);
+  }
+}
+
+/**
+ * Bidang yang bentrok dari galat unik Prisma (P2002): `meta.target` berupa daftar kolom atau nama indeks
+ * (mis. pengguna_fasyankes_id_nik_key). Bila tidak terbaca, dianggap username.
+ */
+export function bidangKonflik(meta: unknown): 'username' | 'nik' {
+  const target = (meta as { target?: unknown } | null | undefined)?.target;
+  const teks = Array.isArray(target) ? target.join('_') : typeof target === 'string' ? target : '';
+  return teks.toLowerCase().split(/[^a-z0-9]+/).includes('nik') ? 'nik' : 'username';
+}
 
 export interface RepositoriAkunBaru {
   /** Username dipakai di mana pun (tanpa beda huruf besar/kecil); NIK dipakai di fasyankes ini. */
@@ -86,7 +100,7 @@ export class RepositoriAkunBaruPrisma implements RepositoriAkunBaru {
         return { id: p.id, profil_id: profil?.id ?? null, penugasan_ids: ids, izin_akun_ids: izinIds, peringatan };
       });
     } catch (galat) {
-      if (galat instanceof Prisma.PrismaClientKnownRequestError && galat.code === 'P2002') throw new KonflikAkun();
+      if (galat instanceof Prisma.PrismaClientKnownRequestError && galat.code === 'P2002') throw new KonflikAkun(bidangKonflik(galat.meta));
       throw galat;
     }
   }

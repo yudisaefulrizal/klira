@@ -12,6 +12,7 @@ import { Tombol } from '../../komponen/ui/tombol';
 import { Isian } from '../../komponen/ui/isian';
 import { Pilihan } from '../../komponen/ui/pilihan';
 import { token } from '../../gaya/token';
+import { AturIzin } from '../../modal/akun-pengaturan/atur-izin';
 import { PembuatanAkun } from '../../modal/akun-pengaturan/pembuatan-akun';
 import { usePengguna } from '../../util/konteks-pengguna';
 import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from '../../util/penyaring-daftar';
@@ -33,7 +34,7 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
   const [cari, setCari] = useState(keadaan.cari);
   const [hasil, setHasil] = useState<Halaman<PenggunaDaftarDto> | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
-  const [segera, setSegera] = useState(false);
+  const [aturUntuk, setAturUntuk] = useState<PenggunaDaftarDto | null>(null);
   const [bukaAkunBaru, setBukaAkunBaru] = useState(false);
   const [muatUlang, setMuatUlang] = useState(0);
 
@@ -92,7 +93,6 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
             <Tombol onClick={() => setBukaAkunBaru(true)}>{PENGGUNA.tambahAkun}</Tombol>
           </HanyaDenganIzin>
         </div>
-        {segera && <Peringatan nada="biru" style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{PENGGUNA.segera}</Peringatan>}
         {galat && <Peringatan style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{galat}</Peringatan>}
         <Tabel kolom={KOLOM} label={PENGGUNA.judulTab}>
           {hasil?.data.map((p) => (
@@ -114,7 +114,7 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
               <SelTabel style={{ textAlign: 'right' }}>
                 <div style={{ display: 'inline-flex', gap: token.jarak.sm }}>
                   <HanyaDenganIzin fitur="akses" aksi="input">
-                    <Tombol varian="teks" onClick={() => setSegera(true)}>{PENGGUNA.aturIzin}</Tombol>
+                    <Tombol varian="teks" onClick={() => setAturUntuk(p)}>{PENGGUNA.aturIzin}</Tombol>
                   </HanyaDenganIzin>
                   {p.id !== saya?.id && (
                     <HanyaDenganIzin fitur="akses" aksi="perbaikan">
@@ -136,6 +136,15 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
         )}
       </Kartu>
       <Peringatan nada="kuning">{PENGGUNA.catatan}</Peringatan>
+      {aturUntuk && (
+        <AturIzin
+          pengguna={aturUntuk}
+          onTutup={(berubah) => {
+            setAturUntuk(null);
+            if (berubah) setMuatUlang((n) => n + 1);
+          }}
+        />
+      )}
       {bukaAkunBaru && (
         <PembuatanAkun
           onTutup={() => setBukaAkunBaru(false)}

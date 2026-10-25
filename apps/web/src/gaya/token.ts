@@ -26,6 +26,7 @@ export const huruf = {
   keluarga: "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
   ukuran: { kecil: '12px', dasar: '14px', besar: '16px', judul: '20px', halaman: '24px', tajuk: '40px' },
   berat: { biasa: 400, sedang: 500, tebal: 600 },
+  jarakHuruf: { kode: '0.05em' },
 } as const;
 
 export const jarak = { xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px' } as const;

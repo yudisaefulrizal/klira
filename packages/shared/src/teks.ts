@@ -103,7 +103,6 @@ export const PENGGUNA = {
   tanpaJenis: 'Tidak ada jenis akun aktif',
   kosong: 'Tidak ada pengguna yang cocok.',
   filterStatus: { semua: 'Semua status', aktif: 'Aktif', nonaktif: 'Dinonaktifkan' },
-  segera: 'Fitur ini segera tersedia.',
   catatan: 'Peringatan izin tidak memblokir: pimpinan dapat memberi izin di luar syarat profesi dengan alasan wajib, dan itu tercatat di audit.',
   tidakBisaNonaktifkanSendiri: 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
   gagalMuat: 'Daftar pengguna gagal dimuat.',
@@ -126,6 +125,7 @@ export const MODAL = {
   peringatanJudul: 'Peringatan izin',
   peringatanKeterangan: 'Peringatan tidak memblokir. Isi alasan untuk melanjutkan; peringatan dan alasannya tercatat di audit.',
   peringatanAlasan: 'Alasan',
+  lanjutkanDenganAlasan: 'Lanjutkan dengan alasan',
   peringatanTerima: 'Terima untuk akun ini',
   peringatanTerimaKet: 'Peringatan sejenis berikutnya untuk akun ini tidak lagi menghalangi, tetapi tetap tercatat.',
   batal: 'Batal',
@@ -154,6 +154,8 @@ export const AKUN_BARU = {
   petunjukIhs: 'Data klinis tanpa IHS Practitioner ID tidak terkirim ke SATUSEHAT.',
   jenisPetunjuk: 'Pilih satu atau lebih jenis akun; tiap jenis punya periode mulai dan selesai.',
   jenisKosong: 'Belum ada jenis akun aktif. Buat jenis akun terlebih dahulu.',
+  syaratProfesi: (syarat: string) => `Syarat profesi: ${syarat}`,
+  peringatanTercatat: (n: number) => `${n} peringatan izin tercatat di audit.`,
   mulai: 'Mulai',
   selesai: 'Selesai (opsional)',
   izinTipe: 'Tipe',
@@ -190,6 +192,46 @@ export const AKUN_BARU = {
   gagalBuat: 'Akun gagal dibuat.',
 } as const;
 
+export const ATUR_IZIN = {
+  judul: 'Atur izin akun',
+  lihatAkses: 'Lihat akses efektif',
+  aksesJudul: 'Akses efektif',
+  aksesJenis: 'Jenis akun berjalan',
+  aksesFitur: 'Fitur yang dapat diakses',
+  aksesIzin: 'Jumlah izin efektif',
+  aksesTidakAda: 'Tidak ada',
+  gagalMuat: 'Data izin akun gagal dimuat.',
+  gagalSimpan: 'Perubahan gagal disimpan.',
+  kolom: { jenis: 'Jenis akun', periode: 'Periode', status: 'Status', tindakan: 'Tindakan', izin: 'Izin', tipe: 'Tipe', alasan: 'Alasan' },
+  penugasanJudul: 'Jenis akun dan periode',
+  penugasanKosong: 'Belum ada penugasan jenis akun.',
+  penugasanTambah: 'Tambah jenis akun',
+  jenisPilih: 'Jenis akun',
+  jenisTidakAda: 'Tidak ada jenis akun aktif yang bisa ditambahkan.',
+  izinJudul: 'Izin tambahan dan pengurangan',
+  izinKosong: 'Belum ada izin tambahan atau pengurangan.',
+  izinTambah: 'Tambah izin',
+  tipe: 'Tipe',
+  tipeOpsi: { tambah: 'Tambah izin', kurang: 'Kurangi izin' },
+  tipeLabel: { tambah: 'Ditambah', kurang: 'Dikurangi' },
+  cariIzin: 'Cari izin',
+  pilihIzin: 'Izin',
+  izinTidakAda: 'Tidak ada izin yang cocok.',
+  alasan: 'Alasan',
+  mulai: 'Mulai',
+  selesai: 'Selesai',
+  selesaiOpsional: 'Selesai (opsional)',
+  tambahkan: 'Tambahkan',
+  ubahPeriode: 'Ubah periode',
+  simpanPeriode: 'Simpan periode',
+  akhiri: 'Akhiri sekarang',
+  batalUbah: 'Batal',
+  selesaiWajib: 'Tanggal selesai wajib diisi.',
+  tanpaBatas: 'tanpa batas',
+  tutup: 'Tutup',
+  memproses: 'Memproses...',
+} as const;
+
 export const NAVIGASI = {
   menuUtama: 'Menu utama',
   tidakDiizinkan: 'Halaman ini tidak diizinkan untuk akun Anda.',
@@ -197,4 +239,4 @@ export const NAVIGASI = {
   segera: 'Halaman ini segera tersedia.',
 } as const;
 
-export const TEKS = { modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN } as const;
+export const TEKS = { aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN } as const;

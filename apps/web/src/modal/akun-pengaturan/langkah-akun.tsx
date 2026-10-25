@@ -78,7 +78,7 @@ export function LangkahJenis({ keadaan: k, ubah, tampilGalat, jenis, hariIni, me
         const p = k.penugasan[j.id];
         return (
           <div key={j.id} style={{ ...kolom, gap: token.jarak.sm, padding: token.jarak.md, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang }}>
-            <KotakCentang id={`jenis-${j.id}`} label={j.nama} keterangan={j.syarat_profesi ? `Syarat profesi: ${j.syarat_profesi}` : undefined} checked={!!p} onChange={(e) => pilih(j.id, e.target.checked)} />
+            <KotakCentang id={`jenis-${j.id}`} label={j.nama} keterangan={j.syarat_profesi ? AKUN_BARU.syaratProfesi(j.syarat_profesi) : undefined} checked={!!p} onChange={(e) => pilih(j.id, e.target.checked)} />
             {p && (
               <div style={baris}>
                 <Isian id={`jenis-${j.id}-mulai`} label={AKUN_BARU.mulai} type="date" value={p.mulai} onChange={(e) => ubah({ penugasan: { ...k.penugasan, [j.id]: { ...p, mulai: e.target.value } } })} galat={g[String(j.id)]} />
@@ -210,11 +210,11 @@ export function IsiHasilAkun({ username, kataSandi, jumlahPeringatan }: { userna
       <div style={{ ...kolom, gap: token.jarak.xs }}>
         <span style={{ color: token.warna.teksRedup }}>{AKUN_BARU.kataSandiAwal}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.md }}>
-          <code data-testid="kata-sandi-awal" style={{ fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal, letterSpacing: '0.05em', background: token.warna.kepalaTabel, padding: `${token.jarak.sm} ${token.jarak.md}`, borderRadius: token.radius.sedang, border: `${token.ukuran.garis} solid ${token.warna.garis}`, userSelect: 'all' }}>{kataSandi}</code>
+          <code data-testid="kata-sandi-awal" style={{ fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal, letterSpacing: token.huruf.jarakHuruf.kode, background: token.warna.kepalaTabel, padding: `${token.jarak.sm} ${token.jarak.md}`, borderRadius: token.radius.sedang, border: `${token.ukuran.garis} solid ${token.warna.garis}`, userSelect: 'all' }}>{kataSandi}</code>
           <Tombol type="button" varian="sekunder" onClick={() => void salin()}>{tersalin ? AKUN_BARU.tersalin : AKUN_BARU.salin}</Tombol>
         </div>
       </div>
-      {jumlahPeringatan > 0 && <Peringatan nada="biru">{`${jumlahPeringatan} peringatan izin tercatat di audit.`}</Peringatan>}
+      {jumlahPeringatan > 0 && <Peringatan nada="biru">{AKUN_BARU.peringatanTercatat(jumlahPeringatan)}</Peringatan>}
     </>
   );
 }

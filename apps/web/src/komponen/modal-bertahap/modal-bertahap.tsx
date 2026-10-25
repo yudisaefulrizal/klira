@@ -102,18 +102,13 @@ export function ModalBertahap({
             {langkah.map((l, n) => {
               const s = status[n];
               return (
-                <button
+                <Tombol
                   key={l.id}
                   type="button"
+                  varian="langkah"
+                  terpilih={s === 'aktif'}
                   aria-current={s === 'aktif' ? 'step' : undefined}
                   onClick={() => onIndeks(n)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: token.jarak.sm, textAlign: 'left', padding: token.jarak.sm, border: 'none', cursor: 'pointer',
-                    borderRadius: token.radius.sedang, fontFamily: token.huruf.keluarga, fontSize: token.huruf.ukuran.dasar,
-                    background: s === 'aktif' ? token.warna.utamaLatar : 'transparent',
-                    color: s === 'aktif' ? token.warna.utamaGelap : token.warna.teks,
-                    fontWeight: s === 'aktif' ? token.huruf.berat.tebal : token.huruf.berat.biasa,
-                  }}
                 >
                   <span
                     aria-hidden="true"
@@ -127,7 +122,7 @@ export function ModalBertahap({
                     {s === 'selesai' ? '✓' : n + 1}
                   </span>
                   {l.judul}
-                </button>
+                </Tombol>
               );
             })}
           </nav>

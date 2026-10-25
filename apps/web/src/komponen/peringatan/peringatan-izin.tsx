@@ -61,7 +61,7 @@ type DialogProps = {
 };
 
 /** Peringatan sebagai dialog (di luar alur bertahap): alasan wajib, tercatat; tidak memblokir bila alasan diisi. */
-export function DialogPeringatan({ peringatan, onLanjut, onBatal, opsiTerima = true, memproses, labelLanjut = 'Lanjutkan dengan alasan' }: DialogProps) {
+export function DialogPeringatan({ peringatan, onLanjut, onBatal, opsiTerima = true, memproses, labelLanjut = MODAL.lanjutkanDenganAlasan }: DialogProps) {
   const [nilai, setNilai] = useState(isianPeringatanAwal);
   const siap = isianPeringatanSiap(nilai) && !memproses;
   return (

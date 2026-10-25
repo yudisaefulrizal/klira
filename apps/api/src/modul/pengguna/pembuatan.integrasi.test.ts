@@ -167,4 +167,19 @@ d('POST /api/pengguna terhadap klira_uji', () => {
     expect(await prisma.pengguna.count({ where: { username: `${kode}-gagal` } })).toBe(0);
     expect(await prisma.profilProfesi.count({ where: { fasyankes_id: fas, pengguna: { username: `${kode}-gagal` } } })).toBe(0);
   });
+
+  it('galat unik dari basis data: NIK ganda dikenali sebagai NIK, username ganda sebagai username', async () => {
+    const { RepositoriAkunBaruPrisma, KonflikAkun } = require('./repositori-baru');
+    const dasar = {
+      fasyankes_id: fas, oleh: id.pimpinan, kata_sandi_hash: 'x', profil: null,
+      penugasan: [{ jenis_akun_id: jenisDaftar, mulai: new Date(), selesai: null }], izin_akun: [], peringatan: [],
+    };
+    const repo = new RepositoriAkunBaruPrisma();
+    const galatNik = await repo.buatAkun({ ...dasar, nama: 'Dup NIK', nik: '9930000000000011', username: `${kode}-dupnik` }).catch((e: unknown) => e);
+    expect(galatNik).toBeInstanceOf(KonflikAkun);
+    expect(galatNik.bidang).toBe('nik');
+    const galatUser = await repo.buatAkun({ ...dasar, nama: 'Dup User', nik: '9960000000000001', username: `${kode}-pimpinan` }).catch((e: unknown) => e);
+    expect(galatUser).toBeInstanceOf(KonflikAkun);
+    expect(galatUser.bidang).toBe('username');
+  });
 });
