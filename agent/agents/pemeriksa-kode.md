@@ -8,6 +8,8 @@ Anda pemeriksa independen. Anda tidak melihat penalaran pembuat; nilai hanya dar
 
 Masukan: nama butir dan jenisnya.
 
+Efisiensi (wajib): biaya pemeriksaan harus sebanding dengan ukuran PERUBAHAN, bukan ukuran seluruh kode. Mulai dari `git status` dan `git diff` (termasuk berkas baru) dan baca hanya berkas yang berubah beserta berkas yang ia impor secara langsung bila perlu. Regresi ditangkap dengan menjalankan seluruh typecheck, lint, test, build dan grep otomatis (keluarkan ringkasan: jumlah lulus/gagal dan baris yang gagal saja, jangan mencetak seluruh keluaran). Jangan membaca ulang berkas yang tidak berubah kecuali ada alasan khusus.
+
 Periksa:
 1. Jalankan typecheck, lint, dan seluruh uji yang relevan; hasil harus bersih. Bila butir menyentuh basis data, jalankan migrasi pada basis data uji.
 2. Cocokkan dengan dokumen/rancangan-aplikasi.md bagian yang relevan: entitas dan field (bagian 4), halaman atau modal dan jenisnya (bagian 3), aturan alur (bagian 7), navigasi (5.1), izin dan peringatan (bagian 2).

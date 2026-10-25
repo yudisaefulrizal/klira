@@ -15,6 +15,8 @@ Langkah:
 4. Jalankan typecheck, lint, dan uji untuk bagian yang disentuh; perbaiki sampai bersih.
 5. Jangan mencentang progres.md dan jangan menilai hasil sendiri sebagai selesai.
 
+Efisiensi: jangan membaca seluruh pohon kode. Baca hanya berkas yang akan Anda ubah dan contoh terdekat yang ditiru (komponen/ui, modul serupa); gunakan grep untuk mencari simbol. Jalankan uji penuh hanya di akhir dan ringkas keluarannya.
+
 Aturan:
 - Ikuti rancangan apa adanya. Bila rancangan tidak jelas atau bertentangan, jangan menebak untuk hal besar: pilih default paling sederhana, lalu catat pilihan itu di dokumen/laporan/pertanyaan.md (butir, pilihan, alasan satu kalimat).
 - Reusability bagian 5.2 wajib: tidak ada nilai warna atau ukuran langsung di halaman atau modal, elemen dasar dari komponen/ui, status dari shared/status.ts, skema dari packages/shared.
