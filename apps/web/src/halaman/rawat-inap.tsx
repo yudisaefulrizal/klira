@@ -7,7 +7,7 @@ import { useIzin } from '../komponen/izin-saja';
 import { Kartu } from '../komponen/ui/kartu';
 import { Lencana } from '../komponen/ui/lencana';
 import { Peringatan } from '../komponen/ui/peringatan';
-import { Kolom, Sebaris } from '../komponen/ui/susunan';
+import { Kisi, Kolom, Sebaris } from '../komponen/ui/susunan';
 import { Tombol } from '../komponen/ui/tombol';
 import { token } from '../gaya/token';
 import { AdmisiRawatInap } from '../modal/pelayanan-klinik/admisi-rawat-inap';
@@ -79,7 +79,7 @@ export function HalamanRawatInap() {
       {perRuang.map(([ruang, bed]) => (
         <Kolom key={ruang} jarak="sm">
           <h2 style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{ruang}</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: token.jarak.md }}>
+          <Kisi kolom={`repeat(auto-fill, minmax(${token.ukuran.kartuBed}, 1fr))`}>
             {bed.map((b) => (
               <Kartu key={b.id} susun="xs" aria-label={`${P.bedLabel} ${b.nama}`}>
                 <Sebaris jarak="sm" sebaran="awal"><strong style={{ flexGrow: 1 }}>{b.nama}</strong><Lencana warna={STATUS_BED.warna(b.status)}>{STATUS_BED.label(b.status)}</Lencana></Sebaris>
@@ -96,7 +96,7 @@ export function HalamanRawatInap() {
                 ) : <span style={kecil}>{P.kosongBed}</span>}
               </Kartu>
             ))}
-          </div>
+          </Kisi>
         </Kolom>
       ))}
       {modal?.jenis === 'admisi' && <AdmisiRawatInap onTutup={() => setModal(null)} onSelesai={selesai} />}
