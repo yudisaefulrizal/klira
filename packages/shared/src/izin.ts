@@ -80,7 +80,7 @@ export const HALAMAN_MENU: readonly HalamanMenu[] = [
   { path: '/penunjang', label: 'Penunjang', fitur: ['penunjang'] },
   { path: '/farmasi', label: 'Farmasi', fitur: ['farmasi'] },
   { path: '/kasir-klaim', label: 'Kasir dan klaim', fitur: ['kasir', 'klaim'] },
-  { path: '/rekam-medis', label: 'Rekam medis', fitur: ['rekam-medis'] },
+  { path: '/rekam-medis', label: 'Rekam medis', fitur: ['rekam-medis', 'klinis'] },
   { path: '/satusehat', label: 'SATUSEHAT', fitur: ['satusehat'] },
   { path: '/pelindungan-data', label: 'Pelindungan data', fitur: ['pdp'] },
   { path: '/pengaturan', label: 'Pengaturan', fitur: ['akses', 'audit', 'satusehat', 'master', 'profil-klinik'] },

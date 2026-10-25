@@ -36,6 +36,9 @@ import { buatLayananPengesahan } from './modul/rekam-medis/layanan';
 import { RepositoriPengesahanPrisma } from './modul/rekam-medis/repositori';
 import { buatRutePengesahan } from './modul/rekam-medis/rute';
 import { buatLayananKlinis } from './modul/klinis/layanan';
+import { buatLayananRm } from './modul/rekam-medis/layanan-rm';
+import { RepositoriRmPrisma } from './modul/rekam-medis/repositori-rm';
+import { buatRuteRm } from './modul/rekam-medis/rute-rm';
 import { RepositoriKlinisPrisma } from './modul/klinis/repositori';
 import { buatRuteKlinis } from './modul/klinis/rute';
 import { buatLayananAddendum } from './modul/rekam-medis/layanan-addendum';
@@ -96,8 +99,10 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   // Pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab nanti) dan modul klinis yang mendaftarkan penyedia isinya.
   const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanPrisma(), audit: new PenampungAuditPrisma() });
   const repoKlinis = new RepositoriKlinisPrisma();
-  app.use('/api', buatRuteKlinis(layananAkses, layananIzin, buatLayananKlinis({
-    repo: repoKlinis, audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan,
+  const layananKlinis = buatLayananKlinis({ repo: repoKlinis, audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan });
+  app.use('/api', buatRuteKlinis(layananAkses, layananIzin, layananKlinis));
+  app.use('/api', buatRuteRm(layananAkses, layananIzin, buatLayananRm({
+    repo: new RepositoriRmPrisma(), pengesahanRepo: new RepositoriPengesahanPrisma(), pengesahan: layananPengesahan, klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));
   // Addendum generik, penunjang (order, spesimen, hasil), persetujuan tindakan, dan tagihan dasar.
   const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan });

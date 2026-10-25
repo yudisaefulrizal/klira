@@ -61,10 +61,11 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
     },
 
     /** Simpan satu bagian = pengesahan (7): isi berversi, hash isi, jenis akun pengesah; perbaikan butuh alasan. Tanpa perubahan tidak menulis apa pun. */
-    async simpanBagian(p: Pelaku, kunjunganId: number, bagian: BagianKlinis, isiMentah: unknown, alasan: string | undefined, alamat?: string): Promise<Hasil<HasilSimpan>> {
+    async simpanBagian(p: Pelaku, kunjunganId: number, bagian: BagianKlinis, isiMentah: unknown, alasan: string | undefined, alamat?: string, opsi: { perbaikan?: boolean; disetujuiOleh?: number } = {}): Promise<Hasil<HasilSimpan>> {
       const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
       if (!k) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
-      if (!TAHAP_BOLEH_CATAT.includes(k.tahap_layanan)) return gagal('konflik', KLINIS.galat.kunjunganTertutup);
+      // Perbaikan catatan yang sudah disahkan boleh pada kunjungan yang sudah ditutup (PMK 24/2022 P30); isian baru tidak.
+      if (!opsi.perbaikan && !TAHAP_BOLEH_CATAT.includes(k.tahap_layanan)) return gagal('konflik', KLINIS.galat.kunjunganTertutup);
       const h = SKEMA_BAGIAN[bagian].safeParse(isiMentah);
       if (!h.success) {
         return { ok: false, kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: h.error.issues.map((i) => ({ jalur: ['isi', ...i.path].join('.'), pesan: i.message })) };
@@ -79,7 +80,7 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
         isi = { item };
       }
       const rencana = await pengesahan.siapkan({
-        fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, alasan,
+        fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, alasan, disetujuiOleh: opsi.disetujuiOleh,
         bacaIsiSekarang: () => repo.bacaBagian(p.fasyankes_id, kunjunganId, bagian),
       });
       if (!rencana.ok) return rencana;

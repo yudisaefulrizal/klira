@@ -918,4 +918,41 @@ export const KASIR = {
   },
 } as const;
 
-export const TEKS = { kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const REKAM_MEDIS = {
+  judul: 'Rekam medis',
+  tabLabel: 'Tab Rekam medis',
+  tab: { berkas: 'Berkas pasien', pengkodean: 'Pengkodean dan laporan', perbaikan: 'Antrean perbaikan' },
+  memuat: 'Memuat...',
+  berkas: {
+    cari: 'Cari nama, nomor RM, atau NIK', kolom: { pasien: 'Pasien', ditutup: 'Ditutup', diagnosis: 'Diagnosis', kode: 'Pengkodean', arsip: 'Arsip', tindakan: 'Tindakan' }, kosong: 'Tidak ada kunjungan pada penyaring ini.', gagalMuat: 'Berkas gagal dimuat.',
+    filterKode: 'Pengkodean', semuaKode: 'Semua', dari: 'Ditutup dari', sampai: 'Ditutup sampai', terapkan: 'Terapkan', aturUlang: 'Atur ulang', riwayat: 'Riwayat', perbaiki: 'Perbaiki catatan', kodekan: 'Pengkodean ICD',
+    diarsipkan: (retensi: string) => `Diarsipkan, retensi sampai ${retensi}`, belumArsip: 'Belum diarsipkan', rawat: { AMB: 'Rawat jalan', IMP: 'Rawat inap' } as Record<string, string>, perbaikanMenunggu: (n: number) => `${n} perbaikan menunggu`,
+    catatan: 'Arsip mengikuti pengkodean: kunjungan yang sudah ditutup dan dikodekan diarsipkan dan disimpan 25 tahun.',
+  },
+  perbaikan: {
+    judul: 'Perbaiki catatan', bagian: 'Bagian catatan', pilihBagian: 'Pilih bagian...', alasan: 'Alasan perbaikan', alasanPetunjuk: 'Alasan wajib dan tersimpan bersama versi lama.', ajukan: 'Simpan perbaikan', mengajukan: 'Menyimpan...',
+    diterapkan: 'Perbaikan diterapkan sebagai versi baru; versi lama tetap tersimpan.', diajukanPesan: 'Perbaikan melewati 2x24 jam atau bukan dari pembuat catatan: diajukan ke persetujuan.', belumDisahkan: 'Bagian ini belum disahkan; isi lewat Pemeriksaan klinis.',
+    gagal: 'Perbaikan gagal disimpan.', bagianLabel: { anamnesis: 'Anamnesis', tanda_vital: 'Tanda vital', pemeriksaan: 'Pemeriksaan', diagnosis: 'Diagnosis', tindakan: 'Tindakan', tindak_lanjut: 'Rencana tindak lanjut' } as Record<string, string>,
+    batasInfo: 'Pembuat catatan dapat memperbaiki langsung dalam 2x24 jam sejak pengesahan terakhir.', sudahAda: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.',
+  },
+  tinjau: {
+    judul: 'Tinjau permintaan perbaikan', kolom: { pasien: 'Pasien', bagian: 'Bagian', pemohon: 'Pemohon', alasan: 'Alasan', status: 'Status', waktu: 'Diajukan', tindakan: 'Tindakan' }, kosong: 'Tidak ada permintaan perbaikan.', gagalMuat: 'Antrean perbaikan gagal dimuat.',
+    tinjau: 'Tinjau', setujui: 'Setujui', tolak: 'Tolak', catatan: 'Catatan keputusan', catatanTolakPetunjuk: 'Alasan penolakan wajib diisi.', sekarang: 'Isi sekarang', usulan: 'Isi usulan', memproses: 'Memproses...',
+    disetujui: 'Perbaikan disetujui dan diterapkan sebagai versi baru.', ditolak: 'Permintaan ditolak.', filterStatus: 'Status', semua: 'Semua status', menunggu: (n: number) => `${n} menunggu`, sudahDiputuskan: 'Permintaan ini sudah diputuskan.',
+    gagal: 'Keputusan gagal dicatat.', penyetujuBeda: 'Penyetuju harus orang lain, bukan pemohon.',
+  },
+  kode: {
+    judul: 'Pengkodean ICD', dokter: 'Dicatat dokter', final: 'Kode final', diagnosis: 'Diagnosis (ICD-10)', tindakan: 'Tindakan (ICD-9 CM)', kode: 'Kode', nama: 'Nama', peran: 'Peran', utama: 'Utama', penyerta: 'Penyerta', tambahDiagnosis: 'Tambah diagnosis',
+    tambahTindakan: 'Tambah tindakan', buang: 'Buang', salinDokter: 'Salin dari dokter', catatan: 'Catatan pengodean', simpan: 'Simpan kode final', menyimpan: 'Menyimpan...', tersimpan: 'Kode final tersimpan.',
+    arsipInfo: (retensi: string) => `Kunjungan diarsipkan, retensi sampai ${retensi}.`, belumDitutup: 'Kunjungan belum ditutup; pengkodean dilakukan sesudah tutup kunjungan.', versi: (n: number) => `Versi ${n}`, oleh: (nama: string) => `Dikodekan oleh ${nama}`,
+    cariKode: 'Cari kode', gagalMuat: 'Data pengkodean gagal dimuat.', gagal: 'Kode final gagal disimpan.', kosongTindakan: 'Tanpa tindakan.',
+  },
+  galat: {
+    tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.', bagian: 'Pilih bagian catatan.', keputusan: 'Pilih setujui atau tolak.', catatanTolak: 'Catatan wajib bila menolak.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10, E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
+    diagnosisWajib: 'Minimal satu diagnosis.', satuUtama: 'Harus ada tepat satu diagnosis utama.', kodeGanda: 'Kode tidak boleh ganda.', kunjunganTidakAda: 'Kunjungan tidak ditemukan.', permintaanTidakAda: 'Permintaan tidak ditemukan.', sudahDiputuskan: 'Permintaan sudah diputuskan.',
+    belumDisahkan: 'Bagian ini belum pernah disahkan.', penyetujuSama: 'Penyetuju harus orang lain, bukan pemohon.', sudahMenunggu: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.', belumDitutup: 'Pengkodean dilakukan setelah kunjungan ditutup.',
+    bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', isiTidakSah: 'Isi perbaikan tidak sah.',
+  },
+} as const;
+
+export const TEKS = { rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

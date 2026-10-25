@@ -23,6 +23,9 @@ export type MasukanSiapkan = {
   /** Isi sekarang di basis data (dibaca hanya bila entitas sudah pernah disahkan). */
   bacaIsiSekarang: () => Promise<unknown>;
   alasan?: string | null;
+  /** Perbaikan yang disetujui orang lain (permintaan perbaikan) atau pengodean: melewati batas perbaikan sendiri 2x24 jam; penyetuju dicatat di versi lama. */
+  disetujuiOleh?: number;
+  lewatiBatas?: boolean;
 };
 
 export type HasilSiapkan = { jenis: 'sama'; versi: number } | { jenis: 'baru'; rencana: Omit<TulisPengesahan, 'fasyankesId' | 'entitas' | 'entitasId'> };
@@ -64,8 +67,8 @@ export function buatLayananPengesahan({ repo, audit, sekarang = () => new Date()
         if (hash === terakhir.hash && hashIsi(isiSekarang) === terakhir.hash) return { ok: true, data: { jenis: 'sama', versi: terakhir.versi } };
         const alasan = m.alasan?.trim();
         if (!alasan) return gagal('tidak_valid', KLINIS.galat.alasanPerbaikan, 'alasan');
-        if (!bolehPerbaikiSendiri(terakhir, m.pelakuId, waktu)) return gagal('konflik', KLINIS.galat.perbaikanButuhPersetujuan);
-        versiLama = { versi: terakhir.versi, isi_lama: isiSekarang ?? null, alasan, disetujui_oleh: null };
+        if (!m.lewatiBatas && m.disetujuiOleh === undefined && !bolehPerbaikiSendiri(terakhir, m.pelakuId, waktu)) return gagal('konflik', KLINIS.galat.perbaikanButuhPersetujuan);
+        versiLama = { versi: terakhir.versi, isi_lama: isiSekarang ?? null, alasan, disetujui_oleh: m.disetujuiOleh ?? null };
       }
       const jenisAkun: JenisAkunPengesah | null = pilihJenisAkun(await repo.jenisAkunPemberiHak(m.fasyankesId, m.pelakuId, m.fitur, terakhir ? 'perbaikan' : 'input', waktu));
       return { ok: true, data: { jenis: 'baru', rencana: { versi: (terakhir?.versi ?? 0) + 1, penggunaId: m.pelakuId, jenisAkun, hash, waktu, versiLama } } };

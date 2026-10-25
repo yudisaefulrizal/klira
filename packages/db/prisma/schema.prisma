@@ -631,6 +631,8 @@ model Kunjungan {
   order_penunjang OrderPenunjang[]
   tagihan         Tagihan?
   resep           Resep[]
+  diarsipkan_pada DateTime?          @db.DateTime(3)
+  retensi_sampai  DateTime?          @db.Date
 
   @@index([fasyankes_id, tahap_layanan])
   @@index([pasien_id])
@@ -1368,4 +1370,45 @@ model PengeluaranObat {
 
   @@index([resep_id])
   @@map("pengeluaran_obat")
+}
+
+// ---- Rekam medis (4.2, 4.9): permintaan perbaikan setelah 2x24 jam, pengkodean ICD final ----
+enum StatusPerbaikan {
+  diajukan
+  disetujui
+  ditolak
+}
+
+// Permintaan perbaikan catatan klinis yang tidak boleh langsung (lewat 2x24 jam atau bukan pembuat): isi baru tersimpan sampai disetujui orang lain.
+model PermintaanPerbaikan {
+  id                Int             @id @default(autoincrement())
+  fasyankes_id      Int
+  kunjungan_id      Int
+  bagian            String          @db.VarChar(30)
+  isi_baru          Json
+  alasan            String          @db.VarChar(500)
+  pemohon_id        Int
+  status            StatusPerbaikan @default(diajukan)
+  penyetuju_id      Int?
+  catatan_keputusan String?         @db.VarChar(500)
+  waktu_keputusan   DateTime?       @db.DateTime(3)
+  dibuat_pada       DateTime        @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, status])
+  @@index([kunjungan_id])
+  @@map("permintaan_perbaikan")
+}
+
+// Kode final hasil verifikasi perekam medis (satu baris per kunjungan; riwayat lewat versi catatan dan pengesahan entitas `pengkodean`).
+model Pengkodean {
+  id              Int      @id @default(autoincrement())
+  fasyankes_id    Int
+  kunjungan_id    Int      @unique
+  isi             Json
+  pengode_id      Int
+  diperbarui_pada DateTime @default(now()) @db.DateTime(3)
+  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id])
+  @@map("pengkodean")
 }
