@@ -2,7 +2,7 @@ export const AKSI_IZIN = ['input', 'perbaikan', 'lihat'] as const;
 export const CAKUPAN_IZIN = ['unit', 'layanan'] as const;
 export const FITUR_IZIN = [
   'pendaftaran', 'kunjungan', 'klinis', 'resep', 'farmasi', 'penunjang', 'kasir', 'klaim',
-  'rekam-medis', 'akses', 'satusehat', 'pdp', 'audit',
+  'rekam-medis', 'akses', 'satusehat', 'pdp', 'audit', 'master', 'profil-klinik',
 ] as const;
 
 export type AksiIzin = (typeof AKSI_IZIN)[number];
@@ -20,7 +20,7 @@ export type JenisAkunAwal = { nama: string; syarat_profesi?: string; fitur: Fitu
 /** Paket awal 12 jenis akun (bagian 2.1; contoh, setelah dibuat menjadi milik klinik). */
 export const JENIS_AKUN_AWAL: JenisAkunAwal[] = [
   { nama: 'Admin vendor', fitur: ['akses', 'satusehat'] },
-  { nama: 'Pimpinan fasyankes', fitur: ['akses', 'audit', 'rekam-medis'] },
+  { nama: 'Pimpinan fasyankes', fitur: ['akses', 'audit', 'rekam-medis', 'master', 'profil-klinik'] },
   { nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', fitur: ['klinis', 'resep', 'kunjungan'] },
   { nama: 'Perawat/Bidan/Nakes lain', syarat_profesi: 'nakes ber-SIP', fitur: ['klinis', 'kunjungan'] },
   { nama: 'Perekam Medis dan Informasi Kesehatan', fitur: ['rekam-medis', 'pendaftaran'] },
@@ -82,7 +82,7 @@ export const HALAMAN_MENU: readonly HalamanMenu[] = [
   { path: '/rekam-medis', label: 'Rekam medis', fitur: ['rekam-medis'] },
   { path: '/satusehat', label: 'SATUSEHAT', fitur: ['satusehat'] },
   { path: '/pelindungan-data', label: 'Pelindungan data', fitur: ['pdp'] },
-  { path: '/pengaturan', label: 'Pengaturan', fitur: ['akses', 'audit', 'satusehat'] },
+  { path: '/pengaturan', label: 'Pengaturan', fitur: ['akses', 'audit', 'satusehat', 'master', 'profil-klinik'] },
   { path: HALAMAN_AWAL.berandaTugas, label: 'Beranda tugas', fitur: null },
 ];
 

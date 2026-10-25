@@ -102,12 +102,6 @@ export const waliKeluarga = id
   .extend(jejak.shape);
 
 // Jenis akun dan izin
-export const jenisAkunMasukan = z.object({
-  nama: teksWajib(150),
-  syarat_profesi: teksOpsional(),
-  izin_ids: z.array(idPositif).default([]),
-  alasan_perubahan: teksOpsional(1000),
-});
 export const jenisAkun = id
   .extend({
     nama: teksWajib(150),

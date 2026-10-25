@@ -4,3 +4,5 @@ export * from './akses';
 export * from './audit';
 export * from './pengguna';
 export * from './keamanan';
+export * from './master';
+export * from './profil';

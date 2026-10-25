@@ -94,6 +94,11 @@ export const STATUS_AKUN = buat({
   nonaktif: { label: 'Dinonaktifkan', warna: 'abu' },
 });
 
+export const STATUS_OPERASIONAL = buat({
+  O: { label: 'Operasional', warna: 'hijau' },
+  U: { label: 'Tidak operasional', warna: 'abu' },
+});
+
 /** Status periode penugasan jenis akun atau izin per akun terhadap hari ini. */
 export const STATUS_PERIODE = buat({
   akan_datang: { label: 'Akan datang', warna: 'biru' },

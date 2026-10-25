@@ -45,6 +45,8 @@ export const rentangIso = (dari: string, sampai: string): { dari?: string; sampa
 export const rentangTerbalik = (dari: string, sampai: string): boolean => !!dari && !!sampai && sampai < dari;
 
 export const BAWAAN_AUDIT: NilaiPenyaring = { pengguna: '', aksi: '', entitas: '', dari: '', sampai: '' };
+/** Penyaring tab Master data: subbagian (jenis), pencarian, status, dan tingkat wilayah. */
+export const BAWAAN_MASTER: NilaiPenyaring = { jenis: 'poli', cari: '', status: 'semua', tingkat: '' };
 export const BAWAAN_PERINGATAN: NilaiPenyaring = { cari: '', jenis: '', dari: '', sampai: '' };
 
 export const penggunaIdSah = (t: string): boolean => t === '' || /^[1-9]\d*$/.test(t);
@@ -85,4 +87,12 @@ export function formatWaktu(iso: string, zona?: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return new Intl.DateTimeFormat('id-ID', { dateStyle: 'short', timeStyle: 'short', timeZone: zona }).format(d);
+}
+
+export type SaringanMasterTab = { halaman: number; ukuran: number; cari?: string; status?: string; tingkat?: string };
+
+/** Saringan daftar master dari keadaan tab; kosong tidak dikirim. */
+export function saringanMaster(k: KeadaanTab, ukuran: number): SaringanMasterTab {
+  const { cari, status, tingkat } = k.nilai;
+  return { halaman: k.halaman, ukuran, ...(cari ? { cari } : {}), ...(status && status !== 'semua' ? { status } : {}), ...(tingkat ? { tingkat } : {}) };
 }

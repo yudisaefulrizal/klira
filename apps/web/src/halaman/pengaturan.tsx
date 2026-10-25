@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { NAVIGASI, PENGGUNA } from '@klira/shared';
+import { PENGGUNA } from '@klira/shared';
 import { Tab } from '../komponen/ui/tab';
 import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
@@ -9,13 +9,13 @@ import { tabPengaturanDiizinkan } from '../util/tab-pengaturan';
 import type { IdTabPengaturan } from '../util/tab-pengaturan';
 import { TabAudit } from './pengaturan/tab-audit';
 import { TabJenisAkun } from './pengaturan/tab-jenis-akun';
+import { TabMaster } from './pengaturan/tab-master';
+import { TabProfil } from './pengaturan/tab-profil';
 import { TabKeamanan } from './pengaturan/tab-keamanan';
 import { TabPengguna } from './pengaturan/tab-pengguna';
 import { TabPeringatan } from './pengaturan/tab-peringatan';
 
 const HALAMAN = 'pengaturan';
-/** Tab yang sudah punya isi; sisanya masih menampilkan pesan segera. */
-const TAB_SIAP: readonly IdTabPengaturan[] = ['pengguna', 'jenis-akun', 'peringatan', 'keamanan', 'audit'];
 const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
 
 /** Halaman Pengaturan (3.1): tab dari alamat (?tab=), jika tidak ada dipakai tab terakhir (5.1h). */
@@ -44,9 +44,10 @@ export function HalamanPengaturan() {
       {aktif === 'pengguna' && <TabPengguna search={dariAlamat === 'pengguna' ? search : ''} ubahAlamat={ubahAlamat} />}
       {aktif === 'jenis-akun' && <TabJenisAkun />}
       {aktif === 'peringatan' && <TabPeringatan search={dariAlamat === 'peringatan' ? search : ''} ubahAlamat={ubahAlamat} />}
+      {aktif === 'master' && <TabMaster search={dariAlamat === 'master' ? search : ''} ubahAlamat={ubahAlamat} />}
+      {aktif === 'profil' && <TabProfil />}
       {aktif === 'keamanan' && <TabKeamanan />}
       {aktif === 'audit' && <TabAudit search={dariAlamat === 'audit' ? search : ''} ubahAlamat={ubahAlamat} />}
-      {aktif && !TAB_SIAP.includes(aktif) && <p style={{ margin: 0, color: token.warna.teksRedup }}>{NAVIGASI.segera}</p>}
     </>
   );
 }

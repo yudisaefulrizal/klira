@@ -14,10 +14,10 @@
 | Pembuatan akun dan penugasan | Modal | Pengguna dan akses | Bisa dikerjakan | ✔ |
 | Atur izin akun | Modal | Pengguna dan akses | Bisa dikerjakan | ✔ |
 | Buat atau ubah jenis akun | Modal | Pengaturan | Bisa dikerjakan | ✔ |
-| Daftar peringatan izin | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ☐ |
-| Master data | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ☐ |
-| Tambah atau ubah master/profil | Modal | Master data | Bisa dikerjakan | ☐ |
-| Profil klinik | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ☐ |
+| Daftar peringatan izin | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
+| Master data | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
+| Tambah atau ubah master/profil | Modal | Master data | Bisa dikerjakan | ✔ |
+| Profil klinik | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
 | Keamanan (kebijakan akses, backup) | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
 | Log audit (tampilan) | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
 | Daftar pasien | Halaman | - | Bisa dikerjakan | ☐ |

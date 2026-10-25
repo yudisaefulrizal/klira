@@ -10,7 +10,7 @@ d('skema basis data (klira_uji)', () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   async function bersihkan() {
     await prisma.$transaction([
-      prisma.sesi.deleteMany(), prisma.peringatanIzin.deleteMany(), prisma.izinPerAkun.deleteMany(), prisma.penugasanJenis.deleteMany(),
+      prisma.sesi.deleteMany(), prisma.jadwalPraktik.deleteMany(), prisma.tarifLayanan.deleteMany(), prisma.riwayatProfil.deleteMany(), prisma.wilayah.deleteMany(), prisma.peringatanIzin.deleteMany(), prisma.izinPerAkun.deleteMany(), prisma.penugasanJenis.deleteMany(),
       prisma.izinJenisAkun.deleteMany(), prisma.riwayatJenisAkun.deleteMany(), prisma.jenisAkun.deleteMany(),
       prisma.profilProfesi.deleteMany(), prisma.waliKeluarga.deleteMany(), prisma.pasien.deleteMany(),
       prisma.pengguna.deleteMany(), prisma.kredensialSatusehat.deleteMany(), prisma.lokasi.deleteMany(),

@@ -62,6 +62,7 @@ model Fasyankes {
   kode_registrasi        String?              @unique @db.VarChar(50)
   organization_id        String?              @db.VarChar(100)
   status_akreditasi      String?              @db.VarChar(100)
+  tanggal_akreditasi     DateTime?            @db.Date
   puskesmas_wilayah      String?              @db.VarChar(200)
   dibuat_oleh            Int?
   dibuat_pada            DateTime             @default(now()) @db.DateTime(3)
@@ -80,6 +81,9 @@ model Fasyankes {
   izin_jenis_akun        IzinJenisAkun[]
   pengaturan_keamanan    PengaturanKeamanan?
   riwayat_backup         RiwayatBackup[]
+  jadwal_praktik         JadwalPraktik[]
+  tarif_layanan          TarifLayanan[]
+  riwayat_profil         RiwayatProfil[]
 
   @@map("fasyankes")
 }
@@ -113,6 +117,7 @@ model Lokasi {
   fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
   induk     Lokasi?   @relation("LokasiInduk", fields: [induk_id], references: [id])
   anak      Lokasi[]  @relation("LokasiInduk")
+  jadwal_praktik JadwalPraktik[]
 
   @@index([fasyankes_id])
   @@map("lokasi")
@@ -136,6 +141,7 @@ model Pengguna {
   izin_per_akun   IzinPerAkun[]
   peringatan_izin PeringatanIzin[]
   sesi            Sesi[]
+  jadwal_praktik  JadwalPraktik[]
 
   @@unique([fasyankes_id, username])
   @@unique([fasyankes_id, nik])
@@ -150,6 +156,7 @@ model ProfilProfesi {
   nomor_sip        String?   @db.VarChar(100)
   masa_berlaku_sip DateTime? @db.Date
   ihs_practitioner_id String? @db.VarChar(100)
+  aktif            Boolean   @default(true)
   dibuat_oleh      Int?
   dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
 
@@ -420,4 +427,94 @@ model RiwayatBackup {
 
   @@index([fasyankes_id, waktu])
   @@map("riwayat_backup")
+}
+
+enum JenisTarif {
+  konsultasi
+  tindakan
+  lab
+  kamar
+}
+
+enum TingkatWilayah {
+  provinsi
+  kabupaten_kota
+  kecamatan
+  kelurahan_desa
+}
+
+// Jadwal praktik (4.2): lokasi_id adalah poli; hari 1 (Senin) sampai 7 (Minggu); jam "HH:MM".
+model JadwalPraktik {
+  id             Int       @id @default(autoincrement())
+  fasyankes_id   Int
+  pengguna_id    Int
+  lokasi_id      Int
+  hari           Int
+  jam_mulai      String    @db.VarChar(5)
+  jam_selesai    String    @db.VarChar(5)
+  kuota          Int
+  berlaku_dari   DateTime  @db.Date
+  berlaku_sampai DateTime? @db.Date
+  aktif          Boolean   @default(true)
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime  @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  pengguna  Pengguna  @relation(fields: [pengguna_id], references: [id])
+  lokasi    Lokasi    @relation(fields: [lokasi_id], references: [id])
+
+  @@index([fasyankes_id])
+  @@index([pengguna_id])
+  @@index([lokasi_id])
+  @@map("jadwal_praktik")
+}
+
+// Tarif layanan master (4.5); harga dalam rupiah bulat.
+model TarifLayanan {
+  id           Int        @id @default(autoincrement())
+  fasyankes_id Int
+  kode         String     @db.VarChar(50)
+  nama         String     @db.VarChar(200)
+  jenis        JenisTarif
+  harga_umum   Int
+  harga_jkn    Int?
+  aktif        Boolean    @default(true)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime   @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@unique([fasyankes_id, kode])
+  @@map("tarif_layanan")
+}
+
+// Referensi kode wilayah Kemendagri: global (bukan per fasyankes), hanya baca di aplikasi; diisi lewat skrip impor.
+model Wilayah {
+  id          Int            @id @default(autoincrement())
+  kode        String         @unique @db.VarChar(20)
+  nama        String         @db.VarChar(200)
+  tingkat     TingkatWilayah
+  induk_kode  String?        @db.VarChar(20)
+  contoh      Boolean        @default(false)
+  dibuat_pada DateTime       @default(now()) @db.DateTime(3)
+
+  @@index([induk_kode])
+  @@index([tingkat])
+  @@map("wilayah")
+}
+
+// Riwayat perubahan profil klinik dan SIP tenaga (4.9); hanya tambah.
+model RiwayatProfil {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int
+  jenis        String   @db.VarChar(20) // profil | akreditasi | sip
+  pengguna_id  Int?
+  ringkasan    String   @db.Text
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@index([fasyankes_id, dibuat_pada])
+  @@map("riwayat_profil")
 }

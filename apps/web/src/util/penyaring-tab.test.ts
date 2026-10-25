@@ -59,3 +59,18 @@ describe('penyaring tab', () => {
     expect(formatWaktu('rusak')).toBe('rusak');
   });
 });
+
+import { BAWAAN_MASTER, bacaPenyaring as bacaMaster, queryPenyaring as queryMaster, saringanMaster } from './penyaring-tab';
+
+describe('penyaring tab Master data', () => {
+  it('subbagian bawaan poli dan tidak masuk alamat; nilai lain tersimpan', () => {
+    const k = bacaMaster('?tab=master&jenis=tarif&cari=kon&halaman=2', BAWAAN_MASTER);
+    expect(k.nilai).toMatchObject({ jenis: 'tarif', cari: 'kon', status: 'semua' });
+    expect(queryMaster('master', k, BAWAAN_MASTER)).toBe('?tab=master&jenis=tarif&cari=kon&halaman=2');
+    expect(queryMaster('master', bacaMaster('', BAWAAN_MASTER), BAWAAN_MASTER)).toBe('?tab=master');
+  });
+  it('saringan hanya memuat nilai terisi dan status bukan semua', () => {
+    expect(saringanMaster(bacaMaster('?jenis=wilayah&tingkat=kecamatan&status=aktif', BAWAAN_MASTER), 20)).toEqual({ halaman: 1, ukuran: 20, status: 'aktif', tingkat: 'kecamatan' });
+    expect(saringanMaster(bacaMaster('', BAWAAN_MASTER), 20)).toEqual({ halaman: 1, ukuran: 20 });
+  });
+});
