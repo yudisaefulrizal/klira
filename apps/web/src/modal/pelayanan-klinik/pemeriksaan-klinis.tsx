@@ -24,6 +24,7 @@ import type { BagianSalinan, KeadaanPemeriksaan, ModePemeriksaan } from './keada
 import {
   LangkahAnamnesis, LangkahDiagnosis, LangkahMenyusul, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
 } from './langkah-pemeriksaan';
+import { LangkahPenunjang } from './langkah-penunjang';
 import { PanelFavorit } from './panel-favorit';
 import { PanelKeluarga } from './panel-keluarga';
 import { PanelRiwayat } from './panel-riwayat';
@@ -139,6 +140,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       case 'pemeriksaan': return <LangkahPemeriksaan {...dasar(l.bagian)} />;
       case 'diagnosis': return <LangkahDiagnosis {...dasar(l.bagian)} favorit={favoritDari('diagnosis')} />;
       case 'tindakan': return <LangkahTindakan {...dasar(l.bagian)} favorit={favoritDari('tindakan')} />;
+      case 'penunjang': return <LangkahPenunjang kunjunganId={kunjunganId} cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} onOrderDipesan={() => { adaTersimpan.current = true; }} />;
       case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar(l.bagian)} />;
       default:
         return (

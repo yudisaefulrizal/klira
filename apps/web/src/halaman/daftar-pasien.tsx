@@ -16,7 +16,11 @@ import { Lencana } from '../komponen/ui/lencana';
 import { Peringatan } from '../komponen/ui/peringatan';
 import { BarisTabel, SelTabel, Tabel } from '../komponen/ui/tabel';
 import { Tombol } from '../komponen/ui/tombol';
+import { AmbilSpesimen } from '../modal/pelayanan-klinik/ambil-spesimen';
 import { DetailPasien } from '../modal/pelayanan-klinik/detail-pasien';
+import { HasilLab } from '../modal/pelayanan-klinik/hasil-lab';
+import { OrderLab } from '../modal/pelayanan-klinik/order-lab';
+import { PersetujuanTindakan } from '../modal/pelayanan-klinik/persetujuan-tindakan';
 import { PendaftaranKunjungan } from '../modal/pelayanan-klinik/pendaftaran-kunjungan';
 import { PanelKeluarga } from '../modal/pelayanan-klinik/panel-keluarga';
 import { PanelRiwayat } from '../modal/pelayanan-klinik/panel-riwayat';
@@ -45,6 +49,8 @@ type Terbuka =
   | { jenis: 'kunjungan'; pasien?: PasienTerpilih }
   | { jenis: 'detail'; pasien: PasienTerpilih }
   | { jenis: 'pemeriksaan'; mode: 'skrining' | 'periksa'; kunjunganId: number; pasien: PasienTerpilih }
+  | { jenis: 'persetujuan' | 'spesimen' | 'hasil_lab'; kunjunganId: number; pasien: PasienTerpilih }
+  | { jenis: 'order_lab'; kunjunganId: number; pasien: PasienTerpilih; cara: 'umum' | 'jkn' }
   | { jenis: 'riwayat'; pasien: PasienTerpilih }
   | { jenis: 'keluarga'; pasien: PasienTerpilih }
   | { jenis: 'batal-antrean'; baris: PasienBarisDto }
@@ -223,6 +229,12 @@ export function HalamanDaftarPasien() {
                           </Tombol>
                         );
                       }
+                      if (jenis === 'persetujuan' || jenis === 'spesimen' || jenis === 'hasil_lab') {
+                        return <Tombol key={jenis} type="button" varian="sekunder" onClick={() => k && setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b) })}>{DAFTAR_PASIEN.aksi[jenis]}</Tombol>;
+                      }
+                      if (jenis === 'order_lab') {
+                        return <Tombol key={jenis} type="button" varian="sekunder" onClick={() => k && setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b), cara: k.cara_pembayaran === 'jkn' ? 'jkn' : 'umum' })}>{DAFTAR_PASIEN.aksi.order_lab}</Tombol>;
+                      }
                       if (jenis === 'riwayat' || jenis === 'keluarga') {
                         return <Tombol key={jenis} type="button" varian="teks" onClick={() => setTerbuka({ jenis, pasien: pasienDari(b) })}>{DAFTAR_PASIEN.aksi[jenis]}</Tombol>;
                       }
@@ -254,6 +266,10 @@ export function HalamanDaftarPasien() {
       {terbuka?.jenis === 'pemeriksaan' && (
         <PemeriksaanKlinis kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} mode={terbuka.mode} onTutup={tutup} onSelesai={selesai} />
       )}
+      {terbuka?.jenis === 'persetujuan' && <PersetujuanTindakan kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
+      {terbuka?.jenis === 'order_lab' && <OrderLab kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} cara={terbuka.cara} onTutup={tutup} onSelesai={selesai} />}
+      {terbuka?.jenis === 'spesimen' && <AmbilSpesimen kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
+      {terbuka?.jenis === 'hasil_lab' && <HasilLab kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
       {terbuka?.jenis === 'riwayat' && <PanelRiwayat pasienId={terbuka.pasien.id} nama={terbuka.pasien.nama} onTutup={tutup} />}
       {terbuka?.jenis === 'keluarga' && <PanelKeluarga pasienId={terbuka.pasien.id} nama={terbuka.pasien.nama} onTutup={tutup} />}
       {terbuka?.jenis === 'detail' && <DetailPasien id={terbuka.pasien.id} nama={terbuka.pasien.nama} onTutup={tutup} />}

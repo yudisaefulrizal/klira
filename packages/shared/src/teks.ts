@@ -497,7 +497,7 @@ export const DAFTAR_PASIEN = {
   jamMenit: (j: number, m: number) => `${j} j ${m} mnt`,
   sebelumnya: 'Sebelumnya',
   berikutnya: 'Berikutnya',
-  aksi: { skrining: 'Skrining', periksa: 'Periksa', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
+  aksi: { skrining: 'Skrining', periksa: 'Periksa', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
   aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',
   batalJudul: 'Batalkan antrean?',
   batalPesan: (kode: string, nama: string) => `Antrean ${kode} atas nama ${nama} akan dibatalkan.`,

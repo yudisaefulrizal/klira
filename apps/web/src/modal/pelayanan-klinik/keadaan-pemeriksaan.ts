@@ -72,7 +72,7 @@ export type KonfigLangkah = {
   menyusul?: 'resep' | 'penunjang';
 };
 
-/** Sembilan langkah Pemeriksaan klinis (3.3). Resep dan Order penunjang menunggu Master obat dan Order lab. */
+/** Sembilan langkah Pemeriksaan klinis (3.3). Resep menunggu Master obat. */
 export const LANGKAH_PEMERIKSAAN: readonly KonfigLangkah[] = [
   { id: 'anamnesis', judul: KLINIS.langkah.anamnesis, bagian: 'anamnesis', aktif: true },
   { id: 'tanda_vital', judul: KLINIS.langkah.tandaVital, bagian: 'tanda_vital', aktif: true },
@@ -80,7 +80,7 @@ export const LANGKAH_PEMERIKSAAN: readonly KonfigLangkah[] = [
   { id: 'diagnosis', judul: KLINIS.langkah.diagnosis, bagian: 'diagnosis', aktif: true },
   { id: 'tindakan', judul: KLINIS.langkah.tindakan, bagian: 'tindakan', aktif: true },
   { id: 'resep', judul: KLINIS.langkah.resep, aktif: false, menyusul: 'resep' },
-  { id: 'penunjang', judul: KLINIS.langkah.penunjang, aktif: false, menyusul: 'penunjang' },
+  { id: 'penunjang', judul: KLINIS.langkah.penunjang, aktif: true },
   { id: 'tindak_lanjut', judul: KLINIS.langkah.tindakLanjut, bagian: 'tindak_lanjut', aktif: true },
   { id: 'ringkasan', judul: KLINIS.langkah.ringkasan, aktif: true },
 ];

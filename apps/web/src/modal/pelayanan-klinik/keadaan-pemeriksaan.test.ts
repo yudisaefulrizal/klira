@@ -15,9 +15,9 @@ const sahkan = (b: KlinisKunjunganDto['bagian'], bagian: BagianKlinis, isi: unkn
 };
 
 describe('langkah dari konfigurasi', () => {
-  it('pemeriksaan memuat sembilan langkah berurutan; resep dan penunjang belum aktif (menyusul)', () => {
+  it('pemeriksaan memuat sembilan langkah berurutan; hanya resep yang belum aktif (menyusul)', () => {
     expect(LANGKAH_PEMERIKSAAN.map((l) => l.id)).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'resep', 'penunjang', 'tindak_lanjut', 'ringkasan']);
-    expect(LANGKAH_PEMERIKSAAN.filter((l) => !l.aktif).map((l) => l.menyusul)).toEqual(['resep', 'penunjang']);
+    expect(LANGKAH_PEMERIKSAAN.filter((l) => !l.aktif).map((l) => l.menyusul)).toEqual(['resep']);
   });
   it('skrining hanya tanda vital dan ringkasan; bagian yang disimpan hanya dari langkah aktif', () => {
     expect(daftarLangkah('skrining').map((l) => l.id)).toEqual(['tanda_vital', 'ringkasan']);

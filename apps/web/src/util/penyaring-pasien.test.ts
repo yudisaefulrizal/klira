@@ -69,6 +69,16 @@ describe('tindakan per baris', () => {
     expect(nama('pemeriksaan', tanpaInput)).toEqual([]);
     expect(nama('menunggu_skrining', tanpaInput)).toEqual([]);
   });
+  it('Persetujuan tindakan, Order lab, Ambil spesimen, dan Hasil lab hanya pada kunjungan berjalan sesuai izin', () => {
+    const tahap = (t: 'menunggu_skrining' | 'pemeriksaan' | 'ditutup') => ({ ...kunj(null)!, tahap_layanan: t });
+    const lab = (t: 'menunggu_skrining' | 'pemeriksaan' | 'ditutup', boleh: Boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => ['persetujuan', 'order_lab', 'spesimen', 'hasil_lab'].includes(j));
+    expect(lab('pemeriksaan')).toEqual(['persetujuan', 'order_lab', 'spesimen', 'hasil_lab']);
+    expect(lab('menunggu_skrining')).toEqual([]);
+    expect(lab('ditutup')).toEqual([]);
+    expect(lab('pemeriksaan', (f, a) => f === 'penunjang' && a === 'input')).toEqual(['spesimen', 'hasil_lab']);
+    expect(lab('pemeriksaan', (f, a) => f === 'klinis' && a === 'input')).toEqual(['order_lab']);
+    expect(lab('pemeriksaan', (f, a) => f === 'persetujuan' && a === 'input')).toEqual(['persetujuan']);
+  });
   it('tombol tanpa izin tidak ditampilkan', () => {
     const hanyaLihat = (f: string, a: string) => f === 'pasien' && a === 'lihat';
     expect(jenis(baris(null), hanyaLihat)).toEqual(['buka', 'keluarga']);

@@ -7,6 +7,7 @@ import { HalamanDaftarPasien } from './halaman/daftar-pasien';
 import { HalamanGantiKredensial } from './halaman/ganti-kredensial';
 import { HalamanMasuk } from './halaman/masuk';
 import { HalamanPengaturan } from './halaman/pengaturan';
+import { HalamanPenunjang } from './halaman/penunjang';
 import { HalamanSementara } from './halaman/placeholder';
 import { PenyediaPengguna, usePengguna } from './util/konteks-pengguna';
 import { PenyediaNavigasi, useNavigasi } from './util/navigasi';
@@ -26,6 +27,7 @@ Object.assign(HALAMAN_MENU_ISI, {
   [HALAMAN_AWAL.daftarPasien]: HalamanDaftarPasien,
   [HALAMAN_AWAL.berandaTugas]: HalamanBerandaTugas,
   '/pengaturan': HalamanPengaturan,
+  '/penunjang': HalamanPenunjang,
 });
 
 function Perute() {
