@@ -29,6 +29,21 @@ export class RepositoriPdpPrisma {
     return new Map((await prisma.pengguna.findMany({ where: { id: { in: [...new Set(ids)] } }, select: { id: true, nama: true } })).map((u) => [u.id, u.nama]));
   }
 
+  /** Hitungan tugas: permintaan hak, insiden belum diberitahukan, DPIA jatuh tempo, pemusnahan lewat jadwal. */
+  async ringkasan(fasyankesId: number, sekarang: Date) {
+    const f = { fasyankes_id: fasyankesId };
+    const belumNotif: Prisma.InsidenDataWhereInput = { ...f, OR: [{ notifikasi_pasien_pada: null }, { notifikasi_lembaga_pada: null }] };
+    const [hakAktif, hakTerlambat, insidenBelum, insidenTerlambat, dpia, musnah] = await Promise.all([
+      prisma.permintaanHak.count({ where: { ...f, status: { not: 'selesai' } } }),
+      prisma.permintaanHak.count({ where: { ...f, status: { not: 'selesai' }, batas_waktu: { lt: sekarang } } }),
+      prisma.insidenData.count({ where: belumNotif }),
+      prisma.insidenData.count({ where: { ...belumNotif, batas_notifikasi: { lt: sekarang } } }),
+      prisma.dpia.count({ where: { ...f, tinjau_ulang_pada: { lt: awalHariWib(sekarang) } } }),
+      prisma.pemusnahan.count({ where: { ...f, status: { not: 'selesai' }, jadwal: { lt: awalHariWib(sekarang) } } }),
+    ]);
+    return { hak_aktif: hakAktif, hak_terlambat: hakTerlambat, insiden_belum_notifikasi: insidenBelum, insiden_terlambat: insidenTerlambat, dpia_jatuh_tempo: dpia, pemusnahan_terlambat: musnah };
+  }
+
   // ---- Permintaan hak ----
   async buatHak(fasyankesId: number, m: HakMasukan, oleh: number, sekarang: Date): Promise<number> {
     return (await prisma.permintaanHak.create({

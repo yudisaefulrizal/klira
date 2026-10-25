@@ -1118,4 +1118,13 @@ export const PDP = {
   },
 } as const;
 
-export const TEKS = { pdp: PDP, klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const BERANDA = {
+  judul: 'Beranda tugas', memuat: 'Memuat...', gagal: 'Tugas gagal dimuat.', kosong: 'Tidak ada tugas yang menunggu.', buka: 'Buka',
+  pdp: {
+    judul: 'Pelindungan data', hakTerlambat: (n: number) => `${n} permintaan hak pasien lewat batas 3x24 jam`, hakAktif: (n: number) => `${n} permintaan hak pasien belum selesai`, insidenTerlambat: (n: number) => `${n} insiden lewat batas notifikasi 3x24 jam`,
+    insidenBelum: (n: number) => `${n} insiden belum selesai diberitahukan`, dpia: (n: number) => `${n} DPIA jatuh tempo tinjau ulang`, musnah: (n: number) => `${n} pemusnahan lewat jadwal`,
+  },
+  satusehat: { judul: 'SATUSEHAT', info: 'Status kirim dan antrean kirim tampil di sini setelah integrasi SATUSEHAT aktif.' },
+} as const;
+
+export const TEKS = { beranda: BERANDA, pdp: PDP, klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

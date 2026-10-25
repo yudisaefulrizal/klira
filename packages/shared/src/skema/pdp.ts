@@ -127,3 +127,6 @@ export type ProsesorDto = Omit<ProsesorMasukan, 'butir_perjanjian'> & { id: numb
 
 export const filterUmumPdp = z.object({ ...halamanUkuran });
 export type HalamanPdp<T> = { data: T[]; halaman: number; ukuran: number; total: number };
+
+/** Ringkasan tugas PDP untuk Beranda tugas. */
+export type RingkasanPdpDto = { hak_aktif: number; hak_terlambat: number; insiden_belum_notifikasi: number; insiden_terlambat: number; dpia_jatuh_tempo: number; pemusnahan_terlambat: number };

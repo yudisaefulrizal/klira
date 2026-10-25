@@ -33,6 +33,8 @@ export function buatRutePdp(layananAkses: LayananAkses, layananIzin: LayananIzin
       res.json({ data: await ambil(pengguna(res), f.data.halaman, f.data.ukuran) });
     });
 
+  rute.get('/pdp/ringkasan', masuk, lihat, bungkus(async (_req, res) => void res.json({ data: await layanan.ringkasan(pengguna(res)) })));
+
   // Permintaan hak pasien
   rute.get('/pdp/hak', masuk, lihat, bungkus(async (req, res) => {
     const f = filterHak.safeParse(req.query);

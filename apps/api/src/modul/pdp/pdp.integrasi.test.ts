@@ -284,4 +284,16 @@ d('pelindungan data pribadi terhadap klira_uji', () => {
     expect((await musnah({ tahap: 'berita_acara', berita_acara: 'x' }, 'lainPetugas')).status).toBe(404);
     expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'pemusnahan' } })).toBe(4);
   });
+
+  it('ringkasan tugas: hitungan hak, insiden, DPIA, pemusnahan; butuh izin lihat', async () => {
+    expect((await panggil('GET', '/pdp/ringkasan', 'kasir')).status).toBe(403);
+    const r = await panggil('GET', '/pdp/ringkasan', 'lihatSaja');
+    expect(r.status).toBe(200);
+    expect(r.badan.data.hak_aktif).toBeGreaterThanOrEqual(1);
+    expect(r.badan.data.hak_terlambat).toBeGreaterThanOrEqual(1);
+    expect(r.badan.data.dpia_jatuh_tempo).toBeGreaterThanOrEqual(1);
+    expect(r.badan.data.insiden_terlambat).toBeLessThanOrEqual(r.badan.data.insiden_belum_notifikasi);
+    const lain = await panggil('GET', '/pdp/ringkasan', 'lainPetugas');
+    expect(lain.badan.data).toEqual({ hak_aktif: 0, hak_terlambat: 0, insiden_belum_notifikasi: 0, insiden_terlambat: 0, dpia_jatuh_tempo: 0, pemusnahan_terlambat: 0 });
+  });
 });

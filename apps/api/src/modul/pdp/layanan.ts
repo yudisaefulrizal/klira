@@ -91,6 +91,8 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }: Dep
   const halaman = <T>(data: T[], h: number, u: number, total: number): HalamanPdp<T> => ({ data, halaman: h, ukuran: u, total });
 
   return {
+    ringkasan: (p: Pelaku) => repo.ringkasan(p.fasyankes_id, sekarang()),
+
     // Permintaan hak
     async catatHak(p: Pelaku, m: HakMasukan, alamat?: string): Promise<Hasil<HakDto>> {
       if (!(await repo.pasien(p.fasyankes_id, m.pasien_id))) return gagal('tidak_ditemukan', G.pasienTidakAda);

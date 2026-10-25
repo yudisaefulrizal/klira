@@ -75,4 +75,4 @@
 | Insiden kebocoran | Modal | Pelindungan data | Sudah dibangun | ✔ |
 | Pemusnahan | Modal | Pelindungan data | Sudah dibangun | ✔ |
 | Prosesor | Modal | Pelindungan data | Sudah dibangun | ✔ |
-| Beranda tugas | Halaman | - | Menunggu bagian lain | ☐ |
+| Beranda tugas | Halaman | - | Sudah dibangun | ✔ |
