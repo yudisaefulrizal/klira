@@ -7,6 +7,7 @@ export class GalatApi extends Error {
     message: string,
     public peringatan?: PeringatanTerdeteksi[],
     public kode?: string,
+    public rincian?: { jalur: string; pesan: string }[],
   ) {
     super(message);
   }
@@ -31,6 +32,6 @@ export async function panggilApi<T>(
     throw new GalatApi(0, GALAT.jaringan);
   }
   const isi = (await res.json().catch(() => null)) as ({ data?: T } & Partial<ResponsGalat>) | null;
-  if (!res.ok) throw new GalatApi(res.status, isi?.galat?.pesan ?? GALAT.umum, isi?.galat?.peringatan, isi?.galat?.kode);
+  if (!res.ok) throw new GalatApi(res.status, isi?.galat?.pesan ?? GALAT.umum, isi?.galat?.peringatan, isi?.galat?.kode, isi?.galat?.rincian);
   return isi?.data as T;
 }

@@ -47,6 +47,9 @@ import { buatRuteKasir } from './modul/kasir/rute';
 import { buatLayananFarmasi } from './modul/farmasi/layanan';
 import { RepositoriFarmasiPrisma } from './modul/farmasi/repositori';
 import { buatRuteFarmasi } from './modul/farmasi/rute';
+import { buatLayananKasir } from './modul/kasir/layanan-kasir';
+import { RepositoriKasirPrisma } from './modul/kasir/repositori-kasir';
+import { buatRuteKasirLengkap } from './modul/kasir/rute-kasir';
 import { buatLayananPenunjang } from './modul/penunjang/layanan';
 import { RepositoriPenunjangPrisma } from './modul/penunjang/repositori';
 import { buatRutePenunjang } from './modul/penunjang/rute';
@@ -107,6 +110,8 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
     tindakanKunjungan: async (fas, id) => ((await repoKlinis.bacaBagian(fas, id, 'tindakan'))?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama })),
   })));
   app.use('/api', buatRuteFarmasi(layananAkses, layananIzin, buatLayananFarmasi({ repo: new RepositoriFarmasiPrisma(), audit: new PenampungAuditPrisma() })));
+  const repoFarmasi = new RepositoriFarmasiPrisma();
+  app.use('/api', buatRuteKasirLengkap(layananAkses, layananIzin, buatLayananKasir({ repo: new RepositoriKasirPrisma(), farmasi: repoFarmasi, audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));

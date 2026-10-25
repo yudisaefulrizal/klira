@@ -1102,8 +1102,11 @@ model Tagihan {
   dibuat_oleh       Int?
   dibuat_pada       DateTime         @default(now()) @db.DateTime(3)
 
-  kunjungan Kunjungan     @relation(fields: [kunjungan_id], references: [id])
-  item      ItemTagihan[]
+  alasan_tutup_belum_lunas String? @db.VarChar(300)
+
+  kunjungan  Kunjungan     @relation(fields: [kunjungan_id], references: [id])
+  item       ItemTagihan[]
+  pembayaran Pembayaran[]
 
   @@map("tagihan")
 }
@@ -1302,4 +1305,67 @@ model MutasiStok {
 
   @@index([stok_id])
   @@map("mutasi_stok")
+}
+
+// ---- Kasir (4.5): shift, pembayaran, serah terima obat ----
+enum MetodeBayar {
+  tunai
+  transfer
+  qris
+}
+
+// Satu shift terbuka per kasir; selisih = kas akhir - (kas awal + pembayaran tunai selama shift).
+model ShiftKasir {
+  id             Int       @id @default(autoincrement())
+  fasyankes_id   Int
+  kasir_id       Int
+  buka           DateTime  @default(now()) @db.DateTime(3)
+  tutup          DateTime? @db.DateTime(3)
+  kas_awal       Int
+  kas_akhir      Int?
+  selisih        Int?
+  alasan_selisih String?   @db.VarChar(300)
+
+  pembayaran Pembayaran[]
+
+  @@index([fasyankes_id, kasir_id])
+  @@index([fasyankes_id, buka])
+  @@map("shift_kasir")
+}
+
+// Pembayaran hanya ditambah (tanpa ubah/hapus); jumlah yang dicatat adalah jumlah yang diterapkan ke tagihan.
+model Pembayaran {
+  id           Int         @id @default(autoincrement())
+  fasyankes_id Int
+  tagihan_id   Int
+  shift_id     Int
+  metode       MetodeBayar
+  jumlah       Int
+  waktu        DateTime    @default(now()) @db.DateTime(3)
+  kasir_id     Int
+
+  tagihan Tagihan    @relation(fields: [tagihan_id], references: [id])
+  shift   ShiftKasir @relation(fields: [shift_id], references: [id])
+
+  @@index([tagihan_id])
+  @@index([shift_id])
+  @@map("pembayaran")
+}
+
+// Pengeluaran obat dicatat saat serah terima di kasir (MedicationDispense); satu baris per item resep.
+model PengeluaranObat {
+  id             Int      @id @default(autoincrement())
+  fasyankes_id   Int
+  resep_id       Int
+  item_resep_id  Int      @unique
+  master_obat_id Int
+  jumlah         Int
+  harga          Int
+  stok_kurang    Boolean  @default(false)
+  alasan         String?  @db.VarChar(300)
+  petugas_id     Int
+  waktu          DateTime @default(now()) @db.DateTime(3)
+
+  @@index([resep_id])
+  @@map("pengeluaran_obat")
 }

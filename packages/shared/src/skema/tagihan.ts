@@ -12,4 +12,10 @@ export type TagihanDto = {
   status_pembayaran: StatusPembayaran;
   total: number;
   item: ItemTagihanDto[];
+  /** Jumlah yang sudah dibayar dan sisa tagihan (0 bila lunas). */
+  dibayar?: number;
+  sisa?: number;
+  pembayaran?: PembayaranDto[];
+  alasan_tutup_belum_lunas?: string | null;
 };
+export type PembayaranDto = { id: number; metode: 'tunai' | 'transfer' | 'qris'; jumlah: number; waktu: string; kasir_nama: string | null };

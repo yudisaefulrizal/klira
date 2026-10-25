@@ -6,6 +6,7 @@ import { HalamanBerandaTugas } from './halaman/beranda-tugas';
 import { HalamanDaftarPasien } from './halaman/daftar-pasien';
 import { HalamanFarmasi } from './halaman/farmasi';
 import { HalamanGantiKredensial } from './halaman/ganti-kredensial';
+import { HalamanKasirKlaim } from './halaman/kasir-klaim';
 import { HalamanMasuk } from './halaman/masuk';
 import { HalamanPengaturan } from './halaman/pengaturan';
 import { HalamanPenunjang } from './halaman/penunjang';
@@ -30,6 +31,7 @@ Object.assign(HALAMAN_MENU_ISI, {
   '/pengaturan': HalamanPengaturan,
   '/penunjang': HalamanPenunjang,
   '/farmasi': HalamanFarmasi,
+  '/kasir-klaim': HalamanKasirKlaim,
 });
 
 function Perute() {

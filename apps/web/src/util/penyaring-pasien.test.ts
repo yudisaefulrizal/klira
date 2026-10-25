@@ -87,6 +87,16 @@ describe('tindakan per baris', () => {
     expect(telaah('kasir')).toEqual([]);
     expect(telaah('resep', (f, a) => f === 'farmasi' && a === 'lihat')).toEqual([]);
   });
+  it('Pembayaran dan Tutup kunjungan hanya pada tahap kasir sesuai izin kasir', () => {
+    const tahap = (t: 'pemeriksaan' | 'resep' | 'kasir' | 'ditutup') => ({ ...kunj(null)!, tahap_layanan: t });
+    const kasir = (t: 'pemeriksaan' | 'resep' | 'kasir' | 'ditutup', boleh: Boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => j === 'bayar' || j === 'tutup_kunjungan');
+    expect(kasir('kasir')).toEqual(['bayar', 'tutup_kunjungan']);
+    expect(kasir('resep')).toEqual([]);
+    expect(kasir('ditutup')).toEqual([]);
+    expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'input')).toEqual(['bayar']);
+    expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'perbaikan')).toEqual(['tutup_kunjungan']);
+    expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'lihat')).toEqual([]);
+  });
   it('tombol tanpa izin tidak ditampilkan', () => {
     const hanyaLihat = (f: string, a: string) => f === 'pasien' && a === 'lihat';
     expect(jenis(baris(null), hanyaLihat)).toEqual(['buka', 'keluarga']);

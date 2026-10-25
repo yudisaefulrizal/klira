@@ -498,7 +498,7 @@ export const DAFTAR_PASIEN = {
   jamMenit: (j: number, m: number) => `${j} j ${m} mnt`,
   sebelumnya: 'Sebelumnya',
   berikutnya: 'Berikutnya',
-  aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
+  aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', bayar: 'Pembayaran', tutup_kunjungan: 'Tutup kunjungan', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
   aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',
   batalJudul: 'Batalkan antrean?',
   batalPesan: (kode: string, nama: string) => `Antrean ${kode} atas nama ${nama} akan dibatalkan.`,
@@ -883,4 +883,39 @@ export const FARMASI = {
   },
 } as const;
 
-export const TEKS = { farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const KASIR = {
+  judul: 'Kasir dan klaim',
+  tab: { shift: 'Shift dan rekap harian', klaim: 'Klaim JKN/BPJS' },
+  tabLabel: 'Tab Kasir dan klaim',
+  memuat: 'Memuat...',
+  shift: {
+    judul: 'Shift kasir', tidakAda: 'Belum ada shift terbuka. Buka shift sebelum menerima pembayaran.', buka: 'Buka shift', tutup: 'Tutup shift', dibuka: (waktu: string) => `Dibuka ${waktu}`,
+    kasAwal: 'Kas awal (Rp)', kasAkhir: 'Kas akhir (Rp)', alasanSelisih: 'Alasan selisih', seharusnya: 'Kas seharusnya', selisih: 'Selisih', tunai: 'Tunai diterima', transfer: 'Transfer', qris: 'QRIS',
+    bukaJudul: 'Buka shift kasir', tutupJudul: 'Tutup shift kasir', bukaSimpan: 'Buka shift', tutupSimpan: 'Tutup shift', menyimpan: 'Menyimpan...', petunjukBuka: 'Hitung uang tunai di laci sebagai kas awal.',
+    petunjukTutup: (seharusnya: string) => `Kas seharusnya ${seharusnya} (kas awal ditambah pembayaran tunai selama shift). Isi kas akhir hasil hitung; selisih perlu alasan.`,
+    riwayat: 'Shift hari ini', kosongRiwayat: 'Belum ada shift pada tanggal ini.', ringkasTutup: (selisih: number) => (selisih === 0 ? 'Kas sesuai.' : `Selisih ${selisih > 0 ? '+' : ''}${selisih}.`),
+  },
+  rekap: { judul: 'Rekap harian', tanggal: 'Tanggal', total: 'Total diterima', jumlah: 'Jumlah pembayaran', gagalMuat: 'Rekap harian gagal dimuat.', catatan: 'Pembayaran, serah terima obat, dan tutup kunjungan dibuka dari Daftar pasien.', perMetode: 'Per metode bayar' },
+  bayar: {
+    judul: 'Pembayaran dan serah terima obat', langkah: { tagihan: 'Tagihan', pembayaran: 'Pembayaran', serah: 'Serah terima obat', ringkasan: 'Ringkasan' }, tagihanJudul: 'Rincian tagihan', kolom: { item: 'Item', jumlah: 'Jumlah', harga: 'Harga', subtotal: 'Subtotal' },
+    total: 'Total', dibayar: 'Sudah dibayar', sisa: 'Sisa', lunas: 'Lunas', tagihanLengkap: 'Tagihan lengkap', tagihanBelum: 'Ada item tanpa harga: tagihan belum lengkap dan belum bisa dibayar.', metode: 'Metode bayar', diterima: 'Jumlah diterima (Rp)',
+    kembalian: (rp: string) => `Kembalian ${rp}`, catat: 'Catat pembayaran', mencatat: 'Mencatat...', pembayaranJudul: 'Pembayaran tercatat', tanpaPembayaran: 'Belum ada pembayaran.', tanpaShift: 'Buka shift kasir dulu di halaman Kasir dan klaim.',
+    tercatat: (rp: string) => `Pembayaran ${rp} tercatat.`, serahJudul: 'Serah terima obat', serahKosong: 'Tidak ada resep pada kunjungan ini.', serahBelumSiap: 'Resep belum siap di farmasi; serah terima menunggu apoteker menyiapkan.',
+    serahSudah: 'Obat sudah diserahkan.', serah: 'Serahkan obat', menyerahkan: 'Menyerahkan...', serahInfo: 'Penyerahan mengurangi stok (batch terdekat kedaluwarsa lebih dulu) dan tidak dapat dibatalkan.',
+    stokKurangJudul: 'Stok kurang', stokKurang: (nama: string, butuh: number, ada: number) => `${nama}: butuh ${butuh}, tersedia ${ada}.`, izinkanStokKurang: 'Tetap serahkan walau stok tercatat kurang', alasanStok: 'Alasan (mis. stok fisik masih ada)', serahTercatat: 'Serah terima tercatat.',
+    ringkasanTutup: 'Syarat tutup kunjungan', syarat: { tahap: 'Kunjungan di tahap kasir', tagihan: 'Tagihan lengkap', resep: 'Semua resep sudah diserahkan', lunas: 'Tagihan lunas' }, selesai: 'Selesai', tutupKunjungan: 'Tutup kunjungan',
+    pembayaranTambahan: 'Tambah pembayaran', gagal: 'Tindakan kasir gagal.', penjelasanTutup: 'Tutup kunjungan dilakukan di modal terpisah setelah semuanya selesai.',
+  },
+  tutup: {
+    judul: 'Tutup kunjungan', syaratJudul: 'Syarat tutup kunjungan', ok: 'Terpenuhi', belum: 'Belum', alasan: 'Alasan menutup belum lunas', alasanPetunjuk: 'Tagihan belum lunas. Kunjungan tetap bisa ditutup dengan alasan; ini tercatat di audit dan terlihat di rekap.', simpan: 'Tutup kunjungan', menutup: 'Menutup...',
+    berhasil: 'Kunjungan ditutup.', berhasilPesan: 'Data kunjungan siap dikodekan dan dikirim; tagihan terkunci.', kembaliKasir: 'Lengkapi yang belum, lalu kembali ke sini.', tanpaIzin: 'Anda tidak memiliki izin menutup kunjungan.',
+  },
+  galat: {
+    angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', jumlahMinimal: 'Jumlah minimal 1.', metode: 'Pilih metode bayar.', alasanWajib: 'Alasan wajib diisi.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
+    kunjunganTidakAda: 'Kunjungan tidak ditemukan.', tahapSalah: 'Kunjungan belum di tahap kasir atau sudah ditutup.', tagihanBelumLengkap: 'Tagihan belum lengkap: ada item tanpa harga.', tagihanKosong: 'Belum ada tagihan pada kunjungan ini.', sudahLunas: 'Tagihan sudah lunas.',
+    jumlahLebih: 'Jumlah melebihi sisa tagihan.', tanpaShift: 'Buka shift kasir terlebih dahulu.', shiftSudahAda: 'Anda sudah memiliki shift terbuka.', shiftTidakAda: 'Tidak ada shift terbuka.', resepBelumSiap: 'Ada resep yang belum siap di farmasi.', tidakAdaResep: 'Tidak ada resep yang perlu diserahkan.',
+    stokKurang: 'Stok tercatat kurang untuk sebagian obat. Setujui dengan alasan bila stok fisik tersedia.', resepBelumDiserahkan: 'Masih ada resep yang belum diserahkan.', belumLunasAlasan: 'Tagihan belum lunas: isi alasan untuk tetap menutup.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
+  },
+} as const;
+
+export const TEKS = { kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

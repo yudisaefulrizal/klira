@@ -14,3 +14,4 @@ export * from './persetujuan';
 export * from './addendum';
 export * from './tagihan';
 export * from './farmasi';
+export * from './kasir';
