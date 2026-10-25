@@ -14,6 +14,9 @@ import { buatLayananIzin } from './modul/akses/layanan-izin';
 import type { LayananIzin } from './modul/akses/layanan-izin';
 import { RepositoriIzinPrisma } from './modul/akses/repositori-izin';
 import { buatRuteIzin } from './modul/akses/rute-izin';
+import { buatLayananAudit } from './modul/audit/layanan';
+import { RepositoriAuditPrisma } from './modul/audit/repositori';
+import { buatRuteAudit } from './modul/audit/rute';
 
 const direktoriWebBawaan = path.resolve(__dirname, '../../web/dist');
 
@@ -38,6 +41,7 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   // Semua rute di bawah ini ditolak selama akun wajib ganti kredensial.
   app.use('/api', blokirSelamaWajibGanti(layananAkses));
   app.use('/api', buatRuteIzin(layananAkses, layananIzin));
+  app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', (_req, res) => {
     res.status(404).json({ galat: 'Rute tidak ditemukan' });
   });

@@ -380,5 +380,8 @@ model LogAudit {
 
   @@index([pengguna_id])
   @@index([waktu])
+  @@index([fasyankes_id, waktu])
+  @@index([aksi, waktu])
+  @@index([entitas, entitas_id])
   @@map("log_audit")
 }

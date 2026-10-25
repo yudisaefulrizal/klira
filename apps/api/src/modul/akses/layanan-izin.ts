@@ -1,5 +1,5 @@
 import { IZIN, kunciIzin, punyaIzin } from '@klira/shared';
-import type { AksesEfektif, AksiIzin, CakupanIzin, KonfirmasiPeringatan, PenggunaSaya, PeringatanTerdeteksi } from '@klira/shared';
+import type { AksesEfektif, AksiAudit, AksiIzin, CakupanIzin, KonfirmasiPeringatan, PenggunaSaya, PeringatanTerdeteksi } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import { evaluasiPeringatan, hitungAksesEfektif, peringatanBaru, relevanUntukTindakan } from './mesin-izin';
 import type { KonteksTindakan, PeringatanInternal, SnapshotAkses } from './mesin-izin';
@@ -29,7 +29,7 @@ export function buatLayananIzin(dep: DependensiIzin) {
   const sekarang = dep.sekarang ?? (() => new Date());
   const { repo, audit } = dep;
 
-  async function catat(p: Pelaku, aksi: string, entitas: string, entitas_id: number | null, keterangan: string, alamat?: string) {
+  async function catat(p: Pelaku, aksi: AksiAudit, entitas: string, entitas_id: number | null, keterangan: string, alamat?: string) {
     await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id, keterangan, alamat });
   }
 
