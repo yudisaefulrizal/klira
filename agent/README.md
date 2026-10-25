@@ -5,7 +5,7 @@ Agent pembangun dan pemeriksa klira.
 ## Isi
 - `agents/pembuat-kode.md`: membangun satu butir dari `dokumen/progres.md` menjadi kode dan uji.
 - `agents/pemeriksa-kode.md`: memeriksa hasilnya secara independen; bila lulus, mencentang `progres.md`.
-- `skills/kerjakan-progres/SKILL.md`: siklus bangun, periksa, perbaiki per kelompok sampai 10 butir (maksimal 3 putaran per butir), satu commit per kelompok.
+- `skills/kerjakan-progres/SKILL.md`: tahap A bangun semua butir per kelompok (commit per kelompok, tanpa pemeriksa), tahap B periksa sekali di akhir per domain secara paralel, lalu perbaiki yang ditolak (maksimal 3 putaran per butir).
 
 ## Cara pakai
 Minta Claude Code menjalankan skill `kerjakan-progres`. Alurnya otomatis sampai tidak ada butir yang siap.
