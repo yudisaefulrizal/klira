@@ -1,0 +1,13 @@
+{
+  "name": "@klira/worker",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "bullmq": "^6.4.2"
+  }
+}

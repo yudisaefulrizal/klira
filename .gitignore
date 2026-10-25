@@ -1,1 +1,4 @@
 .kebutuhan
+node_modules
+dist
+.env

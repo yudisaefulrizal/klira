@@ -1,0 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --warna-utama: #0B6B64;
+  --warna-teks: #17302E;
+  --warna-latar: #F4F6F5;
+  --warna-permukaan: #FFFFFF;
+  --warna-garis: #D9E0DE;
+  --status-hijau-latar: #E1F3E3;
+  --status-hijau-teks: #1D5E2B;
+  --status-kuning-latar: #FCF0D6;
+  --status-kuning-teks: #7A4A00;
+  --status-merah-latar: #F7DADA;
+  --status-merah-teks: #8A1F1F;
+  --status-biru-latar: #E3ECF8;
+  --status-biru-teks: #1E4A85;
+  --status-ungu-latar: #EEE8F8;
+  --status-ungu-teks: #4F2D86;
+  --huruf-keluarga: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --huruf-kecil: 12px;
+  --huruf-dasar: 14px;
+  --huruf-besar: 16px;
+  --huruf-judul: 20px;
+  --jarak-xs: 4px;
+  --jarak-sm: 8px;
+  --jarak-md: 16px;
+  --jarak-lg: 24px;
+  --jarak-xl: 32px;
+  --radius-kecil: 4px;
+  --radius-sedang: 8px;
+  --radius-besar: 12px;
+  --bayangan-kartu: 0 1px 2px rgba(23, 48, 46, 0.08);
+  --bayangan-modal: 0 8px 24px rgba(23, 48, 46, 0.16);
+}
+
+body {
+  margin: 0;
+  background: var(--warna-latar);
+  color: var(--warna-teks);
+  font-family: var(--huruf-keluarga);
+  font-size: var(--huruf-dasar);
+}

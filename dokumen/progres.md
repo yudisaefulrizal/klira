@@ -2,7 +2,7 @@
 
 | Nama | Jenis | Sub dari | Kesiapan | Status |
 |---|---|---|---|---|
-| Repo dan konfigurasi | Infrastruktur | - | Bisa dikerjakan | ☐ |
+| Repo dan konfigurasi | Infrastruktur | - | Bisa dikerjakan | ✔ |
 | Skema basis data dasar | Infrastruktur | - | Bisa dikerjakan | ☐ |
 | Paket shared | Infrastruktur | - | Bisa dikerjakan | ☐ |
 | Masuk | Halaman | - | Bisa dikerjakan | ☐ |

@@ -1,0 +1,13 @@
+{
+  "name": "@klira/api",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  }
+}

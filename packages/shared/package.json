@@ -1,0 +1,13 @@
+{
+  "name": "@klira/shared",
+  "version": "0.0.1",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "zod": "^4.6.7"
+  }
+}

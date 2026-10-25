@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "rootDir": ".", "noEmit": true, "isolatedModules": true },
+  "include": ["apps/*/src", "packages/*/src"],
+  "exclude": ["apps/web"]
+}

@@ -1,0 +1,3 @@
+- Repo dan konfigurasi: ESLint dengan typescript-eslint dipakai untuk lint (tidak ada di 8.1); alasan: butir meminta konfigurasi lint dan tidak ada alternatif di daftar.
+- Repo dan konfigurasi: supertest dan dotenv tidak dipasang (di luar 8.1); uji memakai fetch bawaan Node dan .env dimuat lewat `node --env-file`.
+- Repo dan konfigurasi: Prisma belum dipasang (belum ada skema); dipasang saat butir packages/db.
