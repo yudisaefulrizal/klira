@@ -89,4 +89,33 @@ export const PERINGATAN_IZIN = {
   penugasan_lewat_sip: 'Penugasan jenis akun melewati masa berlaku SIP.',
 } as const;
 
-export const TEKS = { tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN } as const;
+export const PENGGUNA = {
+  judulHalaman: 'Pengaturan',
+  judulTab: 'Pengguna dan akses',
+  cari: 'Cari nama atau nama pengguna',
+  kolom: { nama: 'Nama', jenis: 'Jenis akun aktif', izin: 'Izin tambahan', peringatan: 'Peringatan', status: 'Status', tindakan: 'Tindakan' },
+  tambahAkun: 'Tambah akun',
+  aturIzin: 'Atur izin',
+  nonaktifkan: 'Nonaktifkan',
+  aktifkan: 'Aktifkan',
+  tanpaPeringatan: 'Tidak ada',
+  peringatanTerbuka: (n: number) => `${n} peringatan`,
+  tanpaJenis: 'Tidak ada jenis akun aktif',
+  kosong: 'Tidak ada pengguna yang cocok.',
+  filterStatus: { semua: 'Semua status', aktif: 'Aktif', nonaktif: 'Dinonaktifkan' },
+  segera: 'Fitur ini segera tersedia.',
+  catatan: 'Peringatan izin tidak memblokir: pimpinan dapat memberi izin di luar syarat profesi dengan alasan wajib, dan itu tercatat di audit.',
+  tidakBisaNonaktifkanSendiri: 'Anda tidak dapat menonaktifkan akun Anda sendiri.',
+  gagalMuat: 'Daftar pengguna gagal dimuat.',
+  sebelumnya: 'Sebelumnya',
+  berikutnya: 'Berikutnya',
+} as const;
+
+export const NAVIGASI = {
+  menuUtama: 'Menu utama',
+  tidakDiizinkan: 'Halaman ini tidak diizinkan untuk akun Anda.',
+  memuat: 'Memuat...',
+  segera: 'Halaman ini segera tersedia.',
+} as const;
+
+export const TEKS = { pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN } as const;

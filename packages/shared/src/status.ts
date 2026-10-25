@@ -88,3 +88,8 @@ export type StatusKirimSatusehat = keyof typeof STATUS_KIRIM_SATUSEHAT.peta;
 export type StatusOrderPenunjang = keyof typeof STATUS_ORDER_PENUNJANG.peta;
 export type StatusResep = keyof typeof STATUS_RESEP.peta;
 export type StatusAntrean = keyof typeof STATUS_ANTREAN.peta;
+
+export const STATUS_AKUN = buat({
+  aktif: { label: 'Aktif', warna: 'hijau' },
+  nonaktif: { label: 'Dinonaktifkan', warna: 'abu' },
+});

@@ -1,6 +1,18 @@
 import type { InputHTMLAttributes } from 'react';
 import { token } from '../../gaya/token';
 
+/** Gaya dasar kontrol formulir; dipakai bersama oleh Isian dan Pilihan. */
+export const gayaKontrol = {
+  height: token.ukuran.isian,
+  padding: `0 ${token.jarak.sm}`,
+  border: `${token.ukuran.garis} solid ${token.warna.garis}`,
+  borderRadius: token.radius.sedang,
+  background: token.warna.permukaan,
+  color: token.warna.teks,
+  fontFamily: token.huruf.keluarga,
+  fontSize: token.huruf.ukuran.dasar,
+} as const;
+
 type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; id: string };
 
 export function Isian({ label, id, style, ...sisa }: Props) {
@@ -11,17 +23,7 @@ export function Isian({ label, id, style, ...sisa }: Props) {
       </label>
       <input
         id={id}
-        style={{
-          height: token.ukuran.isian,
-          padding: `0 ${token.jarak.sm}`,
-          border: `${token.ukuran.garis} solid ${token.warna.garis}`,
-          borderRadius: token.radius.sedang,
-          background: token.warna.permukaan,
-          color: token.warna.teks,
-          fontFamily: token.huruf.keluarga,
-          fontSize: token.huruf.ukuran.dasar,
-          ...style,
-        }}
+        style={{ ...gayaKontrol, ...style }}
         {...sisa}
       />
     </div>
