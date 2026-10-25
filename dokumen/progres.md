@@ -30,37 +30,37 @@
 | Salin dari kunjungan sebelumnya | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
 | Favorit dan templat | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
 | Family folder | Panel | Pemeriksaan klinis | Menunggu bagian lain | ✔ |
-| Persetujuan tindakan | Modal | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
-| Penunjang | Halaman | - | Menunggu bagian lain | ☐ |
-| Order lab | Modal | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
-| Ambil spesimen | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
-| Hasil lab | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
-| Farmasi | Halaman | - | Bisa dikerjakan | ☐ |
-| Master obat | Modal | Farmasi | Menunggu pihak ketiga | ☐ |
-| Telaah dan siapkan resep | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
-| Mutasi stok | Modal | Farmasi | Menunggu bagian lain | ☐ |
-| Kasir dan klaim | Halaman | - | Menunggu bagian lain | ☐ |
-| Buka dan tutup shift kasir | Modal | Kasir dan klaim | Bisa dikerjakan | ☐ |
-| Tagihan | Fitur | - | Menunggu bagian lain | ☐ |
-| Pembayaran dan serah terima obat | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
-| Tutup kunjungan | Modal | Daftar pasien | Menunggu bagian lain | ☐ |
-| Rekam medis | Halaman | - | Menunggu bagian lain | ☐ |
-| Perbaiki catatan | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Tinjau permintaan perbaikan | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Addendum | Fitur | - | Menunggu bagian lain | ☐ |
-| Pengkodean ICD | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Resume medis dan surat rujukan | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Permintaan pembukaan | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Penyampaian rekam medis | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Buat laporan | Modal | Rekam medis | Menunggu bagian lain | ☐ |
-| Arsip dan retensi | Fitur | - | Menunggu bagian lain | ☐ |
-| Rawat inap | Halaman | - | Menunggu bagian lain | ☐ |
-| Admisi rawat inap | Modal | Rawat inap | Menunggu bagian lain | ☐ |
-| Ubah penempatan | Modal | Rawat inap | Menunggu bagian lain | ☐ |
-| Catatan harian (CPPT) | Modal | Rawat inap | Menunggu bagian lain | ☐ |
-| Pemulangan rawat inap | Modal | Rawat inap | Menunggu bagian lain | ☐ |
-| Penyiapan klaim | Modal | Kasir dan klaim | Menunggu bagian lain | ☐ |
-| Ubah status klaim | Modal | Kasir dan klaim | Menunggu bagian lain | ☐ |
+| Persetujuan tindakan | Modal | Pemeriksaan klinis | Sudah dibangun | ☐ |
+| Penunjang | Halaman | - | Sudah dibangun | ☐ |
+| Order lab | Modal | Pemeriksaan klinis | Sudah dibangun | ☐ |
+| Ambil spesimen | Modal | Daftar pasien | Sudah dibangun | ☐ |
+| Hasil lab | Modal | Daftar pasien | Sudah dibangun | ☐ |
+| Farmasi | Halaman | - | Sudah dibangun | ☐ |
+| Master obat | Modal | Farmasi | Sudah dibangun | ☐ |
+| Telaah dan siapkan resep | Modal | Daftar pasien | Sudah dibangun | ☐ |
+| Mutasi stok | Modal | Farmasi | Sudah dibangun | ☐ |
+| Kasir dan klaim | Halaman | - | Sudah dibangun | ☐ |
+| Buka dan tutup shift kasir | Modal | Kasir dan klaim | Sudah dibangun | ☐ |
+| Tagihan | Fitur | - | Sudah dibangun | ☐ |
+| Pembayaran dan serah terima obat | Modal | Daftar pasien | Sudah dibangun | ☐ |
+| Tutup kunjungan | Modal | Daftar pasien | Sudah dibangun | ☐ |
+| Rekam medis | Halaman | - | Sudah dibangun | ☐ |
+| Perbaiki catatan | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Tinjau permintaan perbaikan | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Addendum | Fitur | - | Sudah dibangun | ☐ |
+| Pengkodean ICD | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Resume medis dan surat rujukan | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Permintaan pembukaan | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Penyampaian rekam medis | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Buat laporan | Modal | Rekam medis | Sudah dibangun | ☐ |
+| Arsip dan retensi | Fitur | - | Sudah dibangun | ☐ |
+| Rawat inap | Halaman | - | Sudah dibangun | ☐ |
+| Admisi rawat inap | Modal | Rawat inap | Sudah dibangun | ☐ |
+| Ubah penempatan | Modal | Rawat inap | Sudah dibangun | ☐ |
+| Catatan harian (CPPT) | Modal | Rawat inap | Sudah dibangun | ☐ |
+| Pemulangan rawat inap | Modal | Rawat inap | Sudah dibangun | ☐ |
+| Penyiapan klaim | Modal | Kasir dan klaim | Sudah dibangun | ☐ |
+| Ubah status klaim | Modal | Kasir dan klaim | Sudah dibangun | ☐ |
 | SATUSEHAT | Halaman | - | Menunggu pihak ketiga | ☐ |
 | Konfigurasi SATUSEHAT | Modal | SATUSEHAT | Menunggu pihak ketiga | ☐ |
 | Kirim otomatis dan antrean kirim | Fitur | - | Menunggu pihak ketiga | ☐ |
