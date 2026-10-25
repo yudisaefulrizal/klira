@@ -42,6 +42,9 @@ import { buatRuteRm } from './modul/rekam-medis/rute-rm';
 import { buatLayananDokumen } from './modul/rekam-medis/layanan-dokumen';
 import { RepositoriDokumenPrisma } from './modul/rekam-medis/repositori-dokumen';
 import { buatRuteDokumen } from './modul/rekam-medis/rute-dokumen';
+import { buatLayananKlaim } from './modul/klaim/layanan';
+import { RepositoriKlaimPrisma } from './modul/klaim/repositori';
+import { buatRuteKlaim } from './modul/klaim/rute';
 import { buatLayananRawatInap } from './modul/rawat-inap/layanan';
 import { RepositoriRawatInapPrisma } from './modul/rawat-inap/repositori';
 import { buatRuteRawatInap } from './modul/rawat-inap/rute';
@@ -111,8 +114,12 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteRm(layananAkses, layananIzin, buatLayananRm({
     repo: repoRm, pengesahanRepo: new RepositoriPengesahanPrisma(), pengesahan: layananPengesahan, klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));
-  const layananDokumen = buatLayananDokumen({ repo: new RepositoriDokumenPrisma(), repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma() });
+  const repoDokumen = new RepositoriDokumenPrisma();
+  const layananDokumen = buatLayananDokumen({ repo: repoDokumen, repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma() });
   app.use('/api', buatRuteDokumen(layananAkses, layananIzin, layananDokumen));
+  app.use('/api', buatRuteKlaim(layananAkses, layananIzin, buatLayananKlaim({
+    repo: new RepositoriKlaimPrisma(), rm: { pengkodean: (fas, id) => repoRm.pengkodean(fas, id), resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+  })));
   app.use('/api', buatRuteRawatInap(layananAkses, layananIzin, buatLayananRawatInap({
     repo: new RepositoriRawatInapPrisma(), pengesahan: layananPengesahan, audit: new PenampungAuditPrisma(), simpanResume: layananDokumen.simpanResume,
   })));

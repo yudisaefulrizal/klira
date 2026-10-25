@@ -18,3 +18,4 @@ export * from './kasir';
 export * from './rekam-medis';
 export * from './dokumen-rm';
 export * from './rawat-inap';
+export * from './klaim';

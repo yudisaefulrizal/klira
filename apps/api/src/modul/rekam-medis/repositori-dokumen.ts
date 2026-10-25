@@ -29,6 +29,11 @@ export class RepositoriDokumenPrisma {
     return r && { isi: r.isi as ResumeIsi, diperbarui_pada: r.diperbarui_pada };
   }
 
+  /** Kunjungan (dari daftar) yang sudah punya resume medis. */
+  async resumeAda(fasyankesId: number, kunjunganIds: number[]): Promise<Set<number>> {
+    return new Set((await prisma.resumeMedis.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: { in: kunjunganIds } }, select: { kunjungan_id: true } })).map((r) => r.kunjungan_id));
+  }
+
   async simpanResume(d: { fasyankesId: number; kunjunganId: number; isi: ResumeIsi; oleh: number; pengesahan: Omit<TulisPengesahan, 'fasyankesId' | 'entitas' | 'entitasId'> }): Promise<void> {
     await prisma.$transaction(async (tx) => {
       const isi = d.isi as unknown as Prisma.InputJsonValue;

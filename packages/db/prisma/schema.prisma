@@ -1582,3 +1582,59 @@ model Pemulangan {
   @@index([fasyankes_id])
   @@map("pemulangan")
 }
+
+// ---- Klaim JKN/BPJS (FKTP) ----
+enum StatusKlaim {
+  menunggu_sep
+  siap_diajukan
+  diajukan
+  dikembalikan
+  diajukan_ulang
+  ditolak
+  dibayar
+  lewat_batas_waktu
+}
+
+// Klaim satu kunjungan JKN yang sudah ditutup. Diagnosis dan tindakan adalah salinan dari rekam medis saat disiapkan; berkas = daftar berkas lengkap.
+model Klaim {
+  id                 Int         @id @default(autoincrement())
+  fasyankes_id       Int
+  kunjungan_id       Int         @unique
+  nomor_sep          String?     @db.VarChar(50)
+  status             StatusKlaim
+  tanggal_selesai    DateTime    @db.DateTime(3)
+  batas_pengajuan    DateTime    @db.DateTime(3)
+  diagnosis          Json
+  tindakan           Json
+  berkas             Json
+  catatan            String?     @db.VarChar(300)
+  diajukan_pada      DateTime?   @db.DateTime(3)
+  dikembalikan_pada  DateTime?   @db.DateTime(3)
+  berita_acara       String?     @db.Text
+  batas_ajukan_ulang DateTime?   @db.DateTime(3)
+  alasan             String?     @db.VarChar(500)
+  jumlah_dibayar     Int?
+  dibayar_pada       DateTime?   @db.DateTime(3)
+  dibuat_oleh        Int
+  dibuat_pada        DateTime    @default(now()) @db.DateTime(3)
+  diperbarui_pada    DateTime    @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, status])
+  @@index([fasyankes_id, batas_pengajuan])
+  @@map("klaim")
+}
+
+// Riwayat status klaim: hanya ditambah.
+model RiwayatKlaim {
+  id           Int          @id @default(autoincrement())
+  fasyankes_id Int
+  klaim_id     Int
+  dari         StatusKlaim?
+  ke           StatusKlaim
+  alasan       String?      @db.VarChar(500)
+  oleh         Int
+  waktu        DateTime     @default(now()) @db.DateTime(3)
+
+  @@index([klaim_id])
+  @@map("riwayat_klaim")
+}

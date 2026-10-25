@@ -12,15 +12,17 @@ import { Tab } from '../komponen/ui/tab';
 import { BarisTabel, SelTabel, Tabel } from '../komponen/ui/tabel';
 import { Tombol } from '../komponen/ui/tombol';
 import { token } from '../gaya/token';
+import { TabKlaim } from './kasir-klaim/tab-klaim';
 import { ShiftKasir } from '../modal/pelayanan-klinik/shift-kasir';
 import { rupiah } from '../modal/pelayanan-klinik/keadaan-order-lab';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab';
+import { usePengguna } from '../util/konteks-pengguna';
 import { useNavigasi } from '../util/navigasi';
 import { formatWaktu } from '../util/penyaring-tab';
+import { tabKasirKlaimDiizinkan } from '../util/tab-kasir-klaim';
+import type { IdTabKasirKlaim } from '../util/tab-kasir-klaim';
 
 const HALAMAN = 'kasir-klaim';
-const TAB = [{ id: 'shift', label: KASIR.tab.shift }] as const;
-const IDS = TAB.map((t) => t.id);
 const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
 const hariIni = () => new Date(Date.now() + 7 * 3_600_000).toISOString().slice(0, 10);
 const KOLOM_SHIFT = [{ judul: 'Kasir' }, { judul: 'Dibuka' }, { judul: 'Ditutup' }, { judul: KASIR.shift.kasAwal }, { judul: KASIR.shift.tunai }, { judul: KASIR.shift.seharusnya }, { judul: KASIR.shift.selisih }];
@@ -111,13 +113,17 @@ function TabShift() {
   );
 }
 
-/** Halaman Kasir dan klaim (3.1): tab Shift dan rekap harian; tab Klaim JKN/BPJS menyusul. Pembayaran, serah terima obat, dan tutup kunjungan dibuka dari Daftar pasien. */
+/** Halaman Kasir dan klaim (3.1): tab Shift dan rekap harian (kasir) dan Klaim JKN/BPJS (petugas klaim), menurut izin. Pembayaran, serah terima obat, dan tutup kunjungan dibuka dari Daftar pasien. */
 export function HalamanKasirKlaim() {
+  const { pengguna } = usePengguna();
   const { search, ganti } = useNavigasi();
+  const tabBoleh = pengguna ? tabKasirKlaimDiizinkan(pengguna) : [];
+  const ids = tabBoleh.map((t) => t.id);
   const dariAlamat = new URLSearchParams(search).get('tab');
-  const aktif = pilihTab(IDS, dariAlamat, bacaTabTerakhir(HALAMAN, IDS, simpanan()));
+  const aktif: IdTabKasirKlaim | undefined = ids.length ? pilihTab(ids, dariAlamat, bacaTabTerakhir(HALAMAN, ids, simpanan())) : undefined;
 
   useEffect(() => {
+    if (!aktif) return;
     simpanTabTerakhir(HALAMAN, aktif, simpanan());
     if (dariAlamat !== aktif) ganti(`/${HALAMAN}?tab=${aktif}`);
   }, [aktif, dariAlamat, ganti]);
@@ -126,9 +132,10 @@ export function HalamanKasirKlaim() {
     <>
       <Sebaris tag="header" jarak="md" bungkus>
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{KASIR.judul}</h1>
-        <Tab daftar={TAB} aktif={aktif} label={KASIR.tabLabel} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />
+        {aktif && <Tab daftar={tabBoleh} aktif={aktif} label={KASIR.tabLabel} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />}
       </Sebaris>
       {aktif === 'shift' && <TabShift />}
+      {aktif === 'klaim' && <TabKlaim />}
     </>
   );
 }

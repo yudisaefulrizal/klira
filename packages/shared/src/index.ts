@@ -4,5 +4,6 @@ export * from './status';
 export * from './alur';
 export * from './tipe';
 export * from './teks';
+export * from './klaim';
 export * from './klinis';
 export * from './penunjang';

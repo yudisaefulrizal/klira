@@ -40,7 +40,7 @@ export const STATUS_PEMBAYARAN = buat({
 });
 
 export const STATUS_KLAIM = buat({
-  menunggu_sep: { label: 'Menunggu SEP', warna: 'abu' },
+  menunggu_sep: { label: 'Menunggu SEP atau berkas', warna: 'abu' },
   siap_diajukan: { label: 'Siap diajukan', warna: 'biru' },
   diajukan: { label: 'Diajukan', warna: 'ungu' },
   dikembalikan: { label: 'Dikembalikan', warna: 'kuning' },

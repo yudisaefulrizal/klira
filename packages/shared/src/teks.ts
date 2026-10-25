@@ -1025,4 +1025,28 @@ export const RAWAT_INAP = {
   },
 } as const;
 
-export const TEKS = { rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const KLAIM = {
+  judul: 'Klaim JKN/BPJS', tab: 'Klaim JKN/BPJS', memuat: 'Memuat...', gagalMuat: 'Daftar klaim gagal dimuat.', siapkan: 'Siapkan klaim', cari: 'Cari nama, nomor RM, atau SEP', filterStatus: 'Status', semuaStatus: 'Semua status', terapkan: 'Terapkan', aturUlang: 'Atur ulang',
+  kolom: { pasien: 'Pasien', sep: 'Nomor SEP', selesai: 'Selesai dilayani', batas: 'Batas', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Belum ada klaim pada penyaring ini.', ubahStatus: 'Ubah status', berkas: 'Berkas dan SEP', rincian: 'Rincian',
+  batas: { sisa: (n: number) => (n < 0 ? `Lewat ${-n} hari` : n === 0 ? 'Hari ini terakhir' : `${n} hari lagi`), dekat: (n: number) => `Batas pengajuan tinggal ${n} hari.`, lewat: 'Batas waktu terlewati; klaim tidak dapat diajukan.' },
+  berkasLabel: { fpk: 'Formulir pengajuan klaim (FPK) bertanda tangan pimpinan', rekapitulasi: 'Rekapitulasi pelayanan', kuitansi: 'Kuitansi asli bermaterai', surat_tanggung_jawab: 'Surat tanggung jawab mutlak bermaterai', spri: 'Surat perintah rawat inap (SPRI)', ringkasan_rm: 'Ringkasan rekam medis' } as Record<string, string>,
+  siap: {
+    judul: 'Penyiapan klaim', langkah: { kunjungan: 'Kunjungan dan SEP', kode: 'Diagnosis dan tindakan', berkas: 'Berkas klaim', ringkasan: 'Ringkasan' }, kunjungan: 'Kunjungan JKN yang sudah ditutup', pilihKunjungan: 'Pilih kunjungan...', tanpaKandidat: 'Tidak ada kunjungan JKN yang siap diklaim.',
+    sep: 'Nomor SEP', sepPetunjuk: 'Boleh menyusul; klaim menunggu sampai SEP dan berkas lengkap.', diagnosis: 'Diagnosis (ICD-10)', tindakan: 'Tindakan (ICD-9 CM)', kosongKode: 'Tidak ada.', kodeSumber: 'Kode mengikuti rekam medis (pengkodean final bila ada, selain itu catatan dokter).',
+    kodeBelum: 'Pengkodean final belum dibuat; kode diambil dari catatan dokter. Sebaiknya kodekan dulu di Rekam medis.', berkasPetunjuk: 'Centang berkas yang sudah lengkap.', catatan: 'Catatan', resumeBelum: 'Resume medis belum dibuat; klaim rawat inap membutuhkannya.',
+    simpan: 'Simpan klaim', menyimpan: 'Menyimpan...', gagal: 'Klaim gagal disimpan.', hasilJudul: 'Klaim tersimpan', hasilPesan: (status: string) => `Klaim tersimpan dengan status ${status}.`, kurang: (n: number) => `${n} berkas wajib belum lengkap.`,
+    ubahJudul: 'Berkas dan SEP klaim', kodeBeda: 'Kode klaim berbeda dari rekam medis saat ini (PMK 24/2022 P19). Periksa pengkodean; klaim memakai salinan kode saat disiapkan.',
+  },
+  status: {
+    judul: 'Ubah status klaim', aksi: 'Tindakan', aksiLabel: { ajukan: 'Ajukan ke BPJS', dikembalikan: 'Berkas dikembalikan BPJS', ajukan_ulang: 'Ajukan ulang', ditolak: 'Ditolak BPJS', dibayar: 'Dibayar BPJS' } as Record<string, string>,
+    beritaAcara: 'Berita acara pengembalian', alasan: 'Alasan penolakan', jumlah: 'Jumlah dibayar (Rp)', dibayarPada: 'Tanggal dibayar', simpan: 'Simpan', memproses: 'Memproses...', gagal: 'Status klaim gagal diubah.', tersimpan: 'Status klaim diubah.',
+    tidakAda: 'Tidak ada tindakan untuk status ini.', batasUlang: (tgl: string) => `Ajukan ulang paling lambat ${tgl} (pengajuan klaim bulan berikutnya).`, riwayat: 'Riwayat status',
+  },
+  galat: {
+    tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.', aksi: 'Pilih tindakan klaim.', beritaAcara: 'Berita acara pengembalian wajib diisi.', alasan: 'Alasan penolakan wajib diisi.', jumlah: 'Jumlah dibayar harus bilangan bulat positif.',
+    kunjunganTidakAda: 'Kunjungan tidak ditemukan.', bukanJkn: 'Hanya kunjungan peserta JKN yang diklaim.', belumDitutup: 'Kunjungan harus sudah ditutup.', sudahAda: 'Klaim kunjungan ini sudah dibuat.', klaimTidakAda: 'Klaim tidak ditemukan.',
+    tidakBisaUbah: 'Berkas dan SEP tidak dapat diubah pada status ini.', aksiTidakSah: 'Tindakan tidak sah untuk status klaim sekarang.', lewatBatas: 'Batas waktu klaim terlewati.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
+  },
+} as const;
+
+export const TEKS = { klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

@@ -1,0 +1,3 @@
+-- Samakan nama status "lewat batas waktu" dengan STATUS_KLAIM di shared (tabel baru dan masih kosong).
+ALTER TABLE `klaim` MODIFY `status` ENUM('menunggu_sep', 'siap_diajukan', 'diajukan', 'dikembalikan', 'diajukan_ulang', 'ditolak', 'dibayar', 'lewat_batas_waktu') NOT NULL;
+ALTER TABLE `riwayat_klaim` MODIFY `dari` ENUM('menunggu_sep', 'siap_diajukan', 'diajukan', 'dikembalikan', 'diajukan_ulang', 'ditolak', 'dibayar', 'lewat_batas_waktu') NULL, MODIFY `ke` ENUM('menunggu_sep', 'siap_diajukan', 'diajukan', 'dikembalikan', 'diajukan_ulang', 'ditolak', 'dibayar', 'lewat_batas_waktu') NOT NULL;
