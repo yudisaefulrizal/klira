@@ -16,7 +16,8 @@ class RepoMemori implements RepositoriAkses {
     return this.akun.find((a) => a.username === u && a.aktif) ?? null;
   }
   async ambilAkses(id: number) {
-    return { jenis_akun: ['Uji'], fitur: this.fitur[id] ?? [] };
+    const fitur = this.fitur[id] ?? [];
+    return { jenis_akun: ['Uji'], fitur, izin: fitur.map((f) => ({ fitur: f, aksi: 'lihat' as const, cakupan: 'unit' as const })) };
   }
   async buatSesi(d: { idHash: string; akun: AkunMasuk; kedaluwarsa: Date }) {
     this.sesi.set(d.idHash, { akun: d.akun, kedaluwarsa: d.kedaluwarsa });

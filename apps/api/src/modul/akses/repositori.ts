@@ -1,4 +1,6 @@
 import { Prisma, prisma } from '@klira/db';
+import { hitungAksesEfektif } from './mesin-izin';
+import { RepositoriIzinPrisma } from './repositori-izin';
 import type { AksesAkun, AkunMasuk, SesiAktif } from './skema';
 
 export interface RepositoriAkses {
@@ -34,23 +36,12 @@ export class RepositoriAksesPrisma implements RepositoriAkses {
     return prisma.pengguna.findFirst({ where: { username, aktif: true }, orderBy: { id: 'asc' }, select: pilihAkun });
   }
 
+  /** Akses efektif (2.0): gabungan jenis akun aktif + tambahan - pengurangan pada waktu `sekarang`. */
   async ambilAkses(penggunaId: number, sekarang: Date): Promise<AksesAkun> {
-    const penugasan = await prisma.penugasanJenis.findMany({
-      where: {
-        pengguna_id: penggunaId,
-        mulai: { lte: sekarang },
-        OR: [{ selesai: null }, { selesai: { gt: sekarang } }],
-        jenis_akun: { aktif: true },
-      },
-      include: { jenis_akun: { include: { izin: { include: { izin: true } } } } },
-    });
-    const jenis = new Set<string>();
-    const fitur = new Set<string>();
-    for (const p of penugasan) {
-      jenis.add(p.jenis_akun.nama);
-      for (const ij of p.jenis_akun.izin) fitur.add(ij.izin.fitur);
-    }
-    return { jenis_akun: [...jenis], fitur: [...fitur] };
+    const snap = await new RepositoriIzinPrisma().ambilSnapshot(penggunaId);
+    if (!snap) return { jenis_akun: [], fitur: [], izin: [] };
+    const { jenis_akun, fitur, izin } = hitungAksesEfektif(snap, sekarang);
+    return { jenis_akun, fitur, izin };
   }
 
   async buatSesi(data: { idHash: string; akun: AkunMasuk; alamat?: string; kedaluwarsa: Date }): Promise<void> {

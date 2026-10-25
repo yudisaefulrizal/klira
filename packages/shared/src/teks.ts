@@ -64,4 +64,29 @@ export const GANTI_KREDENSIAL = {
   wajib: 'Ganti nama pengguna dan kata sandi awal terlebih dahulu sebelum memakai fitur lain.',
 } as const;
 
-export const TEKS = { tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL } as const;
+export const IZIN = {
+  tidakBerizin: GALAT.tidakBerizin,
+  perluKonfirmasi: 'Ada peringatan izin. Isi alasan untuk melanjutkan.',
+  penggunaTidakAda: 'Pengguna tidak ditemukan.',
+  jenisTidakAda: 'Jenis akun tidak ditemukan.',
+  penugasanTidakAda: 'Penugasan tidak ditemukan.',
+  izinAkunTidakAda: 'Izin akun tidak ditemukan.',
+  izinTidakDikenal: 'Ada izin yang tidak dikenal.',
+  namaJenisDipakai: 'Nama jenis akun sudah dipakai.',
+  perubahanKosong: 'Tidak ada perubahan yang diberikan.',
+  selesaiSebelumMulai: 'Selesai tidak boleh sebelum mulai.',
+  alasanBelumAda: 'Belum ada alasan pimpinan; menunggu tinjauan.',
+  terimaUntukAkun: 'Terima untuk akun ini',
+  alasanPimpinan: 'Alasan pimpinan',
+} as const;
+
+export const PERINGATAN_IZIN = {
+  izin_klinis_non_dokter: 'Izin klinis diberikan ke akun yang profilnya bukan dokter ber-SIP, atau pengeluaran obat ke akun yang bukan tenaga kefarmasian.',
+  perbaikan_pembuat_penyetuju_sama: 'Pembuat dan penyetuju perbaikan data setelah 2x24 jam adalah orang yang sama.',
+  lihat_tak_dibatasi: 'Izin lihat tidak dibatasi ke pasien atau unit yang sedang ditangani.',
+  admin_lihat_rekam_medis: 'Admin IT atau admin vendor diberi izin lihat isi rekam medis.',
+  nakes_tanpa_sip: 'Tenaga kesehatan tanpa SIP aktif diberi izin klinis.',
+  penugasan_lewat_sip: 'Penugasan jenis akun melewati masa berlaku SIP.',
+} as const;
+
+export const TEKS = { tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN } as const;

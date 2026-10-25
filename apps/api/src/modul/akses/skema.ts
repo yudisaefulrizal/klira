@@ -1,4 +1,5 @@
 export { masuk as skemaMasuk, gantiKredensial as skemaGantiKredensial } from '@klira/shared';
+import type { IzinAwal } from '@klira/shared';
 export type { PenggunaSaya } from '@klira/shared';
 
 export const NAMA_COOKIE_SESI = 'klira_sesi';
@@ -13,6 +14,6 @@ export type AkunMasuk = {
   wajib_ganti_kredensial: boolean;
 };
 
-export type AksesAkun = { jenis_akun: string[]; fitur: string[] };
+export type AksesAkun = { jenis_akun: string[]; fitur: string[]; izin: IzinAwal[] };
 
 export type SesiAktif = { akun: AkunMasuk };

@@ -62,6 +62,7 @@ export function buatLayananAkses(dep: DependensiAkses) {
       wajib_ganti_kredensial: akun.wajib_ganti_kredensial,
       jenis_akun: akses.jenis_akun,
       fitur: akses.fitur,
+      izin: akses.izin,
       halaman_awal: halamanAwal(akses.fitur),
     };
   }

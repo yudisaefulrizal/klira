@@ -10,10 +10,14 @@ import type { LayananAkses } from './modul/akses/layanan';
 import { PembatasPercobaan } from './modul/akses/pembatas';
 import { RepositoriAksesPrisma } from './modul/akses/repositori';
 import { buatRuteAkses } from './modul/akses/rute';
+import { buatLayananIzin } from './modul/akses/layanan-izin';
+import type { LayananIzin } from './modul/akses/layanan-izin';
+import { RepositoriIzinPrisma } from './modul/akses/repositori-izin';
+import { buatRuteIzin } from './modul/akses/rute-izin';
 
 const direktoriWebBawaan = path.resolve(__dirname, '../../web/dist');
 
-export type OpsiApp = { layananAkses?: LayananAkses; baseUrl?: string };
+export type OpsiApp = { layananAkses?: LayananAkses; layananIzin?: LayananIzin; baseUrl?: string };
 
 export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp = {}) {
   const app = express();
@@ -26,12 +30,14 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
       audit: new PenampungAuditPrisma(),
       pembatas: new PembatasPercobaan(),
     });
+  const layananIzin = opsi.layananIzin ?? buatLayananIzin({ repo: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() });
   app.get('/api/kesehatan', (_req, res) => {
     res.json({ status: 'ok' });
   });
   app.use('/api', buatRuteAkses(layananAkses, opsi.baseUrl ?? process.env.BASE_URL ?? 'http://localhost'));
   // Semua rute di bawah ini ditolak selama akun wajib ganti kredensial.
   app.use('/api', blokirSelamaWajibGanti(layananAkses));
+  app.use('/api', buatRuteIzin(layananAkses, layananIzin));
   app.use('/api', (_req, res) => {
     res.status(404).json({ galat: 'Rute tidak ditemukan' });
   });

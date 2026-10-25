@@ -3,7 +3,7 @@ import { putuskanRute } from './penjaga-rute';
 
 const dasar: PenggunaSaya = {
   id: 1, nama: 'A', username: 'a', fasyankes_id: 1, wajib_ganti_kredensial: false,
-  jenis_akun: [], fitur: [], halaman_awal: '/pasien',
+  jenis_akun: [], fitur: [], izin: [], halaman_awal: '/pasien',
 };
 
 describe('penjaga rute', () => {
@@ -35,5 +35,12 @@ describe('penjaga rute', () => {
     const admin = { ...dasar, halaman_awal: '/beranda' };
     expect(putuskanRute('/pasien', admin)).toEqual({ tipe: 'alihkan', ke: '/beranda' });
     expect(putuskanRute('/beranda', admin)).toEqual({ tipe: 'tampil' });
+  });
+  it('halaman lain hanya terbuka bila fitur efektif mengizinkan (5.1m)', () => {
+    const kasir = { ...dasar, fitur: ['pendaftaran', 'kasir'] };
+    expect(putuskanRute('/kasir-klaim', kasir)).toEqual({ tipe: 'tampil' });
+    expect(putuskanRute('/rekam-medis', kasir)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
+    expect(putuskanRute('/pengaturan', kasir)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
+    expect(putuskanRute('/pengaturan', { ...kasir, fitur: ['akses'] })).toEqual({ tipe: 'tampil' });
   });
 });

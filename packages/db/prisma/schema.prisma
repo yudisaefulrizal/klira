@@ -331,6 +331,9 @@ model PeringatanIzin {
   penugasan_id     Int?
   jenis_peringatan String    @db.VarChar(100)
   alasan_pimpinan  String    @db.Text
+  sumber           String    @default("pemberian") @db.VarChar(20) // pemberian | tindakan | terima
+  diterima_untuk_akun Boolean @default(false)
+  keterangan       String?   @db.VarChar(255)
   ditetapkan_oleh  Int?
   waktu            DateTime  @default(now()) @db.DateTime(3)
   dibuat_oleh      Int?
@@ -342,6 +345,7 @@ model PeringatanIzin {
   penugasan PenugasanJenis? @relation(fields: [penugasan_id], references: [id])
 
   @@index([pengguna_id])
+  @@index([pengguna_id, jenis_peringatan])
   @@map("peringatan_izin")
 }
 
