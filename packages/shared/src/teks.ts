@@ -244,7 +244,7 @@ export const NAVIGASI = {
 
 export const LABEL_IZIN = {
   fitur: {
-    pasien: 'Pasien', pendaftaran: 'Pendaftaran', kunjungan: 'Kunjungan', klinis: 'Klinis', resep: 'Resep', farmasi: 'Farmasi', penunjang: 'Penunjang',
+    pasien: 'Pasien', pendaftaran: 'Pendaftaran', kunjungan: 'Kunjungan', klinis: 'Klinis', resep: 'Resep', farmasi: 'Farmasi', penunjang: 'Penunjang', persetujuan: 'Persetujuan tindakan',
     kasir: 'Kasir', klaim: 'Klaim', 'rekam-medis': 'Rekam medis', akses: 'Akses dan pengaturan', satusehat: 'SATUSEHAT',
     pdp: 'Pelindungan data', audit: 'Audit', master: 'Master data', 'profil-klinik': 'Profil klinik',
   } as Record<string, string>,
@@ -739,4 +739,88 @@ export const KLINIS = {
   },
 } as const;
 
-export const TEKS = { daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+/** Penunjang: halaman, master pemeriksaan, Order lab, Ambil spesimen, Hasil lab, addendum (3.1, 3.3, 4.3). */
+export const PENUNJANG = {
+  judul: 'Penunjang',
+  tab: { rekap: 'Rekap lab', master: 'Master pemeriksaan' },
+  tabLabel: 'Tab Penunjang',
+  rekap: {
+    kolom: { pasien: 'Pasien', pemeriksaan: 'Pemeriksaan', prioritas: 'Prioritas', status: 'Status', hasil: 'Hasil', waktu: 'Dipesan' },
+    filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal', kosong: 'Tidak ada order lab pada penyaring ini.',
+    gagalMuat: 'Rekap lab gagal dimuat.', catatan: 'Pekerjaan per pasien (ambil spesimen, hasil) dibuka dari Daftar pasien.', bukaDaftar: 'Buka Daftar pasien',
+  },
+  master: {
+    judul: 'Master pemeriksaan', tambah: 'Tambah pemeriksaan', ubah: 'Ubah', cari: 'Cari pemeriksaan', kosong: 'Belum ada pemeriksaan.', gagalMuat: 'Master pemeriksaan gagal dimuat.',
+    kolom: { kode: 'Kode', nama: 'Pemeriksaan', loinc: 'LOINC', satuan: 'Satuan', rujukan: 'Rentang rujukan', tarif: 'Tarif', status: 'Status', tindakan: 'Tindakan' },
+    judulTambah: 'Tambah pemeriksaan', judulUbah: 'Ubah pemeriksaan',
+    bidang: {
+      kode: 'Kode lokal', nama: 'Nama pemeriksaan', kode_loinc: 'Kode LOINC', jenis_spesimen: 'Jenis spesimen', satuan: 'Satuan (UCUM)', rujukan_min: 'Rujukan minimum', rujukan_maks: 'Rujukan maksimum',
+      rujukan_teks: 'Rujukan teks (kualitatif)', tarif_layanan_id: 'Tarif layanan (jenis lab)', aktif: 'Aktif',
+    },
+    petunjukLoinc: 'Contoh format: 718-7. Kode contoh dari seed bertanda contoh.', tanpaTarif: 'Tanpa tarif', contoh: 'Kode contoh', aktif: 'Aktif', nonaktif: 'Nonaktif', tersimpan: 'Pemeriksaan tersimpan.',
+    nonaktifkan: 'Nonaktifkan', aktifkan: 'Aktifkan',
+  },
+  aksi: { order: 'Order lab', spesimen: 'Ambil spesimen', hasil: 'Hasil lab', persetujuan: 'Persetujuan tindakan' },
+  order: {
+    judul: 'Order lab', pemeriksaan: 'Pemeriksaan', cari: 'Cari pemeriksaan', prioritas: 'Prioritas', catatan: 'Catatan untuk laboratorium', pesan: 'Pesan lab', memesan: 'Memesan...',
+    belumAda: 'Belum ada pemeriksaan di master. Minta analis lab menambahkannya di halaman Penunjang.', terpilih: (n: number) => `${n} pemeriksaan dipilih`, tarifBelum: 'Tarif belum ditetapkan',
+    tagihanInfo: 'Biaya pemeriksaan masuk tagihan kunjungan saat dipesan.', hasilJudul: 'Order lab dipesan', hasilPesan: (n: number) => `${n} pemeriksaan dipesan dan ditagihkan.`,
+    tagihanTotal: (rupiah: string) => `Total tagihan kunjungan sekarang ${rupiah}.`, tagihanBelumLengkap: 'Ada item tanpa tarif sehingga tagihan belum lengkap.', pilihSatu: 'Pilih minimal satu pemeriksaan.',
+    daftarJudul: 'Order lab kunjungan ini', kosong: 'Belum ada order lab pada kunjungan ini.', gagalMuat: 'Order lab gagal dimuat.', hasilBelum: 'Hasil belum ada',
+    langkahPetunjuk: 'Pesan pemeriksaan lab untuk kunjungan ini. Order tersimpan langsung dan tidak menunggu tombol Simpan pemeriksaan.', muatUlang: 'Muat ulang order', dipesanOleh: (nama: string) => `Dipesan oleh ${nama}`,
+    hasilSebelumSah: 'Hasil yang sudah divalidasi tampil di sini dan dapat dibaca sebelum Anda mengesahkan catatan.',
+  },
+  spesimen: {
+    judul: 'Ambil spesimen', pilihOrder: 'Order yang diambil spesimennya', asal: 'Asal spesimen', waktu: 'Waktu pengambilan', petugas: 'Petugas', petugasSaya: 'Saya sendiri', simpan: 'Catat spesimen', menyimpan: 'Mencatat...',
+    kosong: 'Tidak ada order yang menunggu spesimen pada kunjungan ini.', tersimpan: (n: number) => `${n} spesimen dicatat.`, asalPetunjuk: 'Mis. darah vena, urin porsi tengah, usap tenggorok.',
+  },
+  hasil: {
+    judul: 'Hasil lab', langkah: { hasil: 'Hasil', interpretasi: 'Interpretasi', validasi: 'Validasi' },
+    nilai: 'Nilai hasil', satuan: 'Satuan', rujukan: 'Rentang rujukan', interpretasi: 'Interpretasi', pilihInterpretasi: 'Pilih interpretasi...', saran: (teks: string) => `Saran dari rentang rujukan: ${teks}`, catatan: 'Catatan analis',
+    kosong: 'Tidak ada order yang menunggu hasil pada kunjungan ini.', petunjukHasil: 'Isi nilai untuk setiap pemeriksaan. Kosongkan yang belum selesai; yang kosong tidak ikut diproses.',
+    petunjukInterpretasi: 'Tentukan interpretasi tiap hasil. Pilihan awal diambil dari rentang rujukan bila hasil berupa angka.', petunjukValidasi: 'Periksa hasil sebelum divalidasi. Validasi mengesahkan hasil atas nama Anda dan tidak dapat diubah; koreksi sesudahnya lewat perbaikan berversi.',
+    validasiSekarang: 'Validasi sekarang', validasiKet: 'Hasil divalidasi dan dikunci. Matikan bila hasil menunggu analis lain memvalidasi.', kirim: 'Simpan hasil', kirimValidasi: 'Simpan dan validasi', memproses: 'Menyimpan...',
+    sudahAda: 'Hasil sudah tersimpan', selesaiJudul: 'Hasil lab tersimpan', selesaiPesan: (disimpan: number, divalidasi: number) => `${disimpan} hasil disimpan, ${divalidasi} divalidasi.`,
+    addendumInfo: 'Catatan kunjungan ini sudah disahkan, sehingga hasil yang divalidasi dicatat sebagai addendum dan dikirim ulang.', ringkasanKosong: 'Belum ada hasil yang diisi.', belumDiisi: 'Belum diisi',
+    gagalSebagian: (nama: string) => `Hasil "${nama}" gagal diproses. Hasil sebelumnya sudah tersimpan.`, rujukanTidakAda: 'Tanpa rentang rujukan',
+  },
+  addendum: {
+    judul: 'Addendum', tab: 'Addendum', kosong: 'Belum ada addendum.', versi: (n: number) => `Addendum versi ${n}`, oleh: (nama: string) => `Oleh ${nama}`, kirimUlang: 'Menunggu kirim ulang',
+    terkirim: 'Sudah dikirim ulang', alasanHasil: (nama: string) => `Hasil lab susulan: ${nama}`, isiLabel: { pemeriksaan: 'Pemeriksaan', nilai: 'Nilai', satuan: 'Satuan', interpretasi: 'Interpretasi', rujukan: 'Rujukan', catatan: 'Catatan', kode_loinc: 'LOINC' } as Record<string, string>,
+    info: 'Addendum menambah catatan tanpa menimpa isi yang sudah disahkan.', gagalMuat: 'Addendum gagal dimuat.',
+  },
+  galat: {
+    angka: 'Isi dengan angka.', loinc: 'Kode LOINC tidak valid (contoh: 718-7).', rentang: 'Rujukan minimum tidak boleh lebih besar dari maksimum.', tidakAdaPerubahan: 'Tidak ada perubahan.',
+    pilihPemeriksaan: 'Pilih minimal satu pemeriksaan.', pemeriksaanGanda: 'Pemeriksaan tidak boleh ganda.', waktuMasaDepan: 'Waktu pengambilan tidak boleh di masa depan.', pilihInterpretasi: 'Pilih interpretasi hasil.',
+    kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganDitutup: 'Kunjungan sudah ditutup. Order baru tidak dapat dibuat.', pemeriksaanTidakAda: 'Pemeriksaan tidak ditemukan atau tidak aktif.', orderTidakAda: 'Order tidak ditemukan.',
+    statusTidakSah: 'Status order tidak mengizinkan tindakan ini. Muat ulang data.', petugasTidakSah: 'Petugas bukan pengguna fasyankes ini.', kodeGanda: 'Kode pemeriksaan sudah dipakai.', masterTidakAda: 'Pemeriksaan tidak ditemukan.',
+    tarifTidakSah: 'Tarif harus bertipe lab dan milik klinik ini.', hasilBelumAda: 'Hasil belum diisi.', sudahValidasi: 'Hasil sudah divalidasi dan tidak dapat diubah.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
+    sumberBelumAda: 'Tidak ada pemeriksaan yang cocok.', entitasAddendum: 'Jenis addendum tidak dikenal.',
+  },
+} as const;
+
+/** Persetujuan tindakan (3.3, 4.4, MODAL-BERTAHAP): Tindakan > Penjelasan > Persetujuan > Ringkasan. */
+export const PERSETUJUAN_TINDAKAN = {
+  judul: 'Persetujuan tindakan',
+  langkah: { tindakan: 'Tindakan', penjelasan: 'Penjelasan', persetujuan: 'Persetujuan', ringkasan: 'Ringkasan' },
+  tindakan: { pilih: 'Tindakan dari kunjungan ini', pilihLabel: 'Tindakan yang akan dilakukan', nama: 'Nama tindakan', kode: 'Kode ICD-9 CM (bila ada)', manual: 'Tindakan lain (ketik sendiri)', tidakAda: 'Belum ada tindakan tercatat. Ketik tindakan di bawah.', pilihPlaceholder: 'Pilih tindakan...' },
+  penjelasan: {
+    label: 'Penjelasan yang diberikan kepada pasien atau wali', petunjuk: 'Catat diagnosis, tujuan dan tata cara tindakan, risiko dan komplikasi, alternatif, serta prognosis yang sudah dijelaskan.',
+    teksTitel: 'Teks persetujuan (versi tetap)', versi: (n: number) => `Versi teks ${n}`, teksTidakAda: 'Teks persetujuan tindakan belum tersedia.',
+  },
+  persetujuan: {
+    bentuk: 'Bentuk persetujuan', penandatangan: 'Penandatangan', wali: 'Wali yang menandatangani', pilihWali: 'Pilih wali...', saksi: 'Saksi tenaga kesehatan', pilihSaksi: 'Pilih saksi...',
+    tidakCakap: 'Pasien tercatat tidak cakap: persetujuan diberikan wali.', tanpaWali: 'Belum ada wali tercatat untuk pasien ini. Tambahkan wali di data pasien.', saksiKet: 'Saksi adalah tenaga kesehatan yang menyaksikan persetujuan.',
+  },
+  ringkasan: { judul: 'Periksa sebelum menyimpan', tindakan: 'Tindakan', bentuk: 'Bentuk', penandatangan: 'Penandatangan', saksi: 'Saksi', penjelasan: 'Penjelasan', versi: 'Teks persetujuan', catat: 'Persetujuan dicatat atas nama pasien dan tidak dapat dihapus.' },
+  tombol: { simpan: 'Catat persetujuan', menyimpan: 'Mencatat...', pemeriksaan: 'Persetujuan tindakan' },
+  hasil: { judul: 'Persetujuan tercatat', pesan: (tindakan: string) => `Persetujuan untuk "${tindakan}" tercatat.` },
+  daftar: { judul: 'Persetujuan tindakan kunjungan ini', kosong: 'Belum ada persetujuan tindakan.', oleh: (ttd: string, saksi: string | null) => (saksi ? `Ditandatangani ${ttd}, saksi ${saksi}` : `Ditandatangani ${ttd}`) },
+  galat: {
+    kode: 'Kode ICD-9 CM tidak valid (contoh: 89.52).', waliWajib: 'Pilih wali yang menandatangani.', kunjunganTidakAda: 'Kunjungan tidak ditemukan.', teksTidakAda: 'Teks persetujuan tidak ditemukan atau tidak aktif.',
+    waliTidakSah: 'Wali bukan wali pasien ini.', saksiTidakSah: 'Saksi bukan pengguna aktif fasyankes ini.', tindakanWajib: 'Pilih atau ketik tindakan.', penjelasanWajib: 'Penjelasan wajib diisi.', pilihTeks: 'Teks persetujuan belum tersedia.',
+    saksiWajib: 'Pilih saksi tenaga kesehatan.', waliTidakAda: 'Pasien belum punya wali tercatat.',
+  },
+} as const;
+
+export const TEKS = { penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

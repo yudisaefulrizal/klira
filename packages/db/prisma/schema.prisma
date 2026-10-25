@@ -627,6 +627,8 @@ model Kunjungan {
   diagnosis     Diagnosis[]
   tindakan      Tindakan[]
   tindak_lanjut TindakLanjut[]
+  order_penunjang OrderPenunjang[]
+  tagihan       Tagihan?
 
   @@index([fasyankes_id, tahap_layanan])
   @@index([pasien_id])
@@ -712,6 +714,10 @@ model Persetujuan {
   wali_id             Int?
   penandatangan_nama  String           @db.VarChar(200)
   saksi_pengguna_id   Int?
+  // Persetujuan tindakan: kunjungan dan tindakan yang disetujui (kosong untuk general consent).
+  kunjungan_id        Int?
+  tindakan_kode       String?          @db.VarChar(50)
+  tindakan_nama       String?          @db.VarChar(255)
   dibuat_oleh         Int?
   dibuat_pada         DateTime         @default(now()) @db.DateTime(3)
 
@@ -721,6 +727,7 @@ model Persetujuan {
   wali      WaliKeluarga?    @relation(fields: [wali_id], references: [id])
 
   @@index([pasien_id])
+  @@index([kunjungan_id])
   @@map("persetujuan")
 }
 
@@ -973,4 +980,169 @@ model KeluargaPasien {
 
   @@unique([pasien_id, anggota_pasien_id])
   @@map("keluarga_pasien")
+}
+
+// ---- Penunjang (4.3), tagihan dasar (4.5), dan addendum (4.2).
+
+enum StatusOrderPenunjang {
+  dipesan
+  spesimen_diambil
+  menunggu_hasil
+  divalidasi
+}
+
+enum StatusTagihan {
+  belum_lengkap
+  lengkap
+}
+
+enum StatusPembayaran {
+  belum
+  sebagian
+  lunas
+}
+
+// Master pemeriksaan penunjang lokal (4.9): satuan UCUM dan rentang rujukan klinik; harga lewat tarif_layanan (jenis lab).
+// loinc_contoh menandai kode LOINC contoh (bukan hasil impor resmi).
+model MasterPemeriksaan {
+  id               Int       @id @default(autoincrement())
+  fasyankes_id     Int
+  kode             String    @db.VarChar(50)
+  nama             String    @db.VarChar(200)
+  jenis            String    @default("lab") @db.VarChar(20)
+  kode_loinc       String?   @db.VarChar(30)
+  loinc_contoh     Boolean   @default(false)
+  jenis_spesimen   String?   @db.VarChar(100)
+  satuan           String?   @db.VarChar(50)
+  rujukan_min      Float?
+  rujukan_maks     Float?
+  rujukan_teks     String?   @db.VarChar(200)
+  tarif_layanan_id Int?
+  aktif            Boolean   @default(true)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+  diubah_pada      DateTime? @db.DateTime(3)
+
+  order OrderPenunjang[]
+
+  @@unique([fasyankes_id, kode])
+  @@map("master_pemeriksaan")
+}
+
+// Satu baris per pemeriksaan yang dipesan; status hanya maju. Nama, kode LOINC, dan prioritas disalin saat order.
+model OrderPenunjang {
+  id                     Int                  @id @default(autoincrement())
+  fasyankes_id           Int
+  kunjungan_id           Int
+  pasien_id              Int
+  jenis                  String               @default("lab") @db.VarChar(20)
+  master_pemeriksaan_id  Int?
+  kode_loinc             String?              @db.VarChar(30)
+  nama                   String               @db.VarChar(200)
+  prioritas              String               @default("rutin") @db.VarChar(20)
+  catatan                String?              @db.VarChar(500)
+  status                 StatusOrderPenunjang @default(dipesan)
+  dibuat_oleh            Int?
+  dibuat_pada            DateTime             @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan          @relation(fields: [kunjungan_id], references: [id])
+  master    MasterPemeriksaan? @relation(fields: [master_pemeriksaan_id], references: [id])
+  spesimen  Spesimen?
+  hasil     HasilPenunjang?
+
+  @@index([fasyankes_id, status])
+  @@index([kunjungan_id])
+  @@map("order_penunjang")
+}
+
+model Spesimen {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int
+  order_id     Int      @unique
+  asal         String   @db.VarChar(100)
+  waktu_ambil  DateTime @db.DateTime(3)
+  petugas_id   Int
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  order OrderPenunjang @relation(fields: [order_id], references: [id])
+
+  @@map("spesimen")
+}
+
+// Hasil dapat diisi ulang sampai divalidasi; sesudah divalidasi tidak diubah (susulan lewat addendum).
+model HasilPenunjang {
+  id              Int       @id @default(autoincrement())
+  fasyankes_id    Int
+  order_id        Int       @unique
+  nilai           String    @db.VarChar(200)
+  satuan          String?   @db.VarChar(50)
+  rujukan_teks    String?   @db.VarChar(200)
+  interpretasi    String    @db.VarChar(30)
+  catatan         String?   @db.VarChar(1000)
+  dientri_oleh    Int
+  dientri_pada    DateTime  @default(now()) @db.DateTime(3)
+  validator_id    Int?
+  divalidasi_pada DateTime? @db.DateTime(3)
+
+  order OrderPenunjang @relation(fields: [order_id], references: [id])
+
+  @@map("hasil_penunjang")
+}
+
+// Tagihan dasar per kunjungan (4.5): item dibuat saat order; status tagihan (lengkap bila semua item berharga) terpisah dari pembayaran.
+model Tagihan {
+  id                Int              @id @default(autoincrement())
+  fasyankes_id      Int
+  kunjungan_id      Int              @unique
+  status_tagihan    StatusTagihan    @default(belum_lengkap)
+  status_pembayaran StatusPembayaran @default(belum)
+  dibuat_oleh       Int?
+  dibuat_pada       DateTime         @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan     @relation(fields: [kunjungan_id], references: [id])
+  item      ItemTagihan[]
+
+  @@map("tagihan")
+}
+
+model ItemTagihan {
+  id                  Int        @id @default(autoincrement())
+  fasyankes_id        Int
+  tagihan_id          Int
+  jenis               JenisTarif
+  tarif_layanan_id    Int?
+  kode                String     @db.VarChar(50)
+  nama                String     @db.VarChar(200)
+  jumlah              Int        @default(1)
+  harga               Int?
+  order_penunjang_id  Int?       @unique
+  dibuat_oleh         Int?
+  dibuat_pada         DateTime   @default(now()) @db.DateTime(3)
+
+  tagihan Tagihan @relation(fields: [tagihan_id], references: [id])
+
+  @@index([tagihan_id])
+  @@map("item_tagihan")
+}
+
+// Addendum (4.2): isi susulan setelah catatan disahkan (mis. hasil lab); hanya menambah, versi per entitas. Pengesahan barunya di pengesahan_catatan (entitas `addendum`).
+model Addendum {
+  id                 Int       @id @default(autoincrement())
+  fasyankes_id       Int
+  kunjungan_id       Int
+  entitas            String    @db.VarChar(50)
+  entitas_id         Int
+  versi              Int
+  isi                Json
+  alasan             String    @db.VarChar(500)
+  waktu              DateTime  @default(now()) @db.DateTime(3)
+  perlu_kirim_ulang  Boolean   @default(true)
+  dikirim_pada       DateTime? @db.DateTime(3)
+  dibuat_oleh        Int?
+  dibuat_pada        DateTime  @default(now()) @db.DateTime(3)
+
+  @@unique([entitas, entitas_id, versi])
+  @@index([kunjungan_id])
+  @@map("addendum")
 }

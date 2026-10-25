@@ -3,6 +3,7 @@ import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
 import { hashKataSandi } from '../kata-sandi';
 import { seedWilayahContoh } from './wilayah';
 import { seedTerminologiContoh } from './terminologi';
+import { seedPenunjangContoh } from './penunjang';
 
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
 export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv = process.env): Promise<void> {
@@ -36,6 +37,7 @@ export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv 
     });
   }
   await seedTeksPersetujuan(prisma);
+  await seedPenunjangContoh(prisma, fas.id);
   await seedPimpinanPertama(prisma, fas.id, env);
   // Wilayah contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
   if ((await prisma.wilayah.count()) === 0) await seedWilayahContoh(prisma);
@@ -57,9 +59,25 @@ export const TEKS_GENERAL_CONSENT_V1 = {
   ].join('\n'),
 };
 
+/** Teks persetujuan tindakan CONTOH (versi 1, semua klinik): harus ditinjau dan diganti klinik sesuai Permenkes 290/2008 dan SOP sendiri. */
+export const TEKS_PERSETUJUAN_TINDAKAN_V1 = {
+  jenis: 'tindakan' as const,
+  versi: 1,
+  judul: 'Persetujuan tindakan kedokteran (CONTOH, tinjau sebelum dipakai)',
+  tujuan: 'Persetujuan atas tindakan kedokteran tertentu setelah mendapat penjelasan diagnosis, tata cara, risiko, alternatif, dan prognosis.',
+  isi: [
+    '[TEKS CONTOH] Klinik wajib meninjau dan mengganti teks ini sesuai ketentuan dan SOP klinik.',
+    'Saya telah mendapat penjelasan dari dokter atau tenaga kesehatan mengenai diagnosis, tujuan dan tata cara tindakan, risiko dan komplikasi, alternatif tindakan, serta prognosis.',
+    'Saya telah diberi kesempatan bertanya dan memahami penjelasan tersebut.',
+    'Dengan ini saya menyetujui tindakan yang disebut pada formulir ini dan memahami bahwa persetujuan dapat ditarik sebelum tindakan dilakukan.',
+  ].join('\n'),
+};
+
 export async function seedTeksPersetujuan(prisma: PrismaClient): Promise<void> {
-  const ada = await prisma.teksPersetujuan.findFirst({ where: { fasyankes_id: null, jenis: 'general', versi: TEKS_GENERAL_CONSENT_V1.versi } });
-  if (!ada) await prisma.teksPersetujuan.create({ data: { ...TEKS_GENERAL_CONSENT_V1, aktif: true } });
+  for (const t of [TEKS_GENERAL_CONSENT_V1, TEKS_PERSETUJUAN_TINDAKAN_V1]) {
+    const ada = await prisma.teksPersetujuan.findFirst({ where: { fasyankes_id: null, jenis: t.jenis, versi: t.versi } });
+    if (!ada) await prisma.teksPersetujuan.create({ data: { ...t, aktif: true } });
+  }
 }
 
 /** Akun Pimpinan pertama dengan kredensial awal statis; idempoten (tidak menimpa akun yang sudah ada). */

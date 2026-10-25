@@ -116,6 +116,20 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
       lokasiIds.length ? prisma.lokasi.findMany({ where: { id: { in: lokasiIds }, fasyankes_id: fasyankesId }, select: { id: true, nama: true } }) : [],
       penggunaIds.length ? prisma.pengguna.findMany({ where: { id: { in: penggunaIds }, fasyankes_id: fasyankesId }, select: { id: true, nama: true } }) : [],
     ]);
+    const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
+    const lab = kunjunganIds.length
+      ? await prisma.orderPenunjang.groupBy({ by: ['kunjungan_id', 'status'], where: { fasyankes_id: fasyankesId, kunjungan_id: { in: kunjunganIds }, status: { not: 'divalidasi' } }, _count: { _all: true } })
+      : [];
+    const hitungLab = (kunjunganId: number) => {
+      let perluSpesimen = 0;
+      let perluHasil = 0;
+      for (const g of lab) {
+        if (g.kunjungan_id !== kunjunganId) continue;
+        if (g.status === 'dipesan') perluSpesimen += g._count._all;
+        else perluHasil += g._count._all;
+      }
+      return { perlu_spesimen: perluSpesimen, perlu_hasil: perluHasil };
+    };
     const namaPoli = new Map(lokasi.map((l) => [l.id, l.nama]));
     const namaDpjp = new Map(pengguna.map((p) => [p.id, p.nama]));
     return isi.map(({ pasien: p, kunjungan: k }) => {
@@ -125,6 +139,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
         dpjp_nama: k.peserta[0] ? namaDpjp.get(k.peserta[0].pengguna_id) ?? null : null,
         mulai: iso(k.mulai),
         antrean: k.antrean ? { id: k.antrean.id, kode: kodeAntrean(k.antrean.nomor), status: k.antrean.status } : null,
+        lab: hitungLab(k.id),
       };
       return {
         id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, jenis_kelamin: p.jenis_kelamin, umur_tahun: umurTahun(tgl(p.tanggal_lahir)),

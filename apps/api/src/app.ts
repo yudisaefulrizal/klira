@@ -38,6 +38,18 @@ import { buatRutePengesahan } from './modul/rekam-medis/rute';
 import { buatLayananKlinis } from './modul/klinis/layanan';
 import { RepositoriKlinisPrisma } from './modul/klinis/repositori';
 import { buatRuteKlinis } from './modul/klinis/rute';
+import { buatLayananAddendum } from './modul/rekam-medis/layanan-addendum';
+import { RepositoriAddendumPrisma } from './modul/rekam-medis/repositori-addendum';
+import { buatRuteAddendum } from './modul/rekam-medis/rute-addendum';
+import { buatLayananTagihan } from './modul/kasir/layanan';
+import { RepositoriTagihanPrisma } from './modul/kasir/repositori';
+import { buatRuteKasir } from './modul/kasir/rute';
+import { buatLayananPenunjang } from './modul/penunjang/layanan';
+import { RepositoriPenunjangPrisma } from './modul/penunjang/repositori';
+import { buatRutePenunjang } from './modul/penunjang/rute';
+import { buatLayananPersetujuan } from './modul/persetujuan/layanan';
+import { RepositoriPersetujuanPrisma } from './modul/persetujuan/repositori';
+import { buatRutePersetujuan } from './modul/persetujuan/rute';
 import { buatLayananPengguna } from './modul/pengguna/layanan';
 import { RepositoriPenggunaPrisma } from './modul/pengguna/repositori';
 import { buatLayananPembuatanAkun } from './modul/pengguna/pembuatan';
@@ -77,9 +89,21 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
   // Pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab nanti) dan modul klinis yang mendaftarkan penyedia isinya.
   const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanPrisma(), audit: new PenampungAuditPrisma() });
+  const repoKlinis = new RepositoriKlinisPrisma();
   app.use('/api', buatRuteKlinis(layananAkses, layananIzin, buatLayananKlinis({
-    repo: new RepositoriKlinisPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan,
+    repo: repoKlinis, audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan,
   })));
+  // Addendum generik, penunjang (order, spesimen, hasil), persetujuan tindakan, dan tagihan dasar.
+  const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan });
+  app.use('/api', buatRuteAddendum(layananAkses, layananIzin, layananAddendum));
+  app.use('/api', buatRutePenunjang(layananAkses, layananIzin, buatLayananPenunjang({
+    repo: new RepositoriPenunjangPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, addendum: layananAddendum,
+  })));
+  app.use('/api', buatRutePersetujuan(layananAkses, layananIzin, buatLayananPersetujuan({
+    repo: new RepositoriPersetujuanPrisma(), audit: new PenampungAuditPrisma(),
+    tindakanKunjungan: async (fas, id) => ((await repoKlinis.bacaBagian(fas, id, 'tindakan'))?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama })),
+  })));
+  app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() }),

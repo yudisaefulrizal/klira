@@ -154,3 +154,34 @@ export const STATUS_RINGKASAN_BAGIAN = buat({
   akan_disimpan: { label: 'Akan disimpan', warna: 'biru' },
   sudah_sah: { label: 'Sudah disahkan', warna: 'hijau' },
 });
+
+/** Prioritas order penunjang (4.3). */
+export const PRIORITAS_ORDER = buat({
+  rutin: { label: 'Rutin', warna: 'abu' },
+  segera: { label: 'Segera (cito)', warna: 'merah' },
+});
+export type PrioritasOrder = keyof typeof PRIORITAS_ORDER.peta;
+
+/** Interpretasi hasil penunjang terhadap rentang rujukan. */
+export const INTERPRETASI_HASIL = buat({
+  normal: { label: 'Normal', warna: 'hijau' },
+  rendah: { label: 'Rendah', warna: 'kuning' },
+  tinggi: { label: 'Tinggi', warna: 'kuning' },
+  abnormal: { label: 'Abnormal', warna: 'kuning' },
+  kritis: { label: 'Kritis', warna: 'merah' },
+});
+export type InterpretasiHasil = keyof typeof INTERPRETASI_HASIL.peta;
+
+/** Bentuk persetujuan (4.4): tertulis atau lisan. */
+export const LABEL_BENTUK_PERSETUJUAN = buat({
+  tertulis: { label: 'Tertulis', warna: 'biru' },
+  lisan: { label: 'Lisan', warna: 'ungu' },
+});
+export type BentukPersetujuanTindakan = keyof typeof LABEL_BENTUK_PERSETUJUAN.peta;
+
+/** Penandatangan persetujuan (4.4): pasien sendiri atau wali. */
+export const LABEL_PENANDATANGAN = buat({
+  pasien: { label: 'Pasien sendiri', warna: 'abu' },
+  wali: { label: 'Wali', warna: 'biru' },
+});
+export type PenandatanganTindakan = keyof typeof LABEL_PENANDATANGAN.peta;

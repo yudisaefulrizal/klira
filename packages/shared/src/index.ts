@@ -5,3 +5,4 @@ export * from './alur';
 export * from './tipe';
 export * from './teks';
 export * from './klinis';
+export * from './penunjang';

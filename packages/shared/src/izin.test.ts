@@ -35,3 +35,18 @@ describe('paket awal: izin pasien', () => {
     expect(lihat).toEqual(expect.arrayContaining(['Dokter/DPJP', 'Perawat/Bidan/Nakes lain', 'Petugas klaim/kasir', 'Apoteker/tenaga kefarmasian', 'Analis lab']));
   });
 });
+
+describe('paket awal: penunjang dan persetujuan', () => {
+  it('Analis lab memegang penunjang utuh; Dokter hanya melihat penunjang dan memegang persetujuan utuh', () => {
+    const jenis = (nama: string) => JENIS_AKUN_AWAL.find((j) => j.nama === nama)!;
+    expect(jenis('Analis lab').fitur).toEqual(['penunjang']);
+    expect(jenis('Dokter/DPJP').fitur).toContain('persetujuan');
+    expect(jenis('Dokter/DPJP').fitur).not.toContain('penunjang');
+    expect(jenis('Dokter/DPJP').lihat_saja).toContain('penunjang');
+  });
+  it('persetujuan tidak diberi ke peran lain kecuali lihat untuk Perekam medis', () => {
+    const penuh = JENIS_AKUN_AWAL.filter((j) => j.fitur.includes('persetujuan')).map((j) => j.nama);
+    expect(penuh).toEqual(['Dokter/DPJP']);
+    expect(JENIS_AKUN_AWAL.filter((j) => j.lihat_saja?.includes('persetujuan')).map((j) => j.nama)).toEqual(['Perekam Medis dan Informasi Kesehatan']);
+  });
+});

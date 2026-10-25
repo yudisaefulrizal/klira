@@ -100,7 +100,7 @@ export const bagianParam = z.object({ id: z.coerce.number().int().positive(), ba
 export const selesaiPemeriksaanMasukan = z.object({ tahap: z.enum(['resep', 'kasir']).default('kasir') });
 
 // Draf alur klinis (4.2 Draf): isi sementara disimpan di server, bukan di peramban klinik bersama.
-export const ALUR_DRAF_KLINIS = ['pemeriksaan-klinis', 'skrining'] as const;
+export const ALUR_DRAF_KLINIS = ['pemeriksaan-klinis', 'skrining', 'hasil-lab', 'persetujuan-tindakan'] as const;
 export type AlurDrafKlinis = (typeof ALUR_DRAF_KLINIS)[number];
 /** Masa berlaku draf klinis di server sejak pembaruan terakhir. */
 export const KEDALUWARSA_DRAF_KLINIS_JAM = 12;

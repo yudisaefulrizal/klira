@@ -26,7 +26,7 @@ describe('status', () => {
 
 describe('izin', () => {
   it('katalog dan 12 jenis akun', () => {
-    expect(IZIN_AWAL).toHaveLength(16 * 3 * 2);
+    expect(IZIN_AWAL).toHaveLength(17 * 3 * 2);
     expect(JENIS_AKUN_AWAL).toHaveLength(12);
   });
 });

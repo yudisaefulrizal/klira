@@ -132,7 +132,9 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
     async simpanDraf(p: Pelaku, kunjunganId: number, alur: AlurDrafKlinis, m: DrafMasukan): Promise<Hasil<DrafKlinisDto>> {
       const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
       if (!k) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
-      if (!TAHAP_BOLEH_CATAT.includes(k.tahap_layanan)) return gagal('konflik', KLINIS.galat.kunjunganTertutup);
+      // Draf catatan klinis hanya selama catatan masih diterima; draf hasil lab dan persetujuan mengikuti kunjungan yang belum ditutup.
+      const alurCatatan = alur === 'pemeriksaan-klinis' || alur === 'skrining';
+      if (alurCatatan ? !TAHAP_BOLEH_CATAT.includes(k.tahap_layanan) : k.tahap_layanan === 'ditutup') return gagal('konflik', KLINIS.galat.kunjunganTertutup);
       const d = await repo.simpanDraf({ fasyankesId: p.fasyankes_id, penggunaId: p.id, alur, kunjunganId, pasienId: k.pasien_id, langkah: m.langkah, isi: m.isi, sekarang: sekarang() });
       return { ok: true, data: { alur, kunjungan_id: kunjunganId, langkah: d.langkah, isi: d.isi, diperbarui_pada: d.diperbarui_pada.toISOString() } };
     },

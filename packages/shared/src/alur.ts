@@ -46,6 +46,12 @@ const WIB_MS = 7 * 60 * 60 * 1000;
 /** Tanggal (YYYY-MM-DD) pada zona Asia/Jakarta (UTC+7) untuk batas hari antrean; waktu tetap disimpan UTC. */
 export const tanggalWib = (waktu: Date): string => new Date(waktu.getTime() + WIB_MS).toISOString().slice(0, 10);
 
+/** Batas waktu UTC untuk rentang tanggal WIB inklusif (YYYY-MM-DD): awal hari `dari` sampai sebelum hari sesudah `sampai`. */
+export function rentangHariWib(dari?: string, sampai?: string): { awal?: Date; akhir?: Date } {
+  const hari = (t: string) => new Date(`${t}T00:00:00.000Z`).getTime() - WIB_MS;
+  return { ...(dari ? { awal: new Date(hari(dari)) } : {}), ...(sampai ? { akhir: new Date(hari(sampai) + 24 * 3_600_000) } : {}) };
+}
+
 /** Umur penuh dalam tahun dari tanggal lahir (YYYY-MM-DD) pada tanggal acuan. */
 export function umurTahun(tanggalLahir: string, acuan: Date = new Date()): number {
   const [y, m, d] = tanggalLahir.split('-').map(Number);

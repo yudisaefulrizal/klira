@@ -42,7 +42,7 @@ describe('tindakan per baris', () => {
   const baris = (kunjungan: PasienBarisDto['kunjungan']): PasienBarisDto => ({ id: 1, nomor_rm: 'X', nama: 'N', jenis_kelamin: 'perempuan', umur_tahun: 3, status_identitas: 'lengkap', kunjungan });
   const kunj = (status: 'menunggu' | 'dipanggil' | 'dilayani' | 'selesai' | 'batal' | null): PasienBarisDto['kunjungan'] => ({
     id: 5, jenis: 'AMB', status: 'arrived', tahap_layanan: 'menunggu_skrining', cara_pembayaran: 'umum', poli_nama: 'Umum', dpjp_nama: null, mulai: '2026-10-25T01:00:00Z',
-    antrean: status ? { id: 9, kode: 'A-001', status } : null,
+    antrean: status ? { id: 9, kode: 'A-001', status } : null, lab: { perlu_spesimen: 0, perlu_hasil: 0 },
   });
   type Boleh = (f: string, a: string) => boolean;
   const semua: Boleh = () => true;

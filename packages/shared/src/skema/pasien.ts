@@ -110,6 +110,8 @@ export type KunjunganAktifDto = {
   dpjp_nama: string | null;
   mulai: string;
   antrean: AntreanRingkasDto | null;
+  /** Order lab yang menunggu pekerjaan (4.3): tombol Ambil spesimen dan Hasil lab. */
+  lab: { perlu_spesimen: number; perlu_hasil: number };
 };
 /** Baris Daftar pasien: hanya data minimal (3.1), tanpa NIK, alamat, atau isi rekam medis. */
 export type PasienBarisDto = {

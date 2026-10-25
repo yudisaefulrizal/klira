@@ -366,8 +366,11 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
   }
 
   async hapusDraf(fasyankesId: number, kunjunganId: number, penggunaId?: number, alur?: AlurDrafKlinis): Promise<number> {
+    // Tanpa alur: hanya draf catatan klinis (draf hasil lab dan persetujuan tindakan tidak ikut terhapus).
     const h = await prisma.draf.deleteMany({
-      where: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, ...(penggunaId !== undefined ? { pengguna_id: penggunaId } : {}), ...(alur ? { alur } : {}) },
+      where: {
+        fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, ...(penggunaId !== undefined ? { pengguna_id: penggunaId } : {}), alur: alur ?? { in: ['pemeriksaan-klinis', 'skrining'] },
+      },
     });
     return h.count;
   }

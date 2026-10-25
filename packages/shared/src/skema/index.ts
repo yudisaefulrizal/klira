@@ -9,3 +9,7 @@ export * from './profil';
 export * from './pasien';
 export * from './kunjungan';
 export * from './klinis';
+export * from './penunjang';
+export * from './persetujuan';
+export * from './addendum';
+export * from './tagihan';

@@ -1,7 +1,7 @@
 export const AKSI_IZIN = ['input', 'perbaikan', 'lihat'] as const;
 export const CAKUPAN_IZIN = ['unit', 'layanan'] as const;
 export const FITUR_IZIN = [
-  'pasien', 'pendaftaran', 'kunjungan', 'klinis', 'resep', 'farmasi', 'penunjang', 'kasir', 'klaim',
+  'pasien', 'pendaftaran', 'kunjungan', 'klinis', 'resep', 'farmasi', 'penunjang', 'persetujuan', 'kasir', 'klaim',
   'rekam-medis', 'akses', 'satusehat', 'pdp', 'audit', 'master', 'profil-klinik',
 ] as const;
 
@@ -22,9 +22,9 @@ export type JenisAkunAwal = { nama: string; syarat_profesi?: string; fitur: Fitu
 export const JENIS_AKUN_AWAL: JenisAkunAwal[] = [
   { nama: 'Admin vendor', fitur: ['akses', 'satusehat'] },
   { nama: 'Pimpinan fasyankes', fitur: ['akses', 'audit', 'rekam-medis', 'master', 'profil-klinik'] },
-  { nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', fitur: ['klinis', 'resep', 'kunjungan'], lihat_saja: ['pasien'] },
+  { nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', fitur: ['klinis', 'resep', 'kunjungan', 'persetujuan'], lihat_saja: ['pasien', 'penunjang'] },
   { nama: 'Perawat/Bidan/Nakes lain', syarat_profesi: 'nakes ber-SIP', fitur: ['klinis', 'kunjungan'], lihat_saja: ['pasien'] },
-  { nama: 'Perekam Medis dan Informasi Kesehatan', fitur: ['pasien', 'kunjungan', 'rekam-medis', 'pendaftaran'] },
+  { nama: 'Perekam Medis dan Informasi Kesehatan', fitur: ['pasien', 'kunjungan', 'rekam-medis', 'pendaftaran'], lihat_saja: ['persetujuan'] },
   { nama: 'Petugas pendaftaran', fitur: ['pasien', 'kunjungan', 'pendaftaran'] },
   { nama: 'Petugas klaim/kasir', fitur: ['kasir', 'klaim'], lihat_saja: ['pasien'] },
   { nama: 'Apoteker/tenaga kefarmasian', syarat_profesi: 'tenaga kefarmasian', fitur: ['farmasi'], lihat_saja: ['pasien'] },

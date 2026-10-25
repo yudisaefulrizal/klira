@@ -33,6 +33,8 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
   const tidakAda = (res: Response) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } } satisfies ResponsGalat);
   const lihatKlinis = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat']);
   const tulisKlinis = wajibIzinSalahSatu(['klinis', 'input'], ['klinis', 'perbaikan']);
+  // Draf pribadi alur bertahap lain (hasil lab, persetujuan tindakan) dibuka juga oleh pemilik izin alur itu.
+  const kelolaDraf = wajibIzinSalahSatu(['klinis', 'input'], ['klinis', 'perbaikan'], ['penunjang', 'input'], ['persetujuan', 'input']);
 
   rute.get('/kunjungan/:id/klinis', masuk, lihatKlinis, bungkus(async (req, res) => {
     const id = idParam.safeParse(req.params);
@@ -57,19 +59,19 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
   }));
 
   // Draf alur klinis di server (bukan penyimpanan lokal komputer bersama); isi tidak pernah dicatat di audit.
-  rute.get('/kunjungan/:id/draf/:alur', masuk, tulisKlinis, bungkus(async (req, res) => {
+  rute.get('/kunjungan/:id/draf/:alur', masuk, kelolaDraf, bungkus(async (req, res) => {
     const p = drafParam.safeParse(req.params);
     if (!p.success) return tidakAda(res);
     kirimHasil(res, await layanan.bacaDraf(pengguna(res), p.data.id, p.data.alur));
   }));
-  rute.put('/kunjungan/:id/draf/:alur', masuk, tulisKlinis, bungkus(async (req, res) => {
+  rute.put('/kunjungan/:id/draf/:alur', masuk, kelolaDraf, bungkus(async (req, res) => {
     const p = drafParam.safeParse(req.params);
     if (!p.success) return tidakAda(res);
     const m = drafMasukan.safeParse(req.body ?? {});
     if (!m.success) return galatValidasi(res, m.error);
     kirimHasil(res, await layanan.simpanDraf(pengguna(res), p.data.id, p.data.alur, m.data));
   }));
-  rute.delete('/kunjungan/:id/draf/:alur', masuk, tulisKlinis, bungkus(async (req, res) => {
+  rute.delete('/kunjungan/:id/draf/:alur', masuk, kelolaDraf, bungkus(async (req, res) => {
     const p = drafParam.safeParse(req.params);
     if (!p.success) return tidakAda(res);
     kirimHasil(res, await layanan.hapusDraf(pengguna(res), p.data.id, p.data.alur));
