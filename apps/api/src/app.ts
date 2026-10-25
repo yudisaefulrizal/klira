@@ -42,6 +42,9 @@ import { buatRuteRm } from './modul/rekam-medis/rute-rm';
 import { buatLayananDokumen } from './modul/rekam-medis/layanan-dokumen';
 import { RepositoriDokumenPrisma } from './modul/rekam-medis/repositori-dokumen';
 import { buatRuteDokumen } from './modul/rekam-medis/rute-dokumen';
+import { buatLayananPdp } from './modul/pdp/layanan';
+import { RepositoriPdpPrisma } from './modul/pdp/repositori';
+import { buatRutePdp } from './modul/pdp/rute';
 import { buatLayananKlaim } from './modul/klaim/layanan';
 import { RepositoriKlaimPrisma } from './modul/klaim/repositori';
 import { buatRuteKlaim } from './modul/klaim/rute';
@@ -117,6 +120,7 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   const repoDokumen = new RepositoriDokumenPrisma();
   const layananDokumen = buatLayananDokumen({ repo: repoDokumen, repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma() });
   app.use('/api', buatRuteDokumen(layananAkses, layananIzin, layananDokumen));
+  app.use('/api', buatRutePdp(layananAkses, layananIzin, buatLayananPdp({ repo: new RepositoriPdpPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteKlaim(layananAkses, layananIzin, buatLayananKlaim({
     repo: new RepositoriKlaimPrisma(), rm: { pengkodean: (fas, id) => repoRm.pengkodean(fas, id), resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));

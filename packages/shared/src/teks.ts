@@ -1049,4 +1049,73 @@ export const KLAIM = {
   },
 } as const;
 
-export const TEKS = { klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const PDP = {
+  judul: 'Pelindungan data', tabLabel: 'Tab Pelindungan data', memuat: 'Memuat...', gagalMuat: 'Data gagal dimuat.', terapkan: 'Terapkan', aturUlang: 'Atur ulang', cari: 'Cari', semuaStatus: 'Semua status', filterStatus: 'Status', tindakan: 'Tindakan', simpan: 'Simpan', menyimpan: 'Menyimpan...', kosong: 'Belum ada data.', ubah: 'Ubah', rincian: 'Rincian', ekspor: 'Ekspor CSV', pasienLabel: 'Pasien',
+  tab: { persetujuan: 'Persetujuan dan pemberitahuan', hak: 'Permintaan hak pasien', ropa: 'ROPA', dpia: 'DPIA', insiden: 'Insiden', retensi: 'Retensi dan pemusnahan', prosesor: 'Prosesor' },
+  batas: { sisa: (jam: number) => (jam < 0 ? `Terlambat ${-jam} jam` : jam === 0 ? 'Batas sekarang' : `${jam} jam lagi`), terlambat: 'Terlambat' },
+  pemberitahuan: {
+    judul: 'Versi teks pemberitahuan', tombol: 'Versi baru', judulIsian: 'Judul', tujuan: 'Tujuan pemrosesan', isi: 'Isi pemberitahuan (tujuan, jenis data, masa retensi, hak subjek)', versi: (n: number) => `Versi ${n}`, aktif: 'Berlaku', tidakAktif: 'Digantikan',
+    petunjuk: 'Versi baru menggantikan yang berlaku; versi lama tetap tersimpan sebagai bukti persetujuan. Perubahan diberitahukan sebelum berlaku.', gagal: 'Versi gagal disimpan.', kosong: 'Belum ada versi teks pemberitahuan.', daftar: 'Teks pemberitahuan',
+  },
+  tarik: {
+    judul: 'Catat tarik persetujuan', tombol: 'Tarik persetujuan', daftar: 'Persetujuan pasien', kolom: { pasien: 'Pasien', jenis: 'Jenis', tujuan: 'Tujuan', waktu: 'Waktu', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Tidak ada persetujuan.',
+    alasan: 'Alasan penarikan', petunjuk: 'Pemrosesan dihentikan paling lambat 3x24 jam sejak dicatat.', batasHenti: (tgl: string) => `Hentikan pemrosesan paling lambat ${tgl}`, pilih: 'Persetujuan yang ditarik', gagal: 'Penarikan gagal dicatat.', tersimpan: 'Penarikan dicatat.',
+    ditarik: 'Ditarik', diberikan: 'Diberikan', cariPasien: 'Cari nama atau nomor RM',
+  },
+  hak: {
+    judul: 'Permintaan hak pasien', catat: 'Catat permintaan', cari: 'Cari pasien atau pemohon', kolom: { pasien: 'Pasien', hak: 'Hak', pemohon: 'Pemohon', batas: 'Batas 3x24 jam', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Belum ada permintaan hak.', aktif: (n: number) => `${n} belum selesai`, terlambat: (n: number) => `${n} terlambat`,
+    langkah: { pemohon: 'Pemohon', jenis: 'Jenis hak', ringkasan: 'Ringkasan' }, pemohon: 'Nama pemohon', hubungan: 'Hubungan pemohon', saluran: 'Saluran masuk', verifikasi: 'Verifikasi identitas pemohon', verifikasiPetunjuk: 'Cara identitas diperiksa (mis. KTP pasien dicocokkan).', jenis: 'Hak yang diminta', rincian: 'Rincian permintaan',
+    hakLabel: { akses: 'Akses data', salinan: 'Salinan data', koreksi: 'Koreksi data', hapus: 'Hapus atau musnahkan', batasi: 'Batasi pemrosesan', ekspor: 'Ekspor data', keberatan: 'Keberatan atas keputusan otomatis' } as Record<string, string>,
+    hubunganLabel: { pasien: 'Pasien sendiri', wali: 'Wali', kuasa: 'Kuasa' } as Record<string, string>, saluranLabel: { langsung: 'Langsung', surat: 'Surat', elektronik: 'Elektronik', telepon: 'Telepon' } as Record<string, string>,
+    ajukan: 'Catat', mencatat: 'Mencatat...', gagal: 'Permintaan gagal dicatat.', hasilJudul: 'Permintaan tercatat', hasilPesan: (tgl: string) => `Permintaan tercatat. Selesaikan paling lambat ${tgl}.`,
+    proses: 'Proses', prosesJudul: 'Proses permintaan hak', langkahProses: { tinjau: 'Tinjau', keputusan: 'Keputusan', pelaksanaan: 'Pelaksanaan', notifikasi: 'Notifikasi' }, setujui: 'Setujui', tolak: 'Tolak', keputusan: 'Keputusan', alasanTolak: 'Alasan penolakan',
+    alasanTolakPetunjuk: 'Alasan wajib. Untuk hak hapus, rekam medis tetap disimpan sampai masa retensi 25 tahun habis (PMK 24/2022 P39).', pelaksanaan: 'Pelaksanaan (apa yang dilakukan, termasuk pada prosesor dan cadangan)', notifikasi: 'Catatan notifikasi ke pemohon', notifikasiPetunjuk: 'Catat bahwa hasil sudah diberitahukan ke pemohon.',
+    simpanProses: 'Simpan tahap ini', memproses: 'Memproses...', gagalProses: 'Tahap gagal disimpan.', selesai: 'Permintaan selesai: pemohon sudah diberi tahu.', tahapBerikut: { keputusan: 'Menunggu keputusan', pelaksanaan: 'Menunggu pelaksanaan', notifikasi: 'Menunggu notifikasi' } as Record<string, string>,
+    diterima: (tgl: string) => `Diterima ${tgl}`, tinjauInfo: 'Periksa identitas pemohon dan cakupan data, lalu putuskan.', oleh: (nama: string) => `Diputuskan oleh ${nama}`,
+  },
+  ropa: {
+    judul: 'Rekaman kegiatan pemrosesan (ROPA)', tambah: 'Tambah kegiatan', kolom: { kegiatan: 'Kegiatan', dasar: 'Dasar', jenis: 'Jenis data', retensi: 'Retensi', diperbarui: 'Diperbarui', tindakan: 'Tindakan' }, kosong: 'Belum ada kegiatan pemrosesan.',
+    langkah: { pihak: 'Pihak', dasar: 'Dasar dan data', akses: 'Akses dan hak', retensi: 'Retensi dan pengamanan', ringkasan: 'Ringkasan' }, namaKegiatan: 'Nama kegiatan', ppdp: 'Petugas PDP (PPDP)', sumberTujuan: 'Sumber dan tujuan data', dasar: 'Dasar pemrosesan', tujuan: 'Tujuan pemrosesan', jenisData: 'Jenis data pribadi',
+    kategoriSubjek: 'Kategori subjek data', pihakAkses: 'Pihak lain yang mengakses', pemenuhanHak: 'Cara pemenuhan hak subjek', aliran: 'Aliran data', masaRetensi: 'Masa retensi', pengamanan: 'Pengamanan', transfer: 'Transfer ke luar negeri',
+    dasarLabel: { persetujuan: 'Persetujuan', kewajiban_hukum: 'Kewajiban hukum', kepentingan_vital: 'Kepentingan vital', pelayanan_publik: 'Pelayanan publik', kepentingan_sah: 'Kepentingan yang sah', kontrak: 'Pemenuhan perjanjian' } as Record<string, string>,
+    simpan: 'Simpan kegiatan', gagal: 'Kegiatan gagal disimpan.', hasilJudul: 'Kegiatan tersimpan', hasilPesan: 'Kegiatan pemrosesan tersimpan.', pengendali: 'Pengendali: klinik ini', pilih: 'Pilih dasar...',
+  },
+  dpia: {
+    judul: 'Penilaian dampak (DPIA)', tambah: 'Tambah DPIA', kolom: { pemrosesan: 'Pemrosesan', tinjau: 'Tinjau ulang', ditinjau: 'Terakhir ditinjau', tindakan: 'Tindakan' }, kosong: 'Belum ada DPIA.', langkah: { risiko: 'Risiko', mitigasi: 'Mitigasi', saran: 'Saran PPDP', tinjau: 'Tinjau ulang' },
+    pemrosesan: 'Pemrosesan yang dinilai', ropa: 'Terkait kegiatan ROPA', tanpaRopa: 'Tidak terkait', risiko: 'Risiko terhadap subjek data', mitigasi: 'Mitigasi risiko', saran: 'Saran PPDP', tinjauUlang: 'Tinjau ulang pada', tandaiDitinjau: 'Tandai sudah ditinjau hari ini', jatuhTempo: 'Jatuh tempo tinjau ulang',
+    simpan: 'Simpan DPIA', gagal: 'DPIA gagal disimpan.', hasilJudul: 'DPIA tersimpan', hasilPesan: 'DPIA tersimpan.', petunjuk: 'DPIA dibuat sebelum go-live dan ditinjau ulang saat risiko berubah.',
+  },
+  insiden: {
+    judul: 'Insiden kebocoran data', catat: 'Catat insiden', kolom: { waktu: 'Diketahui', jenis: 'Jenis', data: 'Data terungkap', terdampak: 'Terdampak', notifikasi: 'Notifikasi', tindakan: 'Tindakan' }, kosong: 'Belum ada insiden.',
+    langkah: { kejadian: 'Kejadian', dampak: 'Dampak', penanganan: 'Penanganan dan pemulihan', notifikasi: 'Notifikasi' }, waktuKejadian: 'Waktu kejadian', waktuDiketahui: 'Waktu diketahui secara pasti', siber: 'Insiden siber', uraian: 'Uraian kejadian (kapan dan bagaimana)',
+    dataTerungkap: 'Data yang terungkap', pasienTerdampak: 'Pasien terdampak', tambahPasien: 'Tambah pasien terdampak', buang: 'Buang', penanganan: 'Penanganan', pemulihan: 'Pemulihan', kontak: 'Kontak PPDP untuk pasien', notifPasien: 'Notifikasi ke pasien dikirim', notifLembaga: 'Notifikasi ke Lembaga dikirim',
+    batas: (tgl: string) => `Notifikasi paling lambat ${tgl} (3x24 jam sejak diketahui)`, belumNotif: 'Belum dikirim', simpan: 'Simpan insiden', gagal: 'Insiden gagal disimpan.', hasilJudul: 'Insiden tersimpan', hasilPesan: 'Insiden tersimpan.', ubah: 'Perbarui', jenisSiber: 'Siber', jenisLain: 'Non-siber',
+    terdampak: (n: number) => `${n} pasien`, kosongPasien: 'Belum ada pasien terdampak dipilih.',
+  },
+  retensi: {
+    kebijakan: 'Kebijakan masa retensi', kolomKebijakan: { jenis: 'Jenis data', periode: 'Periode', dasar: 'Dasar hukum', metode: 'Metode musnah' }, tahun: (n: number) => `${n} tahun`, pemusnahan: 'Pemusnahan', rencana: 'Rencanakan pemusnahan', kolom: { cakupan: 'Cakupan', jadwal: 'Jadwal', status: 'Status', tindakan: 'Tindakan' },
+    kosong: 'Belum ada pemusnahan.', langkah: { data: 'Pilih data', perintah: 'Perintah ke prosesor', pelaksanaan: 'Pelaksanaan', beritaAcara: 'Berita acara' }, cakupan: 'Cakupan data yang dimusnahkan', dasar: 'Dasar pemusnahan', permintaanHak: 'Permintaan hak terkait (nomor)', pasien: 'Pasien terkait', jadwal: 'Jadwal',
+    dasarLabel: { retensi_habis: 'Masa retensi habis', permintaan_hak: 'Permintaan hak pasien', lainnya: 'Lainnya' } as Record<string, string>, prosesor: 'Prosesor yang diperintah', pilihProsesor: 'Pilih prosesor...', nomorPerintah: 'Nomor perintah tertulis', pelaksana: 'Pelaksana', metode: 'Metode pemusnahan', cadangan: 'Mencakup cadangan dan salinan di prosesor',
+    pelaksanaanPada: 'Waktu pelaksanaan', beritaAcara: 'Berita acara', status: { direncanakan: 'Direncanakan', diperintahkan: 'Diperintahkan', dilaksanakan: 'Dilaksanakan', selesai: 'Selesai' } as Record<string, string>, warna: { direncanakan: 'abu', diperintahkan: 'kuning', dilaksanakan: 'biru', selesai: 'hijau' } as Record<string, 'abu' | 'kuning' | 'biru' | 'hijau'>,
+    simpanRencana: 'Simpan rencana', simpanTahap: 'Simpan tahap ini', gagal: 'Pemusnahan gagal diproses.', hasilJudul: 'Tersimpan', hasilPesan: 'Pemusnahan tercatat.', proses: 'Proses', petunjuk: 'Aplikasi mencatat prosedur dan berita acara; penghapusan data dilakukan sesuai prosedur operasional dan tidak menghapus rekam medis sebelum masa retensi habis.',
+    belumCadangan: 'Pemusnahan wajib mencakup cadangan dan salinan di prosesor (PP 33/2026 P82).', menunggu: 'Tahap ini menunggu tahap sebelumnya.', tahapSekarang: 'Tahap sekarang',
+  },
+  prosesor: {
+    judul: 'Prosesor data', tambah: 'Tambah prosesor', kolom: { nama: 'Prosesor', layanan: 'Layanan', lokasi: 'Lokasi data', perjanjian: 'Perjanjian', sla: 'SLA lapor', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Belum ada prosesor.', langkah: { identitas: 'Identitas', perjanjian: 'Perjanjian', sub: 'Sub-prosesor dan SLA' },
+    nama: 'Nama prosesor', layanan: 'Layanan yang diberikan', lokasi: 'Lokasi data', nomorPerjanjian: 'Nomor perjanjian', butir: 'Butir perjanjian yang tercantum', butirKurang: (n: number) => `${n} butir belum tercantum.`, sub: 'Sub-prosesor (persetujuan tertulis)', tambahSub: 'Tambah sub-prosesor', subNama: 'Nama sub-prosesor', subLayanan: 'Layanan', subPersetujuan: 'Persetujuan tertulis pada',
+    sla: 'SLA lapor kegagalan (jam)', slaPetunjuk: 'Vendor wajib melapor pada kesempatan pertama; tetapkan jam agar klinik patuh 3x24 jam (1 sampai 72).', aktif: 'Prosesor aktif', simpan: 'Simpan prosesor', gagal: 'Prosesor gagal disimpan.', hasilJudul: 'Prosesor tersimpan', hasilPesan: 'Prosesor tersimpan.', aktifLabel: 'Aktif', nonaktifLabel: 'Nonaktif', buang: 'Buang',
+    butirLabel: {
+      objek_jangka: 'Objek dan jangka waktu pemrosesan', sifat_tujuan: 'Sifat dan tujuan pemrosesan', jenis_data: 'Jenis data pribadi', kategori_subjek: 'Kategori subjek data', hak_kewajiban: 'Hak dan kewajiban para pihak', perintah_tertulis: 'Bertindak hanya atas perintah tertulis',
+      kerahasiaan: 'Kewajiban menjaga kerahasiaan', keamanan: 'Langkah pengamanan', audit: 'Hak audit pengendali', sub_prosesor: 'Persetujuan tertulis untuk sub-prosesor', pengembalian_hapus: 'Pengembalian atau penghapusan data di akhir perjanjian',
+    } as Record<string, string>,
+  },
+  galat: {
+    tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.', waktu: 'Waktu tidak valid.', jenisHak: 'Pilih hak yang diminta.', saluran: 'Pilih saluran masuk.', hubungan: 'Pilih hubungan pemohon.', keputusan: 'Pilih setujui atau tolak.', alasanTolak: 'Alasan penolakan wajib diisi.', dasar: 'Pilih dasar pemrosesan.', dasarMusnah: 'Pilih dasar pemusnahan.',
+    pasienBanyak: 'Pasien terdampak paling banyak 500.', kejadianSesudahDiketahui: 'Waktu kejadian tidak boleh sesudah waktu diketahui.', subBanyak: 'Sub-prosesor paling banyak 20.', sla: 'SLA lapor harus 1 sampai 72 jam.',
+    pasienTidakAda: 'Pasien tidak ditemukan.', hakTidakAda: 'Permintaan hak tidak ditemukan.', tahapTidakSah: 'Tahap ini tidak sah untuk status sekarang.', persetujuanTidakAda: 'Persetujuan tidak ditemukan.', sudahDitarik: 'Persetujuan sudah ditarik.', bukanPersetujuanPdp: 'Hanya persetujuan umum atau PDP yang dapat ditarik di sini.',
+    ropaTidakAda: 'Kegiatan ROPA tidak ditemukan.', dpiaTidakAda: 'DPIA tidak ditemukan.', insidenTidakAda: 'Insiden tidak ditemukan.', prosesorTidakAda: 'Prosesor tidak ditemukan.', musnahTidakAda: 'Pemusnahan tidak ditemukan.', prosesorTidakSah: 'Prosesor tidak sah atau tidak aktif.', hakTerkaitTidakAda: 'Permintaan hak terkait tidak ditemukan.',
+    cadanganWajib: 'Pemusnahan wajib mencakup cadangan dan salinan di prosesor.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
+  },
+} as const;
+
+export const TEKS = { pdp: PDP, klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

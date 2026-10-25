@@ -1638,3 +1638,219 @@ model RiwayatKlaim {
   @@index([klaim_id])
   @@map("riwayat_klaim")
 }
+
+// ---- Pelindungan data pribadi (PP 33/2026): hak pasien, penarikan persetujuan, ROPA, DPIA, insiden, pemusnahan, prosesor ----
+enum JenisHak {
+  akses
+  salinan
+  koreksi
+  hapus
+  batasi
+  ekspor
+  keberatan
+}
+
+enum SaluranHak {
+  langsung
+  surat
+  elektronik
+  telepon
+}
+
+enum StatusHak {
+  diterima
+  disetujui
+  ditolak
+  dilaksanakan
+  selesai
+}
+
+enum StatusMusnah {
+  direncanakan
+  diperintahkan
+  dilaksanakan
+  selesai
+}
+
+// Permintaan hak subjek data: diterima dengan batas 3x24 jam; keputusan, pelaksanaan, dan notifikasi dicatat bertahap.
+model PermintaanHak {
+  id                 Int        @id @default(autoincrement())
+  fasyankes_id       Int
+  pasien_id          Int
+  jenis              JenisHak
+  saluran            SaluranHak
+  pemohon_nama       String     @db.VarChar(200)
+  pemohon_hubungan   String     @db.VarChar(20)
+  verifikasi         String     @db.VarChar(300)
+  rincian            String?    @db.VarChar(1000)
+  diterima_pada      DateTime   @db.DateTime(3)
+  batas_waktu        DateTime   @db.DateTime(3)
+  status             StatusHak  @default(diterima)
+  keputusan_oleh     Int?
+  waktu_keputusan    DateTime?  @db.DateTime(3)
+  alasan_keputusan   String?    @db.VarChar(500)
+  pelaksanaan        String?    @db.VarChar(1000)
+  pelaksana_id       Int?
+  waktu_pelaksanaan  DateTime?  @db.DateTime(3)
+  notifikasi_pada    DateTime?  @db.DateTime(3)
+  notifikasi_oleh    Int?
+  catatan_notifikasi String?    @db.VarChar(300)
+  dibuat_oleh        Int
+  dibuat_pada        DateTime   @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, status])
+  @@index([pasien_id])
+  @@map("permintaan_hak")
+}
+
+// Penarikan persetujuan: persetujuan berstatus `ditarik`; pemrosesan dihentikan paling lambat batas_henti (3x24 jam).
+model PenarikanPersetujuan {
+  id             Int      @id @default(autoincrement())
+  fasyankes_id   Int
+  persetujuan_id Int      @unique
+  alasan         String   @db.VarChar(500)
+  waktu          DateTime @default(now()) @db.DateTime(3)
+  batas_henti    DateTime @db.DateTime(3)
+  dicatat_oleh   Int
+
+  @@index([fasyankes_id])
+  @@map("penarikan_persetujuan")
+}
+
+// Rekaman kegiatan pemrosesan (ROPA, PP 33/2026 P74).
+model Ropa {
+  id              Int      @id @default(autoincrement())
+  fasyankes_id    Int
+  nama_kegiatan   String   @db.VarChar(200)
+  ppdp_nama       String?  @db.VarChar(200)
+  sumber_tujuan   String   @db.VarChar(500)
+  dasar           String   @db.VarChar(40)
+  tujuan          String   @db.VarChar(500)
+  jenis_data      String   @db.VarChar(500)
+  kategori_subjek String   @db.VarChar(300)
+  pihak_akses     String   @db.VarChar(500)
+  pemenuhan_hak   String   @db.VarChar(500)
+  aliran          String   @db.VarChar(500)
+  masa_retensi    String   @db.VarChar(200)
+  pengamanan      String   @db.VarChar(500)
+  transfer        String   @db.VarChar(300)
+  dibuat_oleh     Int
+  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
+  diperbarui_pada DateTime @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id])
+  @@map("ropa")
+}
+
+// Penilaian dampak pelindungan data (DPIA, UU 27/2022 P34).
+model Dpia {
+  id                Int       @id @default(autoincrement())
+  fasyankes_id      Int
+  pemrosesan        String    @db.VarChar(200)
+  ropa_id           Int?
+  risiko            String    @db.Text
+  mitigasi          String    @db.Text
+  saran_ppdp        String?   @db.Text
+  tinjau_ulang_pada DateTime  @db.Date
+  ditinjau_pada     DateTime? @db.DateTime(3)
+  dibuat_oleh       Int
+  dibuat_pada       DateTime  @default(now()) @db.DateTime(3)
+  diperbarui_pada   DateTime  @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id])
+  @@map("dpia")
+}
+
+// Insiden kebocoran data: notifikasi ke pasien dan Lembaga paling lambat batas_notifikasi (3x24 jam sejak diketahui).
+model InsidenData {
+  id                      Int       @id @default(autoincrement())
+  fasyankes_id            Int
+  waktu_kejadian          DateTime? @db.DateTime(3)
+  waktu_diketahui         DateTime  @db.DateTime(3)
+  siber                   Boolean   @default(false)
+  uraian                  String    @db.Text
+  data_terungkap          String    @db.VarChar(1000)
+  penanganan              String?   @db.Text
+  pemulihan               String?   @db.Text
+  kontak_ppdp             String?   @db.VarChar(200)
+  batas_notifikasi        DateTime  @db.DateTime(3)
+  notifikasi_pasien_pada  DateTime? @db.DateTime(3)
+  notifikasi_lembaga_pada DateTime? @db.DateTime(3)
+  dibuat_oleh             Int
+  dibuat_pada             DateTime  @default(now()) @db.DateTime(3)
+  diperbarui_pada         DateTime  @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, waktu_diketahui])
+  @@map("insiden_data")
+}
+
+model InsidenPasien {
+  id           Int @id @default(autoincrement())
+  fasyankes_id Int
+  insiden_id   Int
+  pasien_id    Int
+
+  @@unique([insiden_id, pasien_id])
+  @@map("insiden_pasien")
+}
+
+// Kebijakan masa retensi (PP 33/2026 P75).
+model KebijakanRetensi {
+  id               Int      @id @default(autoincrement())
+  fasyankes_id     Int
+  jenis_data       String   @db.VarChar(200)
+  periode_tahun    Int
+  dasar_hukum      String   @db.VarChar(300)
+  metode_musnah    String   @db.VarChar(300)
+  penanggung_jawab String?  @db.VarChar(200)
+  dibuat_pada      DateTime @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id])
+  @@map("kebijakan_retensi")
+}
+
+// Pemusnahan data: alur berlangkah (rencana, perintah ke prosesor, pelaksanaan, berita acara); aplikasi mencatat prosedurnya, bukan menghapus data.
+model Pemusnahan {
+  id                Int          @id @default(autoincrement())
+  fasyankes_id      Int
+  cakupan           String       @db.VarChar(500)
+  dasar             String       @db.VarChar(30)
+  permintaan_hak_id Int?
+  pasien_id         Int?
+  jadwal            DateTime     @db.Date
+  status            StatusMusnah @default(direncanakan)
+  prosesor_id       Int?
+  nomor_perintah    String?      @db.VarChar(100)
+  perintah_pada     DateTime?    @db.DateTime(3)
+  pelaksana         String?      @db.VarChar(200)
+  metode            String?      @db.VarChar(300)
+  mencakup_cadangan Boolean      @default(false)
+  pelaksanaan_pada  DateTime?    @db.DateTime(3)
+  berita_acara      String?      @db.Text
+  berita_acara_pada DateTime?    @db.DateTime(3)
+  dibuat_oleh       Int
+  dibuat_pada       DateTime     @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id, status])
+  @@map("pemusnahan")
+}
+
+// Prosesor (vendor, hosting): perjanjian, butir perjanjian, sub-prosesor, SLA lapor kegagalan (PP 33/2026 P14, P15, P118).
+model ProsesorData {
+  id               Int      @id @default(autoincrement())
+  fasyankes_id     Int
+  nama             String   @db.VarChar(200)
+  layanan          String   @db.VarChar(300)
+  lokasi_data      String   @db.VarChar(200)
+  nomor_perjanjian String?  @db.VarChar(100)
+  butir_perjanjian Json
+  sub_prosesor     Json
+  sla_lapor_jam    Int?
+  aktif            Boolean  @default(true)
+  dibuat_oleh      Int
+  dibuat_pada      DateTime @default(now()) @db.DateTime(3)
+  diperbarui_pada  DateTime @default(now()) @db.DateTime(3)
+
+  @@index([fasyankes_id])
+  @@map("prosesor_data")
+}
