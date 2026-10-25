@@ -29,6 +29,6 @@ export const bayangan = {
   modal: '0 8px 24px rgba(23, 48, 46, 0.16)',
 } as const;
 
-export const ukuran = { kartu: '400px', isian: '40px', tombol: '40px', kolomKiri: '1fr', kolomKanan: '1fr' } as const;
+export const ukuran = { kartu: '400px', isian: '40px', tombol: '40px', kolomKiri: '1fr', kolomKanan: '1fr', tinggiLayar: '100vh', garis: '1px' } as const;
 
 export const token = { warna, huruf, jarak, radius, bayangan, ukuran } as const;

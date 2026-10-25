@@ -6,7 +6,7 @@
 | Skema basis data dasar | Infrastruktur | - | Bisa dikerjakan | ✔ |
 | Paket shared | Infrastruktur | - | Bisa dikerjakan | ✔ |
 | Masuk | Halaman | - | Bisa dikerjakan | ✔ |
-| Ganti kredensial | Fitur | - | Bisa dikerjakan | ☐ |
+| Ganti kredensial | Fitur | - | Bisa dikerjakan | ✔ |
 | Izin dan jenis akun | Fitur | - | Bisa dikerjakan | ☐ |
 | Log audit | Fitur | - | Bisa dikerjakan | ☐ |
 | Master terminologi (ICD-10, ICD-9 CM, LOINC, SNOMED, UCUM) | Fitur | - | Menunggu pihak ketiga | ☐ |

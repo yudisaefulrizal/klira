@@ -4,6 +4,11 @@ import { GalatApi, panggilApi } from './klien';
 export const masuk = (username: string, kata_sandi: string) =>
   panggilApi<PenggunaSaya>('POST', '/masuk', { username, kata_sandi });
 
+export type MasukanGanti = { username: string; kata_sandi_lama: string; kata_sandi: string; konfirmasi_kata_sandi: string };
+
+export const gantiKredensial = (masukan: MasukanGanti) =>
+  panggilApi<PenggunaSaya>('POST', '/ganti-kredensial', masukan);
+
 export const keluar = () => panggilApi<{ ok: true }>('POST', '/keluar', {});
 
 /** Pengguna saat ini, atau null bila belum masuk. */

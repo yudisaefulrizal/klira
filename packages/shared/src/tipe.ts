@@ -4,7 +4,7 @@ export type { z };
 export type Turunan<S extends z.ZodType> = z.infer<S>;
 
 export type KodeGalat =
-  | 'tidak_valid' | 'tidak_terautentikasi' | 'tidak_berizin' | 'tidak_ditemukan' | 'konflik' | 'terlalu_banyak' | 'galat_server';
+  | 'tidak_valid' | 'tidak_terautentikasi' | 'tidak_berizin' | 'tidak_ditemukan' | 'konflik' | 'terlalu_banyak' | 'wajib_ganti_kredensial' | 'galat_server';
 
 /** Respons galat seragam dari API. */
 export type ResponsGalat = {

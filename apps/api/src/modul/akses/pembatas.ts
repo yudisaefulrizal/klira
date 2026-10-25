@@ -5,6 +5,8 @@ export type OpsiPembatas = {
   batasAlamat: number;
   jendelaMs: number;
   jedaMs: number;
+  /** Batas jumlah catatan per peta; di atasnya catatan kedaluwarsa disapu segera. */
+  maksCatatan?: number;
 };
 
 export const OPSI_PEMBATAS_BAWAAN: OpsiPembatas = {
@@ -12,12 +14,14 @@ export const OPSI_PEMBATAS_BAWAAN: OpsiPembatas = {
   batasAlamat: 20,
   jendelaMs: 15 * 60_000,
   jedaMs: 5 * 60_000,
+  maksCatatan: 10_000,
 };
 
 /** Pembatas percobaan masuk gagal per akun dan per alamat, dalam memori proses. */
 export class PembatasPercobaan {
   private akun = new Map<string, Catatan>();
   private alamat = new Map<string, Catatan>();
+  private terakhirBersih = 0;
 
   constructor(
     private opsi: OpsiPembatas = OPSI_PEMBATAS_BAWAAN,
@@ -32,7 +36,25 @@ export class PembatasPercobaan {
     return Math.max(0, (a?.terkunciSampai ?? 0) - t, (b?.terkunciSampai ?? 0) - t);
   }
 
+  /** Jumlah catatan yang masih disimpan (untuk uji dan pemantauan). */
+  ukuran(): { akun: number; alamat: number } {
+    return { akun: this.akun.size, alamat: this.alamat.size };
+  }
+
+  /** Buang catatan yang jendelanya lewat dan tidak sedang terkunci. */
+  bersihkan(): void {
+    const t = this.sekarang();
+    this.terakhirBersih = t;
+    for (const peta of [this.akun, this.alamat]) {
+      for (const [k, c] of peta) if (c.terkunciSampai <= t && t - c.mulai > this.opsi.jendelaMs) peta.delete(k);
+    }
+  }
+
   catatGagal(username: string, alamat: string): void {
+    const maks = this.opsi.maksCatatan ?? OPSI_PEMBATAS_BAWAAN.maksCatatan!;
+    if (this.sekarang() - this.terakhirBersih >= this.opsi.jendelaMs || this.akun.size >= maks || this.alamat.size >= maks) {
+      this.bersihkan();
+    }
     this.tambah(this.akun, kunciAkun(username), this.opsi.batasAkun);
     this.tambah(this.alamat, alamat, this.opsi.batasAlamat);
   }

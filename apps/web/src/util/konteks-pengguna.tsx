@@ -1,13 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { PenggunaSaya } from '@klira/shared';
-import { ambilSaya, keluar as panggilKeluar, masuk as panggilMasuk } from '../api-klien/akses';
+import type { MasukanGanti } from '../api-klien/akses';
+import { ambilSaya, gantiKredensial as panggilGanti, keluar as panggilKeluar, masuk as panggilMasuk } from '../api-klien/akses';
 
 type Konteks = {
   pengguna: PenggunaSaya | null;
   memuat: boolean;
   masuk: (username: string, kataSandi: string) => Promise<PenggunaSaya>;
   keluar: () => Promise<void>;
+  gantiKredensial: (masukan: MasukanGanti) => Promise<PenggunaSaya>;
 };
 
 const KonteksPengguna = createContext<Konteks | null>(null);
@@ -33,7 +35,16 @@ export function PenyediaPengguna({ children }: { children: ReactNode }) {
     setPengguna(null);
   }, []);
 
-  const nilai = useMemo(() => ({ pengguna, memuat, masuk, keluar }), [pengguna, memuat, masuk, keluar]);
+  const gantiKredensial = useCallback(async (masukan: MasukanGanti) => {
+    const hasil = await panggilGanti(masukan);
+    setPengguna(hasil);
+    return hasil;
+  }, []);
+
+  const nilai = useMemo(
+    () => ({ pengguna, memuat, masuk, keluar, gantiKredensial }),
+    [pengguna, memuat, masuk, keluar, gantiKredensial],
+  );
   return <KonteksPengguna.Provider value={nilai}>{children}</KonteksPengguna.Provider>;
 }
 

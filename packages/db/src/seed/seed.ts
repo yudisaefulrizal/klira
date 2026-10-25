@@ -1,10 +1,6 @@
 import { PrismaClient } from '@prisma/client';
-import { IZIN_AWAL, JENIS_AKUN_AWAL } from '@klira/shared';
+import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
 import { hashKataSandi } from '../kata-sandi';
-
-/** Kredensial awal statis yang sama untuk semua klinik (2.4); wajib diganti saat masuk pertama. */
-const USERNAME_AWAL_BAWAAN = 'pimpinan';
-const KATA_SANDI_AWAL_BAWAAN = 'klira-awal-2026';
 
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
 export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv = process.env): Promise<void> {
@@ -39,8 +35,8 @@ export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv 
 
 /** Akun Pimpinan pertama dengan kredensial awal statis; idempoten (tidak menimpa akun yang sudah ada). */
 async function seedPimpinanPertama(prisma: PrismaClient, fasyankesId: number, env: NodeJS.ProcessEnv): Promise<void> {
-  const username = env.USERNAME_AWAL?.trim() || USERNAME_AWAL_BAWAAN;
-  const kataSandi = env.KATA_SANDI_AWAL || KATA_SANDI_AWAL_BAWAAN;
+  // Kredensial awal statis yang sama untuk semua klinik (2.4); wajib diganti saat masuk pertama.
+  const { username, kataSandi } = kredensialAwal(env);
   // Bila klinik sudah punya akun (termasuk setelah kredensial awal diganti), tidak membuat ulang kredensial awal.
   if ((await prisma.pengguna.count({ where: { fasyankes_id: fasyankesId } })) > 0) return;
   const pengguna = await prisma.pengguna.create({

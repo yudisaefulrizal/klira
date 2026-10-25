@@ -28,7 +28,7 @@ export function HalamanMasuk() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `${token.ukuran.kolomKiri} ${token.ukuran.kolomKanan}`, minHeight: '100vh' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `${token.ukuran.kolomKiri} ${token.ukuran.kolomKanan}`, minHeight: token.ukuran.tinggiLayar }}>
       <div
         style={{
           background: token.warna.utama,

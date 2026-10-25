@@ -1,4 +1,4 @@
-import { nik, tanggal, pasienMasukan, paginasi, izinPerAkunMasukan, penugasanJenisMasukan, peringatanIzinMasukan } from './skema';
+import { nik, tanggal, pasienMasukan, paginasi, izinPerAkunMasukan, penugasanJenisMasukan, peringatanIzinMasukan, gantiKredensial, kredensialAwal } from './skema';
 
 describe('skema', () => {
   it('NIK 16 digit', () => {
@@ -30,5 +30,29 @@ describe('skema', () => {
     expect(penugasanJenisMasukan.safeParse({ jenis_akun_id: 1, mulai: '2024-01-01' }).success).toBe(true);
     expect(peringatanIzinMasukan.safeParse({ jenis_peringatan: 'x', alasan_pimpinan: 'y' }).success).toBe(false);
     expect(peringatanIzinMasukan.safeParse({ izin_id: 1, jenis_peringatan: 'x', alasan_pimpinan: 'y' }).success).toBe(true);
+  });
+
+  describe('ganti kredensial', () => {
+    const baik = { username: 'dr.budi', kata_sandi_lama: 'lama', kata_sandi: 'Sandi1234', konfirmasi_kata_sandi: 'Sandi1234' };
+    it('menerima masukan sah', () => {
+      expect(gantiKredensial.safeParse(baik).success).toBe(true);
+    });
+    it('menolak kata sandi lemah, pendek, atau konfirmasi beda', () => {
+      const uji = (s: object) => gantiKredensial.safeParse({ ...baik, ...s }).success;
+      expect(uji({ kata_sandi: 'abc1', konfirmasi_kata_sandi: 'abc1' })).toBe(false);
+      expect(uji({ kata_sandi: 'hurufsaja', konfirmasi_kata_sandi: 'hurufsaja' })).toBe(false);
+      expect(uji({ kata_sandi: '1234567890', konfirmasi_kata_sandi: '1234567890' })).toBe(false);
+      expect(uji({ konfirmasi_kata_sandi: 'Beda12345' })).toBe(false);
+    });
+    it('menolak username tidak sah dan kata sandi sama dengan username', () => {
+      const uji = (s: object) => gantiKredensial.safeParse({ ...baik, ...s }).success;
+      expect(uji({ username: 'ab' })).toBe(false);
+      expect(uji({ username: 'ada spasi' })).toBe(false);
+      expect(uji({ username: 'Sandi1234' })).toBe(false);
+    });
+    it('kredensial awal: bawaan dan penimpaan env', () => {
+      expect(kredensialAwal({})).toEqual({ username: 'pimpinan', kataSandi: 'klira-awal-2026' });
+      expect(kredensialAwal({ USERNAME_AWAL: ' x ', KATA_SANDI_AWAL: 'y' })).toEqual({ username: 'x', kataSandi: 'y' });
+    });
   });
 });

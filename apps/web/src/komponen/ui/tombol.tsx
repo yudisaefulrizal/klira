@@ -1,9 +1,16 @@
 import type { ButtonHTMLAttributes } from 'react';
 import { token } from '../../gaya/token';
 
-type Props = ButtonHTMLAttributes<HTMLButtonElement> & { penuh?: boolean };
+type Varian = 'utama' | 'sekunder' | 'teks';
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & { penuh?: boolean; varian?: Varian };
 
-export function Tombol({ penuh, style, disabled, ...sisa }: Props) {
+const gayaVarian = {
+  utama: { background: token.warna.utama, color: token.warna.permukaan, border: 'none' },
+  sekunder: { background: token.warna.permukaan, color: token.warna.utama, border: `${token.ukuran.garis} solid ${token.warna.garis}` },
+  teks: { background: 'transparent', color: token.warna.utama, border: 'none' },
+} as const;
+
+export function Tombol({ penuh, varian = 'utama', style, disabled, ...sisa }: Props) {
   return (
     <button
       disabled={disabled}
@@ -11,9 +18,7 @@ export function Tombol({ penuh, style, disabled, ...sisa }: Props) {
         height: token.ukuran.tombol,
         padding: `0 ${token.jarak.md}`,
         width: penuh ? '100%' : undefined,
-        background: token.warna.utama,
-        color: token.warna.permukaan,
-        border: 'none',
+        ...gayaVarian[varian],
         borderRadius: token.radius.sedang,
         fontFamily: token.huruf.keluarga,
         fontSize: token.huruf.ukuran.dasar,

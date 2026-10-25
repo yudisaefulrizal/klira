@@ -12,3 +12,6 @@
 - Masuk: tabel `log_audit` ditambahkan dengan kolom `aksi` teks bebas (memuat masuk, masuk_gagal, keluar selain aksi data 4.7); alasan: aksi 4.7 tidak mencakup masuk/keluar.
 - Masuk: halaman awal ke Daftar pasien bila jenis akun aktif memiliki izin salah satu fitur pendaftaran/kunjungan/klinis/resep/farmasi/penunjang/kasir/klaim/rekam-medis, selain itu Beranda tugas (termasuk Auditor paket awal); alasan: 3.1 menyebut akun tanpa akses rekam medis ke Beranda tugas.
 - Masuk: kredensial awal bawaan seed `pimpinan` / `klira-awal-2026`, dapat ditimpa lewat USERNAME_AWAL dan KATA_SANDI_AWAL; alasan: 2.4 menetapkan kredensial awal statis tanpa nilainya.
+- Ganti kredensial: username awal dan kata sandi awal statis dibaca dari env USERNAME_AWAL/KATA_SANDI_AWAL dengan bawaan di packages/shared (`kredensialAwal`), dipakai seed dan API; alasan: satu sumber nilai awal.
+- Ganti kredensial: sesi saat ini diperbarui dengan membuat sesi baru (id baru, cookie baru) dan mencabut semua sesi lama akun; username harus unik global (tanpa beda huruf besar/kecil) karena login mencari lintas klinik; alasan: paling sederhana dan aman.
+- Ganti kredensial: layar hanya dapat dibuka selama wajib ganti (belum ada ganti sukarela); blokir API memakai kode 403 `wajib_ganti_kredensial`; kata sandi lama salah tidak dihitung ke pembatas percobaan; alasan: 3.1 hanya menyebut ganti wajib.

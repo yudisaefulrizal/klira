@@ -3,6 +3,7 @@ import express from 'express';
 import type { ErrorRequestHandler } from 'express';
 import { GALAT } from '@klira/shared';
 import type { ResponsGalat } from '@klira/shared';
+import { blokirSelamaWajibGanti } from './middleware/auth';
 import { PenampungAuditPrisma } from './middleware/audit';
 import { buatLayananAkses } from './modul/akses/layanan';
 import type { LayananAkses } from './modul/akses/layanan';
@@ -25,10 +26,12 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
       audit: new PenampungAuditPrisma(),
       pembatas: new PembatasPercobaan(),
     });
-  app.use('/api', buatRuteAkses(layananAkses, opsi.baseUrl ?? process.env.BASE_URL ?? 'http://localhost'));
   app.get('/api/kesehatan', (_req, res) => {
     res.json({ status: 'ok' });
   });
+  app.use('/api', buatRuteAkses(layananAkses, opsi.baseUrl ?? process.env.BASE_URL ?? 'http://localhost'));
+  // Semua rute di bawah ini ditolak selama akun wajib ganti kredensial.
+  app.use('/api', blokirSelamaWajibGanti(layananAkses));
   app.use('/api', (_req, res) => {
     res.status(404).json({ galat: 'Rute tidak ditemukan' });
   });

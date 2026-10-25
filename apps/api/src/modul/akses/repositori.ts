@@ -1,4 +1,4 @@
-import { prisma } from '@klira/db';
+import { Prisma, prisma } from '@klira/db';
 import type { AksesAkun, AkunMasuk, SesiAktif } from './skema';
 
 export interface RepositoriAkses {
@@ -8,7 +8,21 @@ export interface RepositoriAkses {
   cariSesi(idHash: string, sekarang: Date): Promise<SesiAktif | null>;
   hapusSesi(idHash: string): Promise<void>;
   hapusKedaluwarsa(sekarang: Date): Promise<void>;
+  /** Apakah username dipakai akun lain (tanpa membedakan huruf besar/kecil). */
+  usernameDipakai(username: string, kecualiPenggunaId: number): Promise<boolean>;
+  /**
+   * Atomik: ubah username dan hash, matikan wajib ganti, cabut semua sesi akun,
+   * lalu buat sesi baru. Melempar KonflikUsername bila username bentrok.
+   */
+  gantiKredensial(data: {
+    akun: AkunMasuk;
+    username: string;
+    kataSandiHash: string;
+    sesiBaru: { idHash: string; alamat?: string; kedaluwarsa: Date };
+  }): Promise<void>;
 }
+
+export class KonflikUsername extends Error {}
 
 const pilihAkun = {
   id: true, fasyankes_id: true, nama: true, username: true,
@@ -65,5 +79,42 @@ export class RepositoriAksesPrisma implements RepositoriAkses {
 
   async hapusKedaluwarsa(sekarang: Date): Promise<void> {
     await prisma.sesi.deleteMany({ where: { kedaluwarsa_pada: { lte: sekarang } } });
+  }
+
+  async usernameDipakai(username: string, kecualiPenggunaId: number): Promise<boolean> {
+    const ada = await prisma.pengguna.findFirst({
+      where: { username, id: { not: kecualiPenggunaId } },
+      select: { id: true },
+    });
+    return ada !== null;
+  }
+
+  async gantiKredensial(data: {
+    akun: AkunMasuk;
+    username: string;
+    kataSandiHash: string;
+    sesiBaru: { idHash: string; alamat?: string; kedaluwarsa: Date };
+  }): Promise<void> {
+    try {
+      await prisma.$transaction([
+        prisma.pengguna.update({
+          where: { id: data.akun.id },
+          data: { username: data.username, kata_sandi_hash: data.kataSandiHash, wajib_ganti_kredensial: false },
+        }),
+        prisma.sesi.deleteMany({ where: { pengguna_id: data.akun.id } }),
+        prisma.sesi.create({
+          data: {
+            id_hash: data.sesiBaru.idHash,
+            pengguna_id: data.akun.id,
+            fasyankes_id: data.akun.fasyankes_id,
+            alamat: data.sesiBaru.alamat?.slice(0, 64),
+            kedaluwarsa_pada: data.sesiBaru.kedaluwarsa,
+          },
+        }),
+      ]);
+    } catch (galat) {
+      if (galat instanceof Prisma.PrismaClientKnownRequestError && galat.code === 'P2002') throw new KonflikUsername();
+      throw galat;
+    }
   }
 }

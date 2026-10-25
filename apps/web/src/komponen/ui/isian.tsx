@@ -14,7 +14,7 @@ export function Isian({ label, id, style, ...sisa }: Props) {
         style={{
           height: token.ukuran.isian,
           padding: `0 ${token.jarak.sm}`,
-          border: `1px solid ${token.warna.garis}`,
+          border: `${token.ukuran.garis} solid ${token.warna.garis}`,
           borderRadius: token.radius.sedang,
           background: token.warna.permukaan,
           color: token.warna.teks,

@@ -3,12 +3,14 @@ import type { ReactElement } from 'react';
 import { HALAMAN_AWAL } from '@klira/shared';
 import { HalamanBerandaTugas } from './halaman/beranda-tugas';
 import { HalamanDaftarPasien } from './halaman/daftar-pasien';
+import { HalamanGantiKredensial } from './halaman/ganti-kredensial';
 import { HalamanMasuk } from './halaman/masuk';
 import { PenyediaPengguna, usePengguna } from './util/konteks-pengguna';
-import { putuskanRute, RUTE_MASUK } from './util/penjaga-rute';
+import { putuskanRute, RUTE_GANTI_KREDENSIAL, RUTE_MASUK } from './util/penjaga-rute';
 
 const HALAMAN: Record<string, () => ReactElement> = {
   [RUTE_MASUK]: HalamanMasuk,
+  [RUTE_GANTI_KREDENSIAL]: HalamanGantiKredensial,
   [HALAMAN_AWAL.daftarPasien]: HalamanDaftarPasien,
   [HALAMAN_AWAL.berandaTugas]: HalamanBerandaTugas,
 };
