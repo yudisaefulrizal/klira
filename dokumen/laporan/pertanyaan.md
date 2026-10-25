@@ -5,3 +5,5 @@
 - Skema basis data dasar: Prisma 6 dipilih (stabil, `url` di schema) alih-alih rilis 7/8; ID bertipe Int autoincrement; `dibuat_oleh` Int tanpa FK (akun pertama dibuat tanpa pembuat); Fasyankes mengisi `fasyankes_id` = id sendiri.
 - Skema basis data dasar: tabel tambahan `izin_jenis_akun` (daftar izin paket) dan `riwayat_jenis_akun` (riwayat perubahan) karena 4.1b menyebut keduanya; kolom `kata_sandi_hash` pada Pengguna ditambahkan (diperlukan login, butir berikutnya yang mengisinya).
 - Skema basis data dasar: `npm test` root memuat `.env` lewat `--env-file-if-exists`; uji integrasi dilewati bila DATABASE_URL_UJI tidak ada.
+- Paket shared: label/warna status tahap layanan, kirim SATUSEHAT, antrean, dll. disusun sendiri (nilai kirim: menunggu/dikirim/terkirim/gagal) karena 4.x tidak merinci; token warna `abu` ditambahkan ke apps/web/src/gaya.
+- Paket shared: tanggal_lahir pasien tidak dibatasi 2014-06-03 (aturan itu untuk tanggal klinis); urutan workspace di root diubah (shared, db, integrasi, apps) dan `typecheck` root membangun shared dahulu agar impor @klira/shared terpecahkan; web memakai alias Vite ke sumber shared, Jest memakai moduleNameMapper.

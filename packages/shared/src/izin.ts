@@ -1,19 +1,24 @@
-export type IzinAwal = { fitur: string; aksi: 'input' | 'perbaikan' | 'lihat'; cakupan: 'unit' | 'layanan' };
-
-const FITUR = [
+export const AKSI_IZIN = ['input', 'perbaikan', 'lihat'] as const;
+export const CAKUPAN_IZIN = ['unit', 'layanan'] as const;
+export const FITUR_IZIN = [
   'pendaftaran', 'kunjungan', 'klinis', 'resep', 'farmasi', 'penunjang', 'kasir', 'klaim',
   'rekam-medis', 'akses', 'satusehat', 'pdp', 'audit',
-];
+] as const;
 
-/** Katalog izin awal: fitur x aksi x cakupan. */
-export const IZIN_AWAL: IzinAwal[] = FITUR.flatMap((fitur) =>
-  (['input', 'perbaikan', 'lihat'] as const).flatMap((aksi) =>
-    (['unit', 'layanan'] as const).map((cakupan) => ({ fitur, aksi, cakupan })),
-  ),
+export type AksiIzin = (typeof AKSI_IZIN)[number];
+export type CakupanIzin = (typeof CAKUPAN_IZIN)[number];
+export type FiturIzin = (typeof FITUR_IZIN)[number];
+export type IzinAwal = { fitur: FiturIzin; aksi: AksiIzin; cakupan: CakupanIzin };
+
+/** Katalog izin: fitur x aksi x cakupan. */
+export const IZIN_AWAL: IzinAwal[] = FITUR_IZIN.flatMap((fitur) =>
+  AKSI_IZIN.flatMap((aksi) => CAKUPAN_IZIN.map((cakupan) => ({ fitur, aksi, cakupan }))),
 );
 
-/** Paket awal jenis akun (contoh; setelah dibuat menjadi milik klinik). */
-export const JENIS_AKUN_AWAL: { nama: string; syarat_profesi?: string; fitur: string[] }[] = [
+export type JenisAkunAwal = { nama: string; syarat_profesi?: string; fitur: FiturIzin[] };
+
+/** Paket awal 12 jenis akun (bagian 2.1; contoh, setelah dibuat menjadi milik klinik). */
+export const JENIS_AKUN_AWAL: JenisAkunAwal[] = [
   { nama: 'Admin vendor', fitur: ['akses', 'satusehat'] },
   { nama: 'Pimpinan fasyankes', fitur: ['akses', 'audit', 'rekam-medis'] },
   { nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', fitur: ['klinis', 'resep', 'kunjungan'] },

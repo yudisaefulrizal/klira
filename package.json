@@ -2,11 +2,13 @@
   "name": "klira",
   "private": true,
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "packages/shared",
+    "packages/db",
+    "packages/integrasi",
+    "apps/*"
   ],
   "scripts": {
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "typecheck": "npm run build -w packages/shared && npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "test": "node --env-file-if-exists=.env node_modules/jest/bin/jest.js",
     "build": "npm run build --workspaces --if-present",

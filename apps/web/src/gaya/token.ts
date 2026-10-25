@@ -10,6 +10,7 @@ export const warna = {
     merah: { latar: '#F7DADA', teks: '#8A1F1F' },
     biru: { latar: '#E3ECF8', teks: '#1E4A85' },
     ungu: { latar: '#EEE8F8', teks: '#4F2D86' },
+    abu: { latar: '#E8ECEB', teks: '#44514F' },
   },
 } as const;
 

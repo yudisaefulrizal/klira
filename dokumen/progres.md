@@ -4,7 +4,7 @@
 |---|---|---|---|---|
 | Repo dan konfigurasi | Infrastruktur | - | Bisa dikerjakan | ✔ |
 | Skema basis data dasar | Infrastruktur | - | Bisa dikerjakan | ✔ |
-| Paket shared | Infrastruktur | - | Bisa dikerjakan | ☐ |
+| Paket shared | Infrastruktur | - | Bisa dikerjakan | ✔ |
 | Masuk | Halaman | - | Bisa dikerjakan | ☐ |
 | Ganti kredensial | Fitur | - | Bisa dikerjakan | ☐ |
 | Izin dan jenis akun | Fitur | - | Bisa dikerjakan | ☐ |

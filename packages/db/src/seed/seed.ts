@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { IZIN_AWAL, JENIS_AKUN_AWAL } from '../izin-awal';
+import { IZIN_AWAL, JENIS_AKUN_AWAL } from '@klira/shared';
 
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
 export async function jalankanSeed(prisma: PrismaClient): Promise<void> {

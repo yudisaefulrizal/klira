@@ -13,6 +13,7 @@
     "seed": "node --env-file=../../.env dist/seed/seed.js"
   },
   "dependencies": {
+    "@klira/shared": "*",
     "@prisma/client": "^6.19.3"
   },
   "devDependencies": {
