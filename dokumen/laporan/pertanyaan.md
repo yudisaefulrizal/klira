@@ -1,3 +1,7 @@
 - Repo dan konfigurasi: ESLint dengan typescript-eslint dipakai untuk lint (tidak ada di 8.1); alasan: butir meminta konfigurasi lint dan tidak ada alternatif di daftar.
 - Repo dan konfigurasi: supertest dan dotenv tidak dipasang (di luar 8.1); uji memakai fetch bawaan Node dan .env dimuat lewat `node --env-file`.
 - Repo dan konfigurasi: Prisma belum dipasang (belum ada skema); dipasang saat butir packages/db.
+- Skema basis data dasar: basis data `klira` di MySQL lokal sudah berisi 63 tabel proyek lain, jadi tidak dipakai (tidak direset); pengembangan memakai `klira_dev`, uji memakai `klira_uji`; alasan: menghindari kehilangan data milik proyek lain.
+- Skema basis data dasar: Prisma 6 dipilih (stabil, `url` di schema) alih-alih rilis 7/8; ID bertipe Int autoincrement; `dibuat_oleh` Int tanpa FK (akun pertama dibuat tanpa pembuat); Fasyankes mengisi `fasyankes_id` = id sendiri.
+- Skema basis data dasar: tabel tambahan `izin_jenis_akun` (daftar izin paket) dan `riwayat_jenis_akun` (riwayat perubahan) karena 4.1b menyebut keduanya; kolom `kata_sandi_hash` pada Pengguna ditambahkan (diperlukan login, butir berikutnya yang mengisinya).
+- Skema basis data dasar: `npm test` root memuat `.env` lewat `--env-file-if-exists`; uji integrasi dilewati bila DATABASE_URL_UJI tidak ada.

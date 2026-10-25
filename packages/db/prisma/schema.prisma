@@ -1,0 +1,345 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Aturan umum: semua entitas membawa fasyankes_id, dibuat_oleh, dibuat_pada (UTC).
+// Pada Fasyankes, kolom id adalah fasyankes_id itu sendiri; fasyankes_id diisi sama dengan id.
+// Akun, jenis akun, dan penugasan tidak dihapus permanen (aktif / selesai).
+
+enum JenisFasyankes {
+  klinik_pratama_rawat_jalan
+  klinik_pratama_rawat_inap
+}
+
+enum EnvironmentSatusehat {
+  sandbox
+  produksi
+}
+
+enum JenisLokasi {
+  poli
+  ruang
+  bed
+}
+
+enum StatusOperasional {
+  U // unoperasional
+  O // operasional
+}
+
+enum AksiIzin {
+  input
+  perbaikan
+  lihat
+}
+
+enum CakupanIzin {
+  unit
+  layanan
+}
+
+enum TipeIzinAkun {
+  tambah
+  kurang
+}
+
+enum JenisKelamin {
+  laki_laki
+  perempuan
+}
+
+model Fasyankes {
+  id                     Int                  @id @default(autoincrement())
+  fasyankes_id           Int                  @unique
+  nama                   String               @db.VarChar(200)
+  jenis                  JenisFasyankes
+  bentuk_usaha           String?              @db.VarChar(100)
+  kode_registrasi        String?              @unique @db.VarChar(50)
+  organization_id        String?              @db.VarChar(100)
+  status_akreditasi      String?              @db.VarChar(100)
+  puskesmas_wilayah      String?              @db.VarChar(200)
+  dibuat_oleh            Int?
+  dibuat_pada            DateTime             @default(now()) @db.DateTime(3)
+
+  kredensial_satusehat   KredensialSatusehat[]
+  lokasi                 Lokasi[]
+  pengguna               Pengguna[]
+  profil_profesi         ProfilProfesi[]
+  pasien                 Pasien[]
+  wali_keluarga          WaliKeluarga[]
+  jenis_akun             JenisAkun[]
+  penugasan_jenis        PenugasanJenis[]
+  izin_per_akun          IzinPerAkun[]
+  peringatan_izin        PeringatanIzin[]
+  riwayat_jenis_akun     RiwayatJenisAkun[]
+  izin_jenis_akun        IzinJenisAkun[]
+
+  @@map("fasyankes")
+}
+
+model KredensialSatusehat {
+  id                       Int                  @id @default(autoincrement())
+  fasyankes_id             Int
+  environment              EnvironmentSatusehat
+  client_id                String               @db.VarChar(200)
+  client_secret_terenkripsi String              @db.Text
+  dibuat_oleh              Int?
+  dibuat_pada              DateTime             @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@unique([fasyankes_id, environment])
+  @@map("kredensial_satusehat")
+}
+
+model Lokasi {
+  id                Int               @id @default(autoincrement())
+  fasyankes_id      Int
+  nama              String            @db.VarChar(200)
+  jenis             JenisLokasi
+  induk_id          Int?
+  status_operasional StatusOperasional @default(O)
+  ihs_location_id   String?           @db.VarChar(100)
+  dibuat_oleh       Int?
+  dibuat_pada       DateTime          @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  induk     Lokasi?   @relation("LokasiInduk", fields: [induk_id], references: [id])
+  anak      Lokasi[]  @relation("LokasiInduk")
+
+  @@index([fasyankes_id])
+  @@map("lokasi")
+}
+
+model Pengguna {
+  id                 Int      @id @default(autoincrement())
+  fasyankes_id       Int
+  nama               String   @db.VarChar(200)
+  nik                String   @db.Char(16)
+  username           String   @db.VarChar(100)
+  kata_sandi_hash    String   @db.VarChar(255)
+  aktif              Boolean  @default(true)
+  wajib_ganti_kredensial Boolean @default(true)
+  dibuat_oleh        Int?
+  dibuat_pada        DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes       Fasyankes        @relation(fields: [fasyankes_id], references: [id])
+  profil_profesi  ProfilProfesi[]
+  penugasan_jenis PenugasanJenis[]
+  izin_per_akun   IzinPerAkun[]
+  peringatan_izin PeringatanIzin[]
+
+  @@unique([fasyankes_id, username])
+  @@unique([fasyankes_id, nik])
+  @@map("pengguna")
+}
+
+model ProfilProfesi {
+  id               Int       @id @default(autoincrement())
+  fasyankes_id     Int
+  pengguna_id      Int
+  profesi          String    @db.VarChar(100)
+  nomor_sip        String?   @db.VarChar(100)
+  masa_berlaku_sip DateTime? @db.Date
+  ihs_practitioner_id String? @db.VarChar(100)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  pengguna  Pengguna  @relation(fields: [pengguna_id], references: [id])
+
+  @@index([pengguna_id])
+  @@map("profil_profesi")
+}
+
+model Pasien {
+  id               Int       @id @default(autoincrement())
+  fasyankes_id     Int
+  nomor_rm         String    @db.VarChar(50)
+  nik              String?   @db.Char(16)
+  nama             String    @db.VarChar(200)
+  ibu_kandung      String?   @db.VarChar(200)
+  tempat_lahir     String?   @db.VarChar(100)
+  tanggal_lahir    DateTime  @db.Date
+  jenis_kelamin    JenisKelamin
+  agama            String?   @db.VarChar(50)
+  suku             String?   @db.VarChar(100)
+  bahasa           String?   @db.VarChar(100)
+  pekerjaan        String?   @db.VarChar(100)
+  pendidikan       String?   @db.VarChar(100)
+  status_kawin     String?   @db.VarChar(50)
+  alamat           String?   @db.Text
+  kode_wilayah     String?   @db.VarChar(20)
+  nomor_paspor     String?   @db.VarChar(50)
+  nomor_kitas      String?   @db.VarChar(50)
+  ihs_number       String?   @db.VarChar(100)
+  jkn_nomor_kartu  String?   @db.VarChar(50)
+  jkn_kelas_hak    String?   @db.VarChar(20)
+  jkn_fktp_terdaftar String? @db.VarChar(200)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+
+  fasyankes     Fasyankes      @relation(fields: [fasyankes_id], references: [id])
+  wali_keluarga WaliKeluarga[]
+
+  @@unique([fasyankes_id, nomor_rm])
+  @@unique([fasyankes_id, nik])
+  @@map("pasien")
+}
+
+model WaliKeluarga {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int
+  pasien_id    Int
+  hubungan     String   @db.VarChar(100)
+  nama         String   @db.VarChar(200)
+  kontak       String?  @db.VarChar(100)
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  pasien    Pasien    @relation(fields: [pasien_id], references: [id])
+
+  @@index([pasien_id])
+  @@map("wali_keluarga")
+}
+
+model JenisAkun {
+  id              Int      @id @default(autoincrement())
+  fasyankes_id    Int
+  nama            String   @db.VarChar(150)
+  syarat_profesi  String?  @db.VarChar(200)
+  aktif           Boolean  @default(true)
+  diubah_oleh     Int?
+  alasan_perubahan String? @db.Text
+  dibuat_oleh     Int?
+  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes          @relation(fields: [fasyankes_id], references: [id])
+  izin      IzinJenisAkun[]
+  penugasan PenugasanJenis[]
+  riwayat   RiwayatJenisAkun[]
+
+  @@unique([fasyankes_id, nama])
+  @@map("jenis_akun")
+}
+
+// Daftar izin paket pada jenis akun.
+model IzinJenisAkun {
+  id            Int      @id @default(autoincrement())
+  fasyankes_id  Int
+  jenis_akun_id Int
+  izin_id       Int
+  dibuat_oleh   Int?
+  dibuat_pada   DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes  Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  jenis_akun JenisAkun @relation(fields: [jenis_akun_id], references: [id])
+  izin       Izin      @relation(fields: [izin_id], references: [id])
+
+  @@unique([jenis_akun_id, izin_id])
+  @@map("izin_jenis_akun")
+}
+
+// Riwayat perubahan jenis akun (tersimpan, tidak dihapus).
+model RiwayatJenisAkun {
+  id            Int      @id @default(autoincrement())
+  fasyankes_id  Int
+  jenis_akun_id Int
+  ringkasan     String   @db.Text
+  alasan        String?  @db.Text
+  dibuat_oleh   Int?
+  dibuat_pada   DateTime @default(now()) @db.DateTime(3)
+
+  fasyankes  Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  jenis_akun JenisAkun @relation(fields: [jenis_akun_id], references: [id])
+
+  @@index([jenis_akun_id])
+  @@map("riwayat_jenis_akun")
+}
+
+// Katalog izin bersifat global (fitur x aksi x cakupan); fasyankes_id diisi bila khusus klinik.
+model Izin {
+  id           Int         @id @default(autoincrement())
+  fasyankes_id Int?
+  fitur        String      @db.VarChar(100)
+  aksi         AksiIzin
+  cakupan      CakupanIzin
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime    @default(now()) @db.DateTime(3)
+
+  jenis_akun    IzinJenisAkun[]
+  izin_per_akun IzinPerAkun[]
+  peringatan    PeringatanIzin[]
+
+  @@unique([fitur, aksi, cakupan])
+  @@map("izin")
+}
+
+model PenugasanJenis {
+  id             Int       @id @default(autoincrement())
+  fasyankes_id   Int
+  pengguna_id    Int
+  jenis_akun_id  Int
+  mulai          DateTime  @db.DateTime(3)
+  selesai        DateTime? @db.DateTime(3)
+  ditetapkan_oleh Int?
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime  @default(now()) @db.DateTime(3)
+
+  fasyankes  Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  pengguna   Pengguna  @relation(fields: [pengguna_id], references: [id])
+  jenis_akun JenisAkun @relation(fields: [jenis_akun_id], references: [id])
+  peringatan PeringatanIzin[]
+
+  @@index([pengguna_id])
+  @@map("penugasan_jenis")
+}
+
+model IzinPerAkun {
+  id              Int          @id @default(autoincrement())
+  fasyankes_id    Int
+  pengguna_id     Int
+  izin_id         Int
+  tipe            TipeIzinAkun
+  alasan          String       @db.Text
+  mulai           DateTime     @db.DateTime(3)
+  selesai         DateTime?    @db.DateTime(3)
+  ditetapkan_oleh Int?
+  dibuat_oleh     Int?
+  dibuat_pada     DateTime     @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  pengguna  Pengguna  @relation(fields: [pengguna_id], references: [id])
+  izin      Izin      @relation(fields: [izin_id], references: [id])
+
+  @@index([pengguna_id])
+  @@map("izin_per_akun")
+}
+
+model PeringatanIzin {
+  id               Int       @id @default(autoincrement())
+  fasyankes_id     Int
+  pengguna_id      Int
+  izin_id          Int?
+  penugasan_id     Int?
+  jenis_peringatan String    @db.VarChar(100)
+  alasan_pimpinan  String    @db.Text
+  ditetapkan_oleh  Int?
+  waktu            DateTime  @default(now()) @db.DateTime(3)
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
+
+  fasyankes Fasyankes       @relation(fields: [fasyankes_id], references: [id])
+  pengguna  Pengguna        @relation(fields: [pengguna_id], references: [id])
+  izin      Izin?           @relation(fields: [izin_id], references: [id])
+  penugasan PenugasanJenis? @relation(fields: [penugasan_id], references: [id])
+
+  @@index([pengguna_id])
+  @@map("peringatan_izin")
+}
