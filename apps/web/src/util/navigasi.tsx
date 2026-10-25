@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { bukaLapisanRiwayat } from './riwayat-lapisan';
 
 type Navigasi = {
   path: string;
@@ -39,4 +40,16 @@ export function useNavigasi(): Navigasi {
   const k = useContext(KonteksNavigasi);
   if (!k) throw new Error('useNavigasi harus di dalam PenyediaNavigasi');
   return k;
+}
+
+/**
+ * Selama `terbuka`, tombol kembali peramban memanggil `onKembali` (true = lapisan ditutup) alih-alih keluar dari halaman (5.1j).
+ */
+export function useLapisanRiwayat(terbuka: boolean, onKembali: () => boolean): void {
+  const terakhir = useRef(onKembali);
+  terakhir.current = onKembali;
+  useEffect(() => {
+    if (!terbuka) return;
+    return bukaLapisanRiwayat(window, () => terakhir.current());
+  }, [terbuka]);
 }

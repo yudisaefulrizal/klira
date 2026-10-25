@@ -13,9 +13,18 @@ export const gayaKontrol = {
   fontSize: token.huruf.ukuran.dasar,
 } as const;
 
-type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; id: string };
+type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; galat?: string };
 
-export function Isian({ label, id, style, ...sisa }: Props) {
+/** Pesan galat bidang (di bawah kontrol); dipakai bersama Isian dan Pilihan. */
+export function PesanGalat({ id, children }: { id: string; children: string }) {
+  return (
+    <span id={id} role="alert" style={{ color: token.warna.status.merah.teks, fontSize: token.huruf.ukuran.kecil }}>
+      {children}
+    </span>
+  );
+}
+
+export function Isian({ label, id, style, galat, ...sisa }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
       <label htmlFor={id} style={{ fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang }}>
@@ -23,9 +32,12 @@ export function Isian({ label, id, style, ...sisa }: Props) {
       </label>
       <input
         id={id}
-        style={{ ...gayaKontrol, ...style }}
+        style={{ ...gayaKontrol, ...(galat ? { borderColor: token.warna.status.merah.teks } : {}), ...style }}
+        aria-invalid={galat ? true : undefined}
+        aria-describedby={galat ? `${id}-galat` : undefined}
         {...sisa}
       />
+      {galat && <PesanGalat id={`${id}-galat`}>{galat}</PesanGalat>}
     </div>
   );
 }

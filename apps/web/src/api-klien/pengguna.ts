@@ -1,4 +1,4 @@
-import type { FilterPengguna, Halaman, PenggunaDaftarDto } from '@klira/shared';
+import type { FilterPengguna, Halaman, PenggunaBaruDto, PenggunaBaruMasukan, PenggunaDaftarDto } from '@klira/shared';
 import { panggilApi } from './klien';
 
 type MasukanDaftar = Pick<FilterPengguna, 'halaman' | 'ukuran'> & Partial<Pick<FilterPengguna, 'cari' | 'status' | 'jenis_akun_id'>>;
@@ -16,3 +16,6 @@ export const daftarPengguna = (f: MasukanDaftar) =>
 
 export const ubahAktifPengguna = (id: number, aktif: boolean) =>
   panggilApi<{ id: number; aktif: boolean }>('PATCH', `/pengguna/${id}`, { aktif });
+
+/** Buat akun beserta profil, penugasan, dan izin per akun. Respons memuat kata sandi awal satu-satunya kali. */
+export const buatPengguna = (m: PenggunaBaruMasukan) => panggilApi<PenggunaBaruDto>('POST', '/pengguna', m);

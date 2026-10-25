@@ -12,6 +12,7 @@ import { Tombol } from '../../komponen/ui/tombol';
 import { Isian } from '../../komponen/ui/isian';
 import { Pilihan } from '../../komponen/ui/pilihan';
 import { token } from '../../gaya/token';
+import { PembuatanAkun } from '../../modal/akun-pengaturan/pembuatan-akun';
 import { usePengguna } from '../../util/konteks-pengguna';
 import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from '../../util/penyaring-daftar';
 import type { KeadaanDaftar } from '../../util/penyaring-daftar';
@@ -33,6 +34,8 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
   const [hasil, setHasil] = useState<Halaman<PenggunaDaftarDto> | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [segera, setSegera] = useState(false);
+  const [bukaAkunBaru, setBukaAkunBaru] = useState(false);
+  const [muatUlang, setMuatUlang] = useState(0);
 
   const terapkan = useCallback((perubahan: Partial<KeadaanDaftar>) => ubahAlamat(queryDariKeadaan(ubahKeadaan(keadaanDariQuery(search), perubahan), { tab: 'pengguna' })), [search, ubahAlamat]);
 
@@ -58,7 +61,7 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
     return () => {
       batal = true;
     };
-  }, [cariAktif, statusAktif, halamanAktif]);
+  }, [cariAktif, statusAktif, halamanAktif, muatUlang]);
 
   async function ubahAktif(p: PenggunaDaftarDto) {
     try {
@@ -86,7 +89,7 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
             opsi={STATUS_PENGGUNA.map((st) => ({ nilai: st, label: PENGGUNA.filterStatus[st] }))}
           />
           <HanyaDenganIzin fitur="akses" aksi="input">
-            <Tombol onClick={() => setSegera(true)}>{PENGGUNA.tambahAkun}</Tombol>
+            <Tombol onClick={() => setBukaAkunBaru(true)}>{PENGGUNA.tambahAkun}</Tombol>
           </HanyaDenganIzin>
         </div>
         {segera && <Peringatan nada="biru" style={{ margin: `0 ${token.jarak.md} ${token.jarak.md}` }}>{PENGGUNA.segera}</Peringatan>}
@@ -133,6 +136,15 @@ export function TabPengguna({ search, ubahAlamat }: { search: string; ubahAlamat
         )}
       </Kartu>
       <Peringatan nada="kuning">{PENGGUNA.catatan}</Peringatan>
+      {bukaAkunBaru && (
+        <PembuatanAkun
+          onTutup={() => setBukaAkunBaru(false)}
+          onSelesai={() => {
+            setBukaAkunBaru(false);
+            setMuatUlang((n) => n + 1);
+          }}
+        />
+      )}
     </section>
   );
 }

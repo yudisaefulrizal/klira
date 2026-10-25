@@ -20,6 +20,8 @@ import { buatRuteAudit } from './modul/audit/rute';
 
 import { buatLayananPengguna } from './modul/pengguna/layanan';
 import { RepositoriPenggunaPrisma } from './modul/pengguna/repositori';
+import { buatLayananPembuatanAkun } from './modul/pengguna/pembuatan';
+import { RepositoriAkunBaruPrisma } from './modul/pengguna/repositori-baru';
 import { buatRutePengguna } from './modul/pengguna/rute';
 
 const direktoriWebBawaan = path.resolve(__dirname, '../../web/dist');
@@ -46,7 +48,8 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', blokirSelamaWajibGanti(layananAkses));
   app.use('/api', buatRuteIzin(layananAkses, layananIzin));
   app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() })));
+  app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() }),
+    buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruPrisma(), repoIzin: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', (_req, res) => {
     res.status(404).json({ galat: 'Rute tidak ditemukan' });
   });

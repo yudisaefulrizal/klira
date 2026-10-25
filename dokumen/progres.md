@@ -11,7 +11,7 @@
 | Log audit | Fitur | - | Bisa dikerjakan | ✔ |
 | Master terminologi (ICD-10, ICD-9 CM, LOINC, SNOMED, UCUM) | Fitur | - | Menunggu pihak ketiga | ☐ |
 | Pengguna dan akses | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ✔ |
-| Pembuatan akun dan penugasan | Modal | Pengguna dan akses | Bisa dikerjakan | ☐ |
+| Pembuatan akun dan penugasan | Modal | Pengguna dan akses | Bisa dikerjakan | ✔ |
 | Atur izin akun | Modal | Pengguna dan akses | Bisa dikerjakan | ☐ |
 | Buat atau ubah jenis akun | Modal | Pengaturan | Bisa dikerjakan | ☐ |
 | Daftar peringatan izin | Tab Pengaturan | Pengaturan | Bisa dikerjakan | ☐ |

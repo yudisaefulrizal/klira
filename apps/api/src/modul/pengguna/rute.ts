@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
-import { GALAT, filterPengguna, idParam, ubahPengguna } from '@klira/shared';
+import { GALAT, filterPengguna, idParam, penggunaBaru, ubahPengguna } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import type { z } from 'zod';
 import { wajibMasuk } from '../../middleware/auth';
@@ -9,6 +9,7 @@ import { buatWajibIzin } from '../../middleware/izin';
 import type { LayananAkses } from '../akses/layanan';
 import type { LayananIzin } from '../akses/layanan-izin';
 import type { LayananPengguna } from './layanan';
+import type { LayananPembuatanAkun } from './pembuatan';
 
 function galatValidasi(res: Response, e: z.ZodError): void {
   const badan: ResponsGalat = {
@@ -18,7 +19,7 @@ function galatValidasi(res: Response, e: z.ZodError): void {
 }
 
 /** Rute tab Pengguna dan akses: daftar (akses lihat) dan nonaktifkan/aktifkan (akses perbaikan). */
-export function buatRutePengguna(layananAkses: LayananAkses, layananIzin: LayananIzin, layanan: LayananPengguna): Router {
+export function buatRutePengguna(layananAkses: LayananAkses, layananIzin: LayananIzin, layanan: LayananPengguna, pembuatan: LayananPembuatanAkun): Router {
   const rute = Router();
   const masuk = wajibMasuk(layananAkses);
   const { wajibIzin } = buatWajibIzin(layananIzin);
@@ -31,6 +32,21 @@ export function buatRutePengguna(layananAkses: LayananAkses, layananIzin: Layana
     const h = filterPengguna.safeParse(req.query);
     if (!h.success) return galatValidasi(res, h.error);
     res.json({ data: await layanan.daftar(pengguna(res), h.data) });
+  }));
+
+  // Pembuatan akun + profil + penugasan + izin per akun dalam satu transaksi; 409 perlu_konfirmasi_peringatan bila ada peringatan tanpa alasan.
+  rute.post('/pengguna', masuk, wajibIzin('akses', 'input'), bungkus(async (req, res) => {
+    const b = penggunaBaru.safeParse(req.body ?? {});
+    if (!b.success) return galatValidasi(res, b.error);
+    const hasil = await pembuatan.buat(pengguna(res), b.data, alamatDari(req));
+    if (hasil.ok) {
+      res.setHeader('Cache-Control', 'no-store');
+      return void res.status(201).json({ data: hasil.data });
+    }
+    const badan: ResponsGalat = {
+      galat: { kode: hasil.kode, pesan: hasil.pesan, ...(hasil.kode === 'perlu_konfirmasi_peringatan' ? { peringatan: hasil.peringatan } : {}) },
+    };
+    res.status(hasil.kode === 'tidak_valid' ? 400 : 409).json(badan);
   }));
 
   rute.patch('/pengguna/:id', masuk, wajibIzin('akses', 'perbaikan'), bungkus(async (req, res) => {
