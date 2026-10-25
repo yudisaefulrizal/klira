@@ -32,3 +32,17 @@ export const JENIS_AKUN_AWAL: JenisAkunAwal[] = [
   { nama: 'Petugas PDP (PPDP)', fitur: ['pdp'] },
   { nama: 'Auditor', fitur: ['audit'] },
 ];
+
+/** Fitur yang menandakan akses ke pekerjaan per pasien (klinis dan administrasi); selain ini ke Beranda tugas. */
+export const FITUR_AKSES_PASIEN: FiturIzin[] = [
+  'pendaftaran', 'kunjungan', 'klinis', 'resep', 'farmasi', 'penunjang', 'kasir', 'klaim', 'rekam-medis',
+];
+
+export const HALAMAN_AWAL = { daftarPasien: '/pasien', berandaTugas: '/beranda' } as const;
+
+/** Halaman awal setelah masuk (5.1b): Daftar pasien bila punya akses rekam medis/klinis, jika tidak Beranda tugas. */
+export function halamanAwal(fitur: readonly string[]): string {
+  return fitur.some((f) => (FITUR_AKSES_PASIEN as readonly string[]).includes(f))
+    ? HALAMAN_AWAL.daftarPasien
+    : HALAMAN_AWAL.berandaTugas;
+}

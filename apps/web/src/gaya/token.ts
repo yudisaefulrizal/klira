@@ -16,7 +16,8 @@ export const warna = {
 
 export const huruf = {
   keluarga: "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
-  ukuran: { kecil: '12px', dasar: '14px', besar: '16px', judul: '20px' },
+  ukuran: { kecil: '12px', dasar: '14px', besar: '16px', judul: '20px', tajuk: '40px' },
+  berat: { biasa: 400, sedang: 500, tebal: 600 },
 } as const;
 
 export const jarak = { xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px' } as const;
@@ -28,4 +29,6 @@ export const bayangan = {
   modal: '0 8px 24px rgba(23, 48, 46, 0.16)',
 } as const;
 
-export const token = { warna, huruf, jarak, radius, bayangan } as const;
+export const ukuran = { kartu: '400px', isian: '40px', tombol: '40px', kolomKiri: '1fr', kolomKanan: '1fr' } as const;
+
+export const token = { warna, huruf, jarak, radius, bayangan, ukuran } as const;

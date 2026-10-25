@@ -26,4 +26,19 @@ export const GALAT = {
   alasanWajib: 'Alasan wajib diisi.',
 } as const;
 
-export const TEKS = { tombol: TOMBOL, galat: GALAT } as const;
+
+
+export const MASUK = {
+  judul: 'klira',
+  keterangan: 'Sistem rekam medis elektronik untuk klinik.',
+  judulForm: 'Masuk',
+  username: 'Nama pengguna',
+  kataSandi: 'Kata sandi',
+  tombol: 'Masuk',
+  tombolProses: 'Memproses...',
+  catatanGanti: 'Akun awal klinik wajib mengganti nama pengguna dan kata sandi saat masuk pertama kali.',
+  gagal: 'Nama pengguna atau kata sandi salah.',
+  terlaluBanyak: 'Terlalu banyak percobaan masuk. Coba lagi beberapa menit lagi.',
+  keluar: 'Keluar',
+} as const;
+export const TEKS = { tombol: TOMBOL, galat: GALAT, masuk: MASUK } as const;

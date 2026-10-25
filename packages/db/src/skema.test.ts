@@ -10,7 +10,7 @@ d('skema basis data (klira_uji)', () => {
   const prisma = new PrismaClient({ datasourceUrl: url });
   async function bersihkan() {
     await prisma.$transaction([
-      prisma.peringatanIzin.deleteMany(), prisma.izinPerAkun.deleteMany(), prisma.penugasanJenis.deleteMany(),
+      prisma.sesi.deleteMany(), prisma.peringatanIzin.deleteMany(), prisma.izinPerAkun.deleteMany(), prisma.penugasanJenis.deleteMany(),
       prisma.izinJenisAkun.deleteMany(), prisma.riwayatJenisAkun.deleteMany(), prisma.jenisAkun.deleteMany(),
       prisma.profilProfesi.deleteMany(), prisma.waliKeluarga.deleteMany(), prisma.pasien.deleteMany(),
       prisma.pengguna.deleteMany(), prisma.kredensialSatusehat.deleteMany(), prisma.lokasi.deleteMany(),
@@ -33,6 +33,14 @@ d('skema basis data (klira_uji)', () => {
     const fas = await prisma.fasyankes.findFirstOrThrow();
     expect(fas.fasyankes_id).toBe(fas.id);
     expect(await prisma.jenisAkun.count({ where: { fasyankes_id: fas.id } })).toBe(12);
+  });
+
+  it('seed membuat Pimpinan pertama dengan wajib ganti kredensial, hash bukan teks asli', async () => {
+    await jalankanSeed(prisma);
+    const p = await prisma.pengguna.findFirstOrThrow({ where: { username: 'pimpinan' } });
+    expect(p.wajib_ganti_kredensial).toBe(true);
+    expect(p.kata_sandi_hash).not.toContain('klira-awal-2026');
+    expect(await prisma.penugasanJenis.count({ where: { pengguna_id: p.id } })).toBe(1);
   });
 
   it('username unik per fasyankes dan NIK unik', async () => {

@@ -133,6 +133,7 @@ model Pengguna {
   penugasan_jenis PenugasanJenis[]
   izin_per_akun   IzinPerAkun[]
   peringatan_izin PeringatanIzin[]
+  sesi            Sesi[]
 
   @@unique([fasyankes_id, username])
   @@unique([fasyankes_id, nik])
@@ -342,4 +343,38 @@ model PeringatanIzin {
 
   @@index([pengguna_id])
   @@map("peringatan_izin")
+}
+
+// Sesi masuk: hanya hash id sesi yang disimpan (bukan id mentah).
+model Sesi {
+  id               Int      @id @default(autoincrement())
+  fasyankes_id     Int
+  pengguna_id      Int
+  id_hash          String   @unique @db.Char(64)
+  alamat           String?  @db.VarChar(64)
+  dibuat_pada      DateTime @default(now()) @db.DateTime(3)
+  kedaluwarsa_pada DateTime @db.DateTime(3)
+
+  pengguna Pengguna @relation(fields: [pengguna_id], references: [id])
+
+  @@index([pengguna_id])
+  @@index([kedaluwarsa_pada])
+  @@map("sesi")
+}
+
+// Log audit dasar (4.7); aksi bebas teks agar memuat masuk/masuk_gagal/keluar selain aksi data.
+model LogAudit {
+  id           Int      @id @default(autoincrement())
+  fasyankes_id Int?
+  pengguna_id  Int?
+  aksi         String   @db.VarChar(50)
+  entitas      String   @db.VarChar(100)
+  entitas_id   Int?
+  keterangan   String?  @db.VarChar(255)
+  waktu        DateTime @default(now()) @db.DateTime(3)
+  alamat       String?  @db.VarChar(64)
+
+  @@index([pengguna_id])
+  @@index([waktu])
+  @@map("log_audit")
 }

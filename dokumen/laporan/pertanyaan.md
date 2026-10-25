@@ -7,3 +7,8 @@
 - Skema basis data dasar: `npm test` root memuat `.env` lewat `--env-file-if-exists`; uji integrasi dilewati bila DATABASE_URL_UJI tidak ada.
 - Paket shared: label/warna status tahap layanan, kirim SATUSEHAT, antrean, dll. disusun sendiri (nilai kirim: menunggu/dikirim/terkirim/gagal) karena 4.x tidak merinci; token warna `abu` ditambahkan ke apps/web/src/gaya.
 - Paket shared: tanggal_lahir pasien tidak dibatasi 2014-06-03 (aturan itu untuk tanggal klinis); urutan workspace di root diubah (shared, db, integrasi, apps) dan `typecheck` root membangun shared dahulu agar impor @klira/shared terpecahkan; web memakai alias Vite ke sumber shared, Jest memakai moduleNameMapper.
+- Masuk: username dicari di semua fasyankes (form tanpa pilihan klinik; satu instalasi satu klinik), diambil akun aktif pertama; alasan: form 3.1 hanya memuat nama pengguna dan kata sandi.
+- Masuk: pembatas percobaan gagal (5 per akun, 20 per alamat, jeda 5 menit) disimpan dalam memori proses; alasan: paling sederhana untuk satu proses, tidak perlu tabel.
+- Masuk: tabel `log_audit` ditambahkan dengan kolom `aksi` teks bebas (memuat masuk, masuk_gagal, keluar selain aksi data 4.7); alasan: aksi 4.7 tidak mencakup masuk/keluar.
+- Masuk: halaman awal ke Daftar pasien bila jenis akun aktif memiliki izin salah satu fitur pendaftaran/kunjungan/klinis/resep/farmasi/penunjang/kasir/klaim/rekam-medis, selain itu Beranda tugas (termasuk Auditor paket awal); alasan: 3.1 menyebut akun tanpa akses rekam medis ke Beranda tugas.
+- Masuk: kredensial awal bawaan seed `pimpinan` / `klira-awal-2026`, dapat ditimpa lewat USERNAME_AWAL dan KATA_SANDI_AWAL; alasan: 2.4 menetapkan kredensial awal statis tanpa nilainya.
