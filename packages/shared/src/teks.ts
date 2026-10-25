@@ -739,6 +739,15 @@ export const KLINIS = {
   },
 } as const;
 
+/** Addendum (4.2): tampilan isi susulan setelah catatan disahkan; dipakai berkas hasil, panel, dan nanti CPPT dan resume. */
+export const ADDENDUM_TEKS = {
+  judul: 'Addendum', kosong: 'Belum ada addendum.', versi: (n: number) => `Addendum versi ${n}`, oleh: (nama: string) => `Dicatat oleh ${nama}`,
+  disahkanOleh: (nama: string, jenis: string | null) => (jenis ? `Disahkan oleh ${nama} sebagai ${jenis}` : `Disahkan oleh ${nama}`),
+  kirimUlang: 'Menunggu kirim ulang', terkirim: 'Sudah dikirim ulang',
+  alasanHasil: (nama: string) => `Hasil lab susulan: ${nama}`, info: 'Addendum menambah catatan tanpa menimpa isi yang sudah disahkan.', gagalMuat: 'Addendum gagal dimuat.',
+  isiLabel: { pemeriksaan: 'Pemeriksaan', nilai: 'Nilai', satuan: 'Satuan', interpretasi: 'Interpretasi', rujukan: 'Rujukan', catatan: 'Catatan', kode_loinc: 'LOINC' } as Record<string, string>,
+} as const;
+
 /** Penunjang: halaman, master pemeriksaan, Order lab, Ambil spesimen, Hasil lab, addendum (3.1, 3.3, 4.3). */
 export const PENUNJANG = {
   judul: 'Penunjang',
@@ -769,10 +778,16 @@ export const PENUNJANG = {
     daftarJudul: 'Order lab kunjungan ini', kosong: 'Belum ada order lab pada kunjungan ini.', gagalMuat: 'Order lab gagal dimuat.', hasilBelum: 'Hasil belum ada',
     langkahPetunjuk: 'Pesan pemeriksaan lab untuk kunjungan ini. Order tersimpan langsung dan tidak menunggu tombol Simpan pemeriksaan.', muatUlang: 'Muat ulang order', dipesanOleh: (nama: string) => `Dipesan oleh ${nama}`,
     hasilSebelumSah: 'Hasil yang sudah divalidasi tampil di sini dan dapat dibaca sebelum Anda mengesahkan catatan.',
+    gagal: 'Order lab gagal dipesan.', tanpaTarifJumlah: (n: number) => `${n} tanpa tarif`,
   },
+  daftar: {
+    spesimen: 'Spesimen', hasil: 'Hasil', rujukan: 'Rujukan', validator: 'Divalidasi oleh', menungguValidasi: 'Menunggu validasi', pengesahan: 'Pengesahan', kodeLoinc: 'LOINC',
+    spesimenInfo: (asal: string, petugas: string) => `${asal}, diambil oleh ${petugas}`, tanpaSpesimen: 'Spesimen belum diambil', catatan: 'Catatan', bukaDaftar: 'Buka di Daftar pasien',
+  },
+  memuat: 'Memuat...',
   spesimen: {
     judul: 'Ambil spesimen', pilihOrder: 'Order yang diambil spesimennya', asal: 'Asal spesimen', waktu: 'Waktu pengambilan', petugas: 'Petugas', petugasSaya: 'Saya sendiri', simpan: 'Catat spesimen', menyimpan: 'Mencatat...',
-    kosong: 'Tidak ada order yang menunggu spesimen pada kunjungan ini.', tersimpan: (n: number) => `${n} spesimen dicatat.`, asalPetunjuk: 'Mis. darah vena, urin porsi tengah, usap tenggorok.',
+    kosong: 'Tidak ada order yang menunggu spesimen pada kunjungan ini.', gagal: 'Spesimen gagal dicatat.', tersimpan: (n: number) => `${n} spesimen dicatat.`, asalPetunjuk: 'Mis. darah vena, urin porsi tengah, usap tenggorok.',
   },
   hasil: {
     judul: 'Hasil lab', langkah: { hasil: 'Hasil', interpretasi: 'Interpretasi', validasi: 'Validasi' },
@@ -781,13 +796,9 @@ export const PENUNJANG = {
     petunjukInterpretasi: 'Tentukan interpretasi tiap hasil. Pilihan awal diambil dari rentang rujukan bila hasil berupa angka.', petunjukValidasi: 'Periksa hasil sebelum divalidasi. Validasi mengesahkan hasil atas nama Anda dan tidak dapat diubah; koreksi sesudahnya lewat perbaikan berversi.',
     validasiSekarang: 'Validasi sekarang', validasiKet: 'Hasil divalidasi dan dikunci. Matikan bila hasil menunggu analis lain memvalidasi.', kirim: 'Simpan hasil', kirimValidasi: 'Simpan dan validasi', memproses: 'Menyimpan...',
     sudahAda: 'Hasil sudah tersimpan', selesaiJudul: 'Hasil lab tersimpan', selesaiPesan: (disimpan: number, divalidasi: number) => `${disimpan} hasil disimpan, ${divalidasi} divalidasi.`,
-    addendumInfo: 'Catatan kunjungan ini sudah disahkan, sehingga hasil yang divalidasi dicatat sebagai addendum dan dikirim ulang.', ringkasanKosong: 'Belum ada hasil yang diisi.', belumDiisi: 'Belum diisi',
+    addendumInfo: 'Bila catatan kunjungan ini sudah disahkan, hasil yang divalidasi dicatat sebagai addendum (tidak menimpa catatan) dan dikirim ulang.', addendumDibuat: (n: number) => `${n} hasil dicatat sebagai addendum karena catatan sudah disahkan.`,
+    ringkasanHasil: 'Hasil yang akan disimpan', langkahSebelumnya: 'Isi nilai minimal satu hasil terlebih dahulu.', ringkasanKosong: 'Belum ada hasil yang diisi.', belumDiisi: 'Belum diisi',
     gagalSebagian: (nama: string) => `Hasil "${nama}" gagal diproses. Hasil sebelumnya sudah tersimpan.`, rujukanTidakAda: 'Tanpa rentang rujukan',
-  },
-  addendum: {
-    judul: 'Addendum', tab: 'Addendum', kosong: 'Belum ada addendum.', versi: (n: number) => `Addendum versi ${n}`, oleh: (nama: string) => `Oleh ${nama}`, kirimUlang: 'Menunggu kirim ulang',
-    terkirim: 'Sudah dikirim ulang', alasanHasil: (nama: string) => `Hasil lab susulan: ${nama}`, isiLabel: { pemeriksaan: 'Pemeriksaan', nilai: 'Nilai', satuan: 'Satuan', interpretasi: 'Interpretasi', rujukan: 'Rujukan', catatan: 'Catatan', kode_loinc: 'LOINC' } as Record<string, string>,
-    info: 'Addendum menambah catatan tanpa menimpa isi yang sudah disahkan.', gagalMuat: 'Addendum gagal dimuat.',
   },
   galat: {
     angka: 'Isi dengan angka.', loinc: 'Kode LOINC tidak valid (contoh: 718-7).', rentang: 'Rujukan minimum tidak boleh lebih besar dari maksimum.', tidakAdaPerubahan: 'Tidak ada perubahan.',
@@ -795,7 +806,8 @@ export const PENUNJANG = {
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganDitutup: 'Kunjungan sudah ditutup. Order baru tidak dapat dibuat.', pemeriksaanTidakAda: 'Pemeriksaan tidak ditemukan atau tidak aktif.', orderTidakAda: 'Order tidak ditemukan.',
     statusTidakSah: 'Status order tidak mengizinkan tindakan ini. Muat ulang data.', petugasTidakSah: 'Petugas bukan pengguna fasyankes ini.', kodeGanda: 'Kode pemeriksaan sudah dipakai.', masterTidakAda: 'Pemeriksaan tidak ditemukan.',
     tarifTidakSah: 'Tarif harus bertipe lab dan milik klinik ini.', hasilBelumAda: 'Hasil belum diisi.', sudahValidasi: 'Hasil sudah divalidasi dan tidak dapat diubah.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
-    sumberBelumAda: 'Tidak ada pemeriksaan yang cocok.', entitasAddendum: 'Jenis addendum tidak dikenal.',
+    sumberBelumAda: 'Tidak ada pemeriksaan yang cocok.', entitasAddendum: 'Jenis addendum tidak dikenal.', asalWajib: 'Asal spesimen wajib diisi.', waktuWajib: 'Waktu pengambilan wajib diisi.',
+    pilihOrder: 'Pilih minimal satu order.', nilaiWajib: 'Isi nilai hasil.',
   },
 } as const;
 
@@ -823,4 +835,4 @@ export const PERSETUJUAN_TINDAKAN = {
   },
 } as const;
 
-export const TEKS = { penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;
+export const TEKS = { addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

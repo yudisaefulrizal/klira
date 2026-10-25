@@ -1,4 +1,4 @@
-import { bolehAksiOrder, hasilJadiAddendum, PENUNJANG } from '@klira/shared';
+import { ADDENDUM_TEKS, bolehAksiOrder, hasilJadiAddendum, PENUNJANG } from '@klira/shared';
 import type {
   FilterMasterPemeriksaan, FilterRekapLab, HasilBuatOrderDto, HasilMasukan, MasterPemeriksaanDto, MasterPemeriksaanMasukan, OrderLabMasukan, OrderPenunjangDto, PenggunaSaya, RekapLabDto, SpesimenMasukan,
   TarifLabDto, UbahMasterPemeriksaanMasukan,
@@ -137,7 +137,7 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
       try {
         const ok = await repo.validasi({
           fasyankesId: p.fasyankes_id, orderId, kunjunganId: o.data.kunjungan_id, oleh: p.id, waktu: rencana.data.rencana.waktu, pengesahan: rencana.data.rencana,
-          addendum: jadiAddendum ? { alasan: PENUNJANG.addendum.alasanHasil(o.data.nama) } : null,
+          addendum: jadiAddendum ? { alasan: ADDENDUM_TEKS.alasanHasil(o.data.nama) } : null,
         });
         if (!ok) return gagal('konflik', PENUNJANG.galat.statusTidakSah);
       } catch (e) {

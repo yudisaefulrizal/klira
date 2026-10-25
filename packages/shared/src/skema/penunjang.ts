@@ -25,7 +25,7 @@ const masterDasar = {
   rujukan_min: angkaNull,
   rujukan_maks: angkaNull,
   rujukan_teks: teksNull(200),
-  tarif_layanan_id: z.preprocess(kosongJadiNull, idPositif.nullable()),
+  tarif_layanan_id: z.preprocess((v) => (typeof v === 'string' && v.trim() !== '' ? Number(v) : kosongJadiNull(v)), idPositif.nullable()),
   aktif: z.boolean().default(true),
 };
 const cekRentang = (d: { rujukan_min?: number | null; rujukan_maks?: number | null }) => d.rujukan_min == null || d.rujukan_maks == null || d.rujukan_min <= d.rujukan_maks;

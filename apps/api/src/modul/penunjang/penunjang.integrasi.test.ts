@@ -58,7 +58,7 @@ d('penunjang, addendum, tagihan, dan persetujuan terhadap klira_uji', () => {
   };
   const buatPasien = (fasId: number, rm: string, nama: string, ekstra: object = {}) =>
     prisma.pasien.create({ data: { fasyankes_id: fasId, nomor_rm: rm, nama, tanggal_lahir: new Date('1980-01-01'), jenis_kelamin: 'perempuan', ...ekstra } }).then((p) => p.id);
-  const buatKunjungan = (fasId: number, pasienId: number, tahap: 'menunggu_skrining' | 'pemeriksaan' | 'ditutup' = 'pemeriksaan', cara: 'umum' | 'jkn' = 'umum') =>
+  const buatKunjungan = (fasId: number, pasienId: number, tahap: 'menunggu_skrining' | 'pemeriksaan' | 'kasir' | 'ditutup' = 'pemeriksaan', cara: 'umum' | 'jkn' = 'umum') =>
     prisma.kunjungan.create({ data: { fasyankes_id: fasId, pasien_id: pasienId, jenis: 'AMB', tahap_layanan: tahap, cara_pembayaran: cara } }).then((k) => k.id);
   const pesan = (kunj: number, ids: number[], siapa = 'dokter', ekstra: object = {}) => panggil('POST', `/kunjungan/${kunj}/penunjang/order`, siapa, { pemeriksaan_ids: ids, ...ekstra });
   const spesimen = (idOrder: number, siapa = 'analis') => panggil('POST', `/penunjang/order/${idOrder}/spesimen`, siapa, { asal: 'Darah vena', waktu_ambil: new Date().toISOString() });

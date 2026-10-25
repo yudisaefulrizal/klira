@@ -1,4 +1,4 @@
-import { adalahMaju, angkaDariNilai, bolehAksiOrder, hargaTarif, hasilJadiAddendum, orderBerjalan, sarankanInterpretasi, teksRujukan, URUTAN_STATUS_ORDER } from './penunjang';
+import { kodeOrderLab, adalahMaju, angkaDariNilai, bolehAksiOrder, hargaTarif, hasilJadiAddendum, orderBerjalan, sarankanInterpretasi, teksRujukan, URUTAN_STATUS_ORDER } from './penunjang';
 import { rentangHariWib } from './alur';
 import {
   filterRekapLab, hasilMasukan, masterPemeriksaanMasukan, orderLabMasukan, persetujuanTindakanMasukan, spesimenMasukan, ubahMasterPemeriksaanMasukan,
@@ -134,5 +134,12 @@ describe('skema persetujuan tindakan', () => {
     expect(persetujuanTindakanMasukan.safeParse({ ...dasar, penjelasan: ' ' }).success).toBe(false);
     expect(persetujuanTindakanMasukan.safeParse({ ...dasar, saksi_pengguna_id: undefined }).success).toBe(false);
     expect(persetujuanTindakanMasukan.safeParse({ ...dasar, bentuk: 'isyarat' }).success).toBe(false);
+  });
+});
+
+describe('kode order lab', () => {
+  it('tiga digit minimal', () => {
+    expect(kodeOrderLab(31)).toBe('L-031');
+    expect(kodeOrderLab(1234)).toBe('L-1234');
   });
 });

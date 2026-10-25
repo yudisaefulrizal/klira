@@ -57,3 +57,6 @@ export function hargaTarif(tarif: { harga_umum: number; harga_jkn: number | null
 export function hasilJadiAddendum(d: { tahap: string; bagianDisahkan: readonly string[] }): boolean {
   return ['resep', 'kasir', 'ditutup'].includes(d.tahap) || d.bagianDisahkan.some((b) => b === 'diagnosis' || b === 'tindak_lanjut');
 }
+
+/** Nomor order tampil di rekap, mis. 31 menjadi L-031. */
+export const kodeOrderLab = (id: number): string => `L-${String(id).padStart(3, '0')}`;
