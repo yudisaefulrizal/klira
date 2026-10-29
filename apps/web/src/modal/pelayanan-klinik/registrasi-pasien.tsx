@@ -19,7 +19,7 @@ import {
 } from './keadaan-registrasi';
 import type { KeadaanRegistrasi } from './keadaan-registrasi';
 import {
-  KonteksPasien, LangkahAlamat, LangkahConsent, LangkahDuplikat, LangkahIdentitas, LangkahJkn, LangkahRingkasan, LangkahSosial, LangkahWali,
+  KonteksPasien, LangkahAlamat, LangkahConsent, LangkahIdentitas, LangkahJkn, LangkahRingkasan, LangkahSosial, LangkahWali,
 } from './langkah-registrasi';
 
 export const ALUR_REGISTRASI_PASIEN = 'registrasi-pasien';
@@ -33,7 +33,7 @@ type Props = {
 };
 
 /**
- * Modal Registrasi pasien baru (3.3, MODAL-BERTAHAP): Cari duplikat > Identitas > Data sosial > Alamat dan jalur identitas khusus >
+ * Modal Registrasi pasien baru (3.3, MODAL-BERTAHAP): Identitas (deteksi duplikat otomatis) > Data sosial > Alamat dan jalur identitas khusus >
  * Wali/keluarga > Cara pembayaran (data JKN) > General consent > Ringkasan. Satu permintaan, satu transaksi di API; draf otomatis.
  */
 export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: Props) {
@@ -50,6 +50,7 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
   const [hasil, setHasil] = useState<PasienBaruDto | null>(null);
   const [kandidat, setKandidat] = useState<KandidatDuplikatDto[] | null>(null);
   const [mencari, setMencari] = useState(false);
+  const [ulangiCari, setUlangiCari] = useState(0);
   const [galatCari, setGalatCari] = useState<string | null>(null);
   const [teks, setTeks] = useState<TeksPersetujuanDto | null>(null);
   const [memuatTeks, setMemuatTeks] = useState(true);
@@ -98,25 +99,29 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
   };
   const bisaCari = bisaCariDuplikat(keadaan);
 
-  const cari = useCallback(async (k: KeadaanRegistrasi) => {
-    setMencari(true);
+  useEffect(() => {
+    let batal = false;
+    setKandidat(null);
     setGalatCari(null);
-    try {
-      setKandidat(await cekDuplikatPasien(isianCariDuplikat(k)));
-    } catch (e) {
-      setGalatCari(e instanceof GalatApi ? e.message : REGISTRASI.duplikatGagal);
-    } finally {
-      setMencari(false);
-    }
-  }, []);
+    setMencari(bisaCari);
+    if (!bisaCari) return;
+    const jeda = setTimeout(() => {
+      cekDuplikatPasien(isianCariDuplikat(keadaan))
+        .then((hasil) => { if (!batal) setKandidat(hasil); })
+        .catch((e) => { if (!batal) setGalatCari(e instanceof GalatApi ? e.message : REGISTRASI.duplikatGagal); })
+        .finally(() => { if (!batal) setMencari(false); });
+    }, 500);
+    return () => { batal = true; clearTimeout(jeda); };
+  }, [keadaan.nik, keadaan.nama, keadaan.tanggal_lahir, keadaan.ibu_kandung, bisaCari, ulangiCari]);
 
   const dasar = { keadaan, ubah, galat: g.bidang, tampilGalat };
   const langkah: LangkahModal[] = [
     {
-      id: 'duplikat', judul: REGISTRASI.langkah.duplikat,
+      id: 'identitas', judul: REGISTRASI.langkah.identitas,
       isi: (
-        <LangkahDuplikat
-          {...dasar} kandidat={kandidat} mencari={mencari} bisaCari={bisaCari} galatCari={galatCari} onCari={() => void cari(keadaan)}
+        <LangkahIdentitas
+          {...dasar} kandidat={kandidat} mencari={mencari} bisaCari={bisaCari} galatCari={galatCari}
+          onCari={() => setUlangiCari((n) => n + 1)}
           onPakai={(c) => {
             hapus();
             onDaftarkanKunjungan({ id: c.id, nama: c.nama, nomor_rm: c.nomor_rm });
@@ -124,7 +129,6 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
         />
       ),
     },
-    { id: 'identitas', judul: REGISTRASI.langkah.identitas, isi: <LangkahIdentitas {...dasar} /> },
     { id: 'sosial', judul: REGISTRASI.langkah.sosial, isi: <LangkahSosial {...dasar} /> },
     { id: 'alamat', judul: REGISTRASI.langkah.alamat, isi: <LangkahAlamat {...dasar} /> },
     { id: 'wali', judul: REGISTRASI.langkah.wali, isi: <LangkahWali {...dasar} /> },
@@ -134,6 +138,11 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
   ].map((l, n) => ({ ...l, selesai: n < JUMLAH_LANGKAH_REGISTRASI - 1 && dikunjungi.includes(n) && indeks !== n && !g.perLangkah[n] }));
 
   async function kirim() {
+    if (bisaCari && (mencari || kandidat === null)) {
+      setGalat(galatCari ?? REGISTRASI.duplikatMencari);
+      pindah(0);
+      return;
+    }
     const masalah = langkahBermasalah(g.perLangkah);
     if (masalah >= 0) {
       setTampilGalat(true);
@@ -149,10 +158,10 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
       setHasil(h);
     } catch (e) {
       if (e instanceof GalatApi && e.status === 409) {
-        // Kemungkinan data ganda: kembali ke langkah pertama dan muat ulang hasil pencarian.
+        // Kemungkinan data ganda: kembali ke Identitas dan periksa ulang.
         setGalat(e.message);
         pindah(0);
-        void cari(keadaan);
+        setUlangiCari((n) => n + 1);
       } else {
         setGalat(e instanceof GalatApi ? e.message : GALAT.umum);
       }
@@ -196,6 +205,10 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
       onTutup={hasil ? onSelesai : onTutup}
       lindungiTutup={adaPerubahan(awal, keadaan)}
       onLanjut={(dari) => {
+        if (dari === 0 && bisaCari && (mencari || kandidat === null)) {
+          setGalat(galatCari ?? REGISTRASI.duplikatMencari);
+          return false;
+        }
         if (g.perLangkah[dari]) {
           setTampilGalat(true);
           setGalat(g.perLangkah[dari]);

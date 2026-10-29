@@ -32,6 +32,7 @@ describe('tombol kembali menutup lapisan', () => {
     const j = jendela();
     bukaLapisanRiwayat(j.w, () => true)();
     expect(j.log).toEqual(['push', 'back']);
+    j.semuaKembali();
     expect(j.terpasang()).toBe(false);
   });
   it('kembali yang ditolak (perlu konfirmasi) memasang ulang entri dan tetap terbuka', () => {
@@ -40,6 +41,22 @@ describe('tombol kembali menutup lapisan', () => {
     j.kembali();
     expect(j.log).toEqual(['push', 'push']);
     bersih();
+    expect(j.log).toEqual(['push', 'push', 'back']);
+  });
+  it('menutup panel lewat antarmuka mempertahankan modal utama sampai kembali berikutnya', () => {
+    const j = jendela();
+    const modal = jest.fn(() => true);
+    const panel = jest.fn(() => true);
+    const bersihModal = bukaLapisanRiwayat(j.w, modal);
+    const bersihPanel = bukaLapisanRiwayat(j.w, panel);
+    bersihPanel();
+    // Peramban mengirim popstate setelah back() dari pembersihan panel.
+    j.semuaKembali();
+    expect(modal).not.toHaveBeenCalled();
+    expect(panel).not.toHaveBeenCalled();
+    j.semuaKembali();
+    expect(modal).toHaveBeenCalledTimes(1);
+    bersihModal();
     expect(j.log).toEqual(['push', 'push', 'back']);
   });
   it('satu kali kembali hanya menutup lapisan teratas', () => {

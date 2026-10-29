@@ -40,7 +40,7 @@ function AksiPeriode({ id, mulai, selesai, hariIni, memproses, onSimpan }: Perio
   return (
     <Sebaris sebaris sejajar="regang">
       <Tombol type="button" varian="teks" disabled={memproses} onClick={() => setUbah(true)}>{ATUR_IZIN.ubahPeriode}</Tombol>
-      {!berakhir && <Tombol type="button" varian="teks" disabled={memproses || galatUbahPeriode(mulai, hariIni) !== null} onClick={() => onSimpan(hariIni)}>{ATUR_IZIN.akhiri}</Tombol>}
+      {!berakhir && <Tombol type="button" varian="teks" disabled={memproses || galatUbahPeriode(mulai, hariIni) !== null} onClick={() => onSimpan(new Date().toISOString())}>{ATUR_IZIN.akhiri}</Tombol>}
     </Sebaris>
   );
 }

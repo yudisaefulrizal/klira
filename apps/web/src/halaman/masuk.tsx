@@ -30,7 +30,7 @@ export function HalamanMasuk() {
 
   return (
     <Baris style={{ gap: 0, minHeight: token.ukuran.tinggiLayar }}>
-      <Kolom jarak="md" padding="xl" style={{ background: token.warna.utama, color: token.warna.permukaan, justifyContent: 'center' }}>
+      <Kolom jarak="md" padding="xl" style={{ background: token.warna.utama, color: token.warna.diAtasUtama, justifyContent: 'center' }}>
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.tajuk, fontWeight: token.huruf.berat.tebal }}>{MASUK.judul}</h1>
         <p style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{MASUK.keterangan}</p>
       </Kolom>
@@ -45,6 +45,10 @@ export function HalamanMasuk() {
               {proses ? MASUK.tombolProses : MASUK.tombol}
             </Tombol>
             <Peringatan nada="biru">{MASUK.catatanGanti}</Peringatan>
+            <Sebaris bungkus jarak="md" style={{ fontSize: token.huruf.ukuran.kecil }}>
+              <a href="/kebijakan-privasi/">Kebijakan Privasi</a>
+              <a href="/ketentuan-layanan/">Ketentuan Layanan</a>
+            </Sebaris>
           </Kolom>
         </Kartu>
       </Sebaris>

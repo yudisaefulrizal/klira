@@ -18,7 +18,7 @@ export function enkripsiRahasia(teks: string, kunci?: string): string {
 
 export function dekripsiRahasia(terenkripsi: string, kunci?: string): string {
   const [versi, iv, tag, data] = terenkripsi.split(':');
-  if (versi !== 'v1' || !iv || !tag || !data) throw new Error('Format rahasia terenkripsi tidak dikenal');
+  if (versi !== 'v1' || !iv || !tag || data === undefined) throw new Error('Format rahasia terenkripsi tidak dikenal');
   const decipher = createDecipheriv('aes-256-gcm', ambilKunci(kunci), Buffer.from(iv, 'base64'));
   decipher.setAuthTag(Buffer.from(tag, 'base64'));
   return Buffer.concat([decipher.update(Buffer.from(data, 'base64')), decipher.final()]).toString('utf8');

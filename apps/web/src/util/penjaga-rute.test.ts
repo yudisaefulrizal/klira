@@ -44,3 +44,22 @@ describe('penjaga rute', () => {
     expect(putuskanRute('/pengaturan', { ...kasir, fitur: ['akses'] })).toEqual({ tipe: 'tampil' });
   });
 });
+
+describe('rute pengelolaan master kontekstual', () => {
+  const rute = ['/pasien/layanan', '/rawat-inap/ruangan', '/kasir-klaim/tarif'];
+  it('pemegang izin master dapat mengelola data tanpa memperoleh akses ke data klinis', () => {
+    const admin: PenggunaSaya = { ...dasar, halaman_awal: '/beranda', fitur: ['master'], izin: [{ fitur: 'master', aksi: 'lihat', cakupan: 'unit' }] };
+    for (const path of rute) expect(putuskanRute(path, admin)).toEqual({ tipe: 'tampil' });
+    for (const path of ['/pasien', '/rawat-inap', '/kasir-klaim']) expect(putuskanRute(path, admin)).toEqual({ tipe: 'alihkan', ke: '/beranda' });
+  });
+  it('fitur klinis atau kasir saja tidak memberikan izin pengelolaan master', () => {
+    const klinis = { ...dasar, fitur: ['pendaftaran', 'klinis', 'kasir'], izin: [] };
+    for (const path of rute) expect(putuskanRute(path, klinis)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
+  });
+  it('sesi dan kewajiban ganti kredensial tetap berlaku untuk alamat master baru', () => {
+    for (const path of rute) {
+      expect(putuskanRute(path, null)).toEqual({ tipe: 'alihkan', ke: '/masuk' });
+      expect(putuskanRute(path, { ...dasar, wajib_ganti_kredensial: true, izin: [{ fitur: 'master', aksi: 'lihat', cakupan: 'unit' }] })).toEqual({ tipe: 'alihkan', ke: '/ganti-kredensial' });
+    }
+  });
+});

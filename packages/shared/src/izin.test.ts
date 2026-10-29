@@ -1,4 +1,4 @@
-import { JENIS_AKUN_AWAL, HALAMAN_MENU, halamanMenuDiizinkan, punyaIzin } from './izin';
+import { IZIN_AWAL, JENIS_AKUN_AWAL, HALAMAN_MENU, halamanMenuDiizinkan, punyaIzin } from './izin';
 
 describe('punyaIzin', () => {
   const p = { izin: [{ fitur: 'akses', aksi: 'lihat' as const, cakupan: 'unit' as const }] };
@@ -48,5 +48,14 @@ describe('paket awal: penunjang dan persetujuan', () => {
     const penuh = JENIS_AKUN_AWAL.filter((j) => j.fitur.includes('persetujuan')).map((j) => j.nama);
     expect(penuh).toEqual(['Dokter/DPJP']);
     expect(JENIS_AKUN_AWAL.filter((j) => j.lihat_saja?.includes('persetujuan')).map((j) => j.nama)).toEqual(['Perekam Medis dan Informasi Kesehatan']);
+  });
+});
+
+describe('izin WhatsApp tunggal', () => {
+  it('hanya menawarkan satu pilihan WhatsApp dan membuka kedua menu terkait', () => {
+    expect(IZIN_AWAL.filter(i => i.fitur === 'whatsapp')).toEqual([{ fitur: 'whatsapp', aksi: 'lihat', cakupan: 'unit' }]);
+    expect(IZIN_AWAL.some(i => i.fitur === 'pesan')).toBe(false);
+    const paths = halamanMenuDiizinkan(['whatsapp']).map(h => h.path);
+    expect(paths).toEqual(expect.arrayContaining(['/pesan', '/pengaturan']));
   });
 });

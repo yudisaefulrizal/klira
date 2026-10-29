@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { nomorWhatsapp } from '../whatsapp';
 import { GALAT, REGISTRASI } from '../teks';
 import type { Halaman } from '../tipe';
 import type { JenisKunjungan, CaraPembayaran, StatusAntrean, StatusIdentitas, StatusKunjungan, TahapLayanan } from '../status';
@@ -9,7 +10,7 @@ export const JALUR_IDENTITAS = ['nik', 'paspor', 'kitas', 'tanpa_identitas'] as 
 export type JalurIdentitas = (typeof JALUR_IDENTITAS)[number];
 export const BENTUK_PERSETUJUAN = ['tertulis', 'lisan'] as const;
 export const PENANDATANGAN_PERSETUJUAN = ['pasien', 'wali'] as const;
-export const NILAI_TAHAP_FILTER = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup'] as const;
+export const NILAI_TAHAP_FILTER = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup', 'batal'] as const;
 export type TahapFilter = (typeof NILAI_TAHAP_FILTER)[number];
 
 const kosongJadiTiada = (v: unknown) => (typeof v === 'string' && v.trim() === '' ? undefined : v);
@@ -25,12 +26,24 @@ export const tanggalLahir = z
 
 const nikOpsional = z.preprocess(kosongJadiTiada, nik.nullish());
 
+/** Nomor opsional; format lokal 08… dinormalkan menjadi 628… untuk kontak langsung. */
+export const nomorHpPasien = z.string().trim().max(40).transform((value, ctx) => {
+  if (!value) return null;
+  const nomor = nomorWhatsapp(value);
+  if (!nomor) {
+    ctx.addIssue({ code: 'custom', message: 'Nomor HP tidak valid. Gunakan 08… atau kode negara, misalnya +628….' });
+    return z.NEVER;
+  }
+  return nomor;
+}).nullish();
+
 /** Registrasi pasien baru (3.3): identitas, data sosial, alamat, jalur identitas khusus, wali, JKN, dan general consent dalam satu permintaan. */
 export const registrasiPasienMasukan = z
   .object({
     jalur_identitas: z.enum(JALUR_IDENTITAS).default('nik'),
     nik: nikOpsional,
     nama: teksWajib(),
+    nomor_hp: nomorHpPasien,
     ibu_kandung: teksOpsional(),
     tempat_lahir: teksOpsional(100),
     tanggal_lahir: tanggalLahir,
@@ -92,6 +105,7 @@ export type KandidatDuplikatDto = { id: number; nomor_rm: string; nama: string; 
 
 /** Filter Daftar pasien (query string): pencarian nama/nomor RM/NIK, tahap layanan, paginasi. */
 export const filterPasien = z.object({
+  tanggal: z.preprocess(kosongJadiTiada, z.iso.date().optional()),
   cari: z.preprocess(kosongJadiTiada, z.string().trim().max(100).optional()),
   tahap: z.preprocess(kosongJadiTiada, z.enum(NILAI_TAHAP_FILTER).default('semua')),
   halaman: z.coerce.number().int().min(1).default(1),
@@ -132,6 +146,7 @@ export type PasienDetailDto = {
   nomor_rm: string;
   nik: string | null;
   nama: string;
+  nomor_hp: string | null;
   ibu_kandung: string | null;
   tempat_lahir: string | null;
   tanggal_lahir: string;
@@ -158,3 +173,20 @@ export type PasienDetailDto = {
 export type PasienBaruDto = { id: number; nomor_rm: string; nama: string; status_identitas: StatusIdentitas };
 
 export type TeksPersetujuanDto = { id: number; jenis: string; versi: number; judul: string; tujuan: string; isi: string };
+
+/** Perbaikan demografi tanpa mengubah nomor RM atau persetujuan yang sudah diberikan. */
+export const perbaikanPasienMasukan = z.object({
+  ...registrasiPasienMasukan.shape,
+  wali: z.array(waliKeluargaMasukan.extend({ id: idPositif.optional() })).max(10),
+}).omit({ persetujuan: true, konfirmasi_duplikat: true }).superRefine((d, ctx) => {
+  const tambah = (path: string, message: string) => ctx.addIssue({ code: 'custom', path: [path], message });
+  if (d.jalur_identitas === 'nik' && !d.nik) tambah('nik', REGISTRASI.galat.nikWajib);
+  if (d.jalur_identitas === 'paspor' && !d.nomor_paspor?.trim()) tambah('nomor_paspor', GALAT.wajibDiisi);
+  if (d.jalur_identitas === 'kitas' && !d.nomor_kitas?.trim()) tambah('nomor_kitas', GALAT.wajibDiisi);
+  if (d.jalur_identitas === 'tanpa_identitas' && d.nik) tambah('nik', REGISTRASI.galat.nikHarusKosong);
+  if (d.tidak_cakap && !d.wali.length) tambah('wali', REGISTRASI.galat.waliWajib);
+  const ids = d.wali.flatMap((w) => w.id ? [w.id] : []);
+  if (new Set(ids).size !== ids.length) tambah('wali', 'Wali yang sama tercantum lebih dari sekali.');
+});
+export type PerbaikanPasienMasukan = z.infer<typeof perbaikanPasienMasukan>;
+export type PerbaikanPasienKirim = z.input<typeof perbaikanPasienMasukan>;

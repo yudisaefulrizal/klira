@@ -250,11 +250,11 @@ d('mesin izin terhadap klira_uji', () => {
   it('daftar peringatan untuk pimpinan dan auditor; terima untuk akun lewat endpoint; perawat ditolak', async () => {
     const p = await panggil('GET', `/peringatan-izin?pengguna_id=${id.perawat}`, 'pimpinan');
     expect(p.status).toBe(200);
-    expect(p.badan.total).toBeGreaterThanOrEqual(3);
-    expect(p.badan.data.every((r: any) => r.pengguna_id === id.perawat)).toBe(true);
+    expect(p.badan.data.total).toBeGreaterThanOrEqual(3);
+    expect(p.badan.data.data.every((r: any) => r.pengguna_id === id.perawat)).toBe(true);
     const aud = await panggil('GET', '/peringatan-izin?jenis_peringatan=nakes_tanpa_sip', 'auditor');
     expect(aud.status).toBe(200);
-    expect(aud.badan.data.length).toBeGreaterThan(0);
+    expect(aud.badan.data.data.length).toBeGreaterThan(0);
     expect((await panggil('GET', '/peringatan-izin', 'perawat')).status).toBe(403);
     expect((await panggil('GET', '/peringatan-izin?jenis_peringatan=bukan', 'pimpinan')).status).toBe(400);
     const terima = await panggil('POST', '/peringatan-izin/terima', 'pimpinan', {

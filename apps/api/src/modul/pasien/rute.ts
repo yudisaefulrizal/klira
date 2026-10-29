@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
-import { cekDuplikatMasukan, filterPasien, idParam, registrasiPasienMasukan, GALAT, REGISTRASI } from '@klira/shared';
+import { perbaikanPasienMasukan, cekDuplikatMasukan, filterPasien, idParam, registrasiPasienMasukan, GALAT, REGISTRASI } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import { wajibMasuk } from '../../middleware/auth';
 import { alamatDari } from '../../middleware/audit';
@@ -46,6 +46,14 @@ export function buatRutePasien(layananAkses: LayananAkses, layananIzin: LayananI
     const m = registrasiPasienMasukan.safeParse(req.body ?? {});
     if (!m.success) return galatValidasi(res, m.error);
     kirimHasil(res, await layanan.daftarkan(pengguna(res), m.data, alamatDari(req)), 201);
+  }));
+
+  rute.patch('/pasien/:id', masuk, wajibIzin('pasien', 'perbaikan'), bungkus(async (req, res) => {
+    const id = idParam.safeParse(req.params);
+    if (!id.success) return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } } satisfies ResponsGalat);
+    const m = perbaikanPasienMasukan.safeParse(req.body ?? {});
+    if (!m.success) return galatValidasi(res, m.error);
+    kirimHasil(res, await layanan.perbaiki(pengguna(res), id.data.id, m.data, alamatDari(req)));
   }));
 
   rute.get('/pasien/:id', masuk, lihat, bungkus(async (req, res) => {

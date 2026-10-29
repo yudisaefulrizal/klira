@@ -116,7 +116,7 @@ export function buatRuteIzin(layananAkses: LayananAkses, layanan: LayananIzin): 
   rute.get('/peringatan-izin', masuk, wajibIzinSalahSatu(['akses', 'lihat'], ['audit', 'lihat']), bungkus(async (req, res) => {
     const f = filterPeringatan.safeParse(req.query);
     if (!f.success) return galatValidasi(res, f.error);
-    res.json(await layanan.daftarPeringatan(pengguna(res), f.data));
+    res.json({ data: await layanan.daftarPeringatan(pengguna(res), f.data) });
   }));
   rute.post('/peringatan-izin/terima', masuk, wajibIzin('akses', 'input'), bungkus(async (req, res) => {
     const m = badan(terimaPeringatan, req, res);

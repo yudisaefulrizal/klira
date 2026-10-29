@@ -29,10 +29,15 @@ export function HalamanPengaturan() {
   const aktif: IdTabPengaturan | undefined = ids.length ? pilihTab(ids, dariAlamat, bacaTabTerakhir(HALAMAN, ids, simpanan())) : undefined;
 
   useEffect(() => {
+    if (dariAlamat === 'instagram' || dariAlamat === 'whatsapp') {
+      const hasil = new URLSearchParams(search).get('instagram');
+      ganti(`/pesan?kanal=${dariAlamat}${hasil ? `&instagram=${encodeURIComponent(hasil)}` : ''}`);
+      return;
+    }
     if (!aktif) return;
     simpanTabTerakhir(HALAMAN, aktif, simpanan());
     if (dariAlamat !== aktif) ganti(`/${HALAMAN}?tab=${aktif}`);
-  }, [aktif, dariAlamat, ganti]);
+  }, [aktif, dariAlamat, ganti, search]);
 
   const ubahAlamat = (q: string) => ganti(`/${HALAMAN}${q}`);
 

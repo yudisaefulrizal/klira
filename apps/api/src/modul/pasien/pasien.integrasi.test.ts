@@ -303,6 +303,13 @@ d('pasien, kunjungan, dan antrean terhadap klira_uji', () => {
     expect((await panggil('POST', `/antrean/${a1}/panggil`, 'lain')).status).toBe(404); // lintas fasyankes
     const batal = await panggil('POST', `/antrean/${k2.badan.data.antrean.id}/batal`, 'petugas');
     expect(batal.badan.data.status).toBe('batal');
+    const dibatalkan = await panggil('GET', '/pasien?tahap=batal', 'petugas');
+    expect(dibatalkan.status).toBe(200);
+    expect(dibatalkan.badan.data.data.map((x: any) => x.id)).toEqual([p2.id]);
+    expect(dibatalkan.badan.data.jumlah_tahap.batal).toBe(1);
+    const aktif = await panggil('GET', '/pasien', 'petugas');
+    expect(aktif.badan.data.data.map((x: any) => x.id)).not.toContain(p2.id);
+
 
     const hariIni = await panggil('GET', '/antrean', 'petugas');
     expect(hariIni.badan.data.data.map((x: any) => `${x.poli_nama}:${x.kode}:${x.status}`)).toEqual(['Poli Umum:A-001:selesai', 'Poli Umum:A-002:batal', 'Poli Anak:A-001:menunggu']);
@@ -322,7 +329,7 @@ d('pasien, kunjungan, dan antrean terhadap klira_uji', () => {
     expect((await panggil('PATCH', `/kunjungan/${kid}/tahap`, 'pelihat', { tahap: 'resep' })).status).toBe(403);
     const periksa = await panggil('GET', '/pasien?tahap=pemeriksaan', 'petugas');
     expect(periksa.badan.data.data.map((x: any) => x.id)).toEqual([p1.id]);
-    expect(periksa.badan.data.jumlah_tahap).toMatchObject({ menunggu_skrining: 3, pemeriksaan: 1 });
+    expect(periksa.badan.data.jumlah_tahap).toMatchObject({ menunggu_skrining: 2, pemeriksaan: 1, batal: 1 });
     expect((await panggil('GET', '/pasien?cari=Alur&tahap=pemeriksaan', 'petugas')).badan.data.data.map((x: any) => x.id)).toEqual([p1.id]);
     const cari = await panggil('GET', '/pasien?cari=Alur%20Lima', 'petugas');
     expect(cari.badan.data.data[0]).toMatchObject({ id: p5.id, kunjungan: null });
@@ -378,4 +385,23 @@ d('pasien, kunjungan, dan antrean terhadap klira_uji', () => {
     for (const h of hasil.filter((x) => x.status === 'rejected')) expect((h as PromiseRejectedResult).reason).toBeInstanceOf(KunjunganBerjalanError);
     expect(await prisma.kunjungan.count({ where: { fasyankes_id: fas, pasien_id: p.id } })).toBe(1);
   });
+  it('pasien batal bisa daftar ulang besok dengan RM yang sama dan riwayat batal tetap utuh', async () => {
+    const { RepositoriKunjunganPrisma } = require('../kunjungan/repositori');
+    const repo = new RepositoriKunjunganPrisma();
+    const p = await daftarPasien({ nama: 'Daftar Ulang Batal', ibu_kandung: 'DUB' });
+    const data = { pasien_id: p.id, jenis: 'AMB', lokasi_id: poliA, cara_pembayaran: 'umum', nomor_sep: null, keluhan_singkat: null };
+    const lama = await repo.daftarkan(fas, id.petugas, data, new Date('2032-03-11T03:00:00Z'));
+    await repo.ubahAntrean(fas, lama.antrean.id, 'batal', ['menunggu'], 'batal', new Date('2032-03-11T04:00:00Z'));
+    expect(await repo.kunjunganBerjalan(fas, p.id)).toBe(false);
+    const baru = await repo.daftarkan(fas, id.petugas, data, new Date('2032-03-12T03:00:00Z'));
+    expect(baru.id).not.toBe(lama.id);
+    expect(baru.pasien_id).toBe(p.id);
+    expect(baru.antrean.id).not.toBe(lama.antrean.id);
+    expect(baru.antrean.status).toBe('menunggu');
+    expect(await repo.kunjunganBerjalan(fas, p.id)).toBe(true);
+    expect(await prisma.antrean.findUniqueOrThrow({ where: { id: lama.antrean.id } })).toMatchObject({ status: 'batal', kunjungan_id: lama.id });
+    expect(await prisma.pasien.findUniqueOrThrow({ where: { id: p.id } })).toMatchObject({ nomor_rm: p.nomor_rm });
+    expect(await prisma.kunjungan.count({ where: { pasien_id: p.id } })).toBe(2);
+  });
+
 });

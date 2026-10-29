@@ -1,0 +1,125 @@
+.halaman-pasien { display: flex; flex-direction: column; gap: 16px; width: 100%; max-width: 1600px; margin: 8px auto; }
+.pasien-header { display: flex; align-items: flex-end; gap: 16px 24px; flex-wrap: wrap; }
+.pasien-aksi-utama { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+.pasien-aksi-utama:empty { display: none; }
+.pasien-toolbar { display: flex; flex: 1 1 440px; flex-wrap: wrap; min-width: 0; gap: 16px; align-items: flex-end; }
+.pasien-pencarian { flex: 1 1 280px; min-width: 0; max-width: 440px; }
+.pasien-pencarian input { box-sizing: border-box; width: 100%; padding: 0 14px !important; }
+.pasien-petunjuk { padding-bottom: 10px; color: var(--warna-teks-redup); font-size: 12px; white-space: nowrap; }
+.pasien-petunjuk kbd { padding: 2px 6px; border: 1px solid var(--warna-garis); border-radius: 4px; background: var(--warna-permukaan); }
+.pasien-filter { gap: 6px !important; padding-bottom: 12px; border-bottom: 1px solid var(--warna-garis); }
+.pasien-filter button { display: flex; align-items: center; gap: 10px; height: 38px !important; padding: 0 12px !important; border: 1px solid transparent !important; background: transparent !important; color: var(--warna-teks-redup) !important; }
+.pasien-filter button[aria-pressed='true'] { background: var(--warna-utama-latar) !important; color: var(--warna-utama-gelap) !important; border-color: var(--warna-garis) !important; }
+.pasien-filter button:hover { background: var(--warna-utama-latar) !important; }
+.pasien-jumlah { min-width: 20px; padding: 2px 5px; box-sizing: border-box; border-radius: 5px; background: var(--warna-permukaan); font-size: 12px; text-align: center; font-weight: 500; }
+.pasien-tabel { box-shadow: none !important; }
+.pasien-tabel-judul { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
+.pasien-tabel-judul h2 { font-size: 16px; margin: 0; font-weight: 600; }
+.pasien-tabel-judul span { font-size: 12px; color: var(--warna-teks-redup); }
+.pasien-tabel th { padding-top: 13px !important; padding-bottom: 13px !important; white-space: nowrap; }
+.pasien-tabel td { vertical-align: middle !important; line-height: 1.65; }
+.pasien-tabel tbody tr:hover { background: var(--warna-kepala-tabel); }
+.pasien-tabel td:last-child { min-width: 240px; }
+.pasien-tabel td:last-child button { height: 32px !important; padding: 0 8px !important; }
+.pasien-catatan { margin: -8px 0 0; max-width: 760px; color: var(--warna-teks-redup); font-size: 12px; line-height: 1.7; }
+.menu-klinik { min-height: calc(100dvh - 54px); }
+.menu-klinik a { transition: background .15s ease; }
+.menu-klinik a:hover { background: var(--warna-utama-latar) !important; }
+.menu-peran { margin-top: 6px; font-size: 12px; }
+.menu-peran summary { cursor: pointer; color: var(--warna-utama); }
+.menu-peran p { max-height: 160px; overflow-y: auto; line-height: 1.6; }
+@media (max-width: 760px) {
+  .halaman-pasien { gap: 16px; margin: 0; }
+  .pasien-toolbar { flex-basis: 100%; }
+  .pasien-aksi-utama { width: 100%; }
+  .pasien-aksi-utama button { flex: 1; height: auto !important; min-height: 40px; }
+  .pasien-petunjuk { display: none; }
+  .pasien-pencarian { max-width: none; }
+  .pasien-filter { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 12px; }
+  .pasien-filter button { flex-shrink: 0; }
+  .menu-klinik { flex-basis: 100% !important; min-height: auto; flex-direction: row !important; flex-wrap: wrap; padding: 12px !important; }
+  .menu-klinik > div:first-child { width: 100%; padding: 4px 8px 12px !important; }
+  .menu-klinik > div:last-child { width: 100%; }
+  .menu-klinik > div:empty { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .menu-klinik a { transition: none; } }
+
+.pasien-ikon {
+  display: inline-block;
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+  background: currentColor;
+}
+.pasien-ikon-wrap { display: inline-flex; vertical-align: middle; }
+.halaman-pasien .pasien-tombol-ikon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 44px;
+  height: 44px !important;
+  padding: 0 10px !important;
+  border-radius: 12px !important;
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.halaman-pasien .pasien-tombol-ikon:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--warna-utama); }
+.halaman-pasien .pasien-tombol-ikon:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: 3px; }
+.halaman-pasien .pasien-tombol-ikon[aria-label='Batalkan'],
+.halaman-pasien .pasien-filter .pasien-tombol-ikon[aria-label^='Batal'] { color: var(--status-merah-teks) !important; }
+.pasien-isian-ikon { position: relative; }
+.pasien-isian-ikon > .pasien-ikon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--warna-utama);
+  pointer-events: none;
+  width: 20px;
+  height: 20px;
+}
+.pasien-isian-ikon label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.pasien-isian-ikon input { padding-left: 42px !important; }
+.pasien-tanggal { width: 190px; }
+.pasien-tanggal input { box-sizing: border-box; width: 100%; }
+.pasien-tabel td:last-child { min-width: 180px; max-width: 320px; }
+.pasien-tooltip {
+  position: fixed;
+  z-index: 2147483647;
+  transform: translate(-50%, -100%);
+  max-width: min(240px, calc(100vw - 24px));
+  padding: 8px 11px;
+  border-radius: 8px;
+  background: var(--warna-teks);
+  color: var(--warna-permukaan);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 12%);
+  font: 500 12px/1.5 'IBM Plex Sans', sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+.pasien-tooltip[data-bawah='true'] { transform: translate(-50%, 0); }
+@media (max-width: 760px) {
+  .pasien-toolbar { gap: 10px; }
+  .pasien-aksi-utama { width: auto; margin-left: 0; }
+  .pasien-aksi-utama .pasien-ikon-wrap { flex: none; }
+  .pasien-filter { flex-wrap: wrap !important; overflow: visible; }
+  .pasien-pencarian { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .halaman-pasien .pasien-tombol-ikon { transition: none; }
+}
+
+.halaman-pasien .pasien-tabel td:last-child .pasien-tombol-ikon {
+  height: 44px !important;
+  padding: 0 10px !important;
+}
+
+.pasien-buka-layar { display: inline-flex; align-items: center; padding: 8px 12px; border: 1px solid var(--warna-garis); border-radius: 8px; color: var(--warna-utama); text-decoration: none; font-weight: 500; white-space: nowrap; }
+.pasien-buka-layar:hover { background: var(--warna-utama-latar); }

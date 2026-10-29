@@ -17,8 +17,8 @@ export const adaPerubahanJenis = (awal: FormJenis, f: FormJenis): boolean =>
   awal.nama.trim() !== f.nama.trim() || awal.syarat.trim() !== f.syarat.trim() || urut(awal.izin).join() !== urut(f.izin).join();
 
 export const labelFitur = (fitur: string): string => LABEL_IZIN.fitur[fitur] ?? fitur;
-export const labelAksiCakupan = (i: Pick<IzinKatalog, 'aksi' | 'cakupan'>): string =>
-  `${LABEL_IZIN.aksi[i.aksi] ?? i.aksi} · ${LABEL_IZIN.cakupan[i.cakupan] ?? i.cakupan}`;
+export const labelAksiCakupan = (i: Pick<IzinKatalog, 'aksi' | 'cakupan'> & { fitur?: string }): string =>
+  i.fitur === 'instagram' ? 'Semua fitur Instagram' : i.fitur === 'whatsapp' ? 'Semua fitur WhatsApp' : `${LABEL_IZIN.aksi[i.aksi] ?? i.aksi} · ${LABEL_IZIN.cakupan[i.cakupan] ?? i.cakupan}`;
 
 /** Pemilih izin dikelompokkan per fitur menurut urutan katalog fitur; fitur tak dikenal di akhir. */
 export function kelompokkanIzin(katalog: readonly IzinKatalog[]): KelompokIzin[] {

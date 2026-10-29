@@ -20,7 +20,7 @@ type Dasar = { keadaan: KeadaanRegistrasi; ubah: Ubah; galat: Record<string, str
 const teksRedup = { margin: 0, color: token.warna.teksRedup } as const;
 const opsiDari = (daftar: readonly string[]) => [{ nilai: '', label: REGISTRASI.pilih }, ...daftar.map((o) => ({ nilai: o, label: o }))];
 
-/** Bidang identitas utama dipakai di langkah Cari duplikat dan Identitas (isian yang sama, id berbeda). */
+/** Bidang identitas utama untuk pendaftaran dan deteksi duplikat. */
 function BidangKunci({ keadaan: k, ubah, galat, tampilGalat, awalan }: Dasar & { awalan: string }) {
   const g = (b: string) => (tampilGalat ? galat[b] : undefined);
   return (
@@ -47,17 +47,15 @@ type PropsDuplikat = Dasar & {
   onPakai: (c: KandidatDuplikatDto) => void;
 };
 
-export function LangkahDuplikat({ kandidat, mencari, bisaCari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
+function HasilDuplikat({ kandidat, mencari, bisaCari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
   const { keadaan: k, ubah } = dasar;
   const nikSama = !!kandidat?.some((c) => c.alasan === 'nik');
   return (
     <Kolom>
       <p style={teksRedup}>{REGISTRASI.duplikatPetunjuk}</p>
-      <BidangKunci {...dasar} awalan="dup" />
-      <Sebaris jarak="md">
-        <Tombol type="button" varian="sekunder" disabled={!bisaCari || mencari} onClick={onCari}>{mencari ? REGISTRASI.duplikatMencari : REGISTRASI.duplikatCari}</Tombol>
-        {!bisaCari && <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{REGISTRASI.duplikatBelumCukup}</span>}
-      </Sebaris>
+      {mencari && <p style={teksRedup} role="status">{REGISTRASI.duplikatMencari}</p>}
+      {!bisaCari && <p style={teksRedup}>{REGISTRASI.duplikatBelumCukup}</p>}
+      {galatCari && <div><Tombol type="button" varian="sekunder" onClick={onCari}>Coba periksa lagi</Tombol></div>}
       {galatCari && <Peringatan>{galatCari}</Peringatan>}
       {kandidat && kandidat.length === 0 && <Peringatan nada="biru">{REGISTRASI.duplikatTidakAda}</Peringatan>}
       {kandidat && kandidat.length > 0 && (
@@ -84,12 +82,15 @@ export function LangkahDuplikat({ kandidat, mencari, bisaCari, galatCari, onCari
   );
 }
 
-export function LangkahIdentitas(dasar: Dasar) {
+export function LangkahIdentitas({ kandidat, mencari, bisaCari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
   const { keadaan: k, ubah, galat, tampilGalat } = dasar;
   const g = (b: string) => (tampilGalat ? galat[b] : undefined);
   return (
     <Kolom>
       <BidangKunci {...dasar} awalan="id" />
+      <HasilDuplikat {...dasar} kandidat={kandidat} mencari={mencari} bisaCari={bisaCari} galatCari={galatCari} onCari={onCari} onPakai={onPakai} />
+      <Isian id="reg-nomor-hp" label="Nomor HP pasien (opsional)" type="tel" value={k.nomor_hp} maxLength={40}
+        onChange={(e) => ubah({ nomor_hp: e.target.value })} galat={g('nomor_hp')} autoComplete="off" />
       <Baris>
         <Isian id="reg-tempat" label={REGISTRASI.tempatLahir} value={k.tempat_lahir} onChange={(e) => ubah({ tempat_lahir: e.target.value })} galat={g('tempat_lahir')} autoComplete="off" />
         <Pilihan id="reg-jk" label={REGISTRASI.jenisKelamin} value={k.jenis_kelamin} onChange={(e) => ubah({ jenis_kelamin: e.target.value as KeadaanRegistrasi['jenis_kelamin'] })} opsi={REGISTRASI.jenisKelaminOpsi} galat={g('jenis_kelamin')} />

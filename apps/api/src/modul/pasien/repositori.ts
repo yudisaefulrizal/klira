@@ -1,5 +1,5 @@
 import { prisma, Prisma } from '@klira/db';
-import { TAHAP_BERJALAN, formatNomorRm, kodeAntrean, umurTahun } from '@klira/shared';
+import { TAHAP_BERJALAN, rentangHariWib, tanggalWib, formatNomorRm, kodeAntrean, umurTahun } from '@klira/shared';
 import type {
   AlasanDuplikat, DaftarPasienDto, FilterPasien, JalurIdentitas, KandidatDuplikatDto, KunjunganAktifDto, PasienBarisDto, PasienDetailDto, StatusIdentitas,
   TahapLayanan, TeksPersetujuanDto,
@@ -12,6 +12,7 @@ export type DataRegistrasi = {
   status_identitas: StatusIdentitas;
   nik: string | null;
   nama: string;
+  nomor_hp: string | null;
   ibu_kandung: string | null;
   tempat_lahir: string | null;
   tanggal_lahir: string;
@@ -34,13 +35,17 @@ export type DataRegistrasi = {
   persetujuan: { teks: TeksPersetujuanDto; bentuk: string; penandatangan: 'pasien' | 'wali'; wali_ke: number | null; penandatangan_nama: string };
 };
 
+export type DataPerbaikanPasien = Omit<DataRegistrasi, 'persetujuan' | 'wali' | 'nomor_hp'> & { nomor_hp?: string | null; wali: { id?: number; hubungan: string; nama: string; kontak: string | null }[] };
+export class WaliTidakSahError extends Error {}
+
 export type HasilDaftar = { id: number; nomor_rm: string; nama: string; status_identitas: StatusIdentitas; persetujuan_id: number };
 
 /** NIK sudah dipakai pasien lain di fasyankes ini (pelanggaran keunikan saat menyimpan). */
 export class NikKembarError extends Error {}
 
 export interface RepositoriPasien {
-  cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap'> & { lewati: number; ambil: number }): Promise<DaftarPasienDto>;
+  perbaiki(fasyankesId: number, id: number, oleh: number, data: DataPerbaikanPasien): Promise<boolean>;
+  cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap'> & { tanggal?: string } & { lewati: number; ambil: number }): Promise<DaftarPasienDto>;
   detail(fasyankesId: number, id: number): Promise<PasienDetailDto | null>;
   duplikat(fasyankesId: number, k: { nik?: string | null; nama?: string; tanggal_lahir?: string; ibu_kandung?: string }): Promise<KandidatDuplikatDto[]>;
   teksAktif(fasyankesId: number, jenis: 'general'): Promise<TeksPersetujuanDto | null>;
@@ -54,9 +59,15 @@ const iso = (d: Date): string => d.toISOString();
 const pilihTeks = { id: true, jenis: true, versi: true, judul: true, tujuan: true, isi: true } as const;
 
 export class RepositoriPasienPrisma implements RepositoriPasien {
-  async cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap'> & { lewati: number; ambil: number }): Promise<DaftarPasienDto> {
-    const jumlahTahap = await this.hitungTahap(fasyankesId);
-    const tahapSet: TahapLayanan[] = f.tahap === 'semua' ? [...TAHAP_BERJALAN] : [f.tahap];
+  async cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap'> & { tanggal?: string } & { lewati: number; ambil: number }): Promise<DaftarPasienDto> {
+    const { awal, akhir } = rentangHariWib(f.tanggal ?? tanggalWib(new Date()), f.tanggal ?? tanggalWib(new Date()));
+    const mulai = { gte: awal, lt: akhir };
+    const jumlahTahap = await this.hitungTahap(fasyankesId, mulai);
+    const tahapSet: TahapLayanan[] = f.tahap === 'semua' || f.tahap === 'batal' ? [...TAHAP_BERJALAN, 'ditutup'] : [f.tahap];
+    const tanggalKunjungan = f.cari && !f.tanggal ? {} : { mulai };
+    const filterKunjungan: Prisma.KunjunganWhereInput = f.tahap === 'batal'
+      ? { ...tanggalKunjungan, antrean: { is: { status: 'batal' } } }
+      : { ...tanggalKunjungan, tahap_layanan: { in: f.tahap === 'semua' ? [...TAHAP_BERJALAN] : tahapSet }, NOT: { antrean: { is: { status: 'batal' } } } };
     const halaman = Math.floor(f.lewati / f.ambil) + 1;
     const sertakan = {
       antrean: true,
@@ -65,7 +76,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
 
     if (!f.cari) {
       // Tanpa pencarian: kunjungan yang berjalan pada tahap itu, menunggu terlama dahulu.
-      const where = { fasyankes_id: fasyankesId, tahap_layanan: { in: tahapSet } };
+      const where = { fasyankes_id: fasyankesId, ...filterKunjungan };
       const [total, kunjungan] = await Promise.all([
         prisma.kunjungan.count({ where }),
         prisma.kunjungan.findMany({ where, orderBy: [{ mulai: 'asc' }, { id: 'asc' }], skip: f.lewati, take: f.ambil, include: { ...sertakan, pasien: true } }),
@@ -78,22 +89,22 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     const where: Prisma.PasienWhereInput = {
       fasyankes_id: fasyankesId,
       OR: [{ nama: { contains: f.cari } }, { nomor_rm: { contains: f.cari } }, ...(digit ? [{ nik: { startsWith: f.cari } }] : [])],
-      ...(f.tahap === 'semua' ? {} : { kunjungan: { some: { tahap_layanan: { in: tahapSet } } } }),
+      ...(f.tahap === 'semua' && !f.tanggal ? {} : { kunjungan: { some: filterKunjungan } }),
     };
     const [total, pasien] = await Promise.all([
       prisma.pasien.count({ where }),
       prisma.pasien.findMany({
         where, orderBy: [{ nama: 'asc' }, { id: 'asc' }], skip: f.lewati, take: f.ambil,
-        include: { kunjungan: { where: { tahap_layanan: { in: tahapSet } }, orderBy: { id: 'desc' }, take: 1, include: sertakan } },
+        include: { kunjungan: { where: filterKunjungan, orderBy: { id: 'desc' }, take: 1, include: sertakan } },
       }),
     ]);
     const baris = await this.petakan(fasyankesId, pasien.map((p) => ({ pasien: p, kunjungan: p.kunjungan[0] ?? null })));
     return { data: baris, halaman, ukuran: f.ambil, total, jumlah_tahap: jumlahTahap };
   }
 
-  private async hitungTahap(fasyankesId: number): Promise<DaftarPasienDto['jumlah_tahap']> {
-    const g = await prisma.kunjungan.groupBy({ by: ['tahap_layanan'], where: { fasyankes_id: fasyankesId }, _count: { _all: true } });
-    const hasil = { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0 };
+  private async hitungTahap(fasyankesId: number, mulai: Prisma.DateTimeFilter): Promise<DaftarPasienDto['jumlah_tahap']> {
+    const g = await prisma.kunjungan.groupBy({ by: ['tahap_layanan'], where: { fasyankes_id: fasyankesId, mulai, NOT: { antrean: { is: { status: 'batal' } } } }, _count: { _all: true } });
+    const hasil = { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0, batal: await prisma.kunjungan.count({ where: { fasyankes_id: fasyankesId, mulai, antrean: { is: { status: 'batal' } } } }) };
     for (const r of g) hasil[r.tahap_layanan] = r._count._all;
     return hasil;
   }
@@ -152,7 +163,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     const p = await prisma.pasien.findFirst({ where: { id, fasyankes_id: fasyankesId }, include: { wali_keluarga: { orderBy: { id: 'asc' } } } });
     if (!p) return null;
     return {
-      id: p.id, nomor_rm: p.nomor_rm, nik: p.nik, nama: p.nama, ibu_kandung: p.ibu_kandung, tempat_lahir: p.tempat_lahir, tanggal_lahir: tgl(p.tanggal_lahir),
+      id: p.id, nomor_rm: p.nomor_rm, nik: p.nik, nama: p.nama, nomor_hp: p.nomor_hp, ibu_kandung: p.ibu_kandung, tempat_lahir: p.tempat_lahir, tanggal_lahir: tgl(p.tanggal_lahir),
       jenis_kelamin: p.jenis_kelamin, agama: p.agama, suku: p.suku, bahasa: p.bahasa, pekerjaan: p.pekerjaan, pendidikan: p.pendidikan, status_kawin: p.status_kawin,
       alamat: p.alamat, kode_wilayah: p.kode_wilayah, nomor_paspor: p.nomor_paspor, nomor_kitas: p.nomor_kitas, jkn_nomor_kartu: p.jkn_nomor_kartu,
       jkn_kelas_hak: p.jkn_kelas_hak, jkn_fktp_terdaftar: p.jkn_fktp_terdaftar, status_identitas: p.status_identitas, jalur_identitas: p.jalur_identitas as JalurIdentitas,
@@ -189,6 +200,29 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     return prisma.teksPersetujuan.findFirst({ where: { id, jenis, aktif: true, OR: [{ fasyankes_id: fasyankesId }, { fasyankes_id: null }] }, select: pilihTeks });
   }
 
+  async perbaiki(fasyankesId: number, id: number, oleh: number, data: DataPerbaikanPasien): Promise<boolean> {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const ada = await tx.$queryRaw<{ id: number }[]>`SELECT id FROM pasien WHERE id = ${id} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
+        if (!ada.length) return false;
+        const lama = await tx.waliKeluarga.findMany({ where: { pasien_id: id, fasyankes_id: fasyankesId }, select: { id: true } });
+        const ids = data.wali.flatMap((w) => w.id ? [w.id] : []);
+        // Keep the IDs referenced by existing consent records; never delete/recreate guardians.
+        if (ids.length !== lama.length || ids.some((waliId) => !lama.some((w) => w.id === waliId))) throw new WaliTidakSahError();
+        const { wali, tanggal_lahir, ...pasien } = data;
+        await tx.pasien.updateMany({ where: { id, fasyankes_id: fasyankesId }, data: { ...pasien, tanggal_lahir: tglDb(tanggal_lahir) } });
+        for (const { id: waliId, ...w } of wali) {
+          if (waliId) await tx.waliKeluarga.updateMany({ where: { id: waliId, pasien_id: id, fasyankes_id: fasyankesId }, data: w });
+          else await tx.waliKeluarga.create({ data: { ...w, pasien_id: id, fasyankes_id: fasyankesId, dibuat_oleh: oleh } });
+        }
+        return true;
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002' && String(e.meta?.target ?? '').includes('nik')) throw new NikKembarError();
+      throw e;
+    }
+  }
+
   async daftarkan(fasyankesId: number, oleh: number, d: DataRegistrasi): Promise<HasilDaftar> {
     // Baris urutan dipastikan ada di luar transaksi agar kenaikan di dalamnya bebas balapan pembuatan pertama.
     try {
@@ -201,7 +235,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
         const urutan = await tx.urutanNomorRm.update({ where: { fasyankes_id: fasyankesId }, data: { terakhir: { increment: 1 } } });
         const pasien = await tx.pasien.create({
           data: {
-            fasyankes_id: fasyankesId, nomor_rm: formatNomorRm(urutan.terakhir), nik: d.nik, nama: d.nama, ibu_kandung: d.ibu_kandung, tempat_lahir: d.tempat_lahir,
+            fasyankes_id: fasyankesId, nomor_rm: formatNomorRm(urutan.terakhir), nik: d.nik, nama: d.nama, nomor_hp: d.nomor_hp, ibu_kandung: d.ibu_kandung, tempat_lahir: d.tempat_lahir,
             tanggal_lahir: tglDb(d.tanggal_lahir), jenis_kelamin: d.jenis_kelamin, agama: d.agama, suku: d.suku, bahasa: d.bahasa, pekerjaan: d.pekerjaan,
             pendidikan: d.pendidikan, status_kawin: d.status_kawin, alamat: d.alamat, kode_wilayah: d.kode_wilayah, nomor_paspor: d.nomor_paspor,
             nomor_kitas: d.nomor_kitas, jkn_nomor_kartu: d.jkn_nomor_kartu, jkn_kelas_hak: d.jkn_kelas_hak, jkn_fktp_terdaftar: d.jkn_fktp_terdaftar,

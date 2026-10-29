@@ -1,3 +1,4 @@
+import { TautanKelolaMaster } from '../komponen/tautan-kelola-master';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KELAS_RAWAT, RAWAT_INAP, STATUS_BED } from '@klira/shared';
 import type { BedDto, PapanDto } from '@klira/shared';
@@ -59,6 +60,7 @@ export function HalamanRawatInap() {
     <>
       <Sebaris tag="header" jarak="md" bungkus>
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{RAWAT_INAP.judul}</h1>
+        <TautanKelolaMaster kelompok="ruangan" />
         {papan && <span style={{ color: token.warna.teksRedup }}>{P.ringkasan(papan.ringkasan.total, papan.ringkasan.terisi, papan.ringkasan.kosong)}</span>}
         {bisaInput && <Tombol type="button" onClick={() => setModal({ jenis: 'admisi' })}>{P.admisi}</Tombol>}
       </Sebaris>

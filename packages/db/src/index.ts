@@ -17,3 +17,6 @@ export { seedTeksPersetujuan, TEKS_GENERAL_CONSENT_V1, TEKS_PERSETUJUAN_TINDAKAN
 export { PEMERIKSAAN_CONTOH, seedPenunjangContoh } from './seed/penunjang';
 export { bacaCsvTerminologi, imporTerminologiCsv, seedTerminologiContoh, TERMINOLOGI_CONTOH } from './seed/terminologi';
 export { bacaCsvKfa, imporKfaCsv, seedKfaContoh, KFA_CONTOH } from './seed/kfa';
+export * from './retensi-whatsapp';
+
+export * from './retensi-instagram';

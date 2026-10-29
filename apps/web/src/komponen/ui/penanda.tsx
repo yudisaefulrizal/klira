@@ -22,7 +22,7 @@ export function Penanda({ ukuran, bentuk = 'bulat', isi = 'penuh', style, ...sis
         fontSize: ukuran === 'logo' ? undefined : token.huruf.ukuran.kecil,
         fontWeight: ukuran === 'logo' ? token.huruf.berat.tebal : undefined,
         background: isi === 'penuh' ? token.warna.utama : 'transparent',
-        color: isi === 'penuh' ? token.warna.permukaan : 'inherit',
+        color: isi === 'penuh' ? token.warna.diAtasUtama : 'inherit',
         border: isi === 'penuh' ? 'none' : garis(isi === 'garisUtama' ? token.warna.utama : token.warna.garisIsian),
         ...style,
       }}

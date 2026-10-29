@@ -1,0 +1,22 @@
+{
+  "name": "@klira/whatsapp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "start": "node ../../skrip/dengan-env.mjs node dist/main.js",
+    "test": "npm run build && node --test test/profil.mjs"
+  },
+  "dependencies": {
+    "@klira/db": "*",
+    "@klira/shared": "*",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "qrcode": "^1.5.4",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/ws": "^8.18.2"
+  }
+}

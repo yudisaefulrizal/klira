@@ -10,9 +10,10 @@
   "scripts": {
     "typecheck": "npm run build -w packages/shared && npm run build -w packages/db && npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
-    "test": "node --env-file-if-exists=.env node_modules/jest/bin/jest.js",
+    "test": "node skrip/dengan-env.mjs node node_modules/jest/bin/jest.js",
     "build": "npm run build --workspaces --if-present",
-    "start": "npm run build -w apps/web && npm run build -w apps/api && node --env-file=.env apps/api/dist/main.js"
+    "start": "npm run build && node skrip/dengan-env.mjs node skrip/start.mjs",
+    "dev": "node skrip/dengan-env.mjs node skrip/dev.mjs"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

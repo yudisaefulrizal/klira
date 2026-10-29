@@ -8,3 +8,11 @@ export * from './klaim';
 export * from './pdp';
 export * from './klinis';
 export * from './penunjang';
+
+export * from './whatsapp';
+
+export * from './statistik';
+
+export * from './instagram';
+
+export * from './layar-panggilan';

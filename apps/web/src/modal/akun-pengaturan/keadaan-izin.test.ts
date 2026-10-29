@@ -14,11 +14,16 @@ const jenis = [
 const tugas = (id: number, jenis_akun_id: number, mulai: string, selesai: string | null) => ({ id, pengguna_id: 9, jenis_akun_id, mulai: `${mulai}T00:00:00.000Z`, selesai: selesai && `${selesai}T00:00:00.000Z` });
 
 describe('status dan periode', () => {
-  it('menentukan akan datang, berjalan, berakhir (selesai inklusif)', () => {
+  it('menentukan status tanggal dan batas waktu ISO eksklusif', () => {
     expect(statusPeriode('2026-11-01', null, hari)).toBe('akan_datang');
     expect(statusPeriode('2026-10-01', null, hari)).toBe('berjalan');
-    expect(statusPeriode('2026-10-01T00:00:00.000Z', '2026-10-25T00:00:00.000Z', hari)).toBe('berjalan');
+    expect(statusPeriode('2026-10-01T00:00:00.000Z', '2026-10-25T00:00:00.000Z', hari, Date.parse('2026-10-25T15:58:00Z'))).toBe('berakhir');
     expect(statusPeriode('2026-10-01', '2026-10-24', hari)).toBe('berakhir');
+  });
+  it('mencabut langsung pada detik yang sama, bukan menunggu pergantian hari', () => {
+    const waktu = Date.parse('2026-10-25T15:58:00Z');
+    expect(statusPeriode('2026-10-25T00:00:00Z', '2026-10-25T15:58:00Z', hari, waktu)).toBe('berakhir');
+    expect(statusPeriode('2026-10-25T00:00:00Z', '2026-10-25T16:00:00Z', hari, waktu)).toBe('berjalan');
   });
   it('tanggalSaja dan periodeTeks', () => {
     expect(tanggalSaja('2026-10-01T00:00:00.000Z')).toBe('2026-10-01');

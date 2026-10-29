@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root {
+  color-scheme: light;
+  --warna-di-atas-utama: #FFFFFF;
+  --warna-tirai: rgba(44, 59, 57, 0.72);
   --warna-utama: #0B6B64;
   --warna-teks: #17302E;
   --warna-latar: #F4F6F5;
@@ -40,6 +43,43 @@
   --radius-besar: 12px;
   --bayangan-kartu: 0 1px 2px rgba(23, 48, 46, 0.08);
   --bayangan-modal: 0 8px 24px rgba(23, 48, 46, 0.16);
+}
+
+:root[data-tema='gelap'] {
+  color-scheme: dark;
+  --warna-utama: #67D5C8;
+  --warna-di-atas-utama: #092E2A;
+  --warna-teks: #E4EEEB;
+  --warna-latar: #101917;
+  --warna-permukaan: #192522;
+  --warna-garis: #3B504A;
+  --warna-garis-halus: #2C3E38;
+  --warna-utama-latar: #203F39;
+  --warna-utama-gelap: #92E4DA;
+  --warna-teks-redup: #A9BDB6;
+  --warna-teks-menu: #C0D1CA;
+  --warna-garis-isian: #617B70;
+  --warna-kepala-tabel: #20312B;
+  --warna-tirai: rgba(0, 0, 0, 0.72);
+  --status-hijau-latar: #203E2C;
+  --status-hijau-teks: #9DE0AE;
+  --status-kuning-latar: #40351D;
+  --status-kuning-teks: #F2CE81;
+  --status-merah-latar: #46282B;
+  --status-merah-teks: #FFB0B0;
+  --status-biru-latar: #25384F;
+  --status-biru-teks: #ADCFFA;
+  --status-ungu-latar: #382D4B;
+  --status-ungu-teks: #D2BAF4;
+  --status-abu-latar: #303E38;
+  --status-abu-teks: #C4D2CC;
+  --bayangan-kartu: 0 1px 3px rgba(0, 0, 0, 0.24);
+  --bayangan-modal: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:focus-visible {
+  outline: 2px solid var(--warna-utama);
+  outline-offset: 3px;
 }
 
 body {

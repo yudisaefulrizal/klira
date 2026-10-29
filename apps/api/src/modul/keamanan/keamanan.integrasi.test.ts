@@ -151,18 +151,18 @@ d('keamanan, peringatan, dan jenis akun terhadap klira_uji', () => {
 
     const semua = await panggil('GET', '/peringatan-izin', 'auditor');
     expect(semua.status).toBe(200);
-    expect(semua.badan.total).toBe(3);
-    expect(semua.badan.data[0]).toMatchObject({ pengguna_nama: 'Nama auditor', ditetapkan_oleh_nama: 'Nama pimpinan', jenis_peringatan: 'nakes_tanpa_sip' });
-    expect(semua.badan.data.map((x: any) => x.waktu)).toEqual([t(15), t(10), t(5)].map((x) => x.toISOString()));
+    expect(semua.badan.data.total).toBe(3);
+    expect(semua.badan.data.data[0]).toMatchObject({ pengguna_nama: 'Nama auditor', ditetapkan_oleh_nama: 'Nama pimpinan', jenis_peringatan: 'nakes_tanpa_sip' });
+    expect(semua.badan.data.data.map((x: any) => x.waktu)).toEqual([t(15), t(10), t(5)].map((x) => x.toISOString()));
 
-    expect((await panggil('GET', '/peringatan-izin?jenis_peringatan=nakes_tanpa_sip', 'pimpinan')).badan.total).toBe(2);
-    expect((await panggil('GET', `/peringatan-izin?pengguna_id=${id.biasa}`, 'pimpinan')).badan.total).toBe(2);
-    expect((await panggil('GET', '/peringatan-izin?cari=Nama%20biasa', 'pimpinan')).badan.total).toBe(2);
+    expect((await panggil('GET', '/peringatan-izin?jenis_peringatan=nakes_tanpa_sip', 'pimpinan')).badan.data.total).toBe(2);
+    expect((await panggil('GET', `/peringatan-izin?pengguna_id=${id.biasa}`, 'pimpinan')).badan.data.total).toBe(2);
+    expect((await panggil('GET', '/peringatan-izin?cari=Nama%20biasa', 'pimpinan')).badan.data.total).toBe(2);
     const rentang = await panggil('GET', `/peringatan-izin?dari=${t(8).toISOString()}&sampai=${t(12).toISOString()}`, 'pimpinan');
-    expect(rentang.badan.total).toBe(1);
-    expect(rentang.badan.data[0]).toMatchObject({ jenis_peringatan: 'lihat_tak_dibatasi', diterima_untuk_akun: true });
+    expect(rentang.badan.data.total).toBe(1);
+    expect(rentang.badan.data.data[0]).toMatchObject({ jenis_peringatan: 'lihat_tak_dibatasi', diterima_untuk_akun: true });
     expect((await panggil('GET', `/peringatan-izin?dari=${t(12).toISOString()}&sampai=${t(8).toISOString()}`, 'pimpinan')).status).toBe(400);
-    expect((await panggil('GET', '/peringatan-izin?ukuran=2&halaman=2', 'pimpinan')).badan.data).toHaveLength(1);
+    expect((await panggil('GET', '/peringatan-izin?ukuran=2&halaman=2', 'pimpinan')).badan.data.data).toHaveLength(1);
     expect((await panggil('GET', '/peringatan-izin', 'biasa')).status).toBe(403);
   });
 

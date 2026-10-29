@@ -10,7 +10,7 @@ type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const gayaVarian = {
-  utama: { background: token.warna.utama, color: token.warna.permukaan, border: 'none' },
+  utama: { background: token.warna.utama, color: token.warna.diAtasUtama, border: 'none' },
   sekunder: { background: token.warna.permukaan, color: token.warna.utama, border: `${token.ukuran.garis} solid ${token.warna.garis}` },
   teks: { background: 'transparent', color: token.warna.utama, border: 'none' },
   langkah: { background: 'transparent', color: token.warna.teks, border: 'none' },

@@ -4,33 +4,50 @@ export type JendelaRiwayat = {
   removeEventListener(jenis: 'popstate', f: () => void): void;
 };
 
-const tumpukan: symbol[] = [];
+type Lapisan = { masihAda: boolean; onKembali: () => boolean };
+const pengelola = new WeakMap<JendelaRiwayat, { lapisan: Lapisan[]; abaikan: number }>();
 
 /**
- * Tombol kembali peramban menutup modal atau panel, bukan keluar dari halaman (5.1j): saat lapisan dibuka satu
- * entri riwayat ditambahkan (alamat sama). `onKembali` mengembalikan true bila lapisan benar-benar ditutup;
- * false (mis. perlu konfirmasi) memasang kembali entri riwayat. Mengembalikan fungsi pembersih: bila lapisan
- * ditutup lewat antarmuka, entri riwayat tadi dilepas dengan `back()`.
+ * Setiap lapisan menambah satu entri riwayat. Kembali peramban menutup lapisan teratas;
+ * penutupan lewat antarmuka melepas entrinya tanpa menutup lapisan di bawahnya.
  */
 export function bukaLapisanRiwayat(w: JendelaRiwayat, onKembali: () => boolean): () => void {
-  let masihAda = true;
-  const penanda = Symbol('lapisan');
-  tumpukan.push(penanda);
+  let keadaan = pengelola.get(w);
+  if (!keadaan) {
+    keadaan = { lapisan: [], abaikan: 0 };
+    pengelola.set(w, keadaan);
+    const aktif = keadaan;
+    const saatKembali = () => {
+      // back() saat pembersihan juga memicu popstate secara asinkron.
+      if (aktif.abaikan > 0) {
+        aktif.abaikan--;
+      } else {
+        const atas = aktif.lapisan[aktif.lapisan.length - 1];
+        if (atas) {
+          atas.masihAda = false;
+          if (!atas.onKembali()) {
+            w.history.pushState({ klira_lapisan: true }, '');
+            atas.masihAda = true;
+          }
+        }
+      }
+      if (aktif.lapisan.length === 0 && aktif.abaikan === 0) {
+        w.removeEventListener('popstate', saatKembali);
+        pengelola.delete(w);
+      }
+    };
+    w.addEventListener('popstate', saatKembali);
+  }
+  const lapisan: Lapisan = { masihAda: true, onKembali };
+  keadaan.lapisan.push(lapisan);
   w.history.pushState({ klira_lapisan: true }, '');
-  const saatKembali = () => {
-    // Satu kali kembali hanya menutup lapisan teratas (panel di atas modal menutup panel dahulu).
-    if (tumpukan[tumpukan.length - 1] !== penanda) return;
-    masihAda = false;
-    if (!onKembali()) {
-      w.history.pushState({ klira_lapisan: true }, '');
-      masihAda = true;
-    }
-  };
-  w.addEventListener('popstate', saatKembali);
   return () => {
-    w.removeEventListener('popstate', saatKembali);
-    const i = tumpukan.indexOf(penanda);
-    if (i >= 0) tumpukan.splice(i, 1);
-    if (masihAda) w.history.back();
+    const i = keadaan.lapisan.indexOf(lapisan);
+    if (i < 0) return;
+    keadaan.lapisan.splice(i, 1);
+    if (lapisan.masihAda) {
+      keadaan.abaikan++;
+      w.history.back();
+    }
   };
 }

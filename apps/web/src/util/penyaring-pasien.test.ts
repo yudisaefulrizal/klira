@@ -19,6 +19,23 @@ describe('keadaan di alamat', () => {
     expect(keadaanPasienDariQuery('', 'pemeriksaan')).toEqual({ cari: '', tahap: 'pemeriksaan', halaman: 1 });
     expect(keadaanPasienDariQuery('?tahap=ngawur&halaman=-2', 'resep')).toEqual({ cari: '', tahap: 'resep', halaman: 1 });
   });
+  it('tanggal bertahan saat ganti tahap dan mereset halaman', () => {
+    const k = keadaanPasienDariQuery('?tanggal=2026-10-28&tahap=batal&halaman=3', 'semua');
+    expect(ubahKeadaanPasien(k, { tanggal: '2026-10-29' }).halaman).toBe(1);
+    expect(queryPasien(ubahKeadaanPasien(k, { tahap: 'ditutup' }))).toContain('tanggal=2026-10-28');
+    expect(queryDaftarPasien({ ...k, ukuran: 20 })).toContain('tanggal=2026-10-28');
+  });
+  it('filter batal dapat diteruskan ke API', () => {
+    const k = keadaanPasienDariQuery('?tahap=batal', 'semua');
+    expect(k.tahap).toBe('batal');
+    expect(queryDaftarPasien({ ...k, ukuran: 20 })).toContain('tahap=batal');
+  });
+  it('filter selesai dapat dipilih dan diteruskan ke API', () => {
+    const k = keadaanPasienDariQuery('?tahap=ditutup', 'semua');
+    expect(k.tahap).toBe('ditutup');
+    expect(queryPasien(k)).toBe('?tahap=ditutup');
+    expect(queryDaftarPasien({ ...k, ukuran: 20 })).toContain('tahap=ditutup');
+  });
   it('query selalu memuat tahap, pilihan semua tidak tertukar bawaan', () => {
     expect(queryPasien({ cari: '', tahap: 'semua', halaman: 1 })).toBe('?tahap=semua');
     expect(queryPasien({ cari: ' Budi ', tahap: 'pemeriksaan', halaman: 2 })).toBe('?tahap=pemeriksaan&cari=Budi&halaman=2');
@@ -50,6 +67,9 @@ describe('tindakan per baris', () => {
 
   it('tanpa kunjungan: daftarkan, buka, lalu panel pendamping', () => {
     expect(jenis(baris(null))).toEqual(['daftarkan', 'buka', 'riwayat', 'keluarga']);
+  });
+  it('antrean batal dapat didaftarkan ulang tanpa tindakan pelayanan', () => {
+    expect(jenis(baris(kunj('batal')))).toEqual(['daftarkan', 'buka', 'riwayat', 'keluarga']);
   });
   it('antrean mengikuti status, diikuti tombol tahap dan panel pendamping', () => {
     expect(jenis(baris(kunj('menunggu')))).toEqual(['panggil', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);

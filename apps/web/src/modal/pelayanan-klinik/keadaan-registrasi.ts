@@ -7,6 +7,7 @@ export type WaliForm = { hubungan: string; nama: string; kontak: string };
 /** Seluruh isian modal Registrasi pasien baru; semuanya teks agar mudah disimpan sebagai draf. */
 export type KeadaanRegistrasi = {
   nama: string;
+  nomor_hp: string;
   nik: string;
   tanggal_lahir: string;
   ibu_kandung: string;
@@ -38,20 +39,20 @@ export type KeadaanRegistrasi = {
 
 /** Bidang yang tidak boleh masuk draf lokal: identitas, kontak, JKN, wali, persetujuan (komputer bersama). */
 export const BIDANG_SENSITIF_REGISTRASI = [
-  'nama', 'nik', 'tanggal_lahir', 'ibu_kandung', 'tempat_lahir', 'alamat', 'kode_wilayah', 'nomor_paspor', 'nomor_kitas', 'wali',
+  'nama', 'nomor_hp', 'nik', 'tanggal_lahir', 'ibu_kandung', 'tempat_lahir', 'alamat', 'kode_wilayah', 'nomor_paspor', 'nomor_kitas', 'wali',
   'jkn_nomor_kartu', 'jkn_kelas_hak', 'jkn_fktp_terdaftar', 'setuju', 'konfirmasi_duplikat',
 ] as const;
 
 export const awalRegistrasi = (): KeadaanRegistrasi => ({
-  nama: '', nik: '', tanggal_lahir: '', ibu_kandung: '', tempat_lahir: '', jenis_kelamin: '', tidak_cakap: false,
+  nama: '', nomor_hp: '', nik: '', tanggal_lahir: '', ibu_kandung: '', tempat_lahir: '', jenis_kelamin: '', tidak_cakap: false,
   agama: '', suku: '', bahasa: '', pekerjaan: '', pendidikan: '', status_kawin: '',
   alamat: '', kode_wilayah: '', jalur_identitas: 'nik', nomor_paspor: '', nomor_kitas: '',
   wali: [], jkn_nomor_kartu: '', jkn_kelas_hak: '', jkn_fktp_terdaftar: '',
   bentuk: 'tertulis', penandatangan: 'pasien', wali_ke: '', setuju: false, konfirmasi_duplikat: false,
 });
 
-export const JUMLAH_LANGKAH_REGISTRASI = 8;
-const L = { duplikat: 0, identitas: 1, sosial: 2, alamat: 3, wali: 4, jkn: 5, consent: 6, ringkasan: 7 } as const;
+export const JUMLAH_LANGKAH_REGISTRASI = 7;
+const L = { identitas: 0, sosial: 1, alamat: 2, wali: 3, jkn: 4, consent: 5, ringkasan: 6 } as const;
 
 /** Bentuk permintaan API dari isian (skema bersama di packages/shared memvalidasi dan menormalkan). */
 export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): RegistrasiPasienKirim {
@@ -60,6 +61,7 @@ export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): R
     jalur_identitas: k.jalur_identitas,
     nik: k.jalur_identitas === 'tanpa_identitas' ? undefined : k.nik,
     nama: k.nama,
+    nomor_hp: k.nomor_hp,
     ibu_kandung: k.ibu_kandung,
     tempat_lahir: k.tempat_lahir,
     tanggal_lahir: k.tanggal_lahir,
@@ -83,7 +85,7 @@ export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): R
 }
 
 const LANGKAH_BIDANG: Record<string, number> = {
-  nama: L.identitas, nik: L.identitas, tanggal_lahir: L.identitas, ibu_kandung: L.identitas, tempat_lahir: L.identitas, jenis_kelamin: L.identitas,
+  nomor_hp: L.identitas, nama: L.identitas, nik: L.identitas, tanggal_lahir: L.identitas, ibu_kandung: L.identitas, tempat_lahir: L.identitas, jenis_kelamin: L.identitas,
   tidak_cakap: L.identitas,
   agama: L.sosial, suku: L.sosial, bahasa: L.sosial, pekerjaan: L.sosial, pendidikan: L.sosial, status_kawin: L.sosial,
   alamat: L.alamat, kode_wilayah: L.alamat, jalur_identitas: L.alamat, nomor_paspor: L.alamat, nomor_kitas: L.alamat,
@@ -100,7 +102,7 @@ export type GalatRegistrasi = {
 };
 
 /**
- * Galat per langkah dan per bidang. Validasi isian memakai skema Zod bersama; langkah Cari duplikat memakai
+ * Galat per langkah dan per bidang. Validasi isian memakai skema Zod bersama; langkah Identitas memakai
  * aturan tambahan: kandidat harus ditinjau (NIK sama memblokir, selain itu dinyatakan berbeda).
  */
 export function galatRegistrasi(k: KeadaanRegistrasi, teksId: number | null, kandidat: readonly KandidatDuplikatDto[] | null): GalatRegistrasi {
@@ -119,8 +121,8 @@ export function galatRegistrasi(k: KeadaanRegistrasi, teksId: number | null, kan
     bidang['persetujuan.teks_persetujuan_id'] = REGISTRASI.consentTidakAda;
     perLangkah[L.consent] ??= REGISTRASI.consentTidakAda;
   }
-  if (kandidat?.some((c) => c.alasan === 'nik')) perLangkah[L.duplikat] = REGISTRASI.duplikatNikBlokir;
-  else if (kandidat?.length && !k.konfirmasi_duplikat) perLangkah[L.duplikat] = REGISTRASI.duplikatPerluTinjau;
+  if (kandidat?.some((c) => c.alasan === 'nik')) perLangkah[L.identitas] = REGISTRASI.duplikatNikBlokir;
+  else if (kandidat?.length && !k.konfirmasi_duplikat) perLangkah[L.identitas] = REGISTRASI.duplikatPerluTinjau;
   return { perLangkah, bidang };
 }
 
@@ -179,7 +181,7 @@ export function ringkasanRegistrasi(k: KeadaanRegistrasi, teks: TeksPersetujuanD
       judul: R.identitas,
       baris: [
         { label: d.nama, nilai: nilai(k.nama) }, { label: d.nik, nilai: nilai(k.nik) }, { label: d.tanggalLahir, nilai: nilai(k.tanggal_lahir) },
-        { label: d.ibu, nilai: nilai(k.ibu_kandung) }, { label: d.tempatLahir, nilai: nilai(k.tempat_lahir) },
+        { label: 'Nomor HP pasien', nilai: nilai(k.nomor_hp) }, { label: d.ibu, nilai: nilai(k.ibu_kandung) }, { label: d.tempatLahir, nilai: nilai(k.tempat_lahir) },
         { label: d.jenisKelamin, nilai: k.jenis_kelamin ? DAFTAR_PASIEN.jenisKelamin[k.jenis_kelamin] : REGISTRASI.kosongStrip },
         { label: d.identitas, nilai: STATUS_IDENTITAS.label(statusIdentitasDari(k.jalur_identitas)) },
         ...(k.tidak_cakap ? [{ label: d.tidakCakap, nilai: DAFTAR_PASIEN.detail.tidakCakap }] : []),

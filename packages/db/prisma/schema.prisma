@@ -137,6 +137,7 @@ model Fasyankes {
   kunjungan            Kunjungan[]
   peserta_kunjungan    PesertaKunjungan[]
   antrean              Antrean[]
+  event_panggilan      EventPanggilan[]
   persetujuan          Persetujuan[]
   urutan_nomor_rm      UrutanNomorRm?
 
@@ -228,6 +229,7 @@ model Pasien {
   nomor_rm           String          @db.VarChar(50)
   nik                String?         @db.Char(16)
   nama               String          @db.VarChar(200)
+  nomor_hp           String?         @db.VarChar(20)
   ibu_kandung        String?         @db.VarChar(200)
   tempat_lahir       String?         @db.VarChar(100)
   tanggal_lahir      DateTime        @db.Date
@@ -1853,4 +1855,204 @@ model ProsesorData {
 
   @@index([fasyankes_id])
   @@map("prosesor_data")
+}
+
+// Satu nomor WhatsApp per instalasi. Pemilik ditentukan oleh fasyankes yang menghubungkan.
+model WaKoneksi {
+  id Int @id @default(1)
+  fasyankes_id Int
+  aktif Boolean @default(false)
+  generasi Int @default(0)
+  status String @default("terputus") @db.VarChar(30)
+  nomor String? @db.VarChar(40)
+  qr String? @db.LongText
+  detak DateTime? @db.DateTime(3)
+  pemilik_engine String? @db.VarChar(36)
+  sewa_sampai DateTime? @db.DateTime(3)
+  @@map("wa_koneksi")
+}
+model WaAuth {
+  id String @id @db.VarChar(200)
+  isi String @db.LongText
+  @@map("wa_auth")
+}
+model WaPercakapan {
+  id Int @id @default(autoincrement())
+  fasyankes_id Int
+  jid String @db.VarChar(100)
+  nama String @db.VarChar(200)
+  foto_profil String? @db.Text
+  foto_periksa_setelah DateTime? @db.DateTime(3)
+  pasien_id Int?
+  status String @default("baru") @db.VarChar(20)
+  penanggung_jawab Int?
+  diperbarui_pada DateTime @default(now()) @db.DateTime(3)
+  pesan WaPesan[]
+  baca WaBaca[]
+  @@unique([fasyankes_id, jid])
+  @@index([fasyankes_id, diperbarui_pada])
+  @@map("wa_percakapan")
+}
+model WaPesan {
+  id Int @id @default(autoincrement())
+  percakapan_id Int
+  wa_id String? @unique @db.VarChar(200)
+  arah String @db.VarChar(10)
+  isi String @db.LongText
+  jenis String @default("text") @db.VarChar(20)
+  media_id String? @db.VarChar(36)
+  status String @db.VarChar(20)
+  dibuat_oleh Int?
+  dibuat_pada DateTime @default(now()) @db.DateTime(3)
+  percakapan WaPercakapan @relation(fields: [percakapan_id], references: [id])
+  @@index([percakapan_id, id])
+  @@index([status, arah])
+  @@map("wa_pesan")
+}
+model WaBaca {
+  percakapan_id Int
+  pengguna_id Int
+  pesan_id Int @default(0)
+  percakapan WaPercakapan @relation(fields: [percakapan_id], references: [id])
+  @@id([percakapan_id, pengguna_id])
+  @@map("wa_baca")
+}
+model WaMedia {
+  id String @id @db.VarChar(36)
+  fasyankes_id Int
+  isi String @db.LongText
+  mime String @db.VarChar(100)
+  nama String @db.VarChar(200)
+  @@map("wa_media")
+}
+
+// Riwayat otomatis via trigger: seluruh jalur klinis/farmasi/kasir tercakup atomik.
+model RiwayatTahapLayanan {
+  id Int @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  tahap TahapLayanan
+  masuk DateTime @db.DateTime(3)
+  keluar DateTime? @db.DateTime(3)
+  @@index([fasyankes_id, masuk])
+  @@index([kunjungan_id, keluar])
+  @@map("riwayat_tahap_layanan")
+}
+
+// Satu akun Instagram untuk satu instalasi. Kunci penyedia dan webhook terenkripsi.
+model IgKoneksi {
+  id Int @id @default(1)
+  fasyankes_id Int
+  aktif Boolean @default(false)
+  status String @default("terputus") @db.VarChar(30)
+  akun_id String @db.VarChar(100)
+  username String @db.VarChar(100)
+  // Kolom legacy dipertahankan untuk migrasi tanpa menghapus data.
+  api_key String? @db.LongText
+  webhook_secret String? @db.LongText
+  webhook_id String? @db.VarChar(100)
+  penyedia String @default("meta") @db.VarChar(20)
+  oauth_user_id String? @db.VarChar(100)
+  access_token String? @db.LongText
+  token_berakhir DateTime? @db.DateTime(3)
+  token_diperbarui DateTime? @db.DateTime(3)
+  generasi Int @default(0)
+  webhook_aktif Boolean @default(false)
+  @@map("ig_koneksi")
+}
+model IgPercakapan {
+  id Int @id @default(autoincrement())
+  fasyankes_id Int
+  jid String @db.VarChar(100)
+  nama String @db.VarChar(200)
+  foto_profil String? @db.Text
+  profil_diperbarui_pada DateTime? @db.DateTime(3)
+  pasien_id Int?
+  status String @default("baru") @db.VarChar(20)
+  penanggung_jawab Int?
+  diperbarui_pada DateTime @default(now()) @db.DateTime(3)
+  pesan IgPesan[]
+  baca IgBaca[]
+  @@unique([fasyankes_id, jid])
+  @@index([fasyankes_id, diperbarui_pada])
+  @@map("ig_percakapan")
+}
+model IgPesan {
+  id Int @id @default(autoincrement())
+  percakapan_id Int
+  ig_id String? @unique @db.VarChar(200)
+  arah String @db.VarChar(10)
+  isi String @db.LongText
+  jenis String @default("text") @db.VarChar(20)
+  media_id String? @db.VarChar(36)
+  status String @db.VarChar(20)
+  dibuat_oleh Int?
+  dibuat_pada DateTime @default(now()) @db.DateTime(3)
+  percakapan IgPercakapan @relation(fields: [percakapan_id], references: [id])
+  @@index([percakapan_id, id])
+  @@index([status, arah])
+  @@map("ig_pesan")
+}
+model IgBaca {
+  percakapan_id Int
+  pengguna_id Int
+  pesan_id Int @default(0)
+  percakapan IgPercakapan @relation(fields: [percakapan_id], references: [id])
+  @@id([percakapan_id, pengguna_id])
+  @@map("ig_baca")
+}
+model IgMedia {
+  id String @id @db.VarChar(36)
+  fasyankes_id Int
+  isi String @db.LongText
+  mime String @db.VarChar(100)
+  nama String @db.VarChar(200)
+  @@map("ig_media")
+}
+
+// Tombstone nonkonten untuk deduplikasi webhook, tetap ada sesudah retensi pesan.
+model IgEvent {
+  id String @id @db.VarChar(64)
+  @@map("ig_event")
+}
+
+model IgOauthState {
+  hash String @id @db.VarChar(64)
+  pengguna_id Int
+  fasyankes_id Int
+  sesi_hash String @db.VarChar(64)
+  generasi Int
+  berakhir DateTime @db.DateTime(3)
+  @@index([berakhir])
+  @@map("ig_oauth_state")
+}
+model IgMediaPublik {
+  token_hash String @id @db.VarChar(64)
+  media_id String @db.VarChar(36)
+  generasi Int
+  berakhir DateTime @db.DateTime(3)
+  @@index([berakhir])
+  @@map("ig_media_publik")
+}
+model IgPenghapusan {
+  kode String @id @db.VarChar(64)
+  dibuat_pada DateTime @default(now()) @db.DateTime(3)
+  @@map("ig_penghapusan")
+}
+
+
+// Log publik persisten: satu baris untuk setiap klik panggil/panggil ulang.
+model EventPanggilan {
+  id             Int      @id @default(autoincrement())
+  fasyankes_id   Int
+  poli_id        Int
+  poli_nama      String   @db.VarChar(200)
+  kode           String   @db.VarChar(32)
+  tanggal        DateTime @db.Date
+  waktu_panggil  DateTime @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+
+  @@index([fasyankes_id, tanggal, id])
+  @@map("event_panggilan")
 }

@@ -2,7 +2,7 @@ import { aksiAntreanTersedia, NILAI_TAHAP_FILTER } from '@klira/shared';
 import type { AksiAntrean, AksiIzin, PasienBarisDto, TahapFilter } from '@klira/shared';
 
 /** Keadaan Daftar pasien yang disimpan di alamat (5.1g, 5.1k): pencarian, tahap layanan, halaman. */
-export type KeadaanPasien = { cari: string; tahap: TahapFilter; halaman: number };
+export type KeadaanPasien = { cari: string; tahap: TahapFilter; halaman: number; tanggal?: string };
 
 const tahapSah = (t: string | null): t is TahapFilter => !!t && (NILAI_TAHAP_FILTER as readonly string[]).includes(t);
 
@@ -25,6 +25,7 @@ export function keadaanPasienDariQuery(search: string, bawaan: TahapFilter): Kea
   const halaman = Number(q.get('halaman'));
   const tahap = q.get('tahap');
   return {
+    ...(q.get('tanggal') ? { tanggal: q.get('tanggal')! } : {}),
     cari: (q.get('cari') ?? '').trim(),
     tahap: tahapSah(tahap) ? tahap : bawaan,
     halaman: Number.isInteger(halaman) && halaman >= 1 ? halaman : 1,
@@ -34,6 +35,7 @@ export function keadaanPasienDariQuery(search: string, bawaan: TahapFilter): Kea
 /** Query string selalu memuat tahap (agar pilihan "Semua" tidak tertukar bawaan pekerjaan). */
 export function queryPasien(k: KeadaanPasien): string {
   const q = new URLSearchParams({ tahap: k.tahap });
+  if (k.tanggal) q.set('tanggal', k.tanggal);
   if (k.cari.trim()) q.set('cari', k.cari.trim());
   if (k.halaman > 1) q.set('halaman', String(k.halaman));
   return `?${q.toString()}`;
@@ -41,7 +43,7 @@ export function queryPasien(k: KeadaanPasien): string {
 
 /** Mengubah pencarian atau tahap kembali ke halaman pertama; ganti halaman mempertahankan penyaring. */
 export function ubahKeadaanPasien(k: KeadaanPasien, perubahan: Partial<KeadaanPasien>): KeadaanPasien {
-  const berubah = (perubahan.cari !== undefined && perubahan.cari !== k.cari) || (perubahan.tahap !== undefined && perubahan.tahap !== k.tahap);
+  const berubah = (perubahan.tanggal !== undefined && perubahan.tanggal !== k.tanggal) || (perubahan.cari !== undefined && perubahan.cari !== k.cari) || (perubahan.tahap !== undefined && perubahan.tahap !== k.tahap);
   return { ...k, ...perubahan, halaman: perubahan.halaman ?? (berubah ? 1 : k.halaman) };
 }
 
@@ -56,6 +58,9 @@ type Boleh = (fitur: string, aksi: AksiIzin) => boolean;
 export function aksiBaris(baris: PasienBarisDto, boleh: Boleh): AksiBaris[] {
   const hasil: AksiBaris[] = [];
   const k = baris.kunjungan;
+  if (k?.antrean?.status === 'batal') {
+    return aksiBaris({ ...baris, kunjungan: null }, boleh);
+  }
   if (k?.antrean && boleh('kunjungan', 'perbaikan')) {
     for (const jenis of aksiAntreanTersedia(k.antrean.status)) hasil.push({ jenis });
   }

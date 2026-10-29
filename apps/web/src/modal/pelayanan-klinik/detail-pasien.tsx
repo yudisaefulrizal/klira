@@ -21,7 +21,7 @@ export function bagianDetailPasien(p: PasienDetailDto): BagianRingkasan[] {
     {
       judul: d.nama,
       baris: [
-        { label: d.nomorRm, nilai: p.nomor_rm }, { label: d.nik, nilai: strip(p.nik) }, { label: d.ibu, nilai: strip(p.ibu_kandung) },
+        { label: d.nomorRm, nilai: p.nomor_rm }, { label: d.nik, nilai: strip(p.nik) }, { label: 'Nomor HP pasien', nilai: strip(p.nomor_hp) }, { label: d.ibu, nilai: strip(p.ibu_kandung) },
         { label: d.tempatLahir, nilai: strip(p.tempat_lahir) }, { label: d.tanggalLahir, nilai: p.tanggal_lahir },
         { label: d.jenisKelamin, nilai: DAFTAR_PASIEN.jenisKelamin[p.jenis_kelamin] },
         { label: d.agama, nilai: strip(p.agama) }, { label: d.suku, nilai: strip(p.suku) }, { label: d.bahasa, nilai: strip(p.bahasa) },

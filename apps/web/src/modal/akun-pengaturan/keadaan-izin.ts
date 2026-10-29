@@ -9,12 +9,15 @@ export type StatusPeriode = keyof typeof STATUS_PERIODE.peta;
 /** Potong tanggal-waktu ISO dari API menjadi YYYY-MM-DD. */
 export const tanggalSaja = (t: string | null | undefined): string => (t ? t.slice(0, 10) : '');
 
-/** Status periode menurut hari ini (YYYY-MM-DD, perbandingan teks sah karena format tetap). Selesai bersifat inklusif. */
-export function statusPeriode(mulai: string, selesai: string | null | undefined, hariIni: string): StatusPeriode {
-  const m = tanggalSaja(mulai);
-  const s = tanggalSaja(selesai);
-  if (m > hariIni) return 'akan_datang';
-  if (s && s < hariIni) return 'berakhir';
+/** Waktu ISO dari API mengikuti batas eksklusif mesin izin; tanggal formulir tetap inklusif. */
+export function statusPeriode(mulai: string, selesai: string | null | undefined, hariIni: string, sekarang = Date.now()): StatusPeriode {
+  if (mulai.includes('T') || selesai?.includes('T')) {
+    if (selesai && Date.parse(selesai) <= sekarang) return 'berakhir';
+    if (Date.parse(mulai) > sekarang) return 'akan_datang';
+    return 'berjalan';
+  }
+  if (mulai > hariIni) return 'akan_datang';
+  if (selesai && selesai < hariIni) return 'berakhir';
   return 'berjalan';
 }
 

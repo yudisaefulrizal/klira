@@ -2,7 +2,7 @@ export const AKSI_IZIN = ['input', 'perbaikan', 'lihat'] as const;
 export const CAKUPAN_IZIN = ['unit', 'layanan'] as const;
 export const FITUR_IZIN = [
   'pasien', 'pendaftaran', 'kunjungan', 'klinis', 'resep', 'farmasi', 'penunjang', 'persetujuan', 'kasir', 'klaim',
-  'rekam-medis', 'akses', 'satusehat', 'pdp', 'audit', 'master', 'profil-klinik',
+  'rekam-medis', 'akses', 'satusehat', 'pdp', 'audit', 'master', 'profil-klinik', 'whatsapp', 'instagram',
 ] as const;
 
 export type AksiIzin = (typeof AKSI_IZIN)[number];
@@ -10,9 +10,11 @@ export type CakupanIzin = (typeof CAKUPAN_IZIN)[number];
 export type FiturIzin = (typeof FITUR_IZIN)[number];
 export type IzinAwal = { fitur: string; aksi: AksiIzin; cakupan: CakupanIzin };
 
-/** Katalog izin: fitur x aksi x cakupan. */
-export const IZIN_AWAL: IzinAwal[] = FITUR_IZIN.flatMap((fitur) =>
-  AKSI_IZIN.flatMap((aksi) => CAKUPAN_IZIN.map((cakupan) => ({ fitur, aksi, cakupan }))),
+/** Katalog izin: fitur x aksi x cakupan; WhatsApp memakai satu izin untuk seluruh fiturnya. */
+export const IZIN_AWAL: IzinAwal[] = FITUR_IZIN.flatMap<IzinAwal>((fitur) =>
+  (fitur === 'whatsapp' || fitur === 'instagram')
+    ? [{ fitur, aksi: 'lihat' as const, cakupan: 'unit' as const }]
+    : AKSI_IZIN.flatMap((aksi) => CAKUPAN_IZIN.map((cakupan) => ({ fitur, aksi, cakupan }))),
 );
 
 /** `lihat_saja`: fitur yang hanya diberi aksi lihat (mis. `pasien` untuk peran non-pendaftaran). */
@@ -21,11 +23,11 @@ export type JenisAkunAwal = { nama: string; syarat_profesi?: string; fitur: Fitu
 /** Paket awal 12 jenis akun (bagian 2.1; contoh, setelah dibuat menjadi milik klinik). */
 export const JENIS_AKUN_AWAL: JenisAkunAwal[] = [
   { nama: 'Admin vendor', fitur: ['akses', 'satusehat'] },
-  { nama: 'Pimpinan fasyankes', fitur: ['akses', 'audit', 'rekam-medis', 'master', 'profil-klinik'] },
+  { nama: 'Pimpinan fasyankes', fitur: ['whatsapp', 'akses', 'audit', 'rekam-medis', 'master', 'profil-klinik'] },
   { nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', fitur: ['klinis', 'resep', 'kunjungan', 'persetujuan'], lihat_saja: ['pasien', 'penunjang'] },
   { nama: 'Perawat/Bidan/Nakes lain', syarat_profesi: 'nakes ber-SIP', fitur: ['klinis', 'kunjungan'], lihat_saja: ['pasien'] },
   { nama: 'Perekam Medis dan Informasi Kesehatan', fitur: ['pasien', 'kunjungan', 'rekam-medis', 'pendaftaran'], lihat_saja: ['persetujuan'] },
-  { nama: 'Petugas pendaftaran', fitur: ['pasien', 'kunjungan', 'pendaftaran'] },
+  { nama: 'Petugas pendaftaran', fitur: ['whatsapp', 'pasien', 'kunjungan', 'pendaftaran'] },
   { nama: 'Petugas klaim/kasir', fitur: ['kasir', 'klaim'], lihat_saja: ['pasien'] },
   { nama: 'Apoteker/tenaga kefarmasian', syarat_profesi: 'tenaga kefarmasian', fitur: ['farmasi'], lihat_saja: ['pasien'] },
   { nama: 'Analis lab', fitur: ['penunjang'], lihat_saja: ['pasien'] },
@@ -76,6 +78,8 @@ export type HalamanMenu = { path: string; label: string; fitur: readonly FiturIz
 /** Halaman menu (3.1) dan fitur yang membukanya; null = semua akun yang sudah masuk. */
 export const HALAMAN_MENU: readonly HalamanMenu[] = [
   { path: HALAMAN_AWAL.daftarPasien, label: 'Daftar pasien', fitur: FITUR_AKSES_PASIEN },
+  { path: '/statistik', label: 'Statistik pelayanan', fitur: ['kunjungan', 'rekam-medis'] },
+  { path: '/pesan', label: 'Pesan', fitur: ['whatsapp', 'instagram'] },
   { path: '/rawat-inap', label: 'Rawat inap', fitur: ['klinis'] },
   { path: '/penunjang', label: 'Penunjang', fitur: ['penunjang'] },
   { path: '/farmasi', label: 'Farmasi', fitur: ['farmasi'] },
@@ -83,7 +87,7 @@ export const HALAMAN_MENU: readonly HalamanMenu[] = [
   { path: '/rekam-medis', label: 'Rekam medis', fitur: ['rekam-medis', 'klinis'] },
   { path: '/satusehat', label: 'SATUSEHAT', fitur: ['satusehat'] },
   { path: '/pelindungan-data', label: 'Pelindungan data', fitur: ['pdp'] },
-  { path: '/pengaturan', label: 'Pengaturan', fitur: ['akses', 'audit', 'satusehat', 'master', 'profil-klinik'] },
+  { path: '/pengaturan', label: 'Pengaturan', fitur: ['akses', 'audit', 'satusehat', 'master', 'profil-klinik', 'whatsapp', 'instagram'] },
   { path: HALAMAN_AWAL.berandaTugas, label: 'Beranda tugas', fitur: null },
 ];
 

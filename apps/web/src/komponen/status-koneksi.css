@@ -1,0 +1,13 @@
+.status-koneksi{display:flex;align-items:center;gap:8px;margin-left:6px;padding-left:12px;border-left:1px solid var(--warna-garis);flex-shrink:0}
+.status-koneksi-ikon{position:relative;display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;color:var(--warna-teks-redup);cursor:help}
+.status-koneksi-ikon>svg:first-child{width:22px;height:22px}
+.status-koneksi-ikon:hover,.status-koneksi-ikon:focus-visible{background:var(--warna-latar)}
+.status-koneksi-penanda{position:absolute;right:0;bottom:0;width:12px;height:12px;border-radius:50%;box-shadow:0 0 0 2px var(--warna-permukaan)}
+.status-koneksi-ikon[data-nada='baik']{color:var(--status-hijau-teks)}
+.status-koneksi-ikon[data-nada='gagal']{color:var(--status-merah-teks)}
+.status-koneksi-ikon[data-nada='tunggu']{color:var(--status-kuning-teks)}
+.status-koneksi-ikon[data-nada='netral']{color:var(--warna-teks-redup)}
+@media(max-width:480px){.status-koneksi{gap:4px;padding-left:8px;margin-left:0}.pemilih-tema-label{display:none}.pemilih-tema-opsi span{display:none}.pemilih-tema-opsi{padding-inline:9px}}
+
+.status-koneksi-ikon::after{content:attr(data-tooltip);position:absolute;top:calc(100% + 9px);right:0;width:max-content;max-width:min(320px,85vw);padding:8px 10px;border:1px solid var(--warna-garis);border-radius:8px;background:var(--warna-permukaan);color:var(--warna-teks);font-size:var(--huruf-kecil);font-weight:400;line-height:1.5;box-shadow:var(--bayangan-kartu);opacity:0;visibility:hidden;pointer-events:none;z-index:1000}
+.status-koneksi-ikon:hover::after,.status-koneksi-ikon:focus::after{opacity:1;visibility:visible}

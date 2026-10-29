@@ -1,5 +1,15 @@
+import { HalamanKelolaMaster } from './halaman/kelola-master';
+import { KELOMPOK_MASTER } from './util/lokasi-master';
+import { HalamanLayarPanggilan } from './halaman/layar-panggilan';
+import { PenyediaPesan as PenyediaInstagram } from './komponen/instagram/konteks-pesan';
+import { PanelPesan as PanelInstagram } from './komponen/instagram/pesan';
+import { HalamanStatistik } from './halaman/statistik';
+import { HalamanPesan } from './halaman/pesan';
+import { PanelPesan } from './komponen/pesan/pesan';
+import { PenyediaPesan } from './komponen/pesan/konteks-pesan';
 import { useEffect } from 'react';
 import type { ReactElement } from 'react';
+import { PemilihTema } from './komponen/pemilih-tema';
 import { HALAMAN_AWAL, HALAMAN_MENU } from '@klira/shared';
 import { TataLetak } from './komponen/tata-letak';
 import { HalamanBerandaTugas } from './halaman/beranda-tugas';
@@ -28,9 +38,11 @@ const HALAMAN_TANPA_MENU: Record<string, () => ReactElement> = {
 const HALAMAN_MENU_ISI: Record<string, () => ReactElement> = Object.fromEntries(
   HALAMAN_MENU.map((h) => [h.path, () => <HalamanSementara judul={h.label} />]),
 );
-Object.assign(HALAMAN_MENU_ISI, {
+Object.assign(HALAMAN_MENU_ISI, Object.fromEntries(KELOMPOK_MASTER.map(k => [k.path, HalamanKelolaMaster])), {
   [HALAMAN_AWAL.daftarPasien]: HalamanDaftarPasien,
   [HALAMAN_AWAL.berandaTugas]: HalamanBerandaTugas,
+  '/statistik': HalamanStatistik,
+  '/pesan': HalamanPesan,
   '/pengaturan': HalamanPengaturan,
   '/penunjang': HalamanPenunjang,
   '/farmasi': HalamanFarmasi,
@@ -57,10 +69,12 @@ function Perute() {
 }
 
 export function App() {
+  if (/^\/layar-panggilan(?:\/|$)/.test(window.location.pathname)) return <HalamanLayarPanggilan />;
   return (
     <PenyediaPengguna>
+      <PemilihTema />
       <PenyediaNavigasi>
-        <Perute />
+        <PenyediaPesan><PenyediaInstagram><Perute /><PanelPesan /><PanelInstagram /></PenyediaInstagram></PenyediaPesan>
       </PenyediaNavigasi>
     </PenyediaPengguna>
   );

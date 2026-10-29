@@ -98,7 +98,7 @@ export function bentukPermintaan(k: KeadaanAkun, konfirmasi?: KonfirmasiPeringat
   };
 }
 
-export const labelIzin = (i: Pick<IzinKatalog, 'fitur' | 'aksi' | 'cakupan'>): string => `${i.fitur} · ${i.aksi} · ${i.cakupan}`;
+export const labelIzin = (i: Pick<IzinKatalog, 'fitur' | 'aksi' | 'cakupan'>): string => i.fitur === 'instagram' ? 'Instagram' : i.fitur === 'whatsapp' ? 'WhatsApp' : `${i.fitur} · ${i.aksi} · ${i.cakupan}`;
 
 /**
  * Pilihan izin untuk langkah izin tambahan atau pengurangan: Tambah = izin di luar paket jenis terpilih,

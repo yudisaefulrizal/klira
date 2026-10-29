@@ -8,12 +8,12 @@
     "build": "prisma generate && tsc",
     "generate": "prisma generate",
     "validate": "prisma validate",
-    "migrasi:dev": "node --env-file=../../.env ../../node_modules/prisma/build/index.js migrate dev",
-    "migrasi:terapkan": "node --env-file=../../.env ../../node_modules/prisma/build/index.js migrate deploy",
-    "seed": "node --env-file=../../.env dist/seed/seed.js",
-    "seed:wilayah": "node --env-file=../../.env dist/seed/wilayah.js",
-    "seed:terminologi": "node --env-file=../../.env dist/seed/terminologi.js",
-    "seed:kfa": "node --env-file=../../.env dist/seed/kfa.js"
+    "migrasi:dev": "node ../../skrip/dengan-env.mjs node ../../node_modules/prisma/build/index.js migrate dev",
+    "migrasi:terapkan": "node ../../skrip/dengan-env.mjs node ../../node_modules/prisma/build/index.js migrate deploy",
+    "seed": "node ../../skrip/dengan-env.mjs node dist/seed/seed.js",
+    "seed:wilayah": "node ../../skrip/dengan-env.mjs node dist/seed/wilayah.js",
+    "seed:terminologi": "node ../../skrip/dengan-env.mjs node dist/seed/terminologi.js",
+    "seed:kfa": "node ../../skrip/dengan-env.mjs node dist/seed/kfa.js"
   },
   "dependencies": {
     "@klira/shared": "*",

@@ -1,12 +1,12 @@
 import { REGISTRASI, statusIdentitasDari } from '@klira/shared';
 import type {
-  CekDuplikatMasukan, DaftarPasienDto, FilterPasien, KandidatDuplikatDto, PasienBaruDto, PasienDetailDto, PenggunaSaya, RegistrasiPasienMasukan, TeksPersetujuanDto,
+  PerbaikanPasienMasukan, CekDuplikatMasukan, DaftarPasienDto, FilterPasien, KandidatDuplikatDto, PasienBaruDto, PasienDetailDto, PenggunaSaya, RegistrasiPasienMasukan, TeksPersetujuanDto,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import { gagal } from '../hasil';
 import type { Hasil } from '../hasil';
-import { NikKembarError } from './repositori';
-import type { DataRegistrasi, RepositoriPasien } from './repositori';
+import { NikKembarError, WaliTidakSahError } from './repositori';
+import type { DataPerbaikanPasien, DataRegistrasi, RepositoriPasien } from './repositori';
 
 export type DependensiPasien = { repo: RepositoriPasien; audit: PenampungAudit };
 type Pelaku = Pick<PenggunaSaya, 'id' | 'fasyankes_id'>;
@@ -23,6 +23,7 @@ export function normalkanRegistrasi(m: RegistrasiPasienMasukan, teks: TeksPerset
     status_identitas: statusIdentitasDari(jalur),
     nik: jalur === 'tanpa_identitas' ? null : kosongJadiNull(m.nik),
     nama: m.nama.trim(),
+    nomor_hp: kosongJadiNull(m.nomor_hp),
     ibu_kandung: kosongJadiNull(m.ibu_kandung),
     tempat_lahir: kosongJadiNull(m.tempat_lahir),
     tanggal_lahir: m.tanggal_lahir,
@@ -56,7 +57,7 @@ export function buatLayananPasien({ repo, audit }: DependensiPasien) {
   return {
     /** Daftar minimal (tanpa NIK atau isi rekam medis); tidak dicatat per baris, pembukaan isi dicatat di `detail`. */
     async cari(p: Pelaku, f: FilterPasien): Promise<DaftarPasienDto> {
-      return repo.cari(p.fasyankes_id, { cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
+      return repo.cari(p.fasyankes_id, { tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
     },
 
     /** Isi data pasien: pembukaan dicatat `lihat` sebelum data dilepas (gagal catat berarti tidak dilepas). */
@@ -65,6 +66,41 @@ export function buatLayananPasien({ repo, audit }: DependensiPasien) {
       if (!d) return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
       await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'lihat', entitas: 'pasien', entitas_id: id, keterangan: 'Membuka data pasien', alamat });
       return { ok: true, data: d };
+    },
+
+    async perbaiki(p: Pelaku, id: number, m: PerbaikanPasienMasukan, alamat?: string): Promise<Hasil<PasienDetailDto>> {
+      const data: DataPerbaikanPasien = {
+        jalur_identitas: m.jalur_identitas, status_identitas: statusIdentitasDari(m.jalur_identitas),
+        ...(m.nomor_hp !== undefined ? { nomor_hp: kosongJadiNull(m.nomor_hp) } : {}),
+        nama: m.nama.trim(), tanggal_lahir: m.tanggal_lahir, jenis_kelamin: m.jenis_kelamin, tidak_cakap: m.tidak_cakap,
+        nik: m.jalur_identitas === 'tanpa_identitas' ? null : kosongJadiNull(m.nik),
+        nomor_paspor: m.jalur_identitas === 'paspor' ? kosongJadiNull(m.nomor_paspor) : null,
+        nomor_kitas: m.jalur_identitas === 'kitas' ? kosongJadiNull(m.nomor_kitas) : null,
+        ibu_kandung: kosongJadiNull(m.ibu_kandung),
+        tempat_lahir: kosongJadiNull(m.tempat_lahir),
+        agama: kosongJadiNull(m.agama),
+        suku: kosongJadiNull(m.suku),
+        bahasa: kosongJadiNull(m.bahasa),
+        pekerjaan: kosongJadiNull(m.pekerjaan),
+        pendidikan: kosongJadiNull(m.pendidikan),
+        status_kawin: kosongJadiNull(m.status_kawin),
+        alamat: kosongJadiNull(m.alamat),
+        kode_wilayah: kosongJadiNull(m.kode_wilayah),
+        jkn_nomor_kartu: kosongJadiNull(m.jkn_nomor_kartu),
+        jkn_kelas_hak: kosongJadiNull(m.jkn_kelas_hak),
+        jkn_fktp_terdaftar: kosongJadiNull(m.jkn_fktp_terdaftar),
+        wali: m.wali.map((w) => ({ ...w, hubungan: w.hubungan.trim(), nama: w.nama.trim(), kontak: kosongJadiNull(w.kontak) })),
+      };
+      try {
+        if (!await repo.perbaiki(p.fasyankes_id, id, p.id, data)) return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
+      } catch (e) {
+        if (e instanceof NikKembarError) return gagal('konflik', REGISTRASI.galat.nikKembar, 'nik');
+        if (e instanceof WaliTidakSahError) return gagal('konflik', 'Data wali berubah. Tutup dan buka kembali data pasien.', 'wali');
+        throw e;
+      }
+      await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'pasien', entitas_id: id, keterangan: 'Memperbaiki data pasien dan kontak wali/keluarga', alamat });
+      const hasil = await repo.detail(p.fasyankes_id, id);
+      return hasil ? { ok: true, data: hasil } : gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
     },
 
     async cekDuplikat(p: Pelaku, k: CekDuplikatMasukan, alamat?: string): Promise<KandidatDuplikatDto[]> {

@@ -1,5 +1,6 @@
+import { DAFTAR_PERINGATAN } from '@klira/shared';
 import type { AksesEfektif, KonfirmasiPeringatan, Halaman, PeringatanIzinDto } from '@klira/shared';
-import { panggilApi } from './klien';
+import { GalatApi, panggilApi } from './klien';
 
 export type Periode = { mulai: string; selesai?: string | null };
 type DenganKonfirmasi = { konfirmasi_peringatan?: KonfirmasiPeringatan };
@@ -42,10 +43,16 @@ export const akhiriIzinAkun = (penggunaId: number, id: number, selesai: string) 
 
 export const aksesEfektif = (penggunaId: number) => panggilApi<AksesEfektif>('GET', `/pengguna/${penggunaId}/akses-efektif`);
 
-export const daftarPeringatan = (f: { halaman: number; ukuran: number; cari?: string; jenis_peringatan?: string; dari?: string; sampai?: string }) => {
+export const daftarPeringatan = async (f: { halaman: number; ukuran: number; cari?: string; jenis_peringatan?: string; dari?: string; sampai?: string }) => {
   const q = new URLSearchParams();
   for (const [k, v] of Object.entries(f)) if (v !== undefined && v !== '') q.set(k, String(v));
-  return panggilApi<Halaman<PeringatanIzinDto>>('GET', `/peringatan-izin?${q.toString()}`);
+  const hasil = await panggilApi<Halaman<PeringatanIzinDto>>('GET', `/peringatan-izin?${q.toString()}`);
+  if (!hasil || !Array.isArray(hasil.data) || !Number.isFinite(hasil.total)
+    || !Number.isInteger(hasil.halaman) || hasil.halaman < 1
+    || !Number.isInteger(hasil.ukuran) || hasil.ukuran < 1) {
+    throw new GalatApi(200, DAFTAR_PERINGATAN.gagalMuat);
+  }
+  return hasil;
 };
 export const terimaPeringatan = (m: { pengguna_id: number; jenis_peringatan: string; alasan: string }) =>
   panggilApi<PeringatanDto>('POST', '/peringatan-izin/terima', m);

@@ -21,6 +21,10 @@ describe('normalkanRegistrasi', () => {
     const d = normalkanRegistrasi(urai({ jalur_identitas: 'tanpa_identitas', nik: undefined, nomor_paspor: 'X' }), teks);
     expect(d).toMatchObject({ nik: null, status_identitas: 'sementara', nomor_paspor: null });
   });
+  it('menyimpan nomor pasien terpisah dari kontak wali dan tetap opsional', () => {
+    expect(normalkanRegistrasi(urai({ nomor_hp: '081234567890' }), teks).nomor_hp).toBe('6281234567890');
+    expect(normalkanRegistrasi(urai(), teks).nomor_hp).toBeNull();
+  });
   it('paspor hanya menyimpan nomor paspor; wali penandatangan membawa namanya', () => {
     const d = normalkanRegistrasi(
       urai({
@@ -42,6 +46,7 @@ describe('layanan pasien dengan repositori tiruan', () => {
   const buat = (sisa: Partial<RepositoriPasien>) =>
     buatLayananPasien({
       repo: {
+        perbaiki: async () => true,
         teksUntukPakai: async (_f: number, id: number) => (id === 7 ? teks : null),
         duplikat: async () => [],
         daftarkan: async () => ({ id: 9, nomor_rm: '00-00-001', nama: 'Siti Rahma', status_identitas: 'lengkap', persetujuan_id: 4 }),

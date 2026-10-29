@@ -1,6 +1,7 @@
 module.exports = {
   testEnvironment: 'node',
-  // Uji integrasi berbagi basis data klira_uji (ada yang membersihkan tabel), jadi berkas uji berjalan bergantian.
+  // Jalankan berkas uji bergantian agar penggunaan sumber daya tetap ringan.
+  // Tes database dilewati karena dengan-env.mjs tidak menyediakan DATABASE_URL_UJI.
   maxWorkers: 1,
   transform: { '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }] },
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],

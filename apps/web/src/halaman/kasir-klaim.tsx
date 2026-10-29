@@ -1,3 +1,4 @@
+import { TautanKelolaMaster } from '../komponen/tautan-kelola-master';
 import { useCallback, useEffect, useState } from 'react';
 import { KASIR, METODE_BAYAR } from '@klira/shared';
 import type { RekapHarianDto, ShiftDto } from '@klira/shared';
@@ -132,6 +133,7 @@ export function HalamanKasirKlaim() {
     <>
       <Sebaris tag="header" jarak="md" bungkus>
         <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{KASIR.judul}</h1>
+        <TautanKelolaMaster kelompok="tarif" />
         {aktif && <Tab daftar={tabBoleh} aktif={aktif} label={KASIR.tabLabel} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />}
       </Sebaris>
       {aktif === 'shift' && <TabShift />}

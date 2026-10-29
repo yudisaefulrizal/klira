@@ -21,7 +21,7 @@ export function Tab<T extends string>({ daftar, aktif, onPilih, label }: { dafta
               height: token.ukuran.tab, padding: `0 ${token.jarak.md}`, borderRadius: token.radius.pil, cursor: 'pointer',
               border: `${token.ukuran.garis} solid ${on ? token.warna.utama : token.warna.garisIsian}`,
               background: on ? token.warna.utama : token.warna.permukaan,
-              color: on ? token.warna.permukaan : token.warna.teks,
+              color: on ? token.warna.diAtasUtama : token.warna.teks,
               fontFamily: token.huruf.keluarga, fontSize: token.huruf.ukuran.dasar,
               fontWeight: on ? token.huruf.berat.tebal : token.huruf.berat.biasa,
             }}

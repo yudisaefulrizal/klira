@@ -50,7 +50,7 @@ export class RepositoriKunjunganPrisma implements RepositoriKunjungan {
   }
 
   async kunjunganBerjalan(fasyankesId: number, pasienId: number): Promise<boolean> {
-    return (await prisma.kunjungan.count({ where: { fasyankes_id: fasyankesId, pasien_id: pasienId, tahap_layanan: { in: [...TAHAP_BERJALAN] } } })) > 0;
+    return (await prisma.kunjungan.count({ where: { fasyankes_id: fasyankesId, pasien_id: pasienId, tahap_layanan: { in: [...TAHAP_BERJALAN] }, NOT: { antrean: { is: { status: 'batal' } } } } })) > 0;
   }
 
   async poliOperasional(fasyankesId: number, id: number): Promise<boolean> {
@@ -87,7 +87,7 @@ export class RepositoriKunjunganPrisma implements RepositoriKunjungan {
         return await prisma.$transaction(async (tx) => {
           // Kunci baris pasien: pendaftaran serempak pasien yang sama berurutan, sehingga cek di bawah atomik dengan pembuatan.
           await tx.$queryRaw`SELECT id FROM pasien WHERE id = ${d.pasien_id} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
-          const berjalan = await tx.kunjungan.count({ where: { fasyankes_id: fasyankesId, pasien_id: d.pasien_id, tahap_layanan: { in: [...TAHAP_BERJALAN] } } });
+          const berjalan = await tx.kunjungan.count({ where: { fasyankes_id: fasyankesId, pasien_id: d.pasien_id, tahap_layanan: { in: [...TAHAP_BERJALAN] }, NOT: { antrean: { is: { status: 'batal' } } } } });
           if (berjalan > 0) throw new KunjunganBerjalanError();
           const k = await tx.kunjungan.create({
             data: {
@@ -127,8 +127,16 @@ export class RepositoriKunjunganPrisma implements RepositoriKunjungan {
     const waktuData: Prisma.AntreanUpdateManyMutationInput =
       aksi === 'panggil' ? { waktu_panggil: waktu } : aksi === 'mulai' ? { waktu_mulai: waktu } : { waktu_selesai: waktu };
     const hasil = await prisma.$transaction(async (tx) => {
+      // Serialisasi panggilan per fasilitas agar urutan ID event mengikuti urutan commit.
+      if (aksi === 'panggil') await tx.$queryRaw`SELECT id FROM fasyankes WHERE id = ${fasyankesId} FOR UPDATE`;
       const n = await tx.antrean.updateMany({ where: { id, fasyankes_id: fasyankesId, status: { in: [...dari] } }, data: { status: ke, ...waktuData } });
       if (n.count !== 1) return false;
+      if (aksi === 'panggil') {
+        const a = await tx.antrean.findUniqueOrThrow({ where: { id }, select: { lokasi_id: true, nomor: true, tanggal: true } });
+        const poli = await tx.lokasi.findFirstOrThrow({ where: { id: a.lokasi_id, fasyankes_id: fasyankesId }, select: { nama: true } });
+        // Event dan perubahan status berada dalam transaksi yang sama, termasuk panggil ulang.
+        await tx.eventPanggilan.create({ data: { fasyankes_id: fasyankesId, poli_id: a.lokasi_id, poli_nama: poli.nama, kode: kodeAntrean(a.nomor), tanggal: a.tanggal, waktu_panggil: waktu } });
+      }
       if (aksi === 'mulai') {
         const a = await tx.antrean.findUniqueOrThrow({ where: { id }, select: { kunjungan_id: true } });
         await tx.kunjungan.updateMany({ where: { id: a.kunjungan_id, fasyankes_id: fasyankesId, status: { in: ['planned', 'arrived'] } }, data: { status: 'in_progress' } });
