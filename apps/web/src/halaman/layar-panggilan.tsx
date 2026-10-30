@@ -9,13 +9,14 @@ const zona = 'Asia/Jakarta';
 export function HalamanLayarPanggilan() {
   const [data, setData] = useState<LayarPanggilanDto | null>(null);
   const [galat, setGalat] = useState('');
+  const [logoRusak, setLogoRusak] = useState(false);
   const [mode, setMode] = useState<ModeSambunganLayar>('menghubungkan');
   const [sekarang, setSekarang] = useState(new Date());
   const id = window.location.pathname.split('/')[2] ?? new URLSearchParams(window.location.search).get('fasyankes');
   const sah = !!id && /^\d+$/.test(id) && Number.isSafeInteger(Number(id)) && Number(id) > 0;
   useEffect(() => {
     const judul = document.title;
-    document.title = 'Layar Panggilan · Klira';
+    document.title = 'Layar Panggilan';
     const jam = window.setInterval(() => setSekarang(new Date()), 1000);
     return () => { clearInterval(jam); document.title = judul; };
   }, []);
@@ -29,14 +30,16 @@ export function HalamanLayarPanggilan() {
       ] })),
     });
   }, [id, sah]);
+  useEffect(() => { if (data?.fasyankes_nama) document.title = `Layar Panggilan · ${data.fasyankes_nama}`; }, [data?.fasyankes_nama]);
+  useEffect(() => { setLogoRusak(false); }, [data?.fasyankes_logo_url]);
   const hariIni = new Intl.DateTimeFormat('en-CA', { timeZone: zona, year: 'numeric', month: '2-digit', day: '2-digit' }).format(sekarang);
-  const suara = useSuaraPanggilan(data, hariIni);
+  const suara = useSuaraPanggilan(data, hariIni, sah ? id ?? undefined : undefined);
   const tampilan = data?.tanggal === hariIni ? data : null;
   const panggilan = tampilan?.panggilan;
   return <main className="layar-panggilan">
     <header className="lp-kepala">
-      <a className="lp-merek" href="/" aria-label="Klira">klira</a>
-      <div className="lp-judul"><h1>Layar Panggilan</h1><p>{data?.fasyankes_nama ?? 'Antrean pelayanan'}</p></div>
+      <div className="lp-merek">{data?.fasyankes_logo_url && !logoRusak ? <img src={data.fasyankes_logo_url} alt={`Logo ${data.fasyankes_nama}`} width="88" height="88" onError={() => setLogoRusak(true)} /> : <svg width="52" height="52" viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Klinik"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6Z" /></svg>}</div>
+      <div className="lp-judul"><h1>{data?.fasyankes_nama ?? 'Layar Panggilan'}</h1><p>Layar panggilan · Antrean pelayanan</p></div>
       <div className="lp-waktu"><span>{sekarang.toLocaleDateString('id-ID', { timeZone: zona, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span><time>{sekarang.toLocaleTimeString('id-ID', { timeZone: zona, hour: '2-digit', minute: '2-digit', hour12: false }).replace('.', ':')}</time></div>
     </header>
     {!sah ? <section className="lp-petunjuk"><h2>Pilih fasilitas untuk menampilkan antrean</h2><p>Buka alamat layar panggilan dengan ID fasilitas Anda: <code>/layar-panggilan/ID-fasilitas</code></p></section> : <div className="lp-isi">
@@ -53,7 +56,7 @@ export function HalamanLayarPanggilan() {
         <div className="lp-berikut"><h2>Antrean berikutnya</h2><div className="lp-ubin">{tampilan?.poli.map(p => <div key={p.id}><strong>{p.berikutnya ?? '—'}</strong><span>{p.nama}</span></div>)}</div></div>
       </section>
     </div>}
-    <footer className="lp-kaki">{sah && <button type="button" className="lp-tombol-suara" onClick={suara.ubahSuara} disabled={!suara.didukung} aria-pressed={suara.aktif}>{!suara.didukung ? 'Suara tidak didukung' : suara.aktif ? 'Suara aktif · Nonaktifkan' : 'Aktifkan suara'}</button>}<p><span className="lp-info" aria-hidden="true">i</span>Mohon menunggu hingga nomor antrean Anda dipanggil.</p><span className={`lp-koneksi ${galat || !sah ? 'lp-gagal' : ''}`} role="status"><i />{!sah ? 'Fasilitas belum dipilih' : galat ? 'Menghubungkan kembali' : data ? mode === 'websocket' ? 'Terhubung langsung' : mode === 'polling' ? 'Terhubung · Mode cadangan' : 'Menghubungkan langsung…' : 'Menghubungkan…'}</span></footer>
+    <footer className="lp-kaki">{sah && <button type="button" className="lp-tombol-suara" onClick={suara.ubahSuara} disabled={!suara.didukung} aria-pressed={suara.aktif}>{!suara.didukung ? 'Suara tidak didukung' : suara.aktif ? suara.siap ? 'Suara aktif · Nonaktifkan' : 'Menyiapkan suara…' : suara.perluInteraksi ? 'Aktifkan suara · ketuk sekali' : 'Aktifkan suara'}</button>}<p><span className="lp-info" aria-hidden="true">i</span>Mohon menunggu hingga nomor antrean Anda dipanggil.</p><span className={`lp-koneksi ${galat || !sah ? 'lp-gagal' : ''}`} role="status"><i />{!sah ? 'Fasilitas belum dipilih' : galat ? 'Menghubungkan kembali' : data ? mode === 'websocket' ? 'Terhubung langsung' : mode === 'polling' ? 'Terhubung · Mode cadangan' : 'Menghubungkan langsung…' : 'Menghubungkan…'}</span></footer>
     {suara.galatSuara && <div className="lp-galat" role="alert">{suara.galatSuara}</div>}
     {galat && <div className="lp-galat" role="alert">{galat} {data ? 'Informasi yang ditampilkan adalah data terakhir.' : ''}</div>}
   </main>;

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
 import { z } from 'zod';
 import {
-  bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan,
+  kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan,
   ubahFavoritMasukan, ubahKeluargaMasukan,
 } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
@@ -95,6 +95,12 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
     if (!id.success) return tidakAda(res);
     if (!q.success) return galatValidasi(res, q.error);
     kirimHasil(res, await layanan.riwayat(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req)));
+  }));
+
+  rute.get('/terminologi/kamus', masuk, lihatKlinis, bungkus(async (req, res) => {
+    const q = kamusTerminologiMasukan.safeParse(req.query);
+    if (!q.success) return galatValidasi(res, q.error);
+    res.json({ data: await layanan.kamusTerminologi(q.data) });
   }));
 
   rute.get('/terminologi', masuk, lihatKlinis, bungkus(async (req, res) => {

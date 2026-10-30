@@ -84,3 +84,19 @@ Meta tetap menentukan izin/jendela balasan. Penolakan pasti ditampilkan sebagai 
 Tes memakai respons Meta tiruan dan HTTP/WebSocket localhost. Alur akun asli baru boleh dinyatakan terverifikasi setelah: login, callback, verifikasi/langganan webhook, DM masuk, balas teks/gambar, echo aplikasi Instagram, replay webhook, dua pengguna, pencabutan izin, refresh, disconnect saat login, dan tampilan desktop/ponsel diuji. Konfigurasi aplikasi Meta dan uji akun nyata tetap membutuhkan kredensial serta tindakan pemilik aplikasi di dashboard Meta.
 
 Inbox menggunakan filter Semua, Belum dibaca, dan Dibaca. Status penanganan Baru/Diproses/Selesai tidak digunakan lagi. Penanda baca tetap berlaku per pengguna Klira dan diperbarui saat percakapan dibuka.
+
+
+## Bersihkan pesan
+
+Tombol **Bersihkan pesan** tersedia pada bagian koneksi Instagram, baik di halaman Pesan maupun panel chat. Setelah konfirmasi, seluruh percakapan, pesan, penanda baca, dan lampiran lokal kanal Instagram milik fasyankes pengguna dihapus. Koneksi akun, data pasien, kanal lain, dan pesan di aplikasi Instagram tetap tersedia.
+
+Endpoint `DELETE /api/instagram/percakapan` memerlukan sesi, izin `instagram:lihat`, dan badan `{"konfirmasi":"instagram"}`. Transaksi mengunci percakapan sebelum penghapusan dan menulis audit dalam transaksi yang sama. Jika masih ada pesan berstatus antre/mengirim, endpoint mengembalikan 409 tanpa menghapus data. Pembaruan WebSocket mengosongkan percakapan aktif, draf balasan, dan penanda belum dibaca pada klien kanal tersebut. Respons daftar lama diabaikan setelah pembersihan.
+
+Token publik lampiran yang dihapus ikut dibersihkan berdasarkan ID media milik fasyankes. Tombstone deduplikasi webhook dipertahankan untuk menolak replay pesan lama.
+
+
+### Keluar akun
+
+Aksi **Keluar** memutus koneksi Instagram dan membersihkan seluruh percakapan, pesan (termasuk antrean), penanda baca, serta lampiran lokal fasyankes dalam satu transaksi dengan audit. Identitas akun lama dihapus dari konfigurasi lokal dan disembunyikan pada respons koneksi serta antarmuka saat tidak terhubung. Klien lain menerima pembaruan untuk mengosongkan inbox dan draf. Pesan di aplikasi Instagram tetap tersedia.
+
+Token akses dan proses login yang tertunda dibatalkan. Webhook memeriksa generasi koneksi sebelum menyimpan pesan untuk mengabaikan pekerjaan sesi lama.

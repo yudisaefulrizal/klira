@@ -1,3 +1,4 @@
+import { mulaiAntreanDalam, selesaiAntreanDalam } from './antrean-otomatis';
 import { prisma, Prisma } from '@klira/db';
 import { TAHAP_BERJALAN, kodeAntrean, tanggalWib } from '@klira/shared';
 import type { AksiAntrean, AntreanDto, FilterAntrean, KunjunganDto, KunjunganMasukan, OpsiKunjunganDto, StatusAntrean, TahapLayanan } from '@klira/shared';
@@ -115,8 +116,14 @@ export class RepositoriKunjunganPrisma implements RepositoriKunjungan {
   }
 
   async ubahTahap(fasyankesId: number, id: number, dari: TahapLayanan, ke: TahapLayanan): Promise<KunjunganDto | null> {
-    const n = await prisma.kunjungan.updateMany({ where: { id, fasyankes_id: fasyankesId, tahap_layanan: dari }, data: { tahap_layanan: ke } });
-    return n.count === 1 ? keDto(await ambilKunjungan(prisma, id)) : null;
+    return prisma.$transaction(async (tx) => {
+      const n = await tx.kunjungan.updateMany({ where: { id, fasyankes_id: fasyankesId, tahap_layanan: dari }, data: { tahap_layanan: ke } });
+      if (n.count !== 1) return null;
+      const waktu = new Date();
+      if (ke === 'pemeriksaan') await mulaiAntreanDalam(tx, fasyankesId, id, waktu);
+      if (dari === 'pemeriksaan' && (ke === 'resep' || ke === 'kasir')) await selesaiAntreanDalam(tx, fasyankesId, id, waktu);
+      return keDto(await ambilKunjungan(tx, id));
+    });
   }
 
   async statusAntrean(fasyankesId: number, id: number): Promise<StatusAntrean | null> {

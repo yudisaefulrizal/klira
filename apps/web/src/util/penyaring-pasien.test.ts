@@ -1,57 +1,27 @@
 import type { PasienBarisDto } from '@klira/shared';
-import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, tahapBawaan, ubahKeadaanPasien } from './penyaring-pasien';
+import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from './penyaring-pasien';
 import { queryDaftarPasien } from '../api-klien/pasien';
 
-describe('filter bawaan per pekerjaan', () => {
-  it('dokter, perawat, apoteker, kasir, lainnya', () => {
-    expect(tahapBawaan(['pasien', 'klinis', 'resep', 'kunjungan'])).toBe('pemeriksaan');
-    expect(tahapBawaan(['pasien', 'klinis', 'kunjungan'])).toBe('menunggu_skrining');
-    expect(tahapBawaan(['pasien', 'farmasi'])).toBe('resep');
-    expect(tahapBawaan(['pasien', 'kasir', 'klaim'])).toBe('kasir');
-    expect(tahapBawaan(['pasien', 'pendaftaran', 'kunjungan'])).toBe('semua');
-    expect(tahapBawaan([])).toBe('semua');
+describe('satu daftar pasien', () => {
+  it('mengabaikan tahap pada tautan lama agar seluruh pasien tetap terlihat', () => {
+    for (const tahap of ['kasir', 'resep', 'batal', 'ditutup', 'pemeriksaan']) {
+      const k = keadaanPasienDariQuery(`?tahap=${tahap}&cari=%20Siti%20&halaman=3&tanggal=2026-10-30`);
+      expect(k).toEqual({ cari: 'Siti', halaman: 3, tanggal: '2026-10-30' });
+      expect(queryPasien(k)).toBe('?tanggal=2026-10-30&cari=Siti&halaman=3');
+    }
   });
-});
-
-describe('keadaan di alamat', () => {
-  it('tahap dari alamat menang atas bawaan; tahap salah memakai bawaan', () => {
-    expect(keadaanPasienDariQuery('?tahap=kasir&cari=%20Siti%20&halaman=3', 'pemeriksaan')).toEqual({ cari: 'Siti', tahap: 'kasir', halaman: 3 });
-    expect(keadaanPasienDariQuery('', 'pemeriksaan')).toEqual({ cari: '', tahap: 'pemeriksaan', halaman: 1 });
-    expect(keadaanPasienDariQuery('?tahap=ngawur&halaman=-2', 'resep')).toEqual({ cari: '', tahap: 'resep', halaman: 1 });
+  it('alamat kosong dan halaman tidak sah memakai daftar pertama', () => {
+    expect(keadaanPasienDariQuery('')).toEqual({ cari: '', halaman: 1 });
+    expect(keadaanPasienDariQuery('?halaman=-2')).toEqual({ cari: '', halaman: 1 });
+    expect(queryPasien({ cari: '', halaman: 1 })).toBe('');
   });
-  it('tanggal bertahan saat ganti tahap dan mereset halaman', () => {
-    const k = keadaanPasienDariQuery('?tanggal=2026-10-28&tahap=batal&halaman=3', 'semua');
+  it('pencarian dan tanggal mereset halaman, sedangkan paginasi mempertahankannya', () => {
+    const k = { cari: 'Budi', tanggal: '2026-10-30', halaman: 3 };
+    expect(ubahKeadaanPasien(k, { cari: 'Siti' })).toEqual({ ...k, cari: 'Siti', halaman: 1 });
     expect(ubahKeadaanPasien(k, { tanggal: '2026-10-29' }).halaman).toBe(1);
-    expect(queryPasien(ubahKeadaanPasien(k, { tahap: 'ditutup' }))).toContain('tanggal=2026-10-28');
-    expect(queryDaftarPasien({ ...k, ukuran: 20 })).toContain('tanggal=2026-10-28');
-  });
-  it('filter batal dapat diteruskan ke API', () => {
-    const k = keadaanPasienDariQuery('?tahap=batal', 'semua');
-    expect(k.tahap).toBe('batal');
-    expect(queryDaftarPasien({ ...k, ukuran: 20 })).toContain('tahap=batal');
-  });
-  it('filter selesai dapat dipilih dan diteruskan ke API', () => {
-    const k = keadaanPasienDariQuery('?tahap=ditutup', 'semua');
-    expect(k.tahap).toBe('ditutup');
-    expect(queryPasien(k)).toBe('?tahap=ditutup');
-    expect(queryDaftarPasien({ ...k, ukuran: 20 })).toContain('tahap=ditutup');
-  });
-  it('query selalu memuat tahap, pilihan semua tidak tertukar bawaan', () => {
-    expect(queryPasien({ cari: '', tahap: 'semua', halaman: 1 })).toBe('?tahap=semua');
-    expect(queryPasien({ cari: ' Budi ', tahap: 'pemeriksaan', halaman: 2 })).toBe('?tahap=pemeriksaan&cari=Budi&halaman=2');
-    const k = { cari: 'Budi', tahap: 'resep' as const, halaman: 4 };
-    expect(keadaanPasienDariQuery(queryPasien(k), 'semua')).toEqual(k);
-  });
-  it('mengubah penyaring kembali ke halaman 1, ganti halaman mempertahankannya', () => {
-    const k = { cari: 'a', tahap: 'semua' as const, halaman: 3 };
-    expect(ubahKeadaanPasien(k, { tahap: 'kasir' }).halaman).toBe(1);
-    expect(ubahKeadaanPasien(k, { cari: 'b' }).halaman).toBe(1);
-    expect(ubahKeadaanPasien(k, { halaman: 4 }).halaman).toBe(4);
-    expect(ubahKeadaanPasien(k, { cari: 'a' }).halaman).toBe(3);
-  });
-  it('query API: tahap semua dan cari kosong tidak dikirim', () => {
-    expect(queryDaftarPasien({ cari: ' ', tahap: 'semua', halaman: 1, ukuran: 20 })).toBe('halaman=1&ukuran=20');
-    expect(queryDaftarPasien({ cari: 'Siti', tahap: 'resep', halaman: 2, ukuran: 20 })).toBe('halaman=2&ukuran=20&cari=Siti&tahap=resep');
+    expect(ubahKeadaanPasien(k, { halaman: 4 })).toEqual({ ...k, halaman: 4 });
+    expect(keadaanPasienDariQuery(queryPasien(k))).toEqual(k);
+    expect(queryDaftarPasien({ ...k, tahap: 'semua', ukuran: 20 })).not.toContain('tahap=');
   });
 });
 
@@ -73,8 +43,8 @@ describe('tindakan per baris', () => {
   });
   it('antrean mengikuti status, diikuti tombol tahap dan panel pendamping', () => {
     expect(jenis(baris(kunj('menunggu')))).toEqual(['panggil', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
-    expect(jenis(baris(kunj('dipanggil')))).toEqual(['panggil', 'mulai', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
-    expect(jenis(baris(kunj('dilayani')))).toEqual(['selesai', 'skrining', 'buka', 'riwayat', 'keluarga']);
+    expect(jenis(baris(kunj('dipanggil')))).toEqual(['panggil', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
+    expect(jenis(baris(kunj('dilayani')))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
     expect(jenis(baris(kunj('selesai')))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
     expect(jenis(baris(kunj(null)))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
   });
@@ -116,6 +86,13 @@ describe('tindakan per baris', () => {
     expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'input')).toEqual(['bayar']);
     expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'perbaikan')).toEqual(['tutup_kunjungan']);
     expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'lihat')).toEqual([]);
+  });
+  it('penyerahan obat terpisah dari pembayaran dan hanya tersedia bagi farmasi pada tahap kasir', () => {
+    const k = { ...kunj(null)!, tahap_layanan: 'kasir' as const };
+    const farmasi = jenis(baris(k), (f, a) => f === 'farmasi' && a === 'input');
+    expect(farmasi).toEqual(['serah_obat']);
+    expect(jenis(baris(k), (f, a) => f === 'kasir' && a === 'input')).toEqual(['bayar']);
+    expect(jenis(baris({ ...k, tahap_layanan: 'ditutup' }), semua)).not.toContain('serah_obat');
   });
   it('tombol tanpa izin tidak ditampilkan', () => {
     const hanyaLihat = (f: string, a: string) => f === 'pasien' && a === 'lihat';

@@ -19,7 +19,7 @@ export function buatRuteLayarPanggilan() {
     }
     try {
       const data = await prisma.$transaction(async tx => {
-        const fasilitas = await tx.fasyankes.findUnique({ where: { id }, select: { nama: true } });
+        const fasilitas = await tx.fasyankes.findUnique({ where: { id }, select: { nama: true, website_klinik: { select: { logo_url: true } } } });
         if (!fasilitas) return null;
         const tanggal = tanggalWib(new Date());
         const poli = await tx.lokasi.findMany({ where: { fasyankes_id: id, jenis: 'poli', status_operasional: 'O' }, select: { id: true, nama: true }, orderBy: { nama: 'asc' } });
@@ -37,7 +37,7 @@ export function buatRuteLayarPanggilan() {
         const halamanEvent = event.slice(0, 100);
         const terakhir = antrean.find(a => a.status === 'dipanggil' && a.waktu_panggil);
         const data: LayarPanggilanDto = {
-          fasyankes_nama: fasilitas.nama, tanggal,
+          fasyankes_nama: fasilitas.nama, fasyankes_logo_url: fasilitas.website_klinik?.logo_url || null, tanggal,
           kursor: halamanEvent.at(-1)?.id ?? setelah ?? terbaru?.id ?? 0,
           ada_lanjutan: event.length > 100,
           event_panggilan: halamanEvent.map(e => ({ event_id: e.id, kode: e.kode, poli_id: e.poli_id, poli_nama: e.poli_nama, waktu_panggil: e.waktu_panggil.toISOString() })),

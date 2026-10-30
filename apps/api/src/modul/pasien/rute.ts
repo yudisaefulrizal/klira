@@ -1,3 +1,4 @@
+import { ambilWilayah, cariWilayah } from '../wilayah/data';
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
 import { perbaikanPasienMasukan, cekDuplikatMasukan, filterPasien, idParam, registrasiPasienMasukan, GALAT, REGISTRASI } from '@klira/shared';
@@ -23,6 +24,20 @@ export function buatRutePasien(layananAkses: LayananAkses, layananIzin: LayananI
     (f: (req: Request, res: Response) => Promise<void>): RequestHandler =>
     (req, res, next) => void f(req, res).catch(next);
   const lihat = wajibIzinSalahSatu(['pasien', 'lihat'], ['rekam-medis', 'lihat']);
+
+  const izinWilayah = wajibIzinSalahSatu(['pasien', 'lihat'], ['pasien', 'input'], ['pasien', 'perbaikan'], ['rekam-medis', 'lihat']);
+  rute.get('/wilayah', masuk, izinWilayah, (req, res) => {
+    if (typeof req.query.cari !== 'string' || req.query.cari.length > 100) {
+      res.status(400).json({ galat: { kode: 'tidak_valid', pesan: 'Pencarian wilayah maksimal 100 karakter.' } });
+      return;
+    }
+    res.json({ data: cariWilayah(req.query.cari) });
+  });
+  rute.get('/wilayah/:kode', masuk, izinWilayah, (req, res) => {
+    const wilayah = ambilWilayah(String(req.params.kode));
+    if (!wilayah) { res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: 'Wilayah tidak ditemukan dalam referensi aplikasi.' } }); return; }
+    res.json({ data: wilayah });
+  });
 
   rute.get('/pasien', masuk, lihat, bungkus(async (req, res) => {
     const f = filterPasien.safeParse(req.query);

@@ -1,3 +1,4 @@
+import { pasangRuteBersihkan, putuskanDanBersihkan } from '../pesan/bersihkan';
 import { kabarkanWhatsapp } from './kanal';
 import { randomUUID } from 'node:crypto';
 import { Router, type Response } from 'express';
@@ -7,7 +8,6 @@ import {
   dekripsiRahasia,
   kunciPercakapanWhatsapp,
   pangkasPesanWhatsapp,
-  rapikanRiwayatWhatsapp,
 } from '@klira/db';
 import {
   jidWhatsappPribadi,
@@ -17,7 +17,7 @@ import {
   ubahPercakapanWa,
   type PenggunaSaya,
 } from '@klira/shared';
-import { buatFasilitasAudit } from '../../middleware/audit';
+import { alamatDari, buatFasilitasAudit } from '../../middleware/audit';
 import { wajibMasuk } from '../../middleware/auth';
 import { buatWajibIzin } from '../../middleware/izin';
 import type { LayananAkses } from '../akses/layanan';
@@ -36,14 +36,16 @@ export function buatRuteWhatsapp(akses: LayananAkses, izin: LayananIzin) {
   const audit = buatFasilitasAudit();
   const { wajibIzin } = buatWajibIzin(izin);
   rute.use('/whatsapp', masuk);
+  pasangRuteBersihkan(rute, 'whatsapp', wajibIzin('whatsapp', 'lihat'));
   rute.get('/whatsapp/koneksi', wajibIzin('whatsapp', 'lihat'), async (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
     const row = await prisma.waKoneksi.findUnique({ where: { id: 1 } });
     const milik = row?.fasyankes_id === pengguna(res).fasyankes_id;
-    const hidup = milik && tersedia(row.detak);
+    const hidup = milik && row.aktif && tersedia(row.detak);
     res.json({
       data: {
         status: hidup ? row.status : 'terputus',
-        nomor: milik ? row.nomor : null,
+        nomor: hidup && row.status === 'terhubung' ? row.nomor : null,
         qr: hidup && row.qr && punyaIzin(pengguna(res), 'whatsapp', 'lihat') ? dekripsiRahasia(row.qr) : null,
         tersedia: hidup,
       },
@@ -60,16 +62,16 @@ export function buatRuteWhatsapp(akses: LayananAkses, izin: LayananIzin) {
       if (row && row.fasyankes_id !== user.fasyankes_id)
         return tolak(res, 'Nomor WhatsApp sudah dikelola fasyankes lain', 409);
       const aktif = req.body.aksi === 'hubungkan';
-      if (!aktif)
-        await prisma.waPesan.updateMany({
-          where: { status: 'antre', percakapan: { fasyankes_id: user.fasyankes_id } },
-          data: { status: 'dibatalkan' },
-        });
-      if (!aktif) await rapikanRiwayatWhatsapp(user.fasyankes_id);
+      if (!aktif) {
+        await putuskanDanBersihkan('whatsapp', user, alamatDari(req));
+        kabarkanWhatsapp({ tipe: 'dibersihkan', fasyankes_id: user.fasyankes_id });
+        kabarkanWhatsapp({ tipe: 'koneksi', fasyankes_id: user.fasyankes_id });
+        return void res.json({ data: { ok: true } });
+      }
       await prisma.waKoneksi.upsert({
         where: { id: 1, fasyankes_id: user.fasyankes_id },
         create: { id: 1, fasyankes_id: user.fasyankes_id, aktif, status: aktif ? 'menghubungkan' : 'terputus' },
-        update: { aktif, generasi: { increment: 1 }, qr: null, status: aktif ? 'menghubungkan' : 'terputus' },
+        update: { aktif, nomor: null, generasi: { increment: 1 }, qr: null, status: aktif ? 'menghubungkan' : 'terputus' },
       });
       kabarkanWhatsapp({ tipe: 'koneksi', fasyankes_id: user.fasyankes_id });
       res.json({ data: { ok: true } });

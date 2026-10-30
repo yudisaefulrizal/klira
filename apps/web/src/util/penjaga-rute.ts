@@ -17,6 +17,7 @@ export function halamanDiizinkan(pengguna: PenggunaSaya): string[] {
  * (dari /masuk, dari alamat tak dikenal, atau halaman yang tidak diizinkan).
  */
 export function putuskanRute(path: string, pengguna: PenggunaSaya | null): KeputusanRute {
+  if (path === '/' || /^\/klinik\/[a-z0-9-]+\/?$/.test(path)) return { tipe: 'tampil' };
   if (!pengguna) return path === RUTE_MASUK ? { tipe: 'tampil' } : { tipe: 'alihkan', ke: RUTE_MASUK };
   // Selama wajib ganti kredensial (2.4), hanya layar Ganti kredensial yang bisa dibuka.
   if (pengguna.wajib_ganti_kredensial) {

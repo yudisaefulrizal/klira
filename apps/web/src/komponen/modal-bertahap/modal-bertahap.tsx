@@ -1,3 +1,4 @@
+import './modal-bertahap.css';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { MODAL, TOMBOL } from '@klira/shared';
@@ -26,6 +27,8 @@ type Props = {
   onIndeks: (i: number) => void;
   /** Ringkasan pasien atau konteks yang tetap terlihat di semua langkah. */
   konteks?: ReactNode;
+  /** Tombol pendamping pada header, terpisah dari ringkasan pasien. */
+  aksiHeader?: ReactNode;
   /** Info di atas isi langkah (mis. draf dipulihkan). */
   catatan?: ReactNode;
   galat?: string | null;
@@ -48,7 +51,7 @@ type Props = {
  * dan tombol kembali peramban menutup modal. Draf otomatis dipasang pemanggil lewat useDrafOtomatis.
  */
 export function ModalBertahap({
-  judul, langkah, indeks, onIndeks, konteks, catatan, galat, onTutup, lindungiTutup = false, onLanjut, labelKirim, onKirim, kirimNonaktif, hasil,
+  judul, langkah, indeks, onIndeks, konteks, aksiHeader, catatan, galat, onTutup, lindungiTutup = false, onLanjut, labelKirim, onKirim, kirimNonaktif, hasil,
 }: Props) {
   const jumlah = langkah.length;
   const i = batasi(indeks, jumlah);
@@ -84,10 +87,12 @@ export function ModalBertahap({
   return (
     <>
       <Dialog judul={judul} onEsc={() => void mintaTutup()} lebar="modalBesar" tinggi="tinggiModal">
-        <KepalaDialog judul={judul} onTutup={() => void mintaTutup()}>{konteks}</KepalaDialog>
-        <Sebaris jarak="tanpa" sejajar="regang" style={{ flexGrow: 1, minHeight: 0 }}>
+        <KepalaDialog className={aksiHeader ? 'modal-header-dengan-aksi' : undefined} judul={judul} onTutup={() => void mintaTutup()}>{aksiHeader ?? konteks}</KepalaDialog>
+        {aksiHeader && konteks && <div className="modal-konteks-header" style={{ padding: `${token.jarak.sm} ${token.jarak.lg}`, borderBottom: `1px solid ${token.warna.garis}` }}>{konteks}</div>}
+        <Sebaris className="modal-langkah-layout" jarak="tanpa" sejajar="regang" style={{ flexGrow: 1, minHeight: 0 }}>
           <Kolom
             tag="nav"
+            className="modal-langkah-nav"
             aria-label={MODAL.daftarLangkah}
             jarak="xs"
             garis="kanan"
@@ -117,6 +122,7 @@ export function ModalBertahap({
           </Kolom>
           <Kolom
             tag="form"
+            className="modal-langkah-form"
             jarak="tanpa"
             noValidate
             onSubmit={(e) => {
@@ -125,7 +131,7 @@ export function ModalBertahap({
             }}
             style={{ flex: '1 1 0', minWidth: 0 }}
           >
-            <Kolom tag="section" jarak="md" style={{ padding: `${token.jarak.lg} ${token.jarak.xl}`, flexGrow: 1, minHeight: 0, overflowY: 'auto' }} ref={isiRef} aria-labelledby="judul-langkah">
+            <Kolom tag="section" className="modal-langkah-isi" jarak="md" style={{ padding: `${token.jarak.lg} ${token.jarak.xl}`, flexGrow: 1, minHeight: 0, overflowY: 'auto' }} ref={isiRef} aria-labelledby="judul-langkah">
               <h3 id="judul-langkah" style={{ margin: 0, fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal }}>{aktif.judul}</h3>
               {catatan}
               {galat && <Peringatan>{galat}</Peringatan>}

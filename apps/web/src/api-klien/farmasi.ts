@@ -1,5 +1,5 @@
 import type {
-  FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MutasiStokDto, ReferensiKfaDto, ResepDto, RiwayatObatDto, StokObatDto, TelaahMasukan,
+  HasilSerahTerimaDto, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MutasiStokDto, ReferensiKfaDto, ResepDto, RiwayatObatDto, StokObatDto, TelaahMasukan,
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
@@ -31,3 +31,5 @@ export const resepKunjungan = (kunjunganId: number) => panggilApi<ResepDto[]>('G
 export const buatResep = (kunjunganId: number, m: { item: Record<string, unknown>[] }) => panggilApi<HasilBuatResepDto>('POST', `/kunjungan/${kunjunganId}/resep`, m);
 export const telaahResep = (resepId: number, m: TelaahMasukan) => panggilApi<ResepDto>('POST', `/resep/${resepId}/telaah`, m);
 export const siapkanResep = (resepId: number) => panggilApi<HasilSiapDto>('POST', `/resep/${resepId}/siap`);
+
+export const serahkanObat = (kunjunganId: number, m: Record<string, unknown> = {}) => panggilApi<HasilSerahTerimaDto>('POST', `/kunjungan/${kunjunganId}/serah-terima-obat`, m);

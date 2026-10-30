@@ -1,3 +1,4 @@
+import { BersihkanPesan } from '../pesan/bersihkan-pesan';
 import { useEffect, useState } from 'react';
 import type { KoneksiInstagramDto } from '@klira/shared';
 import { panggilApi } from '../../api-klien/klien';
@@ -15,7 +16,7 @@ const hasilLogin: Record<string, string> = {
   gagal: 'Gagal masuk. Coba lagi.',
 };
 export function KoneksiInstagram() {
-  const { revisi } = usePesan();
+  const { revisi, resetPesan } = usePesan();
   const { search } = useNavigasi();
   const hasil = new URLSearchParams(search).get('instagram');
   const [koneksi, setKoneksi] = useState<KoneksiInstagramDto | null>(null);
@@ -34,14 +35,15 @@ export function KoneksiInstagram() {
     <div className="wa-akun">
       <span className="wa-akun-status" data-aktif={aktif}>
         <i aria-hidden="true" />
-        <span><strong>{koneksi?.nomor ? `@${koneksi.nomor.replace(/^@/, '')}` : 'Instagram'}</strong>
+        <span><strong>{aktif && koneksi?.nomor ? `@${koneksi.nomor.replace(/^@/, '')}` : 'Instagram'}</strong>
           <small>{!koneksi ? 'Memuat…' : aktif ? 'Terhubung' : 'Terputus'}</small></span>
       </span>
       <Tombol varian={aktif ? 'sekunder' : 'utama'} disabled={sibuk || !koneksi?.dikonfigurasi} onClick={() => {
         if (aktif) {
-          if (window.confirm('Keluar dari Instagram?')) void jalankan(async () => {
+          if (window.confirm('Keluar dari Instagram dan bersihkan seluruh pesan di Klira?')) void jalankan(async () => {
             await panggilApi('POST', '/instagram/koneksi', { aksi: 'putuskan' });
-            setKoneksi(await koneksiWa());
+            setKoneksi((v) => v ? { ...v, status: 'terputus', nomor: null, tersedia: false, token_berakhir: null } : null);
+            resetPesan();
           });
         } else void jalankan(async () => {
           const { url } = await panggilApi<{ url: string }>('POST', '/instagram/login');
@@ -51,6 +53,7 @@ export function KoneksiInstagram() {
         });
       }}>{sibuk ? 'Sebentar…' : aktif ? 'Keluar' : 'Masuk'}</Tombol>
     </div>
+    <BersihkanPesan kanal="instagram" onSelesai={resetPesan} />
     {hasil && hasilLogin[hasil] && <Peringatan nada="merah">{hasilLogin[hasil]}</Peringatan>}
     {galat && <Peringatan nada="merah">{galat}</Peringatan>}
     {koneksi && !koneksi.dikonfigurasi && <Peringatan nada="biru">Instagram belum disiapkan. Hubungi admin.</Peringatan>}

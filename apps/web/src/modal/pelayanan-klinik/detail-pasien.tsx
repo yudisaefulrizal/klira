@@ -1,3 +1,4 @@
+import { useNamaWilayah } from '../../komponen/pencarian-wilayah';
 import { useEffect, useState } from 'react';
 import { DAFTAR_PASIEN, STATUS_IDENTITAS, TOMBOL } from '@klira/shared';
 import type { PasienDetailDto } from '@klira/shared';
@@ -15,7 +16,7 @@ import { Tombol } from '../../komponen/ui/tombol';
 const strip = (v: string | null | undefined): string => (v && v.trim() ? v : '-');
 
 /** Bagian ringkasan dari isi data pasien (fungsi murni untuk panel dan uji). */
-export function bagianDetailPasien(p: PasienDetailDto): BagianRingkasan[] {
+export function bagianDetailPasien(p: PasienDetailDto, namaWilayah?: string): BagianRingkasan[] {
   const d = DAFTAR_PASIEN.detail;
   return [
     {
@@ -32,7 +33,7 @@ export function bagianDetailPasien(p: PasienDetailDto): BagianRingkasan[] {
     {
       judul: d.alamat,
       baris: [
-        { label: d.alamat, nilai: strip(p.alamat) }, { label: d.kodeWilayah, nilai: strip(p.kode_wilayah) },
+        { label: d.alamat, nilai: p.kode_wilayah ? namaWilayah ?? strip(p.kode_wilayah) : strip(p.alamat) },
         ...(p.nomor_paspor ? [{ label: d.paspor, nilai: p.nomor_paspor }] : []), ...(p.nomor_kitas ? [{ label: d.kitas, nilai: p.nomor_kitas }] : []),
       ],
     },
@@ -47,6 +48,7 @@ export function bagianDetailPasien(p: PasienDetailDto): BagianRingkasan[] {
 /** Panel baca-saja isi data pasien; membukanya tercatat di audit (lihat) oleh API. */
 export function DetailPasien({ id, nama, onTutup }: { id: number; nama: string; onTutup: () => void }) {
   const [data, setData] = useState<PasienDetailDto | null>(null);
+  const namaWilayah = useNamaWilayah(data?.kode_wilayah);
   const [galat, setGalat] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export function DetailPasien({ id, nama, onTutup }: { id: number; nama: string; 
       {data && (
         <>
           <div><Lencana warna={STATUS_IDENTITAS.warna(data.status_identitas)}>{STATUS_IDENTITAS.label(data.status_identitas)}</Lencana></div>
-          <DaftarRingkasan bagian={bagianDetailPasien(data)} />
+          <DaftarRingkasan bagian={bagianDetailPasien(data, namaWilayah)} />
         </>
       )}
     </Panel>

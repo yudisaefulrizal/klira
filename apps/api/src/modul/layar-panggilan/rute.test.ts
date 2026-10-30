@@ -35,7 +35,7 @@ test('fasilitas tidak ada menghasilkan 404', async () => {
   expect(prisma.antrean.findMany).not.toHaveBeenCalled();
 });
 test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa identitas pasien', async () => {
-  jest.mocked(prisma.fasyankes.findUnique).mockResolvedValue({ nama: 'Klinik Uji' } as never);
+  jest.mocked(prisma.fasyankes.findUnique).mockResolvedValue({ nama: 'Klinik Uji', website_klinik: { logo_url: '/asset/brand/bhakti-rahayu.png' } } as never);
   jest.mocked(prisma.lokasi.findMany).mockResolvedValue([{ id: 9, nama: 'Poli Umum' }, { id: 10, nama: 'Poli Gigi' }] as never);
   jest.mocked(prisma.antrean.findMany).mockResolvedValue([
     { id: 4, lokasi_id: 9, nomor: 23, status: 'dipanggil', waktu_panggil: new Date('2026-10-29T03:00:00Z') },
@@ -47,6 +47,8 @@ test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa ide
   expect(res.status).toBe(200);
   expect(res.headers.get('cache-control')).toBe('no-store');
   const { data } = await res.json();
+  expect(data.fasyankes_logo_url).toBe('/asset/brand/bhakti-rahayu.png');
+  expect(prisma.fasyankes.findUnique).toHaveBeenCalledWith({ where: { id: 7 }, select: { nama: true, website_klinik: { select: { logo_url: true } } } });
   expect(data.panggilan).toEqual({ kode: 'A-023', poli_id: 9, poli_nama: 'Poli Umum', waktu_panggil: '2026-10-29T03:00:00.000Z' });
   expect(data.panggilan_aktif).toEqual([data.panggilan]);
   expect(data.poli[0].berikutnya).toBe('A-024');
@@ -59,6 +61,7 @@ test('antrean kosong tetap mengembalikan poli dan status kosong', async () => {
   jest.mocked(prisma.lokasi.findMany).mockResolvedValue([{ id: 9, nama: 'Poli Umum' }] as never);
   jest.mocked(prisma.antrean.findMany).mockResolvedValue([]);
   const { data } = await (await ambil('7')).json();
+  expect(data.fasyankes_logo_url).toBeNull();
   expect(data.panggilan).toBeNull();
   expect(data.panggilan_aktif).toEqual([]);
   expect(data.poli).toEqual([{ id: 9, nama: 'Poli Umum', sekarang: null, berikutnya: null }]);

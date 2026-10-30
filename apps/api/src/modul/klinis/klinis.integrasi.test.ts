@@ -78,6 +78,8 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     const pasienLain = await buatPasien(fasLain, `${kode}-L`, 'Pasien Lain');
     kunjA1 = await buatKunjungan(fas, pasienA);
     kunjLain = await buatKunjungan(fasLain, pasienLain);
+    const poli = await prisma.lokasi.create({ data: { fasyankes_id: fas, nama: 'Poli Uji Antrean', jenis: 'poli' } });
+    await prisma.antrean.create({ data: { fasyankes_id: fas, kunjungan_id: kunjA1, lokasi_id: poli.id, tanggal: new Date(), nomor: 1, status: 'dipanggil' } });
     await prisma.kodeTerminologi.createMany({
       data: [
         { sistem: 'icd10', kode: `${awalan}.1`, nama: 'Kode uji satu', contoh: true }, { sistem: 'icd10', kode: `${awalan}.2`, nama: 'Kode uji dua', contoh: true },
@@ -99,6 +101,7 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     await prisma.kodeTerminologi.deleteMany({ where: { kode: { startsWith: awalan } } });
     await prisma.antrean.deleteMany({ where });
     await prisma.kunjungan.deleteMany({ where });
+    await prisma.lokasi.deleteMany({ where });
     await prisma.pasien.deleteMany({ where });
     await prisma.penugasanJenis.deleteMany({ where });
     await prisma.izinJenisAkun.deleteMany({ where });
@@ -131,6 +134,8 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
       tersimpan: true, kunjungan: { tahap_layanan: 'pemeriksaan' },
       bagian: { isi: { sistolik: 150, diastolik: 95, suhu: 36.7, nadi: null }, verifikasi: 'sah', pengesahan: { versi: 1, pengguna_id: id.dokter, jenis_akun: 'Jenis dokter' } },
     });
+    expect(r.badan.data.kunjungan).toMatchObject({ status: 'in-progress', antrean: { status: 'dilayani' } });
+    expect((await prisma.antrean.findUniqueOrThrow({ where: { kunjungan_id: kunjA1 } })).waktu_mulai).not.toBeNull();
     expect(r.badan.data.bagian.pengesahan.hash).toMatch(/^[0-9a-f]{64}$/);
     // kode LOINC dan satuan UCUM tersimpan pada baris observasi
     const baris = await prisma.observasi.findFirstOrThrow({ where: { kunjungan_id: kunjA1, bidang: 'sistolik' } });
@@ -245,6 +250,10 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     const r = await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', { tahap: 'kasir' });
     expect(r.status).toBe(200);
     expect(r.badan.data.tahap_layanan).toBe('kasir');
+    expect(r.badan.data.antrean.status).toBe('selesai');
+    const antrean = await prisma.antrean.findUniqueOrThrow({ where: { kunjungan_id: kunjA1 } });
+    expect(antrean.waktu_mulai).not.toBeNull();
+    expect(antrean.waktu_selesai).not.toBeNull();
     expect(await prisma.draf.count({ where: { kunjungan_id: kunjA1 } })).toBe(0);
     expect((await panggil('PUT', `/kunjungan/${kunjA1}/draf/pemeriksaan-klinis`, 'dokter', { langkah: 1, isi: {} })).status).toBe(409);
     expect((await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', {})).status).toBe(409);
@@ -269,12 +278,12 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect((await panggil('GET', `/kunjungan/${kunjA2}/salinan/${kunjLain}`, 'dokter')).status).toBe(404);
   });
 
-  it('pencarian terminologi: saran berurutan, dibatasi, tanpa kode nonaktif', async () => {
-    const r = await panggil('GET', `/terminologi?sistem=icd10&q=${awalan}&batas=10`, 'dokter');
+  it('pencarian ICD memakai referensi primer statis, dibatasi dan tetap memeriksa izin', async () => {
+    const r = await panggil('GET', '/terminologi?sistem=icd10&q=A00&batas=10', 'dokter');
     expect(r.status).toBe(200);
-    expect(r.badan.data.map((x: any) => x.kode)).toEqual([`${awalan}.1`, `${awalan}.2`, `${awalan}.3`]);
-    expect((await panggil('GET', `/terminologi?sistem=icd10&q=${awalan}&batas=2`, 'dokter')).badan.data).toHaveLength(2);
-    expect((await panggil('GET', `/terminologi?sistem=icd10&q=uji%20dua`, 'dokter')).badan.data.map((x: any) => x.kode)).toEqual([`${awalan}.2`]);
+    expect(r.badan.data.map((x: any) => x.kode)).toEqual(['A00', 'A00.0', 'A00.1', 'A00.9']);
+    expect((await panggil('GET', '/terminologi?sistem=icd10&q=A00&batas=2', 'dokter')).badan.data).toHaveLength(2);
+    expect((await panggil('GET', '/terminologi?sistem=icd10&q=I10', 'dokter')).badan.data.map((x: any) => x.kode)).toEqual(['I10']);
     expect((await panggil('GET', `/terminologi?sistem=icd10`, 'dokter')).status).toBe(400);
     expect((await panggil('GET', `/terminologi?sistem=icd10&q=a&batas=999`, 'dokter')).status).toBe(400);
     expect((await panggil('GET', `/terminologi?sistem=icd10&q=${awalan}`, 'biasa')).status).toBe(403);

@@ -1,3 +1,4 @@
+import { PengaturanWebsiteKlinik } from './website-klinik';
 import { useCallback, useEffect, useState } from 'react';
 import { PROFIL_KLINIK } from '@klira/shared';
 import type { Halaman, ProfilKlinikDto, RiwayatProfilDto } from '@klira/shared';
@@ -137,6 +138,7 @@ export function TabProfil() {
           </Kolom>
         )}
       </Kartu>
+      <PengaturanWebsiteKlinik onSelesai={() => { setHalaman(1); setMuatRiwayat(n => n + 1); }} />
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
         <Kolom jarak="xs" padding="md">
           <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{PROFIL_KLINIK.riwayatJudul}</div>

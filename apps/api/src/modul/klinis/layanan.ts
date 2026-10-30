@@ -1,7 +1,8 @@
+import { kabarkanLayarPanggilan } from '../layar-panggilan/kanal';
 import { BAGIAN_NARASI, BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, DrafKlinisDto, DrafMasukan, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto,
-  KonteksKlinisDto, KunjunganDto, PenggunaSaya, RiwayatKunjunganDto, SalinanKunjunganDto, TahapLayanan, TemplatDto, TemplatMasukan, TindakanIsi,
+  KamusTerminologiMasukan, KonteksKlinisDto, KunjunganDto, PenggunaSaya, RiwayatKunjunganDto, SalinanKunjunganDto, TahapLayanan, TemplatDto, TemplatMasukan, TindakanIsi,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import { gagal } from '../hasil';
@@ -99,6 +100,7 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
         if (e instanceof BentrokVersiError) return gagal('konflik', KLINIS.galat.bentrok);
         throw e;
       }
+      kabarkanLayarPanggilan(p.fasyankes_id);
       const perbaikan = r.versi > 1;
       await audit.catat({
         fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: perbaikan ? 'perbaikan' : 'input', entitas: bagian, entitas_id: kunjunganId,
@@ -177,6 +179,8 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
       await catatLihat(p, 'catatan_klinis', sumberId, 'Menyalin catatan dari kunjungan sebelumnya', alamat);
       return { ok: true, data: d };
     },
+
+    kamusTerminologi: (q: KamusTerminologiMasukan) => repo.kamusTerminologi(q),
 
     cariTerminologi(q: CariTerminologiMasukan): Promise<KodeTerminologiDto[]> {
       return repo.cariTerminologi(q.sistem, q.q, q.batas);

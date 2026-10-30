@@ -1,4 +1,4 @@
-import { awalMasterObat, awalMutasi, awalResep, awalTelaah, barisResepKosong, biayaResep, bentukMutasi, bentukResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
+import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisResepKosong, biayaResep, bentukMutasi, bentukResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
 
 const kfa = { id: 7, kode: 'contoh-1', tingkat: 92, nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, rute: null, satuan: 'tablet', kekuatan: null, nomor_izin_edar: null, produsen: null, generik: true, status: 'aktif', contoh: true };
 
@@ -73,4 +73,13 @@ describe('telaah', () => {
     expect(galatTelaah({ ...k, catatan: 'cek alergi' })).toEqual({});
     expect(galatTelaah({ ...k, klinis: true })).toEqual({});
   });
+});
+
+
+test('resep awal dan baris tambahan kosong tidak diajukan; isian sebagian tetap memerlukan validasi', () => {
+  expect(adaIsianResep(awalResep())).toBe(false);
+  expect(adaIsianResep([barisResepKosong(), barisResepKosong()])).toBe(false);
+  for (const p of [{ master_obat_id: '7' }, { aturan_pakai: '3 x 1' }, { jumlah: '' }, { jumlah: '2' }, { rute: 'oral' }]) {
+    expect(adaIsianResep([{ ...barisResepKosong(), ...p }])).toBe(true);
+  }
 });

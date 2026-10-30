@@ -45,7 +45,7 @@ export class NikKembarError extends Error {}
 
 export interface RepositoriPasien {
   perbaiki(fasyankesId: number, id: number, oleh: number, data: DataPerbaikanPasien): Promise<boolean>;
-  cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap'> & { tanggal?: string } & { lewati: number; ambil: number }): Promise<DaftarPasienDto>;
+  cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap' | 'untuk_kunjungan'> & { tanggal?: string } & { lewati: number; ambil: number }): Promise<DaftarPasienDto>;
   detail(fasyankesId: number, id: number): Promise<PasienDetailDto | null>;
   duplikat(fasyankesId: number, k: { nik?: string | null; nama?: string; tanggal_lahir?: string; ibu_kandung?: string }): Promise<KandidatDuplikatDto[]>;
   teksAktif(fasyankesId: number, jenis: 'general'): Promise<TeksPersetujuanDto | null>;
@@ -59,7 +59,7 @@ const iso = (d: Date): string => d.toISOString();
 const pilihTeks = { id: true, jenis: true, versi: true, judul: true, tujuan: true, isi: true } as const;
 
 export class RepositoriPasienPrisma implements RepositoriPasien {
-  async cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap'> & { tanggal?: string } & { lewati: number; ambil: number }): Promise<DaftarPasienDto> {
+  async cari(fasyankesId: number, f: Pick<FilterPasien, 'cari' | 'tahap' | 'untuk_kunjungan'> & { tanggal?: string } & { lewati: number; ambil: number }): Promise<DaftarPasienDto> {
     const { awal, akhir } = rentangHariWib(f.tanggal ?? tanggalWib(new Date()), f.tanggal ?? tanggalWib(new Date()));
     const mulai = { gte: awal, lt: akhir };
     const jumlahTahap = await this.hitungTahap(fasyankesId, mulai);
@@ -67,7 +67,9 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     const tanggalKunjungan = f.cari && !f.tanggal ? {} : { mulai };
     const filterKunjungan: Prisma.KunjunganWhereInput = f.tahap === 'batal'
       ? { ...tanggalKunjungan, antrean: { is: { status: 'batal' } } }
-      : { ...tanggalKunjungan, tahap_layanan: { in: f.tahap === 'semua' ? [...TAHAP_BERJALAN] : tahapSet }, NOT: { antrean: { is: { status: 'batal' } } } };
+      : f.tahap === 'semua'
+        ? { ...tanggalKunjungan }
+        : { ...tanggalKunjungan, tahap_layanan: { in: tahapSet }, NOT: { antrean: { is: { status: 'batal' } } } };
     const halaman = Math.floor(f.lewati / f.ambil) + 1;
     const sertakan = {
       antrean: true,
@@ -75,7 +77,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     };
 
     if (!f.cari) {
-      // Tanpa pencarian: kunjungan yang berjalan pada tahap itu, menunggu terlama dahulu.
+      // Tanpa pencarian: kunjungan pada tanggal dan tahap terpilih, yang paling awal dahulu.
       const where = { fasyankes_id: fasyankesId, ...filterKunjungan };
       const [total, kunjungan] = await Promise.all([
         prisma.kunjungan.count({ where }),
@@ -88,7 +90,8 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     const digit = /^\d+$/.test(f.cari);
     const where: Prisma.PasienWhereInput = {
       fasyankes_id: fasyankesId,
-      OR: [{ nama: { contains: f.cari } }, { nomor_rm: { contains: f.cari } }, ...(digit ? [{ nik: { startsWith: f.cari } }] : [])],
+      ...(f.untuk_kunjungan === 'true' ? { AND: [{ kunjungan: { none: { tahap_layanan: { in: [...TAHAP_BERJALAN] }, NOT: { antrean: { is: { status: 'batal' } } } } } }] } : {}),
+      OR: [{ nama: { contains: f.cari } }, { nomor_rm: { contains: f.cari } }, ...(digit ? [{ nik: { startsWith: f.cari } }, { jkn_nomor_kartu: { startsWith: f.cari } }] : [])],
       ...(f.tahap === 'semua' && !f.tanggal ? {} : { kunjungan: { some: filterKunjungan } }),
     };
     const [total, pasien] = await Promise.all([

@@ -1,3 +1,4 @@
+import type { HalamanKamusTerminologiDto, SistemTerminologi as SistemKamus } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, BagianKlinis, BagianKlinisDto, BagianTemplat, DrafKlinisDto, FavoritDto, FolderKeluargaDto, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto, KonteksKlinisDto,
   KunjunganDto, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TemplatDto, TemplatMasukan,
@@ -38,3 +39,7 @@ export const bacaDrafKlinis = (kunjunganId: number, alur: AlurDrafKlinis) => pan
 export const simpanDrafKlinis = (kunjunganId: number, alur: AlurDrafKlinis, langkah: number, isi: Record<string, unknown>) =>
   panggilApi<DrafKlinisDto>('PUT', `/kunjungan/${kunjunganId}/draf/${alur}`, { langkah, isi });
 export const hapusDrafKlinis = (kunjunganId: number, alur: AlurDrafKlinis) => panggilApi<{ kunjungan_id: number }>('DELETE', `/kunjungan/${kunjunganId}/draf/${alur}`);
+
+
+export const jelajahKamus = (sistem: SistemKamus, halaman: number, awalan = '') =>
+  panggilApi<HalamanKamusTerminologiDto>('GET', `/terminologi/kamus?${new URLSearchParams({ sistem, halaman: String(halaman), ukuran: '30', ...(awalan ? { awalan } : {}) })}`);

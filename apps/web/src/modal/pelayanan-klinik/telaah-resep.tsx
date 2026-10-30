@@ -68,7 +68,7 @@ function KartuResep({ resep, onSelesaiTelaah, onSiap, memproses }: { resep: Rese
 
 /**
  * Modal Telaah dan siapkan resep (3.3, MODAL-1): telaah administratif, farmasetik, klinis, lalu tandai siap. Stok kurang tidak memblokir
- * tetapi ditampilkan sebagai peringatan. Setelah semua resep kunjungan siap, kunjungan maju ke kasir; obat diserahkan di kasir (7).
+ * tetapi ditampilkan sebagai peringatan. Setelah semua resep kunjungan siap, kunjungan maju ke kasir; obat diserahkan melalui aksi farmasi tersendiri.
  */
 export function TelaahResep({ kunjunganId, pasien, onTutup, onSelesai }: Props) {
   const [daftar, setDaftar] = useState<ResepDto[] | null>(null);

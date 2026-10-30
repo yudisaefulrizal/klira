@@ -45,3 +45,46 @@ test('pencarian tetap mengikuti tanggal terpilih', async () => {
    const panggilan = jest.mocked(prisma.pasien.findMany).mock.calls[0][0];
    expect(panggilan?.where).not.toHaveProperty('kunjungan');
  });
+
+ test.each([undefined, 'Siti'])('semua mencakup tahap selesai dan batal pada tanggal terpilih (cari: %s)', async (cari) => {
+   await new RepositoriPasienPrisma().cari(7, { tanggal: '2026-10-29', cari, tahap: 'semua', lewati: 0, ambil: 20 });
+   const mulai = { gte: new Date('2026-10-28T17:00:00Z'), lt: new Date('2026-10-29T17:00:00Z') };
+   if (cari) {
+     expect(prisma.pasien.findMany).toHaveBeenCalledWith(expect.objectContaining({
+       where: expect.objectContaining({ kunjungan: { some: { mulai } } }),
+       include: expect.objectContaining({ kunjungan: expect.objectContaining({ where: { mulai } }) }),
+     }));
+   } else {
+     expect(prisma.kunjungan.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { fasyankes_id: 7, mulai } }));
+     expect(prisma.kunjungan.count).toHaveBeenCalledWith({ where: { fasyankes_id: 7, mulai } });
+   }
+ });
+
+
+test('pemilih kunjungan mengecualikan pasien dengan kunjungan berjalan sebelum paginasi', async () => {
+  await new RepositoriPasienPrisma().cari(7, { cari: 'Siti', tahap: 'semua', untuk_kunjungan: 'true', lewati: 0, ambil: 20 });
+  const where = expect.objectContaining({
+    fasyankes_id: 7,
+    AND: [{ kunjungan: { none: {
+      tahap_layanan: { in: ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'] },
+      NOT: { antrean: { is: { status: 'batal' } } },
+    } } }],
+  });
+  expect(prisma.pasien.count).toHaveBeenCalledWith({ where });
+  expect(prisma.pasien.findMany).toHaveBeenCalledWith(expect.objectContaining({ where, skip: 0, take: 20 }));
+  expect(filterPasien.parse({ untuk_kunjungan: 'true' }).untuk_kunjungan).toBe('true');
+  expect(filterPasien.safeParse({ untuk_kunjungan: 'salah' }).success).toBe(false);
+});
+
+
+test.each([undefined, 'true'] as const)('pencarian nomor JKN lengkap atau awalan tetap dibatasi fasilitas (pemilih: %s)', async untuk_kunjungan => {
+  for (const cari of ['0001234567890', '000123']) {
+    await new RepositoriPasienPrisma().cari(7, { cari, tahap: 'semua', untuk_kunjungan, lewati: 0, ambil: 20 });
+    const where = expect.objectContaining({
+      fasyankes_id: 7,
+      OR: expect.arrayContaining([{ jkn_nomor_kartu: { startsWith: cari } }, { nik: { startsWith: cari } }]),
+    });
+    expect(prisma.pasien.count).toHaveBeenLastCalledWith({ where });
+    expect(prisma.pasien.findMany).toHaveBeenLastCalledWith(expect.objectContaining({ where }));
+  }
+});

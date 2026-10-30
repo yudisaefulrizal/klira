@@ -184,6 +184,7 @@ export const STATUS_PERAN_DIAGNOSIS = buat({
 
 /** Keadaan satu bagian catatan pada ringkasan akhir pemeriksaan klinis. */
 export const STATUS_RINGKASAN_BAGIAN = buat({
+  berubah: { label: 'Isi berubah setelah pengesahan', warna: 'kuning' },
   belum_diisi: { label: 'Belum diisi', warna: 'abu' },
   tanpa_perubahan: { label: 'Tanpa perubahan', warna: 'abu' },
   akan_disimpan: { label: 'Akan disimpan', warna: 'biru' },
@@ -192,7 +193,7 @@ export const STATUS_RINGKASAN_BAGIAN = buat({
 
 /** Prioritas order penunjang (4.3). */
 export const PRIORITAS_ORDER = buat({
-  rutin: { label: 'Rutin', warna: 'abu' },
+  rutin: { label: 'Normal', warna: 'abu' },
   segera: { label: 'Segera (cito)', warna: 'merah' },
 });
 export type PrioritasOrder = keyof typeof PRIORITAS_ORDER.peta;

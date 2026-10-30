@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 export type PerubahanWhatsapp = {
-  tipe: 'pesan' | 'baca' | 'percakapan' | 'koneksi' | 'siap';
+  tipe: 'pesan' | 'baca' | 'percakapan' | 'koneksi' | 'siap' | 'dibersihkan';
   fasyankes_id: number;
   baru?: boolean;
 };

@@ -2,6 +2,7 @@
 export type PanggilanPublik = { kode: string; waktu_panggil: string; poli_id: number; poli_nama: string; event_id?: number };
 export type LayarPanggilanDto = {
   fasyankes_nama: string;
+  fasyankes_logo_url?: string | null;
   tanggal: string;
   kursor: number;
   event_panggilan: PanggilanPublik[];

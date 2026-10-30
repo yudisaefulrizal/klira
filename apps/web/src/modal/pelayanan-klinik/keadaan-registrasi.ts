@@ -48,11 +48,11 @@ export const awalRegistrasi = (): KeadaanRegistrasi => ({
   agama: '', suku: '', bahasa: '', pekerjaan: '', pendidikan: '', status_kawin: '',
   alamat: '', kode_wilayah: '', jalur_identitas: 'nik', nomor_paspor: '', nomor_kitas: '',
   wali: [], jkn_nomor_kartu: '', jkn_kelas_hak: '', jkn_fktp_terdaftar: '',
-  bentuk: 'tertulis', penandatangan: 'pasien', wali_ke: '', setuju: false, konfirmasi_duplikat: false,
+  bentuk: 'lisan', penandatangan: 'pasien', wali_ke: '', setuju: false, konfirmasi_duplikat: false,
 });
 
-export const JUMLAH_LANGKAH_REGISTRASI = 7;
-const L = { identitas: 0, sosial: 1, alamat: 2, wali: 3, jkn: 4, consent: 5, ringkasan: 6 } as const;
+export const JUMLAH_LANGKAH_REGISTRASI = 6;
+const L = { identitas: 0, sosial: 1, wali: 2, jkn: 3, consent: 4, ringkasan: 5 } as const;
 
 /** Bentuk permintaan API dari isian (skema bersama di packages/shared memvalidasi dan menormalkan). */
 export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): RegistrasiPasienKirim {
@@ -67,7 +67,7 @@ export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): R
     tanggal_lahir: k.tanggal_lahir,
     jenis_kelamin: k.jenis_kelamin as 'laki_laki',
     agama: k.agama, suku: k.suku, bahasa: k.bahasa, pekerjaan: k.pekerjaan, pendidikan: k.pendidikan, status_kawin: k.status_kawin,
-    alamat: k.alamat, kode_wilayah: k.kode_wilayah,
+    kode_wilayah: k.kode_wilayah,
     nomor_paspor: k.jalur_identitas === 'paspor' ? k.nomor_paspor : undefined,
     nomor_kitas: k.jalur_identitas === 'kitas' ? k.nomor_kitas : undefined,
     jkn_nomor_kartu: k.jkn_nomor_kartu, jkn_kelas_hak: k.jkn_kelas_hak, jkn_fktp_terdaftar: k.jkn_fktp_terdaftar,
@@ -88,7 +88,7 @@ const LANGKAH_BIDANG: Record<string, number> = {
   nomor_hp: L.identitas, nama: L.identitas, nik: L.identitas, tanggal_lahir: L.identitas, ibu_kandung: L.identitas, tempat_lahir: L.identitas, jenis_kelamin: L.identitas,
   tidak_cakap: L.identitas,
   agama: L.sosial, suku: L.sosial, bahasa: L.sosial, pekerjaan: L.sosial, pendidikan: L.sosial, status_kawin: L.sosial,
-  alamat: L.alamat, kode_wilayah: L.alamat, jalur_identitas: L.alamat, nomor_paspor: L.alamat, nomor_kitas: L.alamat,
+  alamat: L.identitas, kode_wilayah: L.identitas, jalur_identitas: L.identitas, nomor_paspor: L.identitas, nomor_kitas: L.identitas,
   wali: L.wali,
   jkn_nomor_kartu: L.jkn, jkn_kelas_hak: L.jkn, jkn_fktp_terdaftar: L.jkn,
   persetujuan: L.consent,
@@ -174,7 +174,6 @@ const nilai = (v: string | undefined | null): string => (v && v.trim() ? v.trim(
 export function ringkasanRegistrasi(k: KeadaanRegistrasi, teks: TeksPersetujuanDto | null): BagianRingkasan[] {
   const d = DAFTAR_PASIEN.detail;
   const R = REGISTRASI.ringkasanJudul;
-  const jalur = REGISTRASI.jalurOpsi.find((o) => o.nilai === k.jalur_identitas)?.label ?? k.jalur_identitas;
   const penandatangan = k.penandatangan === 'wali' && k.wali_ke !== '' ? k.wali[Number(k.wali_ke)]?.nama : undefined;
   return [
     {
@@ -197,7 +196,7 @@ export function ringkasanRegistrasi(k: KeadaanRegistrasi, teks: TeksPersetujuanD
     {
       judul: R.alamat,
       baris: [
-        { label: d.alamat, nilai: nilai(k.alamat) }, { label: d.kodeWilayah, nilai: nilai(k.kode_wilayah) }, { label: d.jalur, nilai: jalur },
+        { label: d.alamat, nilai: nilai(k.kode_wilayah) },
         ...(k.jalur_identitas === 'paspor' ? [{ label: d.paspor, nilai: nilai(k.nomor_paspor) }] : []),
         ...(k.jalur_identitas === 'kitas' ? [{ label: d.kitas, nilai: nilai(k.nomor_kitas) }] : []),
       ],

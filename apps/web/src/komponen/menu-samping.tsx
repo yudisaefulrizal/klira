@@ -4,7 +4,7 @@ import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
 import { Tombol } from './ui/tombol';
 import { Kolom, Sebaris } from './ui/susunan';
-import { Penanda } from './ui/penanda';
+import { LogoKlira } from './logo-klira';
 import { IkonMenu } from './ikon-menu';
 
 /** Menu samping tetap di kiri: hanya halaman yang diizinkan, penanda aktif, dan kotak pengguna dengan tombol keluar (5.1a). */
@@ -36,10 +36,7 @@ export function MenuSamping({
       }}
     >
       <Sebaris jarak="sm" style={{ padding: `${token.jarak.xs} ${token.jarak.md} ${token.jarak.lg}` }}>
-        <Penanda ukuran="logo" bentuk="sudut" aria-hidden="true">
-          k
-        </Penanda>
-        <div style={{ fontWeight: token.huruf.berat.tebal, fontSize: token.huruf.ukuran.judul }}>{MASUK.judul}</div>
+        <LogoKlira />
       </Sebaris>
       {halamanMenuDiizinkan(pengguna.fitur).map((h) => {
         const on = h.path === halamanInduk || (!adaMenuInduk && h.path === '/pengaturan');

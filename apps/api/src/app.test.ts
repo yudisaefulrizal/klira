@@ -1,8 +1,10 @@
+jest.mock('./modul/website-klinik/data', () => ({ bacaKlinikPublik: jest.fn().mockResolvedValue(null), pengaturanWebsite: jest.fn() }));
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import type { AddressInfo } from 'net';
 import { buatApp } from './app';
+import { bacaKlinikPublik } from './modul/website-klinik/data';
 
 describe('app', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'klira-web-'));
@@ -23,6 +25,17 @@ describe('app', () => {
   it('melayani index.html dan fallback SPA', async () => {
     expect(await (await fetch(url('/'))).text()).toContain('Klira SPA');
     expect(await (await fetch(url('/pasien/12'))).text()).toContain('Klira SPA');
+  });
+  it('galat pembacaan website publik memakai penanganan galat umum tanpa membocorkan stack', async () => {
+    const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.mocked(bacaKlinikPublik).mockRejectedValueOnce(new Error('detail-internal-database'));
+    try {
+      const res = await fetch(url('/'));
+      expect(res.status).toBe(500);
+      const isi = await res.text();
+      expect(isi).not.toContain('detail-internal-database');
+      expect(JSON.parse(isi)).toHaveProperty('galat.kode', 'galat_server');
+    } finally { log.mockRestore(); }
   });
   it('rute /api tak dikenal tidak jatuh ke SPA', async () => {
     const res = await fetch(url('/api/tidak-ada'));

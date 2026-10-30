@@ -1,19 +1,18 @@
 import { kunjunganMasukan } from '@klira/shared';
-import type { KunjunganKirim, OpsiDpjpDto } from '@klira/shared';
+import type { KunjunganKirim } from '@klira/shared';
 
 /** Isian modal Pendaftaran kunjungan; teks agar mudah dikelola di isian. */
 export type KeadaanKunjungan = {
   pasien_id: string;
   jenis: 'AMB' | 'IMP';
   lokasi_id: string;
-  dpjp_id: string;
   cara_pembayaran: 'umum' | 'jkn';
   nomor_sep: string;
   keluhan_singkat: string;
 };
 
 export const awalKunjungan = (pasienId?: number): KeadaanKunjungan => ({
-  pasien_id: pasienId ? String(pasienId) : '', jenis: 'AMB', lokasi_id: '', dpjp_id: '', cara_pembayaran: 'umum', nomor_sep: '', keluhan_singkat: '',
+  pasien_id: pasienId ? String(pasienId) : '', jenis: 'AMB', lokasi_id: '', cara_pembayaran: 'umum', nomor_sep: '', keluhan_singkat: '',
 });
 
 const angka = (t: string): number | undefined => (t === '' ? undefined : Number(t));
@@ -23,7 +22,6 @@ export function bentukKunjungan(k: KeadaanKunjungan): KunjunganKirim {
     pasien_id: Number(k.pasien_id) || 0,
     jenis: k.jenis,
     lokasi_id: k.jenis === 'AMB' ? angka(k.lokasi_id) : undefined,
-    dpjp_id: angka(k.dpjp_id),
     cara_pembayaran: k.cara_pembayaran,
     nomor_sep: k.cara_pembayaran === 'jkn' ? k.nomor_sep : undefined,
     keluhan_singkat: k.keluhan_singkat,
@@ -38,18 +36,10 @@ export function galatKunjungan(k: KeadaanKunjungan): Record<string, string> {
   return hasil;
 }
 
-/** DPJP yang berjadwal di poli itu bila ada; bila tidak ada yang berjadwal, semua praktisi aktif. */
-export function dpjpUntukPoli(dpjp: readonly OpsiDpjpDto[], lokasiId: string): OpsiDpjpDto[] {
-  const id = Number(lokasiId);
-  const cocok = id ? dpjp.filter((d) => d.poli_ids.includes(id)) : [];
-  return cocok.length ? cocok : [...dpjp];
-}
-
 /** Perubahan jenis atau cara pembayaran membersihkan isian yang tidak berlaku. */
 export function ubahKunjungan(k: KeadaanKunjungan, p: Partial<KeadaanKunjungan>): KeadaanKunjungan {
   const baru = { ...k, ...p };
   if (baru.cara_pembayaran !== 'jkn') baru.nomor_sep = '';
   if (baru.jenis !== 'AMB') baru.lokasi_id = '';
-  if (p.lokasi_id !== undefined && p.lokasi_id !== k.lokasi_id) baru.dpjp_id = '';
   return baru;
 }

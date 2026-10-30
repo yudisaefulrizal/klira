@@ -1,3 +1,7 @@
+import { readFile } from 'node:fs/promises';
+import { bacaKlinikPublik } from './modul/website-klinik/data';
+import { htmlKlinikPublik } from './modul/website-klinik/html';
+import { buatRuteWebsitePublik, buatRuteWebsitePengaturan } from './modul/website-klinik/rute';
 import { buatRuteLayarPanggilan } from './modul/layar-panggilan/rute';
 import { GalatMeta } from './modul/instagram/meta';
 import { buatRuteInstagram } from './modul/instagram/rute';
@@ -111,8 +115,10 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   });
   app.use('/api', buatRuteAkses(layananAkses, opsi.baseUrl ?? process.env.BASE_URL ?? 'http://localhost'));
   app.use('/api', buatRuteLayarPanggilan());
+  app.use('/api', buatRuteWebsitePublik());
   // Semua rute di bawah ini ditolak selama akun wajib ganti kredensial.
   app.use('/api', blokirSelamaWajibGanti(layananAkses));
+  app.use('/api', buatRuteWebsitePengaturan(layananAkses, layananIzin));
   app.use('/api', buatRuteStatistik(layananAkses, layananIzin));
   app.use('/api', buatRuteWhatsapp(layananAkses, layananIzin));
   app.use('/api', buatRuteInstagram(layananAkses, layananIzin));
@@ -173,11 +179,20 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
     const badan: ResponsGalat = { galat: { kode: 'galat_server', pesan: GALAT.umum } };
     res.status(galat?.type === 'entity.parse.failed' ? 400 : 500).json(badan);
   };
-  app.use(penangananGalat);
   if (opsi.frontend) {
     app.use(opsi.frontend);
+    app.use(penangananGalat);
     return app;
   }
+  app.get(['/', '/klinik/:slug'], async (req, res, next) => {
+    try {
+      const slug = typeof req.params.slug === 'string' ? req.params.slug : undefined;
+      const data = slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? null : await bacaKlinikPublik(req.hostname, slug);
+      const html = await readFile(path.join(direktoriWeb, 'index.html'), 'utf8');
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(data ? 200 : 404).type('html').send(htmlKlinikPublik(html, data));
+    } catch (e) { next(e); }
+  });
   app.use(express.static(direktoriWeb));
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
@@ -185,5 +200,6 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
       if (galat) next();
     });
   });
+  app.use(penangananGalat);
   return app;
 }

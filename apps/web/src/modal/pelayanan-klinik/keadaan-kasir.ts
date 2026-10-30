@@ -24,12 +24,6 @@ export function diterapkan(k: KeadaanBayar, sisa: number): number {
   return Number.isInteger(j) && j > 0 ? Math.min(j, sisa) : 0;
 }
 
-// ---- Serah terima ----
-export type KeadaanSerah = { izinkan: boolean; alasan: string };
-export const awalSerah = (): KeadaanSerah => ({ izinkan: false, alasan: '' });
-export const galatSerah = (k: KeadaanSerah): string | null => (k.izinkan && !k.alasan.trim() ? KASIR.galat.alasanWajib : null);
-export const bentukSerah = (k: KeadaanSerah): Record<string, unknown> => (k.izinkan ? { izinkan_stok_kurang: true, alasan: k.alasan } : {});
-
 // ---- Syarat tutup ----
 /** Daftar syarat tutup kunjungan dari gambaran kasir; `lunas` bukan penghalang (butuh alasan), sisanya wajib. */
 export function daftarSyarat(g: KasirKunjunganDto): { kunci: 'tahap' | 'tagihan' | 'resep' | 'lunas'; ok: boolean; wajib: boolean }[] {

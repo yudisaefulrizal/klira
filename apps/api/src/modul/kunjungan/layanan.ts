@@ -52,6 +52,7 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
       if (!bolehPindahTahap(dari, ke)) return gagal('konflik', REGISTRASI.galat.tahapTidakSah, 'tahap');
       const k = await repo.ubahTahap(p.fasyankes_id, id, dari, ke);
       if (!k) return gagal('konflik', REGISTRASI.galat.tahapTidakSah, 'tahap');
+      kabarkanLayarPanggilan(p.fasyankes_id);
       await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kunjungan', entitas_id: id, keterangan: `Tahap layanan ${dari} menjadi ${ke}`, alamat });
       return { ok: true, data: k };
     },

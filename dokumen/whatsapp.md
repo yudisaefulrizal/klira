@@ -44,3 +44,17 @@ Typecheck, lint, build, pengujian unit/rute, dan pemeriksaan browser dilakukan t
 Foto profil kontak ditampilkan pada daftar percakapan dan header chat. Engine mengambil satu foto pada satu waktu di latar belakang melalui Baileys, termasuk kontak lama, tanpa menunda pesan. URL disegarkan setiap 24 jam. Foto kosong atau dibatasi privasi menggunakan inisial; gangguan sementara mempertahankan foto lama dan dicoba kembali setelah 15 menit. Hasil pengambilan diabaikan jika sesi, generasi koneksi, fasyankes, atau pemilik engine berubah. Migrasi `20261026160000_whatsapp_foto_profil` menambahkan URL foto serta jadwal pemeriksaan berikutnya.
 
 Inbox menggunakan filter Semua, Belum dibaca, dan Dibaca. Status penanganan Baru/Diproses/Selesai tidak digunakan lagi. Penanda baca tetap berlaku per pengguna Klira dan diperbarui saat percakapan dibuka.
+
+
+## Bersihkan pesan
+
+Tombol **Bersihkan pesan** tersedia pada bagian koneksi WhatsApp, baik di halaman Pesan maupun panel chat. Setelah konfirmasi, seluruh percakapan, pesan, penanda baca, dan lampiran lokal kanal WhatsApp milik fasyankes pengguna dihapus. Koneksi akun, data pasien, kanal lain, dan pesan di aplikasi WhatsApp tetap tersedia.
+
+Endpoint `DELETE /api/whatsapp/percakapan` memerlukan sesi, izin `whatsapp:lihat`, dan badan `{"konfirmasi":"whatsapp"}`. Transaksi mengunci percakapan sebelum penghapusan dan menulis audit dalam transaksi yang sama. Jika masih ada pesan berstatus antre/mengirim, endpoint mengembalikan 409 tanpa menghapus data. Pembaruan WebSocket mengosongkan percakapan aktif, draf balasan, dan penanda belum dibaca pada klien kanal tersebut. Respons daftar lama diabaikan setelah pembersihan.
+
+
+### Keluar akun
+
+Aksi **Keluar** memutus koneksi WhatsApp dan membersihkan seluruh percakapan, pesan (termasuk antrean), penanda baca, serta lampiran lokal fasyankes dalam satu transaksi dengan audit. Identitas akun lama dihapus dari konfigurasi lokal dan disembunyikan pada respons koneksi serta antarmuka saat tidak terhubung. Klien lain menerima pembaruan untuk mengosongkan inbox dan draf. Pesan di aplikasi WhatsApp tetap tersedia.
+
+Engine memeriksa sesi dan generasi koneksi dalam transaksi sebelum menyimpan pesan masuk beserta lampirannya, sehingga pekerjaan sesi lama yang tertunda tidak mengisi kembali inbox setelah logout.

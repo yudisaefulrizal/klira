@@ -1,0 +1,57 @@
+{
+  "tanggal_unduh": "2026-10-30",
+  "zona_waktu": "Asia/Jakarta",
+  "penerbit_sumber": "Kementerian Kesehatan RI — SATUSEHAT Platform",
+  "berkas": [
+    {
+      "nama_berkas": "icd-10-2010-satusehat.xlsx",
+      "sistem": "icd10",
+      "halaman_sumber": "https://satusehat.kemkes.go.id/platform/docs/id/terminology/icd/icd-10/",
+      "tautan_dokumen": "https://docs.google.com/spreadsheets/d/12_72PvHRLWny3VEwodEI6TRDc7QqWdiF/edit?gid=0",
+      "tautan_unduh": "https://docs.google.com/spreadsheets/d/12_72PvHRLWny3VEwodEI6TRDc7QqWdiF/export?format=xlsx",
+      "ukuran_byte": 515391,
+      "sha256": "306c8860feb562014de48e894e9254b08aa492770cd04ea29de6707d7e51e150",
+      "lembar": [
+        {
+          "nama": "ICD10",
+          "kolom": [
+            "CODE",
+            "DISPLAY",
+            "VERSION"
+          ],
+          "jumlah_kode": 18542,
+          "kode_unik": 18542,
+          "versi": {
+            "ICD10_2010": 18542
+          },
+          "kode_berawalan_nol": 0
+        }
+      ]
+    },
+    {
+      "nama_berkas": "icd-9-cm-2010-satusehat.xlsx",
+      "sistem": "icd9cm",
+      "halaman_sumber": "https://satusehat.kemkes.go.id/platform/docs/id/terminology/icd/icd-9-cm/",
+      "tautan_dokumen": "https://docs.google.com/spreadsheets/d/1uw9aEzM61rsp7PVt7dRHt2eATg64qQB_/edit?gid=0",
+      "tautan_unduh": "https://docs.google.com/spreadsheets/d/1uw9aEzM61rsp7PVt7dRHt2eATg64qQB_/export?format=xlsx",
+      "ukuran_byte": 136974,
+      "sha256": "af94244dffa652ba11be26b9843c04989e3bfaaead9d5be5bc0e7ca7fd2c99c5",
+      "lembar": [
+        {
+          "nama": "ICD9 CM",
+          "kolom": [
+            "CODE",
+            "DISPLAY",
+            "VERSION"
+          ],
+          "jumlah_kode": 4626,
+          "kode_unik": 4626,
+          "versi": {
+            "ICD9CM_2010": 4626
+          },
+          "kode_berawalan_nol": 443
+        }
+      ]
+    }
+  ]
+}

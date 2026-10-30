@@ -1,6 +1,10 @@
+import { awalResep, barisResepKosong } from './keadaan-farmasi';
+import type { BarisResep } from './keadaan-farmasi';
+import { awalOrderLab } from './keadaan-order-lab';
+import type { KeadaanOrderLab } from './keadaan-order-lab';
 import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL } from '@klira/shared';
 import type {
-  BagianNarasi, BagianKlinis, BidangPemeriksaan, JenisTindakLanjut, KlinisKunjunganDto, KunciTandaVital, SalinanKunjunganDto, TandaVitalIsi, TemplatDto, PeranDiagnosis,
+  BagianNarasi, BagianKlinis, BidangPemeriksaan, JenisTindakLanjut, KlinisKunjunganDto, KunciTandaVital, SalinanKunjunganDto, TandaVitalIsi, TemplatDto, PeranDiagnosis, StatusPengesahan,
 } from '@klira/shared';
 import { KLINIS, STATUS_PERAN_DIAGNOSIS } from '@klira/shared';
 import type { BagianRingkasan } from '../../komponen/ui/susunan';
@@ -27,6 +31,9 @@ export type KeadaanPemeriksaan = {
   implementasi: string;
   evaluasi: string;
   versi_draf: number;
+  lab_dipilih: boolean;
+  order_lab: KeadaanOrderLab;
+  resep: BarisResep[];
 };
 
 /**
@@ -39,7 +46,22 @@ export function pulihkanKeadaan(dasar: KeadaanPemeriksaan, nilai: unknown): Kead
   const hasil: Record<string, unknown> = { ...dasar };
   for (const [kunci, d] of Object.entries(dasar)) {
     const v = n[kunci];
-    if (typeof d === 'string') {
+    if (kunci === 'resep') {
+      if (Array.isArray(v)) {
+        const baris = v.filter((b) => b && typeof b === 'object' && !Array.isArray(b)).map((b) =>
+          Object.fromEntries(Object.entries(barisResepKosong()).map(([bidang, awal]) => [bidang, typeof b[bidang] === 'string' ? b[bidang] : awal])));
+        hasil[kunci] = baris.length ? baris : awalResep();
+      }
+    } else if (kunci === 'order_lab') {
+      const lab = v as Partial<KeadaanOrderLab> | null;
+      if (lab && typeof lab === 'object') hasil[kunci] = {
+        pemeriksaan: Array.isArray(lab.pemeriksaan) ? [...new Set(lab.pemeriksaan.filter((id) => Number.isInteger(id) && id > 0))] : [],
+        prioritas: lab.prioritas === 'segera' ? 'segera' : 'rutin',
+        catatan: typeof lab.catatan === 'string' ? lab.catatan : '',
+      };
+    } else if (typeof d === 'boolean') {
+      if (typeof v === 'boolean') hasil[kunci] = v;
+    } else if (typeof d === 'string') {
       if (typeof v === 'string') hasil[kunci] = v;
     } else if (Array.isArray(d)) {
       if (Array.isArray(v)) hasil[kunci] = v.filter((x) => !!x && typeof x === 'object' && typeof (x as { kode?: unknown }).kode === 'string');
@@ -61,6 +83,7 @@ export const awalKeadaan = (): KeadaanPemeriksaan => ({
   diagnosis: [],
   tindakan: [],
   tindak_lanjut: { jenis: '', tujuan: '', spri: '', catatan: '' },
+  lab_dipilih: false, order_lab: awalOrderLab(), resep: awalResep(),
   alasan: '', assessment: '', plan: '', implementasi: '', evaluasi: '', versi_draf: 2,
 });
 
@@ -227,11 +250,12 @@ export function syaratSelesaiTerpenuhi(disahkan: Record<BagianKlinis, boolean>, 
 export const disahkanDari = (b: BagianServer): Record<BagianKlinis, boolean> =>
   Object.fromEntries(BAGIAN_KLINIS.map((n) => [n, b[n]?.pengesahan != null])) as Record<BagianKlinis, boolean>;
 
-export type StatusRingkasan = 'belum_diisi' | 'tanpa_perubahan' | 'akan_disimpan' | 'sudah_sah';
+export type StatusRingkasan = 'belum_diisi' | 'tanpa_perubahan' | 'akan_disimpan' | 'sudah_sah' | 'berubah';
 /** Keadaan tiap bagian di ringkasan akhir. */
-export function statusRingkasan(bagian: BagianKlinis, k: KeadaanPemeriksaan, server: KeadaanPemeriksaan, disahkan: boolean): StatusRingkasan {
-  if (perluDisimpan(bagian, k, server, disahkan)) return 'akan_disimpan';
-  if (disahkan) return 'sudah_sah';
+export function statusRingkasan(bagian: BagianKlinis, k: KeadaanPemeriksaan, server: KeadaanPemeriksaan, verifikasi: StatusPengesahan): StatusRingkasan {
+  if (perluDisimpan(bagian, k, server, verifikasi !== 'belum_disahkan')) return 'akan_disimpan';
+  if (verifikasi === 'berubah') return 'berubah';
+  if (verifikasi === 'sah') return 'sudah_sah';
   return bagianKosong(bagian, k) ? 'belum_diisi' : 'tanpa_perubahan';
 }
 
@@ -347,8 +371,12 @@ export function ringkasanIsi(k: KeadaanPemeriksaan): BagianRingkasan[] {
       ...PEMERIKSAAN_BIDANG.map((b) => ({ label: KLINIS.pemeriksaan[b], nilai: text(k.pemeriksaan[b]) })),
     ] },
     { judul: 'A — Assessment', baris: [narasi('assessment'), ...k.diagnosis.map((d) => ({ label: d.kode, nilai: `${d.nama} (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})` }))] },
-    { judul: 'P — Plan', baris: [narasi('plan'), { label: KLINIS.tindakLanjut.jenis, nilai: jenis }, { label: KLINIS.tindakLanjut.tujuan, nilai: text(k.tindak_lanjut.tujuan) }, { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) }] },
-    { judul: 'I — Implementation', baris: [narasi('implementasi'), ...k.tindakan.map((t) => ({ label: t.kode, nilai: t.nama }))] },
+    { judul: 'P — Plan', baris: [{ label: 'Tindak lanjut', nilai: jenis }, ...(k.tindak_lanjut.jenis === 'rujuk' ? [{ label: KLINIS.tindakLanjut.tujuan, nilai: text(k.tindak_lanjut.tujuan) }] : []), narasi('plan'), ...(k.tindak_lanjut.jenis === 'rawat_inap' ? [{ label: KLINIS.tindakLanjut.spri, nilai: text(k.tindak_lanjut.spri) }] : []), { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) }] },
+    { judul: 'I — Implementation', baris: [narasi('implementasi'), ...k.tindakan.flatMap((t) => [
+      { label: t.kode, nilai: t.nama },
+      { label: KLINIS.tindakan.mulai, nilai: text(t.mulai.replace('T', ' ')) },
+      { label: KLINIS.tindakan.selesai, nilai: text(t.selesai.replace('T', ' ')) },
+    ])] },
     { judul: 'E — Evaluation', baris: [narasi('evaluasi')] },
   ];
 }

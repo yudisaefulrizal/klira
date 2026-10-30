@@ -1,3 +1,4 @@
+import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
 import type { Prisma } from '@klira/db';
 import { hargaTarif, TAHAP_BERJALAN } from '@klira/shared';
@@ -159,10 +160,7 @@ export class RepositoriRawatInapPrisma {
       await tx.tagihan.update({ where: { id: baru.id }, data: { status_tagihan: semua.every((x) => x.harga !== null) ? 'lengkap' : 'belum_lengkap' } });
     }
     await tx.resep.updateMany({ where: { kunjungan_id: asalId, fasyankes_id: p.fasyankesId, status: { not: 'diserahkan' } }, data: { kunjungan_id: baruId } });
-    const antrean = await tx.antrean.findUnique({ where: { kunjungan_id: asalId } });
-    if (antrean && antrean.status !== 'selesai' && antrean.status !== 'batal') {
-      await tx.antrean.update({ where: { id: antrean.id }, data: antrean.status === 'dilayani' ? { status: 'selesai', waktu_selesai: sekarang } : { status: 'batal' } });
-    }
+    await selesaiAntreanDalam(tx, p.fasyankesId, asalId, sekarang);
     await tx.kunjungan.update({ where: { id: asalId }, data: { tahap_layanan: 'ditutup', status: 'finished', selesai: sekarang, waktu_tutup: sekarang } });
   }
 

@@ -1,8 +1,10 @@
+import { cariIcd, kamusIcd, sistemIcd } from './terminologi-icd';
+import { mulaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma, Prisma } from '@klira/db';
 import { PEMERIKSAAN_BIDANG, TANDA_VITAL, umurTahun } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, AnamnesisIsi, BagianKlinis, BagianTemplat, DiagnosisIsi, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KodeTerminologiDto, KonteksKlinisDto, KunjunganDto,
-  PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi, TindakLanjutIsi,
+  HalamanKamusTerminologiDto, KamusTerminologiMasukan, PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi, TindakLanjutIsi,
 } from '@klira/shared';
 import { ambilKunjungan, keDto } from '../kunjungan/repositori';
 import { tulisPengesahanDalam } from '../rekam-medis/repositori';
@@ -30,6 +32,7 @@ export interface RepositoriKlinis {
   konteks(fasyankesId: number, kunjunganId: number): Promise<KonteksKlinisDto | null>;
   riwayatPasien(fasyankesId: number, pasienId: number, kecualiKunjunganId: number | null, batas: number): Promise<RiwayatKunjunganDto[] | null>;
   salinan(fasyankesId: number, sumberId: number): Promise<SalinanKunjunganDto | null>;
+  kamusTerminologi(q: KamusTerminologiMasukan): Promise<HalamanKamusTerminologiDto>;
   cariTerminologi(sistem: SistemTerminologi, q: string, batas: number): Promise<KodeTerminologiDto[]>;
   daftarFavorit(fasyankesId: number, penggunaId: number, jenis?: JenisFavorit): Promise<FavoritDto[]>;
   tambahFavorit(fasyankesId: number, penggunaId: number, d: { jenis: JenisFavorit; kode: string; nama: string }): Promise<FavoritDto | null>;
@@ -198,6 +201,7 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
         // Versi isi mengikuti versi pengesahan; baris yang sama tidak boleh ditulis dua kali (unique) sehingga penulisan serempak gagal bersih.
         await tulisIsi(tx, d.bagian, d.isi, d.fasyankesId, d.kunjunganId, d.pengesahan.versi, d.oleh, d.pengesahan.waktu);
         await tulisPengesahanDalam(tx, d.pengesahan);
+        await mulaiAntreanDalam(tx, d.fasyankesId, d.kunjunganId, d.pengesahan.waktu);
       });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && (e.code === 'P2002' || e.code === 'P2034')) throw new BentrokVersiError();
@@ -272,8 +276,19 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
     };
   }
 
-  /** Urutan saran: kode diawali kata, nama diawali kata, lalu nama memuat kata; dibatasi `batas` hasil. */
+  /** Referensi ICD dari JSON primer; sistem lain tetap memakai master terminologi. */
+  async kamusTerminologi(q: KamusTerminologiMasukan): Promise<HalamanKamusTerminologiDto> {
+    if (sistemIcd(q.sistem)) return kamusIcd({ ...q, sistem: q.sistem });
+    const where = { sistem: q.sistem, aktif: true, ...(q.awalan ? { kode: { startsWith: q.awalan } } : {}) };
+    const [total, data] = await Promise.all([
+      prisma.kodeTerminologi.count({ where }),
+      prisma.kodeTerminologi.findMany({ where, orderBy: { kode: 'asc' }, skip: (q.halaman - 1) * q.ukuran, take: q.ukuran, select: { sistem: true, kode: true, nama: true, contoh: true } }),
+    ]);
+    return { data, total, halaman: q.halaman, ukuran: q.ukuran };
+  }
+
   async cariTerminologi(sistem: SistemTerminologi, q: string, batas: number): Promise<KodeTerminologiDto[]> {
+    if (sistemIcd(sistem)) return cariIcd(sistem, q, batas);
     const dasar = { sistem, aktif: true };
     const pilih = { sistem: true, kode: true, nama: true, contoh: true } as const;
     const awal = (where: Prisma.KodeTerminologiWhereInput) => prisma.kodeTerminologi.findMany({ where: { ...dasar, ...where }, orderBy: { kode: 'asc' }, take: batas, select: pilih });

@@ -1,3 +1,4 @@
+import { BersihkanPesan } from '../pesan/bersihkan-pesan';
 import { usePesan } from './konteks-pesan';
 import { useEffect, useState } from 'react';
 import { punyaIzin, type KoneksiWaDto } from '@klira/shared';
@@ -9,7 +10,7 @@ import { Tombol } from '../ui/tombol';
 import { Peringatan } from '../ui/peringatan';
 export function KoneksiWhatsapp() {
   const { pengguna } = usePengguna();
-  const { revisi } = usePesan();
+  const { revisi, resetPesan } = usePesan();
   const [koneksi, setKoneksi] = useState<KoneksiWaDto | null>(null);
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState(false);
@@ -31,11 +32,14 @@ export function KoneksiWhatsapp() {
     return () => { hidup = false; };
   }, [revisi]);
   async function aksi(a: 'hubungkan' | 'putuskan') {
-    if (a === 'putuskan' && koneksi?.status === 'terhubung' && !window.confirm('Keluar dari WhatsApp?')) return;
+    if (a === 'putuskan' && koneksi?.status === 'terhubung' && !window.confirm('Keluar dari WhatsApp dan bersihkan seluruh pesan di Klira?')) return;
     setSibuk(true);
     try {
       await aksiKoneksiWa(a);
-      setKoneksi(await koneksiWa());
+      if (a === 'putuskan') {
+        setKoneksi({ status: 'terputus', nomor: null, qr: null, tersedia: false });
+        resetPesan();
+      } else setKoneksi(await koneksiWa());
       setGalat('');
     } catch (e) {
       setGalat(e instanceof Error ? e.message : 'Gagal mengubah koneksi');
@@ -53,7 +57,7 @@ export function KoneksiWhatsapp() {
       <div className="wa-akun">
         <span className="wa-akun-status" data-aktif={aktif}>
           <i aria-hidden="true" />
-          <span><strong>{koneksi?.nomor ? `+${koneksi.nomor}` : 'WhatsApp'}</strong>
+          <span><strong>{aktif && koneksi?.nomor ? `+${koneksi.nomor}` : 'WhatsApp'}</strong>
             <small>{label[koneksi?.status ?? ''] ?? 'Memuat…'}</small></span>
         </span>
         {boleh && <Tombol varian={aktif || menunggu ? 'sekunder' : 'utama'}
@@ -62,6 +66,7 @@ export function KoneksiWhatsapp() {
           {sibuk ? 'Sebentar…' : aktif ? 'Keluar' : menunggu ? 'Batal' : 'Masuk'}
         </Tombol>}
       </div>
+      {boleh && <BersihkanPesan kanal="whatsapp" onSelesai={resetPesan} />}
       {galat && <Peringatan nada="merah">{galat}</Peringatan>}
       {koneksi?.qr && <div className="wa-akun-qr">
         <img src={koneksi.qr} alt="QR WhatsApp" style={{ width: token.ukuran.qrWhatsapp, maxWidth: '100%' }} />

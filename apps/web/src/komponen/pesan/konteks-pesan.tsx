@@ -7,6 +7,7 @@ import { useNavigasi } from '../../util/navigasi';
 type Pasien = { id: number; nama: string };
 type Keadaan = {
   revisi: number;
+  resetPesan: () => void;
   sambungan: 'menghubungkan' | 'terhubung' | 'terputus';
   terbuka: boolean;
   setTerbuka: (v: boolean) => void;
@@ -59,18 +60,34 @@ export function PenyediaPesan({ children }: { children: ReactNode }) {
   const [sambungan, setSambungan] = useState<'menghubungkan' | 'terhubung' | 'terputus'>('menghubungkan');
   const [halaman, setHalaman] = useState(1);
   const [adaLagi, setAdaLagi] = useState(false);
+  const generasiDaftar = useRef(0);
+  const resetPesan = useCallback(() => {
+    generasiDaftar.current += 1;
+    setGalat('');
+    pilih(null);
+    setDraf({});
+    setDaftar([]);
+    setHalaman(1);
+    setAdaLagi(false);
+    setBelum(0);
+    setPemberitahuan(false);
+    setRevisi((v) => v + 1);
+    setRevisiDaftar((v) => v + 1);
+  }, []);
   const identitas = useRef(pengguna?.id);
   identitas.current = pengguna?.id;
   const muat = useCallback(async () => {
     if (!boleh) return;
+    const generasi = generasiDaftar.current;
     try {
       const bagian = await Promise.all(Array.from({ length: halaman }, (_, i) => percakapanWa(i + 1)));
       const rows = bagian.flat();
-      if (identitas.current !== pengguna?.id) return;
+      if (identitas.current !== pengguna?.id || generasi !== generasiDaftar.current) return;
       setDaftar(rows);
       setAdaLagi(bagian.at(-1)?.length === 200);
       setGalat('');
     } catch (e) {
+      if (identitas.current !== pengguna?.id || generasi !== generasiDaftar.current) return;
       setGalat(e instanceof Error ? e.message : 'Gagal memuat pesan');
     }
   }, [boleh, pengguna?.id, halaman]);
@@ -94,9 +111,10 @@ export function PenyediaPesan({ children }: { children: ReactNode }) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     let percobaan = 0;
     const ringkas = async () => {
+      const generasi = generasiDaftar.current;
       try {
         const hasil = await ringkasanWa();
-        if (hidup) setBelum(hasil.belum_dibaca);
+        if (hidup && generasi === generasiDaftar.current) setBelum(hasil.belum_dibaca);
       } catch {
         /* Galat rinci ditampilkan saat panel dibuka. */
       }
@@ -121,7 +139,8 @@ export function PenyediaPesan({ children }: { children: ReactNode }) {
         if (!hidup) return;
         try {
           const data = JSON.parse(event.data) as { tipe: string; baru?: boolean };
-          if (!['pesan', 'baca', 'percakapan', 'koneksi', 'siap'].includes(data.tipe)) return;
+          if (!['pesan', 'baca', 'percakapan', 'koneksi', 'siap', 'dibersihkan'].includes(data.tipe)) return;
+          if (data.tipe === 'dibersihkan') resetPesan();
           void ringkas();
           setRevisiDaftar((v) => v + 1);
           if (data.tipe !== 'baca') setRevisi((v) => v + 1);
@@ -152,7 +171,7 @@ export function PenyediaPesan({ children }: { children: ReactNode }) {
       socket?.close();
       document.removeEventListener('visibilitychange', kembali);
     };
-  }, [boleh, pengguna?.id]);
+  }, [boleh, pengguna?.id, resetPesan]);
   useEffect(() => {
     if (!boleh || !(terbuka || path === '/pesan')) return;
     void muat();
@@ -166,6 +185,7 @@ export function PenyediaPesan({ children }: { children: ReactNode }) {
     <Konteks.Provider
       value={{
         revisi,
+        resetPesan,
         sambungan,
         terbuka,
         setTerbuka,

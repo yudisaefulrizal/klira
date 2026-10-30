@@ -193,17 +193,12 @@ d('master data dan profil klinik terhadap klira_uji', () => {
   });
 
   it('wilayah: hanya baca, dapat dicari dan disaring tingkat; jenis tak dikenal ditolak', async () => {
-    await prisma.wilayah.upsert({ where: { kode: '96' }, update: {}, create: { kode: '96', nama: 'Provinsi Uji Master', tingkat: 'provinsi', contoh: true } });
-    try {
-      const w = await panggil('GET', '/master/wilayah?cari=Uji%20Master&tingkat=provinsi', 'pelihat');
-      expect(w.badan.data.data[0]).toMatchObject({ kode: '96', contoh: true });
-      expect((await panggil('GET', '/master/wilayah?tingkat=kecamatan&cari=Uji%20Master', 'pelihat')).badan.data.total).toBe(0);
-      expect((await panggil('POST', '/master/wilayah', 'pimpinan', { nama: 'x' })).status).toBe(405);
-      expect((await panggil('PATCH', '/master/wilayah/1', 'pimpinan', { nama: 'x' })).status).toBe(405);
-      expect((await panggil('GET', '/master/obat', 'pelihat')).status).toBe(400);
-    } finally {
-      await prisma.wilayah.deleteMany({ where: { kode: '96' } });
-    }
+    const w = await panggil('GET', '/master/wilayah?cari=Aceh&tingkat=provinsi', 'pelihat');
+    expect(w.badan.data.data[0]).toMatchObject({ kode: '11', nama: 'Aceh', contoh: false });
+    expect((await panggil('GET', '/master/wilayah?tingkat=kecamatan&cari=tidak-ada-wilayah-ini', 'pelihat')).badan.data.total).toBe(0);
+    expect((await panggil('POST', '/master/wilayah', 'pimpinan', { nama: 'x' })).status).toBe(405);
+    expect((await panggil('PATCH', '/master/wilayah/1', 'pimpinan', { nama: 'x' })).status).toBe(405);
+    expect((await panggil('GET', '/master/obat', 'pelihat')).status).toBe(400);
   });
 
   it('profil klinik: baca, validasi, simpan dengan riwayat dan audit, kode registrasi unik', async () => {

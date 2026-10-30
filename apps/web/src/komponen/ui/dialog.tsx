@@ -115,9 +115,10 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
 }
 
 /** Kepala dialog: judul, slot samping (ringkasan konteks), dan tombol tutup. */
-export function KepalaDialog({ judul, onTutup, labelTutup = MODAL.tutup, children }: { judul: string; onTutup: () => void; labelTutup?: string; children?: ReactNode }) {
+export function KepalaDialog({ judul, onTutup, labelTutup = MODAL.tutup, children, className }: { judul: string; onTutup: () => void; labelTutup?: string; children?: ReactNode; className?: string }) {
   return (
     <header
+      className={className}
       style={{
         display: 'flex', alignItems: 'center', gap: token.jarak.lg, padding: `${token.jarak.md} ${token.jarak.lg}`,
         background: token.warna.kepalaTabel, borderBottom: `${token.ukuran.garis} solid ${token.warna.garis}`,

@@ -53,6 +53,7 @@ export type UbahMasterObatMasukan = z.infer<typeof ubahMasterObatMasukan>;
 
 export type MasterObatDto = {
   id: number; kfa_id: number; kfa_kode: string; kfa_nama: string; kfa_tingkat: number; kfa_contoh: boolean; nama_tampil: string; satuan: string; harga: number; aktif: boolean;
+  bentuk_sediaan?: string | null; rute?: string | null;
   stok_total: number; kedaluwarsa_terdekat: string | null; status_stok: StatusStok;
 };
 export type HalamanMasterObatDto = { data: MasterObatDto[]; halaman: number; ukuran: number; total: number };

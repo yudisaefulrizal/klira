@@ -1,0 +1,8 @@
+@media (max-width: 700px) {
+  .modal-langkah-layout { flex-direction: column !important; }
+  .modal-langkah-nav { flex: 0 0 auto !important; flex-direction: row !important; overflow-x: auto !important; overflow-y: hidden !important; padding: 8px !important; border-right: 0 !important; border-bottom: 1px solid var(--warna-garis); }
+  .modal-langkah-nav > div:first-child { display: none; }
+  .modal-langkah-nav button { flex-shrink: 0; white-space: nowrap; }
+  .modal-langkah-form { min-height: 0; }
+  .modal-langkah-isi { padding: 16px !important; }
+}

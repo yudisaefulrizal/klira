@@ -6,6 +6,12 @@ import type {
 } from '@klira/shared';
 import { tambahItemTagihanDalam, totalTagihan } from '../kasir/repositori';
 
+export type Kekurangan = { master_obat_id: number; nama: string; butuh: number; tersedia: number };
+export type HasilSerahRepo =
+  | { ok: true; kekurangan: Kekurangan[] }
+  | { ok: false; sebab: 'tidak_ada_resep' | 'belum_siap' | 'sudah_diserahkan' | 'tahap_salah' }
+  | { ok: false; sebab: 'stok_kurang'; kekurangan: Kekurangan[] };
+
 export type KunjunganResep = { id: number; pasien_id: number; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
 export type ObatMini = { id: number; nama_tampil: string; satuan: string; harga: number };
 export type ItemBaruResep = { master_obat_id: number; aturan_pakai: string; bentuk: string | null; rute: string | null; jumlah: number };
@@ -15,6 +21,57 @@ const tglIso = (d: Date): string => d.toISOString().slice(0, 10);
 const awalHariUtc = (): Date => new Date(`${tglIso(new Date())}T00:00:00.000Z`);
 
 export class RepositoriFarmasiPrisma {
+  // ---- Serah terima obat ----
+  /**
+   * Serah terima semua resep siap kunjungan ini. Stok dikurangi per batch (kedaluwarsa terdekat lebih dulu, batch kedaluwarsa dilewati) dengan kunci baris,
+   * dicatat sebagai mutasi keluar dan pengeluaran obat. Stok kurang hanya diteruskan bila diizinkan (peringatan); jumlah pengeluaran tetap sesuai resep.
+   */
+  async serahTerima(fasyankesId: number, petugasId: number, kunjunganId: number, izinkan: boolean, alasan: string | null): Promise<HasilSerahRepo> {
+    return prisma.$transaction(async (tx) => {
+      // Kunci baris resep kunjungan sebagai pernyataan pertama agar dua penyerahan serempak tidak sama-sama membaca status siap.
+      await tx.$queryRaw`SELECT id FROM resep WHERE kunjungan_id = ${kunjunganId} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
+      const k = await tx.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, select: { tahap_layanan: true } });
+      if (!k || k.tahap_layanan === 'ditutup') return { ok: false, sebab: 'tahap_salah' } as const;
+      const reseps = await tx.resep.findMany({ where: { kunjungan_id: kunjunganId, fasyankes_id: fasyankesId }, include: { item: { include: { master: true } } }, orderBy: { id: 'asc' } });
+      if (!reseps.length) return { ok: false, sebab: 'tidak_ada_resep' } as const;
+      if (reseps.some((r) => r.status === 'diajukan' || r.status === 'ditelaah')) return { ok: false, sebab: 'belum_siap' } as const;
+      const siap = reseps.filter((r) => r.status === 'siap');
+      if (!siap.length) return { ok: false, sebab: 'sudah_diserahkan' } as const;
+      const alokasi: { resepId: number; itemId: number; masterId: number; harga: number; butuh: number; ambil: { stokId: number; jumlah: number }[]; kurang: number; nama: string; nomor: string }[] = [];
+      const terpakai = new Map<number, number>();
+      const hariIni = new Date(`${tglIso(new Date())}T00:00:00.000Z`);
+      for (const r of siap) {
+        for (const i of r.item) {
+          const stok = await tx.$queryRaw<{ id: number; jumlah: number }[]>`SELECT id, jumlah FROM stok_obat WHERE master_obat_id = ${i.master_obat_id} AND fasyankes_id = ${fasyankesId} AND jumlah > 0 AND kedaluwarsa >= ${hariIni} ORDER BY kedaluwarsa, batch FOR UPDATE`;
+          let sisa = i.jumlah;
+          const ambil: { stokId: number; jumlah: number }[] = [];
+          for (const s of stok) {
+            const tersedia = s.jumlah - (terpakai.get(s.id) ?? 0);
+            if (sisa <= 0 || tersedia <= 0) continue;
+            const a = Math.min(tersedia, sisa);
+            ambil.push({ stokId: s.id, jumlah: a });
+            terpakai.set(s.id, (terpakai.get(s.id) ?? 0) + a);
+            sisa -= a;
+          }
+          alokasi.push({ resepId: r.id, itemId: i.id, masterId: i.master_obat_id, harga: i.master.harga, butuh: i.jumlah, ambil, kurang: sisa, nama: i.master.nama_tampil, nomor: r.nomor_resep });
+        }
+      }
+      const kekurangan = alokasi.filter((a) => a.kurang > 0).map((a) => ({ master_obat_id: a.masterId, nama: a.nama, butuh: a.butuh, tersedia: a.butuh - a.kurang }));
+      if (kekurangan.length && !izinkan) return { ok: false, sebab: 'stok_kurang', kekurangan } as const;
+      for (const a of alokasi) {
+        for (const x of a.ambil) {
+          await tx.stokObat.update({ where: { id: x.stokId }, data: { jumlah: { decrement: x.jumlah }, diubah_pada: new Date() } });
+          await tx.mutasiStok.create({ data: { fasyankes_id: fasyankesId, stok_id: x.stokId, jenis: 'keluar', jumlah: -x.jumlah, alasan: `Serah terima resep ${a.nomor}`, pengguna_id: petugasId } });
+        }
+        await tx.pengeluaranObat.create({
+          data: { fasyankes_id: fasyankesId, resep_id: a.resepId, item_resep_id: a.itemId, master_obat_id: a.masterId, jumlah: a.butuh, harga: a.harga, stok_kurang: a.kurang > 0, alasan: a.kurang > 0 ? alasan : null, petugas_id: petugasId },
+        });
+      }
+      await tx.resep.updateMany({ where: { id: { in: siap.map((r) => r.id) }, status: 'siap' }, data: { status: 'diserahkan' } });
+      return { ok: true, kekurangan } as const;
+    });
+  }
+
   /** Referensi KFA (global, baca-saja): pencarian nama atau kode, dibatasi jumlah hasil. */
   async cariKfa(f: FilterKfa): Promise<ReferensiKfaDto[]> {
     const baris = await prisma.referensiKfa.findMany({
@@ -46,11 +103,12 @@ export class RepositoriFarmasiPrisma {
     return hasil;
   }
 
-  private keMasterDto(m: { id: number; kfa_id: number; nama_tampil: string; satuan: string; harga: number; aktif: boolean; kfa: { kode: string; nama: string; tingkat: number; contoh: boolean } }, ringkas?: { total: number; terdekat: string | null }): MasterObatDto {
+  private keMasterDto(m: { id: number; kfa_id: number; nama_tampil: string; satuan: string; harga: number; aktif: boolean; kfa: { kode: string; nama: string; tingkat: number; contoh: boolean; bentuk_sediaan?: string | null; rute?: string | null } }, ringkas?: { total: number; terdekat: string | null }): MasterObatDto {
     const total = ringkas?.total ?? 0;
     const terdekat = ringkas?.terdekat ?? null;
     return {
       id: m.id, kfa_id: m.kfa_id, kfa_kode: m.kfa.kode, kfa_nama: m.kfa.nama, kfa_tingkat: m.kfa.tingkat, kfa_contoh: m.kfa.contoh, nama_tampil: m.nama_tampil, satuan: m.satuan, harga: m.harga, aktif: m.aktif,
+      bentuk_sediaan: m.kfa.bentuk_sediaan ?? null, rute: m.kfa.rute ?? null,
       stok_total: total, kedaluwarsa_terdekat: terdekat, status_stok: statusStokDari(total, terdekat),
     };
   }

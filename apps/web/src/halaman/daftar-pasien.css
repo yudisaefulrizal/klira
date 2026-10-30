@@ -7,11 +7,6 @@
 .pasien-pencarian input { box-sizing: border-box; width: 100%; padding: 0 14px !important; }
 .pasien-petunjuk { padding-bottom: 10px; color: var(--warna-teks-redup); font-size: 12px; white-space: nowrap; }
 .pasien-petunjuk kbd { padding: 2px 6px; border: 1px solid var(--warna-garis); border-radius: 4px; background: var(--warna-permukaan); }
-.pasien-filter { gap: 6px !important; padding-bottom: 12px; border-bottom: 1px solid var(--warna-garis); }
-.pasien-filter button { display: flex; align-items: center; gap: 10px; height: 38px !important; padding: 0 12px !important; border: 1px solid transparent !important; background: transparent !important; color: var(--warna-teks-redup) !important; }
-.pasien-filter button[aria-pressed='true'] { background: var(--warna-utama-latar) !important; color: var(--warna-utama-gelap) !important; border-color: var(--warna-garis) !important; }
-.pasien-filter button:hover { background: var(--warna-utama-latar) !important; }
-.pasien-jumlah { min-width: 20px; padding: 2px 5px; box-sizing: border-box; border-radius: 5px; background: var(--warna-permukaan); font-size: 12px; text-align: center; font-weight: 500; }
 .pasien-tabel { box-shadow: none !important; }
 .pasien-tabel-judul { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
 .pasien-tabel-judul h2 { font-size: 16px; margin: 0; font-weight: 600; }
@@ -35,8 +30,6 @@
   .pasien-aksi-utama button { flex: 1; height: auto !important; min-height: 40px; }
   .pasien-petunjuk { display: none; }
   .pasien-pencarian { max-width: none; }
-  .pasien-filter { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 12px; }
-  .pasien-filter button { flex-shrink: 0; }
   .menu-klinik { flex-basis: 100% !important; min-height: auto; flex-direction: row !important; flex-wrap: wrap; padding: 12px !important; }
   .menu-klinik > div:first-child { width: 100%; padding: 4px 8px 12px !important; }
   .menu-klinik > div:last-child { width: 100%; }
@@ -65,8 +58,7 @@
 }
 .halaman-pasien .pasien-tombol-ikon:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--warna-utama); }
 .halaman-pasien .pasien-tombol-ikon:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: 3px; }
-.halaman-pasien .pasien-tombol-ikon[aria-label='Batalkan'],
-.halaman-pasien .pasien-filter .pasien-tombol-ikon[aria-label^='Batal'] { color: var(--status-merah-teks) !important; }
+.halaman-pasien .pasien-tombol-ikon[aria-label='Batalkan'] { color: var(--status-merah-teks) !important; }
 .pasien-isian-ikon { position: relative; }
 .pasien-isian-ikon > .pasien-ikon {
   position: absolute;
@@ -109,7 +101,6 @@
   .pasien-toolbar { gap: 10px; }
   .pasien-aksi-utama { width: auto; margin-left: 0; }
   .pasien-aksi-utama .pasien-ikon-wrap { flex: none; }
-  .pasien-filter { flex-wrap: wrap !important; overflow: visible; }
   .pasien-pencarian { flex-basis: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {

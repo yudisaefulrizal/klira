@@ -105,6 +105,7 @@ export type KandidatDuplikatDto = { id: number; nomor_rm: string; nama: string; 
 
 /** Filter Daftar pasien (query string): pencarian nama/nomor RM/NIK, tahap layanan, paginasi. */
 export const filterPasien = z.object({
+  untuk_kunjungan: z.enum(['true']).optional(),
   tanggal: z.preprocess(kosongJadiTiada, z.iso.date().optional()),
   cari: z.preprocess(kosongJadiTiada, z.string().trim().max(100).optional()),
   tahap: z.preprocess(kosongJadiTiada, z.enum(NILAI_TAHAP_FILTER).default('semua')),

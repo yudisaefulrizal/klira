@@ -114,7 +114,7 @@ function TabShift() {
   );
 }
 
-/** Halaman Kasir dan klaim (3.1): tab Shift dan rekap harian (kasir) dan Klaim JKN/BPJS (petugas klaim), menurut izin. Pembayaran, serah terima obat, dan tutup kunjungan dibuka dari Daftar pasien. */
+/** Halaman Kasir dan klaim (3.1): tab Shift dan rekap harian (kasir) dan Klaim JKN/BPJS (petugas klaim), menurut izin. Pembayaran dan tutup kunjungan dibuka dari Daftar pasien; penyerahan obat dikelola farmasi. */
 export function HalamanKasirKlaim() {
   const { pengguna } = usePengguna();
   const { search, ganti } = useNavigasi();

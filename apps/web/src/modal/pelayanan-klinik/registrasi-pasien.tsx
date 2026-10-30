@@ -19,7 +19,7 @@ import {
 } from './keadaan-registrasi';
 import type { KeadaanRegistrasi } from './keadaan-registrasi';
 import {
-  KonteksPasien, LangkahAlamat, LangkahConsent, LangkahIdentitas, LangkahJkn, LangkahRingkasan, LangkahSosial, LangkahWali,
+  KonteksPasien, LangkahConsent, LangkahIdentitas, LangkahJkn, LangkahRingkasan, LangkahSosial, LangkahWali,
 } from './langkah-registrasi';
 
 export const ALUR_REGISTRASI_PASIEN = 'registrasi-pasien';
@@ -33,8 +33,8 @@ type Props = {
 };
 
 /**
- * Modal Registrasi pasien baru (3.3, MODAL-BERTAHAP): Identitas (deteksi duplikat otomatis) > Data sosial > Alamat dan jalur identitas khusus >
- * Wali/keluarga > Cara pembayaran (data JKN) > General consent > Ringkasan. Satu permintaan, satu transaksi di API; draf otomatis.
+ * Modal Registrasi pasien baru (3.3, MODAL-BERTAHAP): Identitas dan alamat (deteksi duplikat otomatis) > Data sosial >
+ * Wali/keluarga > Data JKN > General consent > Ringkasan. Satu permintaan, satu transaksi di API; draf otomatis.
  */
 export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: Props) {
   const { pengguna: saya } = usePengguna();
@@ -62,8 +62,9 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
 
   useEffect(() => {
     if (!pulihan) return;
-    const n = batasi(pulihan.langkah, JUMLAH_LANGKAH_REGISTRASI);
-    setKeadaan({ ...awal, ...pulihan.nilai });
+    // Mulai dari Identitas saat memulihkan draf agar indeks alur lama tidak melewati langkah.
+    const n = 0;
+    setKeadaan({ ...awal, ...pulihan.nilai, jalur_identitas: 'nik', nomor_paspor: '', nomor_kitas: '' });
     setIndeks(n);
     setDikunjungi(Array.from({ length: n + 1 }, (_x, i) => i));
     setDrafDipulihkan(true);
@@ -120,7 +121,7 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
       id: 'identitas', judul: REGISTRASI.langkah.identitas,
       isi: (
         <LangkahIdentitas
-          {...dasar} kandidat={kandidat} mencari={mencari} bisaCari={bisaCari} galatCari={galatCari}
+          {...dasar} kandidat={kandidat} mencari={mencari} galatCari={galatCari}
           onCari={() => setUlangiCari((n) => n + 1)}
           onPakai={(c) => {
             hapus();
@@ -130,7 +131,6 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
       ),
     },
     { id: 'sosial', judul: REGISTRASI.langkah.sosial, isi: <LangkahSosial {...dasar} /> },
-    { id: 'alamat', judul: REGISTRASI.langkah.alamat, isi: <LangkahAlamat {...dasar} /> },
     { id: 'wali', judul: REGISTRASI.langkah.wali, isi: <LangkahWali {...dasar} /> },
     { id: 'jkn', judul: REGISTRASI.langkah.jkn, isi: <LangkahJkn {...dasar} /> },
     { id: 'consent', judul: REGISTRASI.langkah.consent, isi: <LangkahConsent {...dasar} teks={teks} memuat={memuatTeks} galatMuat={galatTeks} /> },

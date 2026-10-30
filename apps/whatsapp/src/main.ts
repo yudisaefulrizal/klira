@@ -100,6 +100,8 @@ async function autentikasi(): Promise<{ state: AuthenticationState; save: () => 
   };
 }
 async function terima(fasyankes: number, message: WAMessage, wa: ReturnType<typeof makeWASocket>) {
+  const generasiPesan = generasi;
+  if (socket !== wa) return;
   const jid = message.key.remoteJidAlt?.endsWith('@s.whatsapp.net') ? message.key.remoteJidAlt : message.key.remoteJid;
   if (!jidWhatsappPribadi(message.key.remoteJid) || !jidWhatsappPribadi(jid) || !message.key.id) return;
   const isi = normalizeMessageContent(message.message);
@@ -109,6 +111,7 @@ async function terima(fasyankes: number, message: WAMessage, wa: ReturnType<type
   let teks = isi.conversation ?? isi.extendedTextMessage?.text ?? '';
   let jenis = 'text';
   let mediaId: string | null = null;
+  let lampiran: { id: string; fasyankes_id: number; isi: string; mime: string; nama: string } | null = null;
   for (const [tipe, media] of [
     ['image', isi.imageMessage],
     ['document', isi.documentMessage],
@@ -137,22 +140,24 @@ async function terima(fasyankes: number, message: WAMessage, wa: ReturnType<type
         potongan.push(potong);
       }
       mediaId = randomUUID();
-      await prisma.waMedia.create({
-        data: {
+      lampiran = {
           id: mediaId,
           fasyankes_id: fasyankes,
           isi: enkripsiRahasia(Buffer.concat(potongan).toString('base64')),
           mime: media.mimetype ?? 'application/octet-stream',
           nama: ('fileName' in media && media.fileName ? media.fileName : `lampiran-${tipe}`).slice(0, 200),
-        },
-      });
+      };
     } catch {
       teks = `${teks}\n[Lampiran tidak tersedia atau melebihi 8 MB]`.trim();
     }
     break;
   }
   if (!teks && !mediaId) teks = '[Jenis pesan ini belum didukung]';
-  await prisma.$transaction(async (tx) => {
+  const tersimpan = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM wa_koneksi WHERE id = 1 FOR UPDATE`;
+    const current = await tx.waKoneksi.findUnique({ where: { id: 1 } });
+    if (!current?.aktif || current.fasyankes_id !== fasyankes || current.generasi !== generasiPesan || socket !== wa) return false;
+    if (lampiran) await tx.waMedia.create({ data: lampiran });
     const percakapan = await tx.waPercakapan.upsert({
       where: { fasyankes_id_jid: { fasyankes_id: fasyankes, jid } },
       create: {
@@ -181,8 +186,9 @@ async function terima(fasyankes: number, message: WAMessage, wa: ReturnType<type
       },
     });
     await pangkasPesanWhatsapp(tx, percakapan.id);
+    return true;
   });
-  kabarkan(fasyankes, 'pesan', !message.key.fromMe);
+  if (tersimpan) kabarkan(fasyankes, 'pesan', !message.key.fromMe);
 }
 async function hubungkan(fasyankes: number) {
   await prisma.waKoneksi.update({ where: { id: 1 }, data: { status: 'menghubungkan', qr: null } });

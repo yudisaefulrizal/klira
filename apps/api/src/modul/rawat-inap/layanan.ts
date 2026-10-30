@@ -1,3 +1,4 @@
+import { kabarkanLayarPanggilan } from '../layar-panggilan/kanal';
 import { RAWAT_INAP } from '@klira/shared';
 import type {
   AdmisiMasukan, AsalAdmisiDto, CatatanHarianDto, CatatanHarianMasukan, HasilAdmisiDto, HasilPemulanganDto, OpsiRawatInapDto, PapanDto, PemulanganMasukan, PenempatanMasukan, PenggunaSaya, RawatInapDto, ResumeMasukan,
@@ -55,6 +56,7 @@ export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, se
       if (!(await repo.dpjpSah(p.fasyankes_id, [m.dpjp_id, ...m.dpjp_bersama]))) return gagal('tidak_valid', G.dpjpTidakSah);
       try {
         const h = await repo.admisi(pelaku(p), m, sekarang());
+        kabarkanLayarPanggilan(p.fasyankes_id);
         await catat(p, 'input', 'rawat_inap', h.kunjungan_id, `Admisi rawat inap pasien ${m.pasien_id}${h.menunggu_ruangan ? ' (menunggu ruangan)' : ''}`, alamat);
         return { ok: true, data: h };
       } catch (e) {

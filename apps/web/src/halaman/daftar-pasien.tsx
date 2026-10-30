@@ -1,3 +1,4 @@
+import { SerahTerimaObat } from '../modal/pelayanan-klinik/serah-terima-obat';
 import { TautanKelolaMaster } from '../komponen/tautan-kelola-master';
 import { IkonPasien, TombolIkonPasien, type NamaIkonPasien } from '../komponen/ikon-pasien';
 import './daftar-pasien.css';
@@ -5,9 +6,9 @@ import { EditPasien } from '../modal/pelayanan-klinik/edit-pasien';
 import { usePesan } from '../komponen/pesan/konteks-pesan';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, JENIS_KUNJUNGAN, NILAI_TAHAP_FILTER, STATUS_ANTREAN, STATUS_IDENTITAS, TAHAP_LAYANAN,
+  tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS, TAHAP_LAYANAN,
 } from '@klira/shared';
-import type { AksiAntrean, DaftarPasienDto, PasienBarisDto, TahapFilter } from '@klira/shared';
+import type { AksiAntrean, DaftarPasienDto, PasienBarisDto } from '@klira/shared';
 import { aksiAntrean } from '../api-klien/kunjungan';
 import { daftarPasien } from '../api-klien/pasien';
 import { GalatApi } from '../api-klien/klien';
@@ -26,7 +27,7 @@ import { DetailPasien } from '../modal/pelayanan-klinik/detail-pasien';
 import { HasilLab } from '../modal/pelayanan-klinik/hasil-lab';
 import { OrderLab } from '../modal/pelayanan-klinik/order-lab';
 import { PersetujuanTindakan } from '../modal/pelayanan-klinik/persetujuan-tindakan';
-import { PembayaranSerahTerima } from '../modal/pelayanan-klinik/pembayaran-serah-terima';
+import { Pembayaran } from '../modal/pelayanan-klinik/pembayaran';
 import { TelaahResep } from '../modal/pelayanan-klinik/telaah-resep';
 import { TutupKunjungan } from '../modal/pelayanan-klinik/tutup-kunjungan';
 import { PendaftaranKunjungan } from '../modal/pelayanan-klinik/pendaftaran-kunjungan';
@@ -34,22 +35,16 @@ import { PanelKeluarga } from '../modal/pelayanan-klinik/panel-keluarga';
 import { PanelRiwayat } from '../modal/pelayanan-klinik/panel-riwayat';
 import { PemeriksaanKlinis } from '../modal/pelayanan-klinik/pemeriksaan-klinis';
 import { RegistrasiPasien } from '../modal/pelayanan-klinik/registrasi-pasien';
-import { bacaTabTerakhir, simpanTabTerakhir } from '../util/ingatan-tab';
 import { usePengguna } from '../util/konteks-pengguna';
 import { useNavigasi } from '../util/navigasi';
-import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, tahapBawaan, ubahKeadaanPasien } from '../util/penyaring-pasien';
+import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from '../util/penyaring-pasien';
 import type { AksiBaris, KeadaanPasien } from '../util/penyaring-pasien';
 import { Sebaris } from '../komponen/ui/susunan';
 
 const UKURAN = 20;
-const INGATAN = 'pasien-tahap';
-const TAHAP_CHIP: readonly TahapFilter[] = NILAI_TAHAP_FILTER;
-const IKON_TAHAP: Record<TahapFilter, NamaIkonPasien> = {
-  semua: 'semua', menunggu_skrining: 'skrining', pemeriksaan: 'periksa', resep: 'resep', kasir: 'bayar', ditutup: 'selesai', batal: 'batal',
-};
 const IKON_AKSI: Record<AksiBaris['jenis'], NamaIkonPasien> = {
   buka: 'buka', daftarkan: 'kunjungan-baru', skrining: 'skrining', periksa: 'periksa', telaah: 'telaah',
-  bayar: 'bayar', tutup_kunjungan: 'tutup-kunjungan', persetujuan: 'persetujuan', order_lab: 'order-lab',
+  serah_obat: 'telaah', bayar: 'bayar', tutup_kunjungan: 'tutup-kunjungan', persetujuan: 'persetujuan', order_lab: 'order-lab',
   spesimen: 'spesimen', hasil_lab: 'hasil-lab', riwayat: 'riwayat', keluarga: 'keluarga',
   panggil: 'panggil', mulai: 'mulai', selesai: 'selesai', batal: 'batal',
 };
@@ -58,7 +53,6 @@ const KOLOM = [
   { judul: DAFTAR_PASIEN.kolom.antrean }, { judul: DAFTAR_PASIEN.kolom.pasien }, { judul: DAFTAR_PASIEN.kolom.nomorRm }, { judul: DAFTAR_PASIEN.kolom.poliDpjp },
   { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.tahap }, { judul: DAFTAR_PASIEN.kolom.menunggu }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },
 ];
-const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
 
 type PasienTerpilih = { id: number; nama: string; nomor_rm: string };
 /** Hanya satu modal atau panel pada satu waktu (5.1e); beralih dari registrasi ke kunjungan menutup yang pertama. */
@@ -67,7 +61,7 @@ type Terbuka =
   | { jenis: 'kunjungan'; pasien?: PasienTerpilih }
   | { jenis: 'detail' | 'edit-pasien'; pasien: PasienTerpilih }
   | { jenis: 'pemeriksaan'; mode: 'skrining' | 'periksa'; kunjunganId: number; pasien: PasienTerpilih }
-  | { jenis: 'persetujuan' | 'spesimen' | 'hasil_lab' | 'telaah' | 'bayar' | 'tutup_kunjungan'; kunjunganId: number; pasien: PasienTerpilih }
+  | { jenis: 'persetujuan' | 'spesimen' | 'hasil_lab' | 'telaah' | 'bayar' | 'serah_obat' | 'tutup_kunjungan'; kunjunganId: number; pasien: PasienTerpilih }
   | { jenis: 'order_lab'; kunjunganId: number; pasien: PasienTerpilih; cara: 'umum' | 'jkn' }
   | { jenis: 'riwayat'; pasien: PasienTerpilih }
   | { jenis: 'keluarga'; pasien: PasienTerpilih }
@@ -77,18 +71,13 @@ type Terbuka =
 const labelAksi = (a: AksiAntrean, status: string): string =>
   a === 'panggil' && status === 'dipanggil' ? DAFTAR_PASIEN.aksi.panggilUlang : DAFTAR_PASIEN.aksi[a === 'batal' ? 'batal' : a];
 
-/**
- * Daftar pasien (3.1), halaman awal akun klinis dan administrasi: pencarian, filter tahap bawaan per pekerjaan (diingat sesi dan
- * di alamat), tindakan per baris sesuai tahap, serta pembuka modal Registrasi pasien baru dan Pendaftaran kunjungan. Setelah
- * modal ditutup halaman tetap pada alamat yang sama sehingga pencarian dan filter tidak berubah (5.1g).
- */
+/** Satu daftar pasien dengan tindakan mengikuti tahap pelayanan dan izin akun. */
 export function HalamanDaftarPasien() {
   const { pengguna } = usePengguna();
   const { search, ganti } = useNavigasi();
   const boleh = useIzin();
   const pesan = usePesan();
-  const bawaan = bacaTabTerakhir<TahapFilter>(INGATAN, NILAI_TAHAP_FILTER, simpanan()) ?? tahapBawaan(pengguna?.fitur ?? []);
-  const keadaan = keadaanPasienDariQuery(search, bawaan);
+  const keadaan = keadaanPasienDariQuery(search);
 
   const [cari, setCari] = useState(keadaan.cari);
   const [hasil, setHasil] = useState<DaftarPasienDto | null>(null);
@@ -99,16 +88,15 @@ export function HalamanDaftarPasien() {
   const [memprosesAksi, setMemprosesAksi] = useState(false);
   const kotakCari = useRef<HTMLDivElement>(null);
 
-  const terapkan = useCallback((p: Partial<KeadaanPasien>) => ganti(`/pasien${queryPasien(ubahKeadaanPasien(keadaanPasienDariQuery(search, bawaan), p))}`), [search, bawaan, ganti]);
+  const terapkan = useCallback((p: Partial<KeadaanPasien>) => ganti(`/pasien${queryPasien(ubahKeadaanPasien(keadaanPasienDariQuery(search), p))}`), [search, ganti]);
 
-  // Alamat selalu memuat tahap (5.1k) dan tahap terakhir diingat selama sesi (5.1h).
-  const adaTahapDiAlamat = new URLSearchParams(search).has('tahap');
+  // Tautan lama tidak boleh menyisakan filter tahap tersembunyi.
   useEffect(() => {
-    simpanTabTerakhir(INGATAN, keadaan.tahap, simpanan());
-    if (!adaTahapDiAlamat) ganti(`/pasien${queryPasien(keadaan)}`);
-  }, [keadaan.tahap, adaTahapDiAlamat, keadaan, ganti]);
+    if (!new URLSearchParams(search).has('tahap')) return;
+    ganti(`/pasien${queryPasien(keadaanPasienDariQuery(search))}`);
+  }, [search, ganti]);
 
-  useEffect(() => setCari(keadaanPasienDariQuery(search, bawaan).cari), [search, bawaan]);
+  useEffect(() => setCari(keadaanPasienDariQuery(search).cari), [search]);
   useEffect(() => {
     if (cari.trim() === keadaan.cari) return;
     const t = setTimeout(() => terapkan({ cari: cari.trim() }), 300);
@@ -133,10 +121,10 @@ export function HalamanDaftarPasien() {
   }, []);
 
   const tanggalAktif = keadaan.tanggal ?? tanggalWib(sekarang);
-  const { cari: cariAktif, tahap: tahapAktif, halaman: halamanAktif } = keadaan;
+  const { cari: cariAktif, halaman: halamanAktif } = keadaan;
   useEffect(() => {
     let batal = false;
-    daftarPasien({ tanggal: tanggalAktif, cari: cariAktif, tahap: tahapAktif, halaman: halamanAktif, ukuran: UKURAN })
+    daftarPasien({ tanggal: tanggalAktif, cari: cariAktif, tahap: 'semua', halaman: halamanAktif, ukuran: UKURAN })
       .then((h) => {
         if (batal) return;
         setHasil(h);
@@ -146,7 +134,7 @@ export function HalamanDaftarPasien() {
     return () => {
       batal = true;
     };
-  }, [tanggalAktif, cariAktif, tahapAktif, halamanAktif, muatUlang]);
+  }, [tanggalAktif, cariAktif, halamanAktif, muatUlang]);
 
   const tutup = () => setTerbuka(null);
   const selesai = () => {
@@ -169,8 +157,6 @@ export function HalamanDaftarPasien() {
     }
   }
 
-  const jumlah = (t: TahapFilter): number | undefined =>
-    !hasil ? undefined : t === 'semua' ? TAHAP_CHIP.filter((x) => x !== 'semua' && x !== 'ditutup' && x !== 'batal').reduce((s, x) => s + hasil.jumlah_tahap[x as Exclude<TahapFilter, 'semua'>], 0) : hasil.jumlah_tahap[t as Exclude<TahapFilter, 'semua'>];
   const pasienDari = (b: PasienBarisDto): PasienTerpilih => ({ id: b.id, nama: b.nama, nomor_rm: b.nomor_rm });
 
   return (
@@ -203,21 +189,10 @@ export function HalamanDaftarPasien() {
           </HanyaDenganIzin>
         </div>
       </header>
-      <Sebaris className="pasien-filter" jarak="sm" bungkus sejajar="regang" role="group" aria-label={DAFTAR_PASIEN.filterTahap}>
-        {TAHAP_CHIP.map((t) => {
-          const n = jumlah(t);
-          return (
-            <TombolIkonPasien key={t} ikon={IKON_TAHAP[t]} label={`${t === 'semua' ? DAFTAR_PASIEN.semua : DAFTAR_PASIEN.tahapPanjang[t]}${n !== undefined ? ` · ${n} pasien` : ''}`} varian={keadaan.tahap === t ? 'utama' : 'sekunder'} aria-pressed={keadaan.tahap === t} onClick={() => terapkan({ tahap: t })}>
-              {n !== undefined && <strong className="pasien-jumlah" aria-hidden="true">{n}</strong>}
-            </TombolIkonPasien>
-          );
-        })}
-      </Sebaris>
-
       {galat && <Peringatan>{galat}</Peringatan>}
       <Kartu className="pasien-tabel" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="pasien-tabel-judul">
-          <h2>{keadaan.tahap === 'semua' ? 'Semua pasien' : DAFTAR_PASIEN.tahapPanjang[keadaan.tahap]}</h2>
+          <h2>{DAFTAR_PASIEN.judul}</h2>
           <span role="status">{hasil ? `${hasil.total} pasien` : 'Memuat pasien…'}</span>
         </div>
         <Tabel kolom={KOLOM} label={DAFTAR_PASIEN.judul}>
@@ -266,7 +241,7 @@ export function HalamanDaftarPasien() {
                           <TombolIkonPasien ikon={ikonAksi(jenis)} label={DAFTAR_PASIEN.aksi[jenis]} key={jenis} type="button" onClick={() => k && setTerbuka({ jenis: 'pemeriksaan', mode: jenis, kunjunganId: k.id, pasien: pasienDari(b) })} />
                         );
                       }
-                      if (jenis === 'persetujuan' || jenis === 'spesimen' || jenis === 'hasil_lab' || jenis === 'telaah' || jenis === 'bayar' || jenis === 'tutup_kunjungan') {
+                      if (jenis === 'persetujuan' || jenis === 'spesimen' || jenis === 'hasil_lab' || jenis === 'telaah' || jenis === 'bayar' || jenis === 'serah_obat' || jenis === 'tutup_kunjungan') {
                         return <TombolIkonPasien ikon={ikonAksi(jenis)} label={DAFTAR_PASIEN.aksi[jenis]} key={jenis} type="button" varian="sekunder" onClick={() => k && setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b) })} />;
                       }
                       if (jenis === 'order_lab') {
@@ -288,7 +263,7 @@ export function HalamanDaftarPasien() {
           })}
         </Tabel>
         {hasil && hasil.data.length === 0 && (
-          <div style={{ padding: token.jarak.md, color: token.warna.teksRedup }}>{keadaan.cari ? DAFTAR_PASIEN.kosong : keadaan.tahap === 'semua' ? DAFTAR_PASIEN.kosong : DAFTAR_PASIEN.kosongTahap}</div>
+          <div style={{ padding: token.jarak.md, color: token.warna.teksRedup }}>{DAFTAR_PASIEN.kosong}</div>
         )}
         {hasil && <Paginasi modeIkon halaman={keadaan.halaman} total={hasil.total} ukuran={hasil.ukuran} onPindah={(h) => terapkan({ halaman: h })} />}
       </Kartu>
@@ -301,7 +276,8 @@ export function HalamanDaftarPasien() {
         <PemeriksaanKlinis kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} mode={terbuka.mode} onTutup={tutup} onSelesai={selesai} />
       )}
       {terbuka?.jenis === 'persetujuan' && <PersetujuanTindakan kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
-      {terbuka?.jenis === 'bayar' && <PembayaranSerahTerima kunjunganId={terbuka.kunjunganId} onTutup={tutup} onSelesai={selesai} />}
+      {terbuka?.jenis === 'serah_obat' && <SerahTerimaObat kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
+      {terbuka?.jenis === 'bayar' && <Pembayaran kunjunganId={terbuka.kunjunganId} onTutup={tutup} onSelesai={selesai} />}
       {terbuka?.jenis === 'tutup_kunjungan' && <TutupKunjungan kunjunganId={terbuka.kunjunganId} onTutup={tutup} onSelesai={selesai} />}
       {terbuka?.jenis === 'telaah' && <TelaahResep kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
       {terbuka?.jenis === 'order_lab' && <OrderLab kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} cara={terbuka.cara} onTutup={tutup} onSelesai={selesai} />}

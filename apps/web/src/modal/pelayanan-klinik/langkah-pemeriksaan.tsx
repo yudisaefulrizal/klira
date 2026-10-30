@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { LABEL_NARASI, KLINIS, PEMERIKSAAN_BIDANG, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL } from '@klira/shared';
 import type { BagianNarasi, BagianKlinis, BagianKlinisDto, FavoritDto } from '@klira/shared';
 import { cariTerminologi } from '../../api-klien/klinis';
@@ -9,7 +10,6 @@ import { Isian } from '../../komponen/ui/isian';
 import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Pilihan } from '../../komponen/ui/pilihan';
 import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { hapusDiagnosis, hapusTindakan, jadikanUtama, ringkasanIsi, tambahDiagnosis, tambahTindakan } from './keadaan-pemeriksaan';
@@ -29,7 +29,6 @@ export type DasarLangkah = {
 const teksRedup = { margin: 0, color: token.warna.teksRedup } as const;
 const cariIcd10 = (q: string) => cariTerminologi('icd10', q);
 const cariIcd9 = (q: string) => cariTerminologi('icd9cm', q);
-const opsiRencana = [{ nilai: '', label: KLINIS.tindakLanjut.pilih }, ...KLINIS.tindakLanjut.jenisOpsi];
 
 function GalatBagian({ galat }: { galat?: string | null }) {
   return galat ? <Peringatan>{galat}</Peringatan> : null;
@@ -90,7 +89,7 @@ export function LangkahDiagnosis({ k, ubah, galat, server, favorit }: DasarLangk
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      <PencarianKode id="diagnosis-cari" label={d.cari} petunjuk={d.petunjukCari} cari={cariIcd10} onPilih={tambah} manual teksManual={{ kode: d.kode, nama: d.nama }} />
+      <PencarianKode kamus={{ judul: 'Kamus ICD-10', sistem: 'icd10' }} id="diagnosis-cari" label={d.cari} petunjuk={d.petunjukCari} cari={cariIcd10} onPilih={tambah} manual teksManual={{ kode: d.kode, nama: d.nama }} />
       {favorit.length > 0 && (
         <Sebaris bungkus>
           <span style={{ color: token.warna.teksRedup }}>{d.favoritSaya}</span>
@@ -129,7 +128,7 @@ export function LangkahTindakan({ k, ubah, galat, server, favorit }: DasarLangka
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      <PencarianKode id="tindakan-cari" label={t.cari} petunjuk={t.petunjukCari} cari={cariIcd9} onPilih={tambah} manual teksManual={{ kode: t.kode, nama: t.nama }} />
+      <PencarianKode kamus={{ judul: 'Kamus ICD-9-CM', sistem: 'icd9cm' }} id="tindakan-cari" label={t.cari} petunjuk={t.petunjukCari} cari={cariIcd9} onPilih={tambah} manual teksManual={{ kode: t.kode, nama: t.nama }} />
       {favorit.length > 0 && (
         <Sebaris bungkus>
           <span style={{ color: token.warna.teksRedup }}>{KLINIS.diagnosis.favoritSaya}</span>
@@ -170,19 +169,28 @@ export function LangkahMenyusul({ langkah, onLewati }: { langkah: KonfigLangkah;
   );
 }
 
-export function LangkahTindakLanjut({ k, ubah, galat, server }: DasarLangkah) {
+export function LangkahTindakLanjut({ k, ubah, galat, server, ringkas = false }: DasarLangkah & { ringkas?: boolean }) {
   const t = KLINIS.tindakLanjut;
   const tl = k.tindak_lanjut;
   const set = (p: Partial<typeof tl>) => ubah({ tindak_lanjut: { ...tl, ...p } });
   return (
     <Kolom>
       <InfoPengesahan bagian={server} />
-      <p style={teksRedup}>{t.keterangan}</p>
+      {!ringkas && <p style={teksRedup}>{t.keterangan}</p>}
       <GalatBagian galat={galat} />
-      <Pilihan id="tl-jenis" label={t.jenis} opsi={opsiRencana} value={tl.jenis} onChange={(e) => set({ jenis: e.target.value as typeof tl.jenis })} />
+      <fieldset style={{ margin: 0, padding: 0, border: 0, minWidth: 0 }}>
+        <legend style={{ padding: 0, marginBottom: token.jarak.sm, fontWeight: token.huruf.berat.sedang }}>Tindak lanjut</legend>
+        <Sebaris bungkus jarak="md">
+          {t.jenisOpsi.map((o) => <label key={o.nilai} style={{ display: 'inline-flex', alignItems: 'center', gap: token.jarak.xs, minHeight: 44, cursor: 'pointer' }}>
+            <input type="radio" name="tl-jenis" value={o.nilai} checked={tl.jenis === o.nilai}
+              onChange={() => set({ jenis: o.nilai as typeof tl.jenis })} style={{ accentColor: token.warna.utama }} />
+            {o.label}
+          </label>)}
+        </Sebaris>
+      </fieldset>
       {tl.jenis === 'rujuk' && <Isian id="tl-tujuan" label={t.tujuan} value={tl.tujuan} onChange={(e) => set({ tujuan: e.target.value })} autoComplete="off" />}
       {tl.jenis === 'rawat_inap' && <Isian id="tl-spri" label={t.spri} value={tl.spri} onChange={(e) => set({ spri: e.target.value })} autoComplete="off" />}
-      <AreaTeks id="tl-catatan" label={t.catatan} value={tl.catatan} onChange={(e) => set({ catatan: e.target.value })} />
+      {(!ringkas || tl.catatan) && <AreaTeks id="tl-catatan" label={ringkas ? 'Catatan tindak lanjut tersimpan' : t.catatan} value={tl.catatan} onChange={(e) => set({ catatan: e.target.value })} />}
     </Kolom>
   );
 }
@@ -200,22 +208,24 @@ type PropsRingkasan = {
   tampilSelesai: boolean;
   selesai: boolean;
   onSelesai: (v: boolean) => void;
+  children?: ReactNode;
 };
 
-export function LangkahRingkasan({ k, ubah, rencana, status, bagian, labelBagian, perluAlasan, bisaSelesai, tampilSelesai, selesai, onSelesai }: PropsRingkasan) {
+export function LangkahRingkasan({ k, ubah, rencana, status, bagian, labelBagian, perluAlasan, bisaSelesai, tampilSelesai, selesai, onSelesai, children }: PropsRingkasan) {
   const r = KLINIS.ringkasan;
   return (
     <Kolom>
       <p style={teksRedup}>{r.judul}</p>
-      <Daftar jarak="xs">
+      {!tampilSelesai && <Daftar jarak="xs">
         {bagian.map((b) => (
           <Sebaris tag="li" jarak="md" key={b}>
             <Tumbuh>{labelBagian[b]}</Tumbuh>
             <Lencana warna={STATUS_RINGKASAN_BAGIAN.warna(status[b])}>{STATUS_RINGKASAN_BAGIAN.label(status[b])}</Lencana>
           </Sebaris>
         ))}
-      </Daftar>
-      {tampilSelesai && <DaftarRingkasan bagian={ringkasanIsi(k)} />}
+      </Daftar>}
+      {tampilSelesai && <DaftarRingkasan bagian={ringkasanIsi(k).map((b) => ({ ...b, baris: b.baris.filter((x) => x.nilai !== '-') }))} />}
+      {children}
       {rencana.map((x) => x.galat && <Peringatan key={x.bagian}>{`${labelBagian[x.bagian]}: ${x.galat}`}</Peringatan>)}
       {perluAlasan && <AreaTeks id="ringkasan-alasan" label={r.alasan} value={k.alasan} onChange={(e) => ubah({ alasan: e.target.value })} />}
       {perluAlasan && <p style={{ ...teksRedup, fontSize: token.huruf.ukuran.kecil }}>{r.alasanKet}</p>}

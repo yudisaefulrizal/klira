@@ -16,3 +16,6 @@ export * from './statistik';
 export * from './instagram';
 
 export * from './layar-panggilan';
+
+export * from './website-klinik';
+export type { WilayahDto, HasilCariWilayah } from './wilayah';

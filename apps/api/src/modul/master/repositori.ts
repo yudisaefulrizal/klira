@@ -1,3 +1,4 @@
+import { dataWilayah } from '../wilayah/data';
 import { prisma } from '@klira/db';
 import type { Prisma } from '@klira/db';
 import { SKEMA_MASTER } from '@klira/shared';
@@ -96,16 +97,14 @@ export class RepositoriMasterPrisma implements RepositoriMaster {
       ]);
       return { total, baris: data.map(barisTarif) };
     }
-    // Wilayah: referensi global, hanya baca.
-    const where: Prisma.WilayahWhereInput = {
-      ...(f.tingkat ? { tingkat: f.tingkat } : {}),
-      ...(cari ? { OR: [{ kode: { contains: cari } }, { nama: { contains: cari } }] } : {}),
-    };
-    const [total, data] = await Promise.all([
-      prisma.wilayah.count({ where }),
-      prisma.wilayah.findMany({ where, orderBy: [{ kode: 'asc' }], ...halaman }),
-    ]);
-    return { total, baris: data.map((w) => ({ id: w.id, aktif: true, kode: w.kode, nama: w.nama, tingkat: w.tingkat, induk_kode: w.induk_kode, contoh: w.contoh })) };
+    // Wilayah adalah referensi statis aplikasi, tidak memerlukan tabel database.
+    const tingkat = ['provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan_desa'] as const;
+    const kata = cari?.toLocaleLowerCase('id');
+    const data = Object.entries(dataWilayah()).map(([kode, nama], i) => ({
+      id: i + 1, aktif: true, kode, nama, tingkat: tingkat[kode.split('.').length - 1],
+      induk_kode: kode.includes('.') ? kode.slice(0, kode.lastIndexOf('.')) : null, contoh: false,
+    })).filter((w) => (!f.tingkat || w.tingkat === f.tingkat) && (!kata || w.kode.includes(kata) || w.nama.toLocaleLowerCase('id').includes(kata)));
+    return { total: data.length, baris: data.slice(halaman.skip, halaman.skip + halaman.take) };
   }
 
   async ambil(fasyankesId: number, jenis: JenisMasterUbah, id: number): Promise<BarisMaster | null> {

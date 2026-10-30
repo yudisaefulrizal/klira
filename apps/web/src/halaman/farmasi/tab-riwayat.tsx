@@ -1,3 +1,6 @@
+import { SerahTerimaObat } from '../../modal/pelayanan-klinik/serah-terima-obat';
+import { HanyaDenganIzin } from '../../komponen/izin-saja';
+import { Tombol } from '../../komponen/ui/tombol';
 import { useEffect, useState } from 'react';
 import { FARMASI, STATUS_RESEP } from '@klira/shared';
 import type { RiwayatObatDto } from '@klira/shared';
@@ -18,7 +21,7 @@ const R = FARMASI.riwayat;
 const UKURAN = 20;
 const STATUS = ['diajukan', 'ditelaah', 'siap', 'diserahkan'] as const;
 const OPSI = [{ nilai: '', label: R.semuaStatus }, ...STATUS.map((s) => ({ nilai: s, label: STATUS_RESEP.label(s) }))];
-const KOLOM = [{ judul: R.kolom.nomor }, { judul: R.kolom.pasien }, { judul: R.kolom.dokter }, { judul: R.kolom.item }, { judul: R.kolom.status }, { judul: R.kolom.waktu }];
+const KOLOM = [{ judul: R.kolom.nomor }, { judul: R.kolom.pasien }, { judul: R.kolom.dokter }, { judul: R.kolom.item }, { judul: R.kolom.status }, { judul: R.kolom.waktu }, { judul: 'Tindakan' }];
 type Saringan = { status: '' | (typeof STATUS)[number]; dari: string; sampai: string; halaman: number };
 const AWAL: Saringan = { status: '', dari: '', sampai: '', halaman: 1 };
 
@@ -27,6 +30,8 @@ export function TabRiwayat() {
   const [terapan, setTerapan] = useState<Saringan>(AWAL);
   const [draf, setDraf] = useState<Saringan>(AWAL);
   const [hasil, setHasil] = useState<RiwayatObatDto | null>(null);
+  const [terbuka, setTerbuka] = useState<RiwayatObatDto['data'][number] | null>(null);
+  const [versi, setVersi] = useState(0);
   const [galat, setGalat] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,7 +46,7 @@ export function TabRiwayat() {
     return () => {
       batal = true;
     };
-  }, [terapan]);
+  }, [terapan, versi]);
 
   const terbalik = !!draf.dari && !!draf.sampai && draf.dari > draf.sampai;
 
@@ -63,12 +68,14 @@ export function TabRiwayat() {
               <SelTabel>{R.jumlahObat(r.jumlah_item)}</SelTabel>
               <SelTabel><Lencana warna={STATUS_RESEP.warna(r.status)}>{STATUS_RESEP.label(r.status)}</Lencana></SelTabel>
               <SelTabel>{formatWaktu(r.dibuat_pada)}</SelTabel>
+              <SelTabel>{r.status === 'siap' && <HanyaDenganIzin fitur="farmasi" aksi="input"><Tombol type="button" varian="sekunder" onClick={() => setTerbuka(r)}>Serahkan obat</Tombol></HanyaDenganIzin>}</SelTabel>
             </BarisTabel>
           ))}
         </Tabel>
         {hasil && hasil.data.length === 0 && <div style={{ padding: token.jarak.md, color: token.warna.teksRedup }}>{R.kosong}</div>}
         {hasil && <Paginasi halaman={terapan.halaman} total={hasil.total} ukuran={hasil.ukuran} onPindah={(h) => setTerapan({ ...terapan, halaman: h })} />}
       </Kartu>
+      {terbuka && <SerahTerimaObat kunjunganId={terbuka.kunjungan_id} pasien={{ nama: terbuka.pasien_nama, nomor_rm: terbuka.pasien_nomor_rm }} onTutup={() => setTerbuka(null)} onSelesai={() => { setTerbuka(null); setVersi((v) => v + 1); }} />}
       <p style={{ margin: 0, color: token.warna.teksRedup }}>{R.catatan}</p>
     </>
   );

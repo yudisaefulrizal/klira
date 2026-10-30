@@ -1,3 +1,4 @@
+import { PencarianWilayah } from '../../komponen/pencarian-wilayah';
 import { useEffect, useState } from 'react';
 import { perbaikanPasienMasukan, punyaIzin, REGISTRASI } from '@klira/shared';
 import type { PasienDetailDto } from '@klira/shared';
@@ -6,7 +7,6 @@ import { detailPasien, perbaikiPasien } from '../../api-klien/pasien';
 import { Modal1 } from '../../komponen/modal-1/modal-1';
 import { Isian } from '../../komponen/ui/isian';
 import { Pilihan } from '../../komponen/ui/pilihan';
-import { AreaTeks } from '../../komponen/ui/area-teks';
 import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Tab } from '../../komponen/ui/tab';
@@ -36,7 +36,7 @@ export function EditPasien({ id, nama, onTutup, onSelesai }: { id: number; nama:
   const ubah = (perubahan: Partial<PasienDetailDto>) => setData((p) => p && { ...p, ...perubahan });
   const isian = (key: keyof PasienDetailDto, label: string, maxLength = 200, type = 'text') => (
     <Isian id={`edit-pasien-${key}`} label={label} type={type} maxLength={maxLength}
-      value={String(data?.[key] ?? '')} onChange={(e) => ubah({ [key]: e.target.value })}
+      value={String(data?.[key] ?? '')} onChange={(e) => ubah(key === 'nik' ? { nik: e.target.value.replace(/\D/g, '') || null, ...(data?.jalur_identitas === 'tanpa_identitas' && e.target.value ? { jalur_identitas: 'nik' as const } : {}) } : { [key]: e.target.value })}
       galat={bidang[key]} autoComplete="off" />
   );
   const indeksTab = TAB_EDIT_PASIEN.findIndex((t) => t.id === tab);
@@ -87,16 +87,12 @@ export function EditPasien({ id, nama, onTutup, onSelesai }: { id: number; nama:
                   <Pilihan id="edit-pasien-jk" label="Jenis kelamin" value={data.jenis_kelamin} onChange={(e) => ubah({ jenis_kelamin: e.target.value as PasienDetailDto['jenis_kelamin'] })}
                     opsi={[{ nilai: 'laki_laki', label: 'Laki-laki' }, { nilai: 'perempuan', label: 'Perempuan' }]} />
                 </Baris>
-                <Baris>
-                  <Pilihan id="edit-pasien-jalur" label="Identitas" value={data.jalur_identitas} onChange={(e) => ubah({ jalur_identitas: e.target.value as PasienDetailDto['jalur_identitas'], ...(e.target.value === 'tanpa_identitas' ? { nik: null } : {}) })}
-                    opsi={[{ nilai: 'nik', label: 'NIK' }, { nilai: 'paspor', label: 'Paspor' }, { nilai: 'kitas', label: 'KITAS' }, { nilai: 'tanpa_identitas', label: 'Tanpa identitas' }]} />
-                  {data.jalur_identitas !== 'tanpa_identitas' && isian('nik', 'NIK', 16)}
-                </Baris>
+                {isian('nik', 'NIK', 16)}
                 {data.jalur_identitas === 'paspor' && isian('nomor_paspor', 'Nomor paspor', 50)}
                 {data.jalur_identitas === 'kitas' && isian('nomor_kitas', 'Nomor KITAS', 50)}
                 </Kolom>
                 <Kolom>
-                  {isian('nomor_hp', 'Nomor HP pasien (opsional)', 40, 'tel')}
+                  {isian('nomor_hp', 'Nomor HP pasien', 40, 'tel')}
                   <Baris>{isian('agama', 'Agama', 50)}{isian('pekerjaan', 'Pekerjaan', 100)}</Baris>
                   <Baris>{isian('pendidikan', 'Pendidikan', 100)}{isian('status_kawin', 'Status perkawinan', 50)}</Baris>
                 </Kolom>
@@ -104,11 +100,9 @@ export function EditPasien({ id, nama, onTutup, onSelesai }: { id: number; nama:
               {tab === 'edit-pelengkap' && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '24px' }}>
                 <Kolom>
                   <Baris>{isian('tempat_lahir', 'Tempat lahir', 100)}{isian('ibu_kandung', 'Nama ibu kandung')}</Baris>
-                  <AreaTeks id="edit-pasien-alamat" label="Alamat" value={data.alamat ?? ''} maxLength={1000} onChange={(e) => ubah({ alamat: e.target.value })} />
-                  {bidang.alamat && <Peringatan>{bidang.alamat}</Peringatan>}
+                  <PencarianWilayah id="edit-pasien-wilayah" value={data.kode_wilayah ?? ''} onChange={(kode) => ubah({ kode_wilayah: kode || null })} galat={bidang.kode_wilayah} />
                 </Kolom>
                 <Kolom>
-                  {isian('kode_wilayah', 'Kode wilayah', 20)}
                   <Baris>{isian('suku', 'Suku', 100)}{isian('bahasa', 'Bahasa', 100)}</Baris>
                 </Kolom>
               </div>}

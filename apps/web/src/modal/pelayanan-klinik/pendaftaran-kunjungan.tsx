@@ -13,7 +13,7 @@ import { Pilihan } from '../../komponen/ui/pilihan';
 import { Baris, Kolom } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { adaPerubahan } from '../../util/draf';
-import { awalKunjungan, bentukKunjungan, dpjpUntukPoli, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan';
+import { awalKunjungan, bentukKunjungan, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan';
 import type { KeadaanKunjungan } from './keadaan-kunjungan';
 
 type Props = {
@@ -25,7 +25,7 @@ type Props = {
 };
 
 /**
- * Modal Pendaftaran kunjungan (3.3, MODAL-1): layanan, poli/DPJP, cara pembayaran, keluhan singkat. Rawat jalan mendapat
+ * Modal Pendaftaran kunjungan (3.3, MODAL-1): layanan, poli, cara pembayaran, keluhan singkat. Rawat jalan mendapat
  * nomor antrean otomatis per poli per hari; nomor SEP JKN boleh menyusul. Bentuk draf otomatis tidak dipasang (isian pendek).
  */
 export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
@@ -38,7 +38,10 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
   const [hasil, setHasil] = useState<KunjunganDto | null>(null);
   const [kata, setKata] = useState('');
   const [calon, setCalon] = useState<PasienBarisDto[]>([]);
+  const [galatPencarian, setGalatPencarian] = useState<string | null>(null);
   const [mencari, setMencari] = useState(false);
+  const [hasilTerbuka, setHasilTerbuka] = useState(false);
+  const [calonAktif, setCalonAktif] = useState(-1);
 
   useEffect(() => {
     let batal = false;
@@ -52,29 +55,37 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
 
   // Pencarian pasien (hanya bila pasien belum ditentukan), ditunda agar tidak memanggil API di tiap ketukan.
   useEffect(() => {
-    if (pasien || kata.trim().length < 2) {
-      setCalon([]);
+    setCalon([]);
+    setGalatPencarian(null);
+    setMencari(false);
+    if (pasien || keadaan.pasien_id || kata.trim().length < 2) {
       return;
     }
     let batal = false;
+    setMencari(true);
     const t = setTimeout(() => {
-      setMencari(true);
-      daftarPasien({ cari: kata, tahap: 'semua', halaman: 1, ukuran: 20 })
+      daftarPasien({ untuk_kunjungan: true, cari: kata, tahap: 'semua', halaman: 1, ukuran: 20 })
         .then((h) => !batal && setCalon(h.data))
-        .catch((e) => !batal && setGalat(e instanceof GalatApi ? e.message : GALAT.umum))
+        .catch((e) => !batal && setGalatPencarian(e instanceof GalatApi ? e.message : GALAT.umum))
         .finally(() => !batal && setMencari(false));
     }, 300);
     return () => {
       batal = true;
       clearTimeout(t);
     };
-  }, [kata, pasien]);
+  }, [kata, pasien, keadaan.pasien_id]);
 
   const ubah = (p: Partial<KeadaanKunjungan>) => setKeadaan((k) => ubahKunjungan(k, p));
   const g = galatKunjungan(keadaan);
   const tampil = (b: string) => (dicoba ? g[b] : undefined);
-  const dpjp = dpjpUntukPoli(opsi?.dpjp ?? [], keadaan.lokasi_id);
-  const pilihanCalon = calon.filter((c) => !c.kunjungan);
+  const daftarTerbuka = hasilTerbuka && !keadaan.pasien_id && calon.length > 0;
+  function pilihPasien(c: PasienBarisDto) {
+    ubah({ pasien_id: String(c.id) });
+    setKata(`${c.nama} (${c.nomor_rm})`);
+    setHasilTerbuka(false);
+    setCalonAktif(-1);
+    setCalon([]);
+  }
 
   async function simpan() {
     setDicoba(true);
@@ -140,16 +151,47 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
               <span style={{ color: token.warna.teksRedup }}> · {pasien.nomor_rm}</span>
             </div>
           ) : (
-            <>
-              <Isian id="kunjungan-cari" label={KUNJUNGAN.cariPasien} type="search" value={kata} onChange={(e) => setKata(e.target.value)} autoComplete="off" />
-              <Pilihan
-                id="kunjungan-pasien" label={KUNJUNGAN.pasien} value={keadaan.pasien_id} onChange={(e) => ubah({ pasien_id: e.target.value })} galat={tampil('pasien_id')}
-                opsi={[
-                  { nilai: '', label: mencari ? KUNJUNGAN.mencari : pilihanCalon.length || kata.trim().length < 2 ? KUNJUNGAN.pilihPasien : KUNJUNGAN.pasienTidakAda },
-                  ...pilihanCalon.map((c) => ({ nilai: String(c.id), label: `${c.nama} (${c.nomor_rm})` })),
-                ]}
-              />
-            </>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
+              <Isian id="kunjungan-cari" label={KUNJUNGAN.pasien} placeholder={KUNJUNGAN.cariPasien}
+                value={kata} autoComplete="off" galat={tampil('pasien_id')}
+                role="combobox" aria-autocomplete="list" aria-expanded={daftarTerbuka}
+                aria-controls="kunjungan-calon" aria-activedescendant={daftarTerbuka && calonAktif >= 0 ? `kunjungan-calon-${calonAktif}` : undefined}
+                onFocus={() => setHasilTerbuka(true)} onBlur={() => setHasilTerbuka(false)}
+                onChange={(e) => {
+                  setKata(e.target.value);
+                  setCalon([]);
+                  setCalonAktif(-1);
+                  setHasilTerbuka(true);
+                  setMencari(e.target.value.trim().length >= 2);
+                  setGalatPencarian(null);
+                  ubah({ pasien_id: '' });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape' && hasilTerbuka) {
+                    e.preventDefault(); e.stopPropagation(); setHasilTerbuka(false);
+                  }
+                  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault(); setHasilTerbuka(true);
+                    setCalonAktif((n) => calon.length ? Math.max(0, Math.min(calon.length - 1, n + (e.key === 'ArrowDown' ? 1 : -1))) : -1);
+                  }
+                  if (e.key === 'Enter' && !keadaan.pasien_id) {
+                    e.preventDefault();
+                    if (daftarTerbuka && calon[calonAktif]) pilihPasien(calon[calonAktif]);
+                  }
+                }} />
+              {galatPencarian && <Peringatan>{galatPencarian}</Peringatan>}
+              {!keadaan.pasien_id && <small role="status" style={{ color: token.warna.teksRedup }}>
+                {kata.trim().length < 2 ? 'Ketik minimal 2 karakter untuk mencari pasien.' : mencari ? KUNJUNGAN.mencari : galatPencarian ? '' : calon.length ? 'Pilih pasien dari hasil pencarian.' : KUNJUNGAN.pasienTidakAda}
+              </small>}
+              {daftarTerbuka && <ul id="kunjungan-calon" role="listbox" aria-label="Hasil pencarian pasien"
+                style={{ margin: 0, padding: 0, listStyle: 'none', maxHeight: 220, overflowY: 'auto', border: `1px solid ${token.warna.garis}`, borderRadius: token.radius.sedang }}>
+                {calon.map((c, i) => <li key={c.id} id={`kunjungan-calon-${i}`} role="option" aria-selected={calonAktif === i}
+                  onMouseDown={(e) => e.preventDefault()} onClick={() => pilihPasien(c)}
+                  style={{ padding: token.jarak.sm, cursor: 'pointer', background: calonAktif === i ? token.warna.latar : token.warna.permukaan }}>
+                  <strong>{c.nama}</strong><span style={{ color: token.warna.teksRedup }}> · {c.nomor_rm}</span>
+                </li>)}
+              </ul>}
+            </div>
           )}
           <Baris>
             <Pilihan id="kunjungan-jenis" label={KUNJUNGAN.layanan} value={keadaan.jenis} onChange={(e) => ubah({ jenis: e.target.value as KeadaanKunjungan['jenis'] })} opsi={KUNJUNGAN.layananOpsi} />
@@ -158,13 +200,7 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
               opsi={[{ nilai: '', label: KUNJUNGAN.pilih }, ...(opsi?.poli ?? []).map((p) => ({ nilai: String(p.id), label: p.nama }))]}
             />
           </Baris>
-          <Baris>
-            <Pilihan
-              id="kunjungan-dpjp" label={KUNJUNGAN.dpjp} value={keadaan.dpjp_id} onChange={(e) => ubah({ dpjp_id: e.target.value })} galat={tampil('dpjp_id')}
-              opsi={[{ nilai: '', label: KUNJUNGAN.tanpaDpjp }, ...dpjp.map((d) => ({ nilai: String(d.id), label: d.nama }))]}
-            />
-            <Pilihan id="kunjungan-bayar" label={KUNJUNGAN.caraBayar} value={keadaan.cara_pembayaran} onChange={(e) => ubah({ cara_pembayaran: e.target.value as KeadaanKunjungan['cara_pembayaran'] })} opsi={KUNJUNGAN.caraBayarOpsi} />
-          </Baris>
+          <Pilihan id="kunjungan-bayar" label={KUNJUNGAN.caraBayar} value={keadaan.cara_pembayaran} onChange={(e) => ubah({ cara_pembayaran: e.target.value as KeadaanKunjungan['cara_pembayaran'] })} opsi={KUNJUNGAN.caraBayarOpsi} />
           {keadaan.cara_pembayaran === 'jkn' && (
             <>
               <Isian id="kunjungan-sep" label={KUNJUNGAN.sep} value={keadaan.nomor_sep} onChange={(e) => ubah({ nomor_sep: e.target.value })} galat={tampil('nomor_sep')} autoComplete="off" />

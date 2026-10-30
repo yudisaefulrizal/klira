@@ -76,6 +76,8 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     await buatPengguna('kasir', '9990000000000001', KASIR);
     await buatPengguna('kasir2', '9990000000000002', KASIR);
     await buatPengguna('dokter', '9990000000000003', [['klinis', 'lihat'], ['resep', 'input']]);
+    await buatPengguna('apoteker', '9990000000000005', [['farmasi', 'lihat'], ['farmasi', 'input']]);
+    await buatPengguna('lainApoteker', '9990000000000006', [['farmasi', 'lihat'], ['farmasi', 'input']], fasLain);
     await buatPengguna('lainKasir', '9990000000000004', KASIR, fasLain);
     kfaId = (await prisma.referensiKfa.create({ data: { kode: `${kode}-K`, tingkat: 92, nama: `Uji obat ${kode}`, contoh: true } })).id;
     obatId = (await prisma.masterObat.create({ data: { fasyankes_id: fas, kfa_id: kfaId, nama_tampil: 'Obat Kasir', satuan: 'tablet', harga: 1000 } })).id;
@@ -83,7 +85,7 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     await prisma.stokObat.create({ data: { fasyankes_id: fas, master_obat_id: obatId, batch: 'B-DEKAT', kedaluwarsa: jauh(60), jumlah: 6 } });
     await prisma.stokObat.create({ data: { fasyankes_id: fas, master_obat_id: obatId, batch: 'B-JAUH', kedaluwarsa: jauh(400), jumlah: 20 } });
     await prisma.stokObat.create({ data: { fasyankes_id: fas, master_obat_id: obatId, batch: 'B-LEWAT', kedaluwarsa: jauh(-5), jumlah: 100 } });
-    for (const k of ['kasir', 'kasir2', 'dokter', 'lainKasir']) await login(k);
+    for (const k of ['kasir', 'kasir2', 'dokter', 'lainKasir', 'apoteker', 'lainApoteker']) await login(k);
   });
 
   afterAll(async () => {
@@ -165,14 +167,18 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
 
   it('serah terima obat: resep harus siap, stok dikurangi per batch terdekat kedaluwarsa, batch kedaluwarsa dilewati, stok kurang butuh persetujuan dan alasan', async () => {
     const belum = await siapkan({ resep: 'diajukan' });
-    expect((await panggil('POST', `/kunjungan/${belum.kunj}/serah-terima-obat`, 'kasir', {})).status).toBe(409);
+    expect((await panggil('POST', `/kunjungan/${belum.kunj}/serah-terima-obat`, 'apoteker', {})).status).toBe(409);
     const tanpa = await siapkan({ resep: null });
-    expect((await panggil('POST', `/kunjungan/${tanpa.kunj}/serah-terima-obat`, 'kasir', {})).status).toBe(409);
+    expect((await panggil('POST', `/kunjungan/${tanpa.kunj}/serah-terima-obat`, 'apoteker', {})).status).toBe(409);
     expect((await panggil('POST', `/kunjungan/${belum.kunj}/serah-terima-obat`, 'dokter', {})).status).toBe(403);
-    expect((await panggil('POST', `/kunjungan/${belum.kunj}/serah-terima-obat`, 'lainKasir', {})).status).toBe(404);
+    expect((await panggil('POST', `/kunjungan/${belum.kunj}/serah-terima-obat`, 'lainApoteker', {})).status).toBe(404);
     const s = await siapkan({ resep: 'siap', jumlahObat: 10 });
-    expect((await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'kasir', { izinkan_stok_kurang: true })).status).toBe(400); // alasan wajib
-    const h = await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'kasir', {});
+    expect((await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'apoteker', { izinkan_stok_kurang: true })).status).toBe(400); // alasan wajib
+    expect((await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'kasir', {})).status).toBe(403);
+    expect((await bayar(s.kunj, { metode: 'tunai', jumlah: 1000 }, 'apoteker')).status).toBe(403);
+    const pembayaranSebelum = await prisma.pembayaran.count({ where: { fasyankes_id: fas } });
+    const h = await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'apoteker', {});
+    expect(await prisma.pembayaran.count({ where: { fasyankes_id: fas } })).toBe(pembayaranSebelum);
     expect(h.status).toBe(200);
     expect(h.badan.data.kekurangan).toEqual([]);
     expect(h.badan.data.resep[0].status).toBe('diserahkan');
@@ -183,15 +189,15 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     expect(keluar.map((m) => m.jumlah)).toEqual([-6, -4]);
     const p = await prisma.pengeluaranObat.findMany({ where: { resep_id: s.resepId } });
     expect(p).toMatchObject([{ jumlah: 10, harga: 1000, stok_kurang: false }]);
-    expect((await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'kasir', {})).status).toBe(409); // sudah diserahkan
+    expect((await panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'apoteker', {})).status).toBe(409); // sudah diserahkan
     // stok kurang: sisa 16, butuh 30
     const kurang = await siapkan({ resep: 'siap', jumlahObat: 30 });
-    const tolak = await panggil('POST', `/kunjungan/${kurang.kunj}/serah-terima-obat`, 'kasir', {});
+    const tolak = await panggil('POST', `/kunjungan/${kurang.kunj}/serah-terima-obat`, 'apoteker', {});
     expect(tolak.status).toBe(409);
     expect(tolak.badan.galat.rincian[0].pesan).toMatch(/butuh 30, tersedia 16/);
     expect(await stokBatch('B-JAUH')).toBe(16); // tidak ada perubahan saat ditolak
     expect((await prisma.resep.findUnique({ where: { id: kurang.resepId } }))?.status).toBe('siap');
-    const lanjut = await panggil('POST', `/kunjungan/${kurang.kunj}/serah-terima-obat`, 'kasir', { izinkan_stok_kurang: true, alasan: 'stok fisik masih ada di rak' });
+    const lanjut = await panggil('POST', `/kunjungan/${kurang.kunj}/serah-terima-obat`, 'apoteker', { izinkan_stok_kurang: true, alasan: 'stok fisik masih ada di rak' });
     expect(lanjut.status).toBe(200);
     expect(lanjut.badan.data.kekurangan[0]).toMatchObject({ butuh: 30, tersedia: 16 });
     expect(await stokBatch('B-JAUH')).toBe(0);
@@ -202,7 +208,7 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     await prisma.stokObat.updateMany({ where: { master_obat_id: obatId, batch: 'B-JAUH' }, data: { jumlah: 20 } });
     const sebelum = await stokBatch('B-JAUH');
     const s = await siapkan({ resep: 'siap', jumlahObat: 1 });
-    const hasil = await Promise.all([1, 2, 3].map(() => panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'kasir', {})));
+    const hasil = await Promise.all([1, 2, 3].map(() => panggil('POST', `/kunjungan/${s.kunj}/serah-terima-obat`, 'apoteker', {})));
     expect(hasil.filter((h) => h.status === 200).length).toBe(1);
     expect(hasil.filter((h) => h.status === 409).length).toBe(2);
     expect(await stokBatch('B-JAUH')).toBe(sebelum - 1);

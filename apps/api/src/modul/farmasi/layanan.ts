@@ -1,6 +1,6 @@
-import { FARMASI } from '@klira/shared';
+import { FARMASI, KASIR } from '@klira/shared';
 import type {
-  FilterKfa, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MasterObatMasukan, MutasiStokDto, MutasiStokMasukan, PenggunaSaya,
+  HasilSerahTerimaDto, SerahTerimaMasukan, FilterKfa, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MasterObatMasukan, MutasiStokDto, MutasiStokMasukan, PenggunaSaya,
   ReferensiKfaDto, ResepDto, ResepMasukan, RiwayatObatDto, StokObatDto, TelaahMasukan, UbahMasterObatMasukan,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
@@ -92,6 +92,22 @@ export function buatLayananFarmasi({ repo, audit }: DependensiFarmasi) {
       const kekurangan = baru.item.filter((i) => i.stok_tersedia < i.jumlah).map((i) => ({ master_obat_id: i.master_obat_id, nama: i.nama, butuh: i.jumlah, tersedia: i.stok_tersedia }));
       await catat(p, 'perbaikan', 'resep', resepId, `Resep ${baru.nomor_resep} siap${kekurangan.length ? `, stok kurang ${kekurangan.length} obat` : ''}`, alamat);
       return { ok: true, data: { resep: baru, kekurangan, tahap_kunjungan: hasil.tahap } };
+    },
+
+    async serahTerima(p: Pelaku, kunjunganId: number, m: SerahTerimaMasukan, alamat?: string): Promise<Hasil<HasilSerahTerimaDto>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', KASIR.galat.kunjunganTidakAda);
+      const izinkan = !!m.izinkan_stok_kurang;
+      const alasan = typeof m.alasan === 'string' && m.alasan.trim() ? m.alasan.trim() : null;
+      const h = await repo.serahTerima(p.fasyankes_id, p.id, kunjunganId, izinkan, alasan);
+      if (!h.ok) {
+        if (h.sebab === 'stok_kurang') {
+          return { ok: false, kode: 'konflik', pesan: KASIR.galat.stokKurang, rincian: h.kekurangan.map((x) => ({ jalur: `obat.${x.master_obat_id}`, pesan: KASIR.bayar.stokKurang(x.nama, x.butuh, x.tersedia) })) };
+        }
+        const pesan = { tidak_ada_resep: KASIR.galat.tidakAdaResep, belum_siap: KASIR.galat.resepBelumSiap, sudah_diserahkan: KASIR.bayar.serahSudah, tahap_salah: KASIR.galat.tahapSalah }[h.sebab];
+        return gagal('konflik', pesan);
+      }
+      await catat(p, 'input', 'pengeluaran_obat', kunjunganId, `Serah terima obat kunjungan ${kunjunganId}${h.kekurangan.length ? `, stok kurang ${h.kekurangan.length} obat (${alasan ?? '-'})` : ''}`, alamat);
+      return { ok: true, data: { resep: await repo.resepKunjungan(p.fasyankes_id, kunjunganId), kekurangan: h.kekurangan } };
     },
 
     riwayat: (p: Pelaku, f: FilterRiwayatObat): Promise<RiwayatObatDto> => repo.riwayat(p.fasyankes_id, f),

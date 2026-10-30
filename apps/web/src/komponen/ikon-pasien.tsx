@@ -14,12 +14,13 @@ export function IkonPasien({ nama }: { nama: NamaIkonPasien }) {
 }
 
 type Props = Omit<ComponentProps<typeof Tombol>, 'children'> & {
-  ikon: NamaIkonPasien;
+  ikon?: NamaIkonPasien;
+  ikonKustom?: ReactNode;
   label: string;
   children?: ReactNode;
 };
 
-export function TombolIkonPasien({ ikon, label, children, className = '', ...props }: Props) {
+export function TombolIkonPasien({ ikon, ikonKustom, label, children, className = '', ...props }: Props) {
   const id = useId();
   const ref = useRef<HTMLSpanElement>(null);
   const [posisi, setPosisi] = useState<{ x: number; y: number; bawah: boolean } | null>(null);
@@ -38,9 +39,9 @@ export function TombolIkonPasien({ ikon, label, children, className = '', ...pro
     };
   }, [posisi]);
   return <span ref={ref} className="pasien-ikon-wrap" onMouseEnter={tampil} onMouseLeave={tutup}
-    onFocus={tampil} onBlur={tutup} onClick={tutup} onKeyDown={(e) => { if (e.key === 'Escape') tutup(); }}>
+    onFocus={tampil} onBlur={tutup} onClick={tutup} onKeyDown={(e) => { if (e.key === 'Escape' && posisi) { e.preventDefault(); e.stopPropagation(); tutup(); } }}>
     <Tombol type="button" {...props} className={`pasien-tombol-ikon ${className}`} aria-label={label} aria-describedby={posisi ? id : undefined}>
-      <IkonPasien nama={ikon} />{children}
+      {ikonKustom ? <span className="pasien-ikon-kustom" style={{ display: 'inline-flex', width: 24, height: 24, flex: '0 0 24px' }}>{ikonKustom}</span> : ikon ? <IkonPasien nama={ikon} /> : null}{children}
     </Tombol>
     {posisi && createPortal(<span id={id} role="tooltip" className="pasien-tooltip" data-bawah={posisi.bawah}
       style={{ left: posisi.x, top: posisi.y }}>{label}</span>, document.body)}

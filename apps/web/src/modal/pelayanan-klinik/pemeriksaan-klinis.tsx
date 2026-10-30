@@ -1,15 +1,21 @@
+import { TombolIkonPasien } from '../../komponen/ikon-pasien';
+import './pemeriksaan-klinis.css';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BAGIAN_KLINIS, GALAT, KLINIS, MODAL, TAHAP_LAYANAN } from '@klira/shared';
+import { BAGIAN_KLINIS, GALAT, KLINIS, TAHAP_LAYANAN } from '@klira/shared';
 import type { BagianKlinis, FavoritDto, JenisFavorit, KlinisKunjunganDto, KonteksKlinisDto, KunjunganDto, SalinanKunjunganDto, TemplatDto } from '@klira/shared';
+import { buatOrderLab } from '../../api-klien/penunjang';
+import { awalOrderLab, bentukOrderLab, galatOrderLab } from './keadaan-order-lab';
 import { GalatApi } from '../../api-klien/klien';
 import { adaptorDrafServer } from '../../api-klien/draf-klinis';
-import { resepKunjungan } from '../../api-klien/farmasi';
+import { adaIsianResep, awalResep, bentukResep, galatResep } from './keadaan-farmasi';
+import { buatResep, resepKunjungan } from '../../api-klien/farmasi';
 import { ambilKlinis, ambilKonteksKlinis, daftarFavorit, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { HanyaDenganIzin } from '../../komponen/izin-saja';
 import { ModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap';
 import type { LangkahModal } from '../../komponen/modal-bertahap/modal-bertahap';
 import { Lencana } from '../../komponen/ui/lencana';
+import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
@@ -71,14 +77,14 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const [hasil, setHasil] = useState<{ jumlah: number; kunjungan: KunjunganDto } | null>(null);
   const [panel, setPanel] = useState<PanelTerbuka>(null);
   const [favorit, setFavorit] = useState<FavoritDto[]>([]);
-  const [drafDipulihkan, setDrafDipulihkan] = useState(false);
   const adaTersimpan = useRef(false);
+  const sedangMengirim = useRef(false);
 
   const server = useMemo(() => (klinis ? keadaanDariServer(klinis.bagian) : awalKeadaan()), [klinis]);
   const disahkan = useMemo(() => (klinis ? disahkanDari(klinis.bagian) : ({} as Record<BagianKlinis, boolean>)), [klinis]);
 
   const [formSiap, setFormSiap] = useState(false);
-  const { pulihan, siap: drafSiap, hapus, buang } = useDrafOtomatis<KeadaanPemeriksaan>({
+  const { pulihan, siap: drafSiap, hapus } = useDrafOtomatis<KeadaanPemeriksaan>({
     adaptor, nilai: keadaan, awal: server, langkah: indeks, aktif: formSiap && !hasil,
   });
 
@@ -109,7 +115,6 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       setKeadaan(pulihkanKeadaan(dasar, pulihan.nilai));
       setIndeks(n);
       setDikunjungi(Array.from({ length: n + 1 }, (_x, i) => i));
-      setDrafDipulihkan(true);
     } else setKeadaan(dasar);
     setFormSiap(true);
   }, [klinis, drafSiap, formSiap, pulihan, konfig.length, mode]);
@@ -126,8 +131,9 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const alasanPerlu = perluAlasan(rencana, disahkan);
   const bisaSelesai = mode === 'periksa' && !!klinis && klinis.kunjungan.tahap_layanan === 'pemeriksaan' && syaratSelesaiTerpenuhi(disahkan, rencana) && (['anamnesis', 'diagnosis', 'tindak_lanjut'] as const).every((b) => klinis.bagian[b].verifikasi === 'sah' || rencana.some((r) => r.bagian === b && !r.galat));
   const pilihSelesai = selesaiDipilih && bisaSelesai;
-  const adaYangDikirim = rencana.length > 0 || pilihSelesai;
-  const statusBagian = Object.fromEntries(BAGIAN_KLINIS.map((b) => [b, statusRingkasan(b, keadaan, server, !!disahkan[b])])) as Parameters<typeof LangkahRingkasan>[0]['status'];
+  const adaResepBaru = adaIsianResep(keadaan.resep);
+  const adaYangDikirim = rencana.length > 0 || pilihSelesai || keadaan.lab_dipilih || adaResepBaru;
+  const statusBagian = Object.fromEntries(BAGIAN_KLINIS.map((b) => [b, statusRingkasan(b, keadaan, server, klinis?.bagian[b].verifikasi ?? 'belum_disahkan')])) as Parameters<typeof LangkahRingkasan>[0]['status'];
 
   const infoServer = (b?: BagianKlinis) => (b && klinis ? klinis.bagian[b] : null);
   const dasar = (b?: BagianKlinis) => ({ k: keadaan, ubah, galat: galatDi(b), server: infoServer(b) });
@@ -149,10 +155,11 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         <LangkahDiagnosis {...dasar('diagnosis')} favorit={favoritDari('diagnosis')} />
       </Kolom>;
       case 'plan': return <Kolom>
+        <LangkahTindakLanjut {...dasar('tindak_lanjut')} ringkas />
         <LangkahNarasi bagian="plan" {...dasar('plan')} />
-        <LangkahResep kunjunganId={kunjunganId} onResepDiajukan={() => { adaTersimpan.current = true; }} />
-        <LangkahPenunjang kunjunganId={kunjunganId} cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} onOrderDipesan={() => { adaTersimpan.current = true; }} />
-        <LangkahTindakLanjut {...dasar('tindak_lanjut')} />
+        <LangkahResep baris={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />
+        <KotakCentang id="plan-lab" label="Lab" checked={keadaan.lab_dipilih} disabled={memproses} onChange={(e) => ubah({ lab_dipilih: e.target.checked })} />
+        {keadaan.lab_dipilih && <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat && keadaan.lab_dipilih ? galatOrderLab(keadaan.order_lab) : null} />}
       </Kolom>;
       case 'implementasi': return <Kolom>
         <LangkahNarasi bagian="implementasi" {...dasar('implementasi')} />
@@ -164,17 +171,17 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       case 'pemeriksaan': return <LangkahPemeriksaan {...dasar(l.bagian)} />;
       case 'diagnosis': return <LangkahDiagnosis {...dasar(l.bagian)} favorit={favoritDari('diagnosis')} />;
       case 'tindakan': return <LangkahTindakan {...dasar(l.bagian)} favorit={favoritDari('tindakan')} />;
-      case 'resep': return <LangkahResep kunjunganId={kunjunganId} onResepDiajukan={() => { adaTersimpan.current = true; }} />;
-      case 'penunjang': return <LangkahPenunjang kunjunganId={kunjunganId} cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} onOrderDipesan={() => { adaTersimpan.current = true; }} />;
+      case 'resep': return <LangkahResep baris={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />;
+      case 'penunjang': return <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat && keadaan.lab_dipilih ? galatOrderLab(keadaan.order_lab) : null} />;
       case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar(l.bagian)} />;
       default:
         return (
-          <Kolom><LangkahRingkasan
+          <LangkahRingkasan
             k={keadaan} ubah={ubah} rencana={rencana} status={statusBagian} bagian={bagianDiModal(mode)} labelBagian={labelBagian} perluAlasan={alasanPerlu}
             bisaSelesai={bisaSelesai} tampilSelesai={mode === 'periksa'} selesai={selesaiDipilih} onSelesai={setSelesaiDipilih}
-          />
-          {mode === 'periksa' && <RingkasanOrderKunjungan kunjunganId={kunjunganId} />}
-          </Kolom>
+          >
+            {mode === 'periksa' && <RingkasanOrderKunjungan kunjunganId={kunjunganId} k={keadaan} />}
+          </LangkahRingkasan>
         );
     }
   };
@@ -185,6 +192,20 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   }));
 
   async function kirim() {
+    if (sedangMengirim.current) return;
+    const galatObat = adaResepBaru ? Object.values(galatResep(keadaan.resep))[0] : undefined;
+    if (galatObat) {
+      setTampilGalat(true);
+      setGalat(galatObat);
+      pindah(konfig.findIndex((l) => l.id === 'plan' || l.id === 'resep'));
+      return;
+    }
+    if (keadaan.lab_dipilih && galatOrderLab(keadaan.order_lab)) {
+      setTampilGalat(true);
+      setGalat(galatOrderLab(keadaan.order_lab));
+      pindah(konfig.findIndex((l) => l.id === 'plan' || l.id === 'penunjang'));
+      return;
+    }
     const masalah = rencana.findIndex((r) => r.galat);
     if (masalah >= 0) {
       setTampilGalat(true);
@@ -198,7 +219,10 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       return;
     }
     setGalat(null);
+    sedangMengirim.current = true;
     setMemproses(true);
+    let labBerjalan = false;
+    let resepBerjalan = false;
     let disimpan = 0;
     let bagianBerjalan: BagianKlinis | null = null;
     try {
@@ -209,6 +233,22 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         adaTersimpan.current = adaTersimpan.current || h.tersimpan;
       }
       bagianBerjalan = null;
+      if (keadaan.lab_dipilih) {
+        labBerjalan = true;
+        await buatOrderLab(kunjunganId, bentukOrderLab({ ...keadaan.order_lab, prioritas: 'rutin' }));
+        labBerjalan = false;
+        adaTersimpan.current = true;
+        // Hapus draf order yang berhasil agar kegagalan tahap berikutnya tidak memesannya lagi.
+        ubah({ lab_dipilih: false, order_lab: awalOrderLab() });
+      }
+      if (adaResepBaru) {
+        resepBerjalan = true;
+        await buatResep(kunjunganId, bentukResep(keadaan.resep));
+        resepBerjalan = false;
+        adaTersimpan.current = true;
+        // Resep yang sudah dikonfirmasi tidak diajukan lagi bila tahap berikutnya gagal.
+        ubah({ resep: awalResep() });
+      }
       let kunjungan = (await ambilKlinis(kunjunganId)).kunjungan;
       if (pilihSelesai) {
         // Resep yang belum siap mengirim kunjungan ke farmasi (tahap resep); tanpa itu langsung ke kasir.
@@ -220,11 +260,12 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       setHasil({ jumlah: disimpan, kunjungan });
     } catch (e) {
       const pesan = e instanceof GalatApi ? e.message : GALAT.umum;
-      setGalat(bagianBerjalan ? `${KLINIS.gagalSebagian(labelBagian[bagianBerjalan])} ${pesan}` : pesan);
+      setGalat(resepBerjalan ? `Penyimpanan pemeriksaan belum lengkap pada bagian resep. ${pesan}` : labBerjalan ? `Penyimpanan pemeriksaan belum lengkap pada bagian lab. ${pesan}` : bagianBerjalan ? `${KLINIS.gagalSebagian(labelBagian[bagianBerjalan])} ${pesan}` : pesan);
       // sebagian bagian mungkin sudah tersimpan: muat ulang agar keadaan pengesahan tampil benar
       void ambilKlinis(kunjunganId).then(setKlinis).catch(() => undefined);
       setTampilGalat(true);
     } finally {
+      sedangMengirim.current = false;
       setMemproses(false);
     }
   }
@@ -244,7 +285,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (adaTersimpan.current) onSelesai();
     else onTutup();
   };
-  const tombolPanel = (id: Exclude<PanelTerbuka, null>, teks: string) => <Tombol type="button" varian="sekunder" onClick={() => setPanel(id)}>{teks}</Tombol>;
+
 
   const judul = mode === 'skrining' ? KLINIS.judulSkrining : KLINIS.judul;
   return (
@@ -258,33 +299,15 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
           pindah(n);
         }}
         konteks={<KonteksKlinis konteks={konteks} nama={pasien.nama} nomorRm={pasien.nomor_rm} />}
-        catatan={
-          <Kolom jarak="sm">
-            <Sebaris bungkus>
-              {tombolPanel('riwayat', KLINIS.tombol.riwayat)}
-              {mode === 'periksa' && tombolPanel('salin', KLINIS.tombol.salin)}
-              {mode === 'periksa' && tombolPanel('favorit', KLINIS.tombol.favorit)}
-              {tombolPanel('keluarga', KLINIS.tombol.keluarga)}
-            </Sebaris>
-            {drafDipulihkan && (
-              <Peringatan nada="biru" baris>
-                <span style={{ flexGrow: 1 }}>{MODAL.drafDipulihkan}</span>
-                <Tombol
-                  type="button"
-                  varian="teks"
-                  onClick={() => {
-                    buang();
-                    setKeadaan(server);
-                    setIndeks(0);
-                    setDikunjungi([0]);
-                    setDrafDipulihkan(false);
-                  }}
-                >
-                  {MODAL.buangDraf}
-                </Tombol>
-              </Peringatan>
-            )}
-          </Kolom>
+        aksiHeader={
+          <div className="pemeriksaan-aksi-header" role="group" aria-label="Alat pemeriksaan">
+            <TombolIkonPasien ikon="riwayat" label={KLINIS.tombol.riwayat} varian="teks" style={{ padding: 0 }} onClick={() => setPanel('riwayat')} />
+            {mode === 'periksa' && <TombolIkonPasien label={KLINIS.tombol.salin} varian="teks" style={{ padding: 0 }} onClick={() => setPanel('salin')}
+              ikonKustom={<svg width="24" height="24" style={{ width: 24, height: 24, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h3"/></svg>} />}
+            {mode === 'periksa' && <TombolIkonPasien label={KLINIS.tombol.favorit} varian="teks" style={{ padding: 0 }} onClick={() => setPanel('favorit')}
+              ikonKustom={<svg width="24" height="24" style={{ width: 24, height: 24, flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9Z"/></svg>} />}
+            <TombolIkonPasien ikon="keluarga" label={KLINIS.tombol.keluarga} varian="teks" style={{ padding: 0 }} onClick={() => setPanel('keluarga')} />
+          </div>
         }
         galat={galat}
         onTutup={hasil ? onSelesai : tutup}
@@ -308,10 +331,10 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         hasil={
           hasil
             ? {
-                judul: KLINIS.hasil.judul,
+                judul: mode === 'skrining' ? KLINIS.hasil.judul : 'Pemeriksaan tersimpan',
                 isi: (
                   <Kolom>
-                    <p style={{ margin: 0 }}>{mode === 'skrining' ? KLINIS.hasil.pesanSkrining : KLINIS.hasil.pesan(hasil.jumlah)}</p>
+                    <p style={{ margin: 0 }}>{mode === 'skrining' ? KLINIS.hasil.pesanSkrining : 'Pemeriksaan tersimpan dan disahkan.'}</p>
                     <Sebaris>
                       <span style={{ color: token.warna.teksRedup }}>{KLINIS.hasil.tahap}</span>
                       <Lencana warna={TAHAP_LAYANAN.warna(hasil.kunjungan.tahap_layanan)}>{TAHAP_LAYANAN.label(hasil.kunjungan.tahap_layanan)}</Lencana>

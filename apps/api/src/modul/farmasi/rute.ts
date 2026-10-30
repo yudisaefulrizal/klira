@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
-import { filterKfa, filterMasterObat, filterRiwayatObat, GALAT, idParam, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
+import { filterKfa, filterMasterObat, filterRiwayatObat, GALAT, idParam, masterObatMasukan, mutasiStokMasukan, resepMasukan, serahTerimaMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import { wajibMasuk } from '../../middleware/auth';
 import { alamatDari } from '../../middleware/audit';
@@ -25,7 +25,7 @@ export function buatRuteFarmasi(layananAkses: LayananAkses, layananIzin: Layanan
   const tidakAda = (res: Response) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } } satisfies ResponsGalat);
   // Master dibaca juga oleh dokter yang menulis resep.
   const bacaMaster = wajibIzinSalahSatu(['farmasi', 'lihat'], ['resep', 'input']);
-  const lihatResep = wajibIzinSalahSatu(['farmasi', 'lihat'], ['resep', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat']);
+  const lihatResep = wajibIzinSalahSatu(['farmasi', 'lihat'], ['farmasi', 'input'], ['resep', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat']);
 
   rute.get('/farmasi/kfa', masuk, wajibIzin('farmasi', 'input'), bungkus(async (req, res) => {
     const f = filterKfa.safeParse(req.query);
@@ -90,5 +90,12 @@ export function buatRuteFarmasi(layananAkses: LayananAkses, layananIzin: Layanan
     kirimHasil(res, await layanan.siap(pengguna(res), id.data.id, alamatDari(req)));
   }));
 
+  rute.post('/kunjungan/:id/serah-terima-obat', masuk, wajibIzin('farmasi', 'input'), bungkus(async (req, res) => {
+    const id = idParam.safeParse(req.params);
+    if (!id.success) return tidakAda(res);
+    const m = serahTerimaMasukan.safeParse(req.body ?? {});
+    if (!m.success) return galatValidasi(res, m.error);
+    kirimHasil(res, await layanan.serahTerima(pengguna(res), id.data.id, m.data, alamatDari(req)));
+  }));
   return rute;
 }

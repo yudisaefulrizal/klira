@@ -1,4 +1,5 @@
-import { awalBayar, awalSerah, awalShift, bentukSerah, bisaTutup, daftarSyarat, diterapkan, galatBayar, galatBukaShift, galatSerah, galatTutupShift, kembalian, selisihShift } from './keadaan-kasir';
+import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi';
+import { awalBayar, awalShift, bisaTutup, daftarSyarat, diterapkan, galatBayar, galatBukaShift, galatTutupShift, kembalian, selisihShift } from './keadaan-kasir';
 
 const gambaran = (syarat: Partial<{ tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean }> = {}) =>
   ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ...syarat } }) as never;

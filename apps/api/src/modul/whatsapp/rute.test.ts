@@ -1,3 +1,4 @@
+import { putuskanDanBersihkan } from '../pesan/bersihkan';
 import express from 'express';
 import type { AddressInfo } from 'node:net';
 import type { PenggunaSaya } from '@klira/shared';
@@ -5,6 +6,7 @@ import type { LayananAkses } from '../akses/layanan';
 import type { LayananIzin } from '../akses/layanan-izin';
 import { prisma } from '@klira/db';
 import { buatRuteWhatsapp } from './rute';
+jest.mock('../pesan/bersihkan', () => ({ ...jest.requireActual('../pesan/bersihkan'), putuskanDanBersihkan: jest.fn(async () => ({ percakapan: 1, pesan: 2 })) }));
 jest.mock('@klira/db', () => ({
   prisma: {
     waPercakapan: {
@@ -29,6 +31,7 @@ jest.mock('@klira/db', () => ({
   enkripsiRahasia: jest.fn((v) => v),
 }));
 jest.mock('../../middleware/audit', () => ({
+  alamatDari: () => 'uji',
   buatFasilitasAudit: () => ({
     perbaikan: () => (_req: unknown, _res: unknown, next: () => void) => next(),
     lihat: () => (_req: unknown, _res: unknown, next: () => void) => next(),
@@ -87,7 +90,7 @@ it('satu izin WhatsApp memberi akses pengelolaan koneksi', async () => {
 it('satu izin WhatsApp dapat melihat QR', async () => {
   jest
     .mocked(prisma.waKoneksi.findUnique)
-    .mockResolvedValue({ fasyankes_id: 2, detak: new Date(), status: 'qr', qr: 'qr-uji', nomor: null } as never);
+    .mockResolvedValue({ fasyankes_id: 2, detak: new Date(), status: 'qr', aktif: true, qr: 'qr-uji', nomor: null } as never);
   const response = await call('/koneksi');
   expect(response.status).toBe(200);
   expect((await response.json()).data.qr).toBe('qr-uji');
@@ -134,13 +137,10 @@ it('penanda baca hanya bergerak maju sampai pesan yang benar-benar dibuka', asyn
     data: { pesan_id: 40 },
   });
 });
-it('memutuskan koneksi membatalkan antrean milik fasyankes itu saja', async () => {
+it('memutuskan koneksi membersihkan pesan fasyankes peminta', async () => {
   jest.mocked(prisma.waKoneksi.findUnique).mockResolvedValue({ fasyankes_id: 2 } as never);
   expect((await call('/koneksi', { aksi: 'putuskan' })).status).toBe(200);
-  expect(prisma.waPesan.updateMany).toHaveBeenCalledWith({
-    where: { status: 'antre', percakapan: { fasyankes_id: 2 } },
-    data: { status: 'dibatalkan' },
-  });
+  expect(putuskanDanBersihkan).toHaveBeenCalledWith('whatsapp', expect.objectContaining({ fasyankes_id: 2 }), expect.any(String));
 });
 
 it('izin inbox saja tidak boleh mengambil identitas pasien melalui penautan', async () => {

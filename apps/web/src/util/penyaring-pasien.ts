@@ -1,53 +1,34 @@
-import { aksiAntreanTersedia, NILAI_TAHAP_FILTER } from '@klira/shared';
-import type { AksiAntrean, AksiIzin, PasienBarisDto, TahapFilter } from '@klira/shared';
+import { aksiAntreanTersedia } from '@klira/shared';
+import type { AksiAntrean, AksiIzin, PasienBarisDto } from '@klira/shared';
 
-/** Keadaan Daftar pasien yang disimpan di alamat (5.1g, 5.1k): pencarian, tahap layanan, halaman. */
-export type KeadaanPasien = { cari: string; tahap: TahapFilter; halaman: number; tanggal?: string };
+/** Pencarian, tanggal, dan halaman tetap tersimpan di alamat; seluruh tahap memakai satu tabel. */
+export type KeadaanPasien = { cari: string; halaman: number; tanggal?: string };
 
-const tahapSah = (t: string | null): t is TahapFilter => !!t && (NILAI_TAHAP_FILTER as readonly string[]).includes(t);
-
-/**
- * Filter bawaan sesuai pekerjaan akun (3.1): dokter menunggu pemeriksaan, perawat menunggu skrining, apoteker resep menunggu,
- * kasir menunggu pembayaran; selain itu semua. Dokter dikenali dari izin resep, perawat dari izin klinis tanpa resep.
- */
-export function tahapBawaan(fitur: readonly string[]): TahapFilter {
-  const ada = (f: string) => fitur.includes(f);
-  if (ada('klinis') && ada('resep')) return 'pemeriksaan';
-  if (ada('klinis')) return 'menunggu_skrining';
-  if (ada('farmasi')) return 'resep';
-  if (ada('kasir')) return 'kasir';
-  return 'semua';
-}
-
-/** Baca keadaan dari alamat; tahap yang tidak ada di alamat memakai `bawaan` (diingat sesi atau bawaan pekerjaan). */
-export function keadaanPasienDariQuery(search: string, bawaan: TahapFilter): KeadaanPasien {
+export function keadaanPasienDariQuery(search: string): KeadaanPasien {
   const q = new URLSearchParams(search);
   const halaman = Number(q.get('halaman'));
-  const tahap = q.get('tahap');
   return {
     ...(q.get('tanggal') ? { tanggal: q.get('tanggal')! } : {}),
     cari: (q.get('cari') ?? '').trim(),
-    tahap: tahapSah(tahap) ? tahap : bawaan,
     halaman: Number.isInteger(halaman) && halaman >= 1 ? halaman : 1,
   };
 }
 
-/** Query string selalu memuat tahap (agar pilihan "Semua" tidak tertukar bawaan pekerjaan). */
 export function queryPasien(k: KeadaanPasien): string {
-  const q = new URLSearchParams({ tahap: k.tahap });
+  const q = new URLSearchParams();
   if (k.tanggal) q.set('tanggal', k.tanggal);
   if (k.cari.trim()) q.set('cari', k.cari.trim());
   if (k.halaman > 1) q.set('halaman', String(k.halaman));
-  return `?${q.toString()}`;
+  return q.size ? `?${q.toString()}` : '';
 }
 
-/** Mengubah pencarian atau tahap kembali ke halaman pertama; ganti halaman mempertahankan penyaring. */
+/** Mengubah pencarian atau tanggal kembali ke halaman pertama. */
 export function ubahKeadaanPasien(k: KeadaanPasien, perubahan: Partial<KeadaanPasien>): KeadaanPasien {
-  const berubah = (perubahan.tanggal !== undefined && perubahan.tanggal !== k.tanggal) || (perubahan.cari !== undefined && perubahan.cari !== k.cari) || (perubahan.tahap !== undefined && perubahan.tahap !== k.tahap);
+  const berubah = (perubahan.tanggal !== undefined && perubahan.tanggal !== k.tanggal) || (perubahan.cari !== undefined && perubahan.cari !== k.cari);
   return { ...k, ...perubahan, halaman: perubahan.halaman ?? (berubah ? 1 : k.halaman) };
 }
 
-export type AksiBaris = { jenis: 'buka' | 'daftarkan' | 'skrining' | 'periksa' | 'telaah' | 'bayar' | 'tutup_kunjungan' | 'persetujuan' | 'order_lab' | 'spesimen' | 'hasil_lab' | 'riwayat' | 'keluarga' | AksiAntrean };
+export type AksiBaris = { jenis: 'buka' | 'daftarkan' | 'skrining' | 'periksa' | 'telaah' | 'bayar' | 'serah_obat' | 'tutup_kunjungan' | 'persetujuan' | 'order_lab' | 'spesimen' | 'hasil_lab' | 'riwayat' | 'keluarga' | AksiAntrean };
 type Boleh = (fitur: string, aksi: AksiIzin) => boolean;
 
 /**
@@ -61,12 +42,15 @@ export function aksiBaris(baris: PasienBarisDto, boleh: Boleh): AksiBaris[] {
   if (k?.antrean?.status === 'batal') {
     return aksiBaris({ ...baris, kunjungan: null }, boleh);
   }
-  if (k?.antrean && boleh('kunjungan', 'perbaikan')) {
-    for (const jenis of aksiAntreanTersedia(k.antrean.status)) hasil.push({ jenis });
+  if (k?.antrean && k.tahap_layanan !== 'ditutup' && boleh('kunjungan', 'perbaikan')) {
+    for (const jenis of aksiAntreanTersedia(k.antrean.status)) {
+      if (jenis === 'panggil' || jenis === 'batal') hasil.push({ jenis });
+    }
   }
   if (k?.tahap_layanan === 'menunggu_skrining' && boleh('klinis', 'input')) hasil.push({ jenis: 'skrining' });
   if (k?.tahap_layanan === 'pemeriksaan' && boleh('klinis', 'input')) hasil.push({ jenis: 'periksa' });
   if (k?.tahap_layanan === 'resep' && boleh('farmasi', 'input')) hasil.push({ jenis: 'telaah' });
+  if (k?.tahap_layanan === 'kasir' && boleh('farmasi', 'input')) hasil.push({ jenis: 'serah_obat' });
   if (k?.tahap_layanan === 'kasir' && boleh('kasir', 'input')) hasil.push({ jenis: 'bayar' });
   if (k?.tahap_layanan === 'kasir' && boleh('kasir', 'perbaikan')) hasil.push({ jenis: 'tutup_kunjungan' });
   if (!k && boleh('kunjungan', 'input')) hasil.push({ jenis: 'daftarkan' });

@@ -1,4 +1,4 @@
-import { FARMASI, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
+import { KASIR, FARMASI, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
 import type { MasterObatDto, ReferensiKfaDto, StokObatDto } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
@@ -65,6 +65,9 @@ export function pilihBatch(k: KeadaanMutasi, stok: readonly StokObatDto[], batch
 // ---- Resep ----
 export type BarisResep = { master_obat_id: string; jumlah: string; aturan_pakai: string; bentuk: string; rute: string };
 export const barisResepKosong = (): BarisResep => ({ master_obat_id: '', jumlah: '1', aturan_pakai: '', bentuk: '', rute: '' });
+/** Baris awal tanpa obat bukan resep; isian sebagian tetap harus divalidasi sebelum Simpan. */
+export const adaIsianResep = (baris: readonly BarisResep[]): boolean => baris.some((b) =>
+  !!(b.master_obat_id.trim() || b.aturan_pakai.trim() || b.bentuk.trim() || b.rute.trim()) || b.jumlah !== '1');
 export const awalResep = (): BarisResep[] => [barisResepKosong()];
 export const ubahBarisResep = (b: readonly BarisResep[], n: number, p: Partial<BarisResep>): BarisResep[] => b.map((x, i) => (i === n ? { ...x, ...p } : x));
 export const hapusBarisResep = (b: readonly BarisResep[], n: number): BarisResep[] => (b.length <= 1 ? [barisResepKosong()] : b.filter((_, i) => i !== n));
@@ -89,3 +92,9 @@ export const awalTelaah = (t?: { administratif: boolean; farmasetik: boolean; kl
 });
 export const telaahLengkap = (k: KeadaanTelaah): boolean => k.administratif && k.farmasetik && k.klinis;
 export const galatTelaah = (k: KeadaanTelaah): Record<string, string> => petakan(telaahMasukan.safeParse({ ...k, catatan: k.catatan }).error?.issues ?? []);
+
+// ---- Serah terima ----
+export type KeadaanSerah = { izinkan: boolean; alasan: string };
+export const awalSerah = (): KeadaanSerah => ({ izinkan: false, alasan: '' });
+export const galatSerah = (k: KeadaanSerah): string | null => (k.izinkan && !k.alasan.trim() ? KASIR.galat.alasanWajib : null);
+export const bentukSerah = (k: KeadaanSerah): Record<string, unknown> => (k.izinkan ? { izinkan_stok_kurang: true, alasan: k.alasan } : {});

@@ -31,8 +31,9 @@ const where = (f: SaringanRepo): Prisma.LogAuditWhereInput => ({
 });
 
 export class RepositoriAuditPrisma implements RepositoriAudit {
+  constructor(private readonly klien: Pick<Prisma.TransactionClient, 'logAudit'> = prisma) {}
   async tambah(c: CatatanBaru): Promise<void> {
-    await prisma.logAudit.create({ data: c });
+    await this.klien.logAudit.create({ data: c });
   }
 
   async cari(f: SaringanRepo, lewati: number, ambil: number) {

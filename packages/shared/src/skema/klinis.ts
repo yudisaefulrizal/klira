@@ -169,7 +169,7 @@ export const cariTerminologiMasukan = z.object({
   batas: z.coerce.number().int().min(1).max(50).default(10),
 });
 export type CariTerminologiMasukan = z.infer<typeof cariTerminologiMasukan>;
-export type KodeTerminologiDto = { sistem: SistemTerminologi; kode: string; nama: string; contoh: boolean };
+export type KodeTerminologiDto = { sistem: SistemTerminologi; kode: string; nama: string; contoh: boolean; nama_indonesia?: string; status_padanan?: 'komunitas' };
 
 // Favorit dan templat
 export const favoritMasukan = z.object({ jenis: z.enum(JENIS_FAVORIT), kode: teksWajib(50), nama: teksWajib(255) });
@@ -203,3 +203,14 @@ export type FolderKeluargaDto = {
   wali: { id: number; hubungan: string; nama: string; kontak: string | null }[];
   anggota: AnggotaKeluargaDto[];
 };
+
+
+/** Penjelajahan kamus tanpa kata pencarian. */
+export const kamusTerminologiMasukan = z.object({
+  sistem: sistemTerminologi,
+  halaman: z.coerce.number().int().min(1).max(100000).default(1),
+  ukuran: z.coerce.number().int().min(1).max(50).default(30),
+  awalan: z.string().regex(/^[A-Za-z0-9]$/).transform((v) => v.toUpperCase()).optional(),
+});
+export type KamusTerminologiMasukan = z.infer<typeof kamusTerminologiMasukan>;
+export type HalamanKamusTerminologiDto = { data: KodeTerminologiDto[]; total: number; halaman: number; ukuran: number };

@@ -3,10 +3,11 @@ import type {
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
-export type SaringanPasien = { tanggal?: string; cari?: string; tahap?: TahapFilter; halaman: number; ukuran: number };
+export type SaringanPasien = { tanggal?: string; untuk_kunjungan?: boolean; cari?: string; tahap?: TahapFilter; halaman: number; ukuran: number };
 
 export function queryDaftarPasien(f: SaringanPasien): string {
   const q = new URLSearchParams({ halaman: String(f.halaman), ukuran: String(f.ukuran) });
+  if (f.untuk_kunjungan) q.set('untuk_kunjungan', 'true');
   if (f.tanggal) q.set('tanggal', f.tanggal);
   if (f.cari?.trim()) q.set('cari', f.cari.trim());
   if (f.tahap && f.tahap !== 'semua') q.set('tahap', f.tahap);

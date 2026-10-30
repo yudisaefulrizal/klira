@@ -117,6 +117,7 @@ model Fasyankes {
   dibuat_oleh        Int?
   dibuat_pada        DateTime       @default(now()) @db.DateTime(3)
 
+  website_klinik       WebsiteKlinik?
   kredensial_satusehat KredensialSatusehat[]
   lokasi               Lokasi[]
   pengguna             Pengguna[]
@@ -2056,6 +2057,32 @@ model EventPanggilan {
 
   @@index([fasyankes_id, tanggal, id])
   @@map("event_panggilan")
+}
+
+
+model WebsiteKlinik {
+  id                       Int      @id @default(autoincrement())
+  fasyankes_id             Int      @unique
+  aktif                    Boolean  @default(false)
+  slug                     String   @unique @db.VarChar(100)
+  domain                   String?  @unique @db.VarChar(253)
+  judul                    String   @db.VarChar(160)
+  ringkasan                String   @db.VarChar(500)
+  tentang                  String   @db.Text
+  alamat                   String   @db.VarChar(1000)
+  whatsapp                 String   @db.VarChar(25)
+  telepon                  String   @db.VarChar(40)
+  email                    String   @db.VarChar(254)
+  jam_operasional          String   @db.VarChar(500)
+  warna_utama              String   @db.VarChar(7)
+  logo_url                 String   @db.VarChar(2000)
+  hero_url                 String   @db.VarChar(2000)
+  tampilkan_jadwal         Boolean  @default(true)
+  tampilkan_nama_praktisi  Boolean  @default(false)
+  diubah_pada              DateTime @updatedAt @db.DateTime(3)
+
+  fasyankes Fasyankes @relation(fields: [fasyankes_id], references: [id])
+  @@map("website_klinik")
 }
 
 

@@ -17,7 +17,8 @@ const order = (id: number, p: Partial<OrderPenunjangDto> = {}): OrderPenunjangDt
 describe('Order lab', () => {
   const daftar = [master(1, { nama: 'Hemoglobin', kode: 'HB', kode_loinc: '718-7' }), master(2, { nama: 'Asam urat' }), master(3, { nama: 'Lama', aktif: false })];
   it('menyaring pemeriksaan aktif menurut nama, kode, atau LOINC dan mengurutkan menurut nama', () => {
-    expect(saringPemeriksaan(daftar, '').map((m) => m.id)).toEqual([2, 1]);
+    expect(saringPemeriksaan(daftar, '')).toEqual([]);
+    expect(saringPemeriksaan(daftar, '   ')).toEqual([]);
     expect(saringPemeriksaan(daftar, 'hemo').map((m) => m.id)).toEqual([1]);
     expect(saringPemeriksaan(daftar, '718').map((m) => m.id)).toEqual([1]);
     expect(saringPemeriksaan(daftar, 'hb').map((m) => m.id)).toEqual([1]);

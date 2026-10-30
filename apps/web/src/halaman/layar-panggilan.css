@@ -6,3 +6,6 @@
 @media(max-width:800px){.layar-panggilan{padding:0 14px}.lp-kepala{flex-wrap:wrap;padding:20px 4px;gap:18px}.lp-judul{padding-left:18px}.lp-waktu{width:100%;justify-content:space-between}.lp-isi{grid-template-columns:1fr;gap:16px}.lp-panggilan{padding:28px 24px}.lp-label{gap:18px}.lp-nomor{font-size:clamp(90px,23vw,180px)}.lp-tujuan{padding-top:20px}.lp-status{margin-top:20px}.lp-dokumen{padding:16px;margin-top:10px;gap:16px}.lp-dokumen>span{padding-right:16px}.lp-layanan{padding:22px}.lp-poli{padding:22px 0;gap:16px}.lp-poli strong{font-size:38px}.lp-berikut{padding-top:20px}.lp-ubin{gap:10px}.lp-ubin>div{padding:20px 6px}.lp-ubin strong{font-size:30px}.lp-kaki{padding:20px 0;align-items:flex-start;flex-wrap:wrap;margin-top:16px}.lp-kaki p{gap:12px}}
 
 .lp-tombol-suara{font:inherit;font-weight:600;color:#0b6b64;background:#e3f1ef;border:1px solid #b9ceca;border-radius:8px;padding:.65em 1em;cursor:pointer;white-space:nowrap}.lp-tombol-suara[aria-pressed="true"]{background:#0b6b64;color:white}.lp-tombol-suara:disabled{cursor:default;opacity:.65}
+
+.lp-merek{display:flex;align-items:center;justify-content:center;width:88px;height:88px;flex-shrink:0;padding:4px;background:#fff;border-radius:10px}.lp-merek img{display:block;width:100%;height:100%;object-fit:contain}.lp-judul{min-width:0}
+@media(max-width:800px){.lp-merek{width:64px;height:64px}}

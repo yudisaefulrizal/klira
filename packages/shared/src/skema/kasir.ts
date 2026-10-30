@@ -40,7 +40,7 @@ export type RekapHarianDto = { tanggal: string; per_metode: Record<MetodeBayar, 
 export type ShiftSayaDto = { terbuka: ShiftDto | null };
 
 export type SyaratTutupDto = { tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean };
-/** Gambaran kasir satu kunjungan untuk modal Pembayaran dan serah terima obat serta Tutup kunjungan. */
+/** Gambaran kasir satu kunjungan untuk pembayaran dan syarat tutup kunjungan; resep hanya sebagai status pendamping. */
 export type KasirKunjunganDto = {
   kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
   tagihan: TagihanDto & { pembayaran: PembayaranDto[]; dibayar: number; sisa: number };

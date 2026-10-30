@@ -89,6 +89,7 @@ export function DaftarRingkasan({ bagian }: { bagian: readonly BagianRingkasan[]
       {bagian.map((b) => (
         <section key={b.judul} style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
           <h4 style={{ margin: 0, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>{b.judul}</h4>
+          {b.baris.length === 0 && <p style={{ margin: 0 }}>—</p>}
           <dl style={{ margin: 0, display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: token.jarak.md, rowGap: token.jarak.xs }}>
             {b.baris.map((r) => (
               <PasanganRingkasan key={r.label} label={r.label} nilai={r.nilai} />

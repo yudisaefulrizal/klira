@@ -1,8 +1,8 @@
+import { PencarianWilayah, useNamaWilayah } from '../../komponen/pencarian-wilayah';
 import { useState } from 'react';
-import { GALAT, REGISTRASI, STATUS_IDENTITAS, statusIdentitasDari } from '@klira/shared';
+import { DAFTAR_PASIEN, GALAT, REGISTRASI, STATUS_IDENTITAS, statusIdentitasDari } from '@klira/shared';
 import type { KandidatDuplikatDto, TeksPersetujuanDto } from '@klira/shared';
 import { token } from '../../gaya/token';
-import { AreaTeks } from '../../komponen/ui/area-teks';
 import { Isian } from '../../komponen/ui/isian';
 import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Lencana } from '../../komponen/ui/lencana';
@@ -10,7 +10,7 @@ import { Peringatan } from '../../komponen/ui/peringatan';
 import { Pilihan } from '../../komponen/ui/pilihan';
 import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
-import { hapusWali, ringkasanRegistrasi, ubahJalur, ubahTidakCakap } from './keadaan-registrasi';
+import { hapusWali, ringkasanRegistrasi, ubahTidakCakap } from './keadaan-registrasi';
 import type { KeadaanRegistrasi } from './keadaan-registrasi';
 import { Bingkai } from '../../komponen/ui/kartu';
 
@@ -28,7 +28,7 @@ function BidangKunci({ keadaan: k, ubah, galat, tampilGalat, awalan }: Dasar & {
       <Isian id={`${awalan}-nama`} label={REGISTRASI.nama} value={k.nama} onChange={(e) => ubah({ nama: e.target.value })} galat={g('nama')} autoComplete="off" />
       <Baris>
         <Isian
-          id={`${awalan}-nik`} label={REGISTRASI.nik} value={k.nik} inputMode="numeric" maxLength={16} disabled={k.jalur_identitas === 'tanpa_identitas'}
+          id={`${awalan}-nik`} label={REGISTRASI.nik} value={k.nik} inputMode="numeric" maxLength={16}
           onChange={(e) => ubah({ nik: e.target.value.replace(/\D/g, '') })} galat={g('nik')} autoComplete="off"
         />
         <Isian id={`${awalan}-lahir`} label={REGISTRASI.tanggalLahir} type="date" value={k.tanggal_lahir} onChange={(e) => ubah({ tanggal_lahir: e.target.value })} galat={g('tanggal_lahir')} />
@@ -41,20 +41,17 @@ function BidangKunci({ keadaan: k, ubah, galat, tampilGalat, awalan }: Dasar & {
 type PropsDuplikat = Dasar & {
   kandidat: readonly KandidatDuplikatDto[] | null;
   mencari: boolean;
-  bisaCari: boolean;
   galatCari: string | null;
   onCari: () => void;
   onPakai: (c: KandidatDuplikatDto) => void;
 };
 
-function HasilDuplikat({ kandidat, mencari, bisaCari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
+function HasilDuplikat({ kandidat, mencari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
   const { keadaan: k, ubah } = dasar;
   const nikSama = !!kandidat?.some((c) => c.alasan === 'nik');
   return (
     <Kolom>
-      <p style={teksRedup}>{REGISTRASI.duplikatPetunjuk}</p>
       {mencari && <p style={teksRedup} role="status">{REGISTRASI.duplikatMencari}</p>}
-      {!bisaCari && <p style={teksRedup}>{REGISTRASI.duplikatBelumCukup}</p>}
       {galatCari && <div><Tombol type="button" varian="sekunder" onClick={onCari}>Coba periksa lagi</Tombol></div>}
       {galatCari && <Peringatan>{galatCari}</Peringatan>}
       {kandidat && kandidat.length === 0 && <Peringatan nada="biru">{REGISTRASI.duplikatTidakAda}</Peringatan>}
@@ -82,19 +79,20 @@ function HasilDuplikat({ kandidat, mencari, bisaCari, galatCari, onCari, onPakai
   );
 }
 
-export function LangkahIdentitas({ kandidat, mencari, bisaCari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
+export function LangkahIdentitas({ kandidat, mencari, galatCari, onCari, onPakai, ...dasar }: PropsDuplikat) {
   const { keadaan: k, ubah, galat, tampilGalat } = dasar;
   const g = (b: string) => (tampilGalat ? galat[b] : undefined);
   return (
     <Kolom>
       <BidangKunci {...dasar} awalan="id" />
-      <HasilDuplikat {...dasar} kandidat={kandidat} mencari={mencari} bisaCari={bisaCari} galatCari={galatCari} onCari={onCari} onPakai={onPakai} />
-      <Isian id="reg-nomor-hp" label="Nomor HP pasien (opsional)" type="tel" value={k.nomor_hp} maxLength={40}
+      <HasilDuplikat {...dasar} kandidat={kandidat} mencari={mencari} galatCari={galatCari} onCari={onCari} onPakai={onPakai} />
+      <Isian id="reg-nomor-hp" label="Nomor HP pasien" type="tel" value={k.nomor_hp} maxLength={40}
         onChange={(e) => ubah({ nomor_hp: e.target.value })} galat={g('nomor_hp')} autoComplete="off" />
       <Baris>
         <Isian id="reg-tempat" label={REGISTRASI.tempatLahir} value={k.tempat_lahir} onChange={(e) => ubah({ tempat_lahir: e.target.value })} galat={g('tempat_lahir')} autoComplete="off" />
         <Pilihan id="reg-jk" label={REGISTRASI.jenisKelamin} value={k.jenis_kelamin} onChange={(e) => ubah({ jenis_kelamin: e.target.value as KeadaanRegistrasi['jenis_kelamin'] })} opsi={REGISTRASI.jenisKelaminOpsi} galat={g('jenis_kelamin')} />
       </Baris>
+      <PencarianWilayah id="reg-wilayah" value={k.kode_wilayah} onChange={(kode) => ubah({ kode_wilayah: kode })} galat={g('kode_wilayah')} />
       <KotakCentang id="reg-tidak-cakap" label={REGISTRASI.tidakCakap} keterangan={REGISTRASI.tidakCakapKet} checked={k.tidak_cakap} onChange={(e) => ubah(ubahTidakCakap(k, e.target.checked))} />
     </Kolom>
   );
@@ -116,21 +114,6 @@ export function LangkahSosial({ keadaan: k, ubah, galat, tampilGalat }: Dasar) {
         <Pilihan id="reg-pendidikan" label={REGISTRASI.pendidikan} value={k.pendidikan} onChange={(e) => ubah({ pendidikan: e.target.value })} opsi={opsiDari(REGISTRASI.pendidikanOpsi)} galat={g('pendidikan')} />
         <Pilihan id="reg-kawin" label={REGISTRASI.statusKawin} value={k.status_kawin} onChange={(e) => ubah({ status_kawin: e.target.value })} opsi={opsiDari(REGISTRASI.statusKawinOpsi)} galat={g('status_kawin')} />
       </Baris>
-    </Kolom>
-  );
-}
-
-export function LangkahAlamat({ keadaan: k, ubah, galat, tampilGalat }: Dasar) {
-  const g = (b: string) => (tampilGalat ? galat[b] : undefined);
-  return (
-    <Kolom>
-      <AreaTeks id="reg-alamat" label={REGISTRASI.alamat} value={k.alamat} onChange={(e) => ubah({ alamat: e.target.value })} />
-      <Isian id="reg-wilayah" label={REGISTRASI.kodeWilayah} value={k.kode_wilayah} onChange={(e) => ubah({ kode_wilayah: e.target.value })} galat={g('kode_wilayah')} autoComplete="off" />
-      <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{REGISTRASI.kodeWilayahKet}</span>
-      <Pilihan id="reg-jalur" label={REGISTRASI.jalur} value={k.jalur_identitas} onChange={(e) => ubah(ubahJalur(k, e.target.value as KeadaanRegistrasi['jalur_identitas']))} opsi={REGISTRASI.jalurOpsi} galat={g('jalur_identitas')} />
-      {k.jalur_identitas === 'paspor' && <Isian id="reg-paspor" label={REGISTRASI.paspor} value={k.nomor_paspor} onChange={(e) => ubah({ nomor_paspor: e.target.value })} galat={g('nomor_paspor')} autoComplete="off" />}
-      {k.jalur_identitas === 'kitas' && <Isian id="reg-kitas" label={REGISTRASI.kitas} value={k.nomor_kitas} onChange={(e) => ubah({ nomor_kitas: e.target.value })} galat={g('nomor_kitas')} autoComplete="off" />}
-      {k.jalur_identitas === 'tanpa_identitas' && <Peringatan nada="kuning">{REGISTRASI.tanpaIdentitasInfo}</Peringatan>}
     </Kolom>
   );
 }
@@ -234,7 +217,9 @@ export function LangkahConsent({ teks, memuat, galatMuat, ...dasar }: PropsConse
 }
 
 export function LangkahRingkasan({ keadaan, teks }: { keadaan: KeadaanRegistrasi; teks: TeksPersetujuanDto | null }) {
-  return <DaftarRingkasan bagian={ringkasanRegistrasi(keadaan, teks)} />;
+  const wilayah = useNamaWilayah(keadaan.kode_wilayah);
+  const bagian = ringkasanRegistrasi(keadaan, teks).map((b) => ({ ...b, baris: b.baris.map((r) => r.label === DAFTAR_PASIEN.detail.alamat ? { ...r, nilai: wilayah } : r) }));
+  return <DaftarRingkasan bagian={bagian} />;
 }
 
 /** Ringkasan pasien yang tetap terlihat di semua langkah (kepala modal). */

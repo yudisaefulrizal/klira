@@ -59,7 +59,7 @@ export const webhookInstagram: RequestHandler = async (req, res) => {
       const baru = await prisma.$transaction(async (tx) => {
         await tx.$queryRaw`SELECT id FROM ig_koneksi WHERE id = 1 FOR UPDATE`;
         const current = await tx.igKoneksi.findUnique({ where: { id: 1 } });
-        if (!current?.aktif || current.akun_id !== row.akun_id || current.penyedia !== 'meta') return false;
+        if (!current?.aktif || current.generasi !== row.generasi || current.akun_id !== row.akun_id || current.penyedia !== 'meta') return false;
         if (await tx.igEvent.findUnique({ where: { id: mid } })) return false;
         const kontak = await tx.igPercakapan.upsert({
           where: { fasyankes_id_jid: { fasyankes_id: row.fasyankes_id, jid: pesan.jid } },

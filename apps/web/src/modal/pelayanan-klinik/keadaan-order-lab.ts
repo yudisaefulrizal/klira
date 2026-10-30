@@ -9,8 +9,9 @@ export const awalOrderLab = (): KeadaanOrderLab => ({ pemeriksaan: [], prioritas
 /** Pemeriksaan aktif yang cocok dengan kata cari (nama, kode, atau LOINC), urut nama. */
 export function saringPemeriksaan(master: readonly MasterPemeriksaanDto[], cari: string): MasterPemeriksaanDto[] {
   const k = cari.trim().toLowerCase();
+  if (!k) return [];
   return master
-    .filter((m) => m.aktif && (!k || m.nama.toLowerCase().includes(k) || m.kode.toLowerCase().includes(k) || (m.kode_loinc ?? '').toLowerCase().includes(k)))
+    .filter((m) => m.aktif && (m.nama.toLowerCase().includes(k) || m.kode.toLowerCase().includes(k) || (m.kode_loinc ?? '').toLowerCase().includes(k)))
     .sort((a, b) => a.nama.localeCompare(b.nama, 'id'));
 }
 

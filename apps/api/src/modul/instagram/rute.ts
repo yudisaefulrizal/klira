@@ -1,3 +1,4 @@
+import { pasangRuteBersihkan } from '../pesan/bersihkan';
 import { perbaruiNamaKontakInstagram } from './profil';
 import { pasangRuteKoneksi } from './koneksi';
 import { kirimMeta, idPesan, hash, konfigurasiMeta, GalatMeta } from './meta';
@@ -36,6 +37,7 @@ export function buatRuteInstagram(akses: LayananAkses, izin: LayananIzin) {
   const audit = buatFasilitasAudit();
   const { wajibIzin } = buatWajibIzin(izin);
   rute.use('/instagram', masuk);
+  pasangRuteBersihkan(rute, 'instagram', wajibIzin('instagram', 'lihat'));
   pasangRuteKoneksi(rute, wajibIzin('instagram', 'lihat'));
   rute.get('/instagram/percakapan', wajibIzin('instagram', 'lihat'), async (req, res) => {
     const user = pengguna(res);
