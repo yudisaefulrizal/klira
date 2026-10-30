@@ -190,3 +190,32 @@ describe('layanan klinis: draf server', () => {
     expect(await l.bacaDraf(saya, 10, 'pemeriksaan-klinis')).toEqual({ ok: true, data: null });
   });
 });
+
+describe('narasi SOAPIE', () => {
+  it.each(['assessment', 'plan', 'implementasi', 'evaluasi'] as const)('%s: simpan, buka, koreksi, audit, dan isolasi fasyankes', async (bagian) => {
+    const { l, catatan, versiCatatan } = buatDunia();
+    expect(await l.simpanBagian(saya, 10, bagian, { isi: '  Catatan nakes  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: true, bagian: { isi: { isi: 'Catatan nakes' }, verifikasi: 'sah', pengesahan: { versi: 1, pengguna_id: 7 } } } });
+    expect(await l.ambil(saya, 10)).toMatchObject({ ok: true, data: { bagian: { [bagian]: { isi: { isi: 'Catatan nakes' }, verifikasi: 'sah' } } } });
+    expect(await l.simpanBagian(saya, 10, bagian, { isi: '' }, undefined)).toMatchObject({ ok: false });
+    expect(await l.simpanBagian(saya, 10, bagian, { isi: '' }, 'Koreksi catatan')).toMatchObject({ ok: true, data: { bagian: { isi: { isi: null }, pengesahan: { versi: 2 } } } });
+    expect(versiCatatan).toEqual([expect.objectContaining({ isi_lama: { isi: 'Catatan nakes' } })]);
+    expect(catatan).toEqual(expect.arrayContaining([expect.objectContaining({ aksi: 'input', entitas: bagian }), expect.objectContaining({ aksi: 'perbaikan', entitas: bagian })]));
+    expect(await l.ambil({ ...saya, fasyankes_id: 2 }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+  });
+
+  it('narasi kosong pertama tidak menghasilkan versi atau pengesahan', async () => {
+    const { l, repo } = buatDunia();
+    expect(await l.simpanBagian(saya, 10, 'evaluasi', { isi: '  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: false, bagian: { isi: null, pengesahan: null } } });
+    expect(repo.simpanBagian).not.toHaveBeenCalled();
+  });
+
+  it('penyelesaian menolak bagian wajib yang berubah setelah disahkan', async () => {
+    const { l, isi, dunia } = buatDunia();
+    await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
+    await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama' }] }, undefined);
+    await l.simpanBagian(saya, 10, 'tindak_lanjut', { jenis: 'pulang' }, undefined);
+    isi.set('anamnesis:10', { keluhan_utama: 'Diubah di luar alur' });
+    expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
+    expect(dunia.tahap).toBe('pemeriksaan');
+  });
+});

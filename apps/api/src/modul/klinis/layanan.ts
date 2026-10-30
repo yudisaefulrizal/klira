@@ -1,4 +1,4 @@
-import { BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
+import { BAGIAN_NARASI, BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, DrafKlinisDto, DrafMasukan, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto,
   KonteksKlinisDto, KunjunganDto, PenggunaSaya, RiwayatKunjunganDto, SalinanKunjunganDto, TahapLayanan, TemplatDto, TemplatMasukan, TindakanIsi,
@@ -79,6 +79,11 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
         }
         isi = { item };
       }
+      // Bagian narasi yang belum pernah diisi tidak menghasilkan catatan kosong.
+      if ((BAGIAN_NARASI as readonly string[]).includes(bagian) && (isi as { isi: string | null }).isi === null
+          && (await pengesahan.keadaan(p.fasyankes_id, bagian, kunjunganId)).status === 'belum_disahkan') {
+        return { ok: true, data: { bagian: await bagianDto(p.fasyankes_id, kunjunganId, bagian), kunjungan: (await repo.kunjunganDto(p.fasyankes_id, kunjunganId)) as KunjunganDto, tersimpan: false } };
+      }
       const rencana = await pengesahan.siapkan({
         fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, alasan, disetujuiOleh: opsi.disetujuiOleh,
         bacaIsiSekarang: () => repo.bacaBagian(p.fasyankes_id, kunjunganId, bagian),
@@ -111,7 +116,7 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
       if (!k) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
       if (k.tahap_layanan !== 'pemeriksaan') return gagal('konflik', KLINIS.galat.tahapSelesai);
       for (const b of BAGIAN_WAJIB_SELESAI) {
-        if ((await pengesahan.keadaan(p.fasyankes_id, b, kunjunganId)).status === 'belum_disahkan') return gagal('konflik', KLINIS.galat.syaratSelesai);
+        if ((await pengesahan.keadaan(p.fasyankes_id, b, kunjunganId)).status !== 'sah') return gagal('konflik', KLINIS.galat.syaratSelesai);
       }
       const hasil = await kunjungan.ubahTahap(p, kunjunganId, tahap, alamat);
       if (hasil.ok) await repo.hapusDraf(p.fasyankes_id, kunjunganId); // pemeriksaan selesai: draf tidak lagi berguna

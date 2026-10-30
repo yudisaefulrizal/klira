@@ -14,7 +14,7 @@ import { Tombol } from '../../komponen/ui/tombol';
 import { disahkanDari, galatBagian, isiBagian, keadaanDariServer } from './keadaan-pemeriksaan';
 import type { KeadaanPemeriksaan } from './keadaan-pemeriksaan';
 import { galatAlasanPerbaikan } from './keadaan-rm';
-import { LangkahAnamnesis, LangkahDiagnosis, LangkahPemeriksaan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut } from './langkah-pemeriksaan';
+import { LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahPemeriksaan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut } from './langkah-pemeriksaan';
 import { KepalaPasien } from './kepala-pasien';
 
 type Props = { kunjunganId: number; pasien: { id: number; nama: string; nomor_rm: string }; onTutup: () => void; onSelesai: () => void };
@@ -102,6 +102,7 @@ export function PerbaikiCatatan({ kunjunganId, pasien, onTutup, onSelesai }: Pro
             id="perbaikan-bagian" label={P.bagian} opsi={opsi} value={bagian}
             onChange={(e) => { setBagian(e.target.value as BagianKlinis | ''); setK(keadaanDariServer(klinis.bagian)); setDicoba(false); }}
           />
+          {(bagian === 'assessment' || bagian === 'plan' || bagian === 'implementasi' || bagian === 'evaluasi') && <LangkahNarasi bagian={bagian} {...dasar} />}
           {opsi.length === 1 && <Peringatan nada="biru">{P.belumDisahkan}</Peringatan>}
           {bagian === 'anamnesis' && <LangkahAnamnesis {...dasar} />}
           {bagian === 'tanda_vital' && <LangkahTandaVital {...dasar} />}

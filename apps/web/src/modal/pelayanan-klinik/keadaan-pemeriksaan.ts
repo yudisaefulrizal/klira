@@ -1,6 +1,6 @@
-import { BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL } from '@klira/shared';
+import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL } from '@klira/shared';
 import type {
-  BagianKlinis, BidangPemeriksaan, JenisTindakLanjut, KlinisKunjunganDto, KunciTandaVital, SalinanKunjunganDto, TandaVitalIsi, TemplatDto, PeranDiagnosis,
+  BagianNarasi, BagianKlinis, BidangPemeriksaan, JenisTindakLanjut, KlinisKunjunganDto, KunciTandaVital, SalinanKunjunganDto, TandaVitalIsi, TemplatDto, PeranDiagnosis,
 } from '@klira/shared';
 import { KLINIS, STATUS_PERAN_DIAGNOSIS } from '@klira/shared';
 import type { BagianRingkasan } from '../../komponen/ui/susunan';
@@ -10,7 +10,7 @@ import type { BagianRingkasan } from '../../komponen/ui/susunan';
 export type ModePemeriksaan = 'skrining' | 'periksa';
 
 export type ItemDiagnosis = { kode: string; nama: string; peran: PeranDiagnosis; snomed: string };
-export type ItemTindakan = { kode: string; nama: string; mulai: string; selesai: string };
+export type ItemTindakan = { kode: string; nama: string; mulai: string; selesai: string; performer_id?: number | null };
 export type KeadaanPemeriksaan = {
   anamnesis: { keluhan_utama: string; penyerta: string };
   /** Riwayat kesehatan pribadi. */
@@ -22,6 +22,11 @@ export type KeadaanPemeriksaan = {
   tindak_lanjut: { jenis: JenisTindakLanjut | ''; tujuan: string; spri: string; catatan: string };
   /** Alasan perbaikan bagian yang sudah disahkan. */
   alasan: string;
+  assessment: string;
+  plan: string;
+  implementasi: string;
+  evaluasi: string;
+  versi_draf: number;
 };
 
 /**
@@ -56,34 +61,41 @@ export const awalKeadaan = (): KeadaanPemeriksaan => ({
   diagnosis: [],
   tindakan: [],
   tindak_lanjut: { jenis: '', tujuan: '', spri: '', catatan: '' },
-  alasan: '',
+  alasan: '', assessment: '', plan: '', implementasi: '', evaluasi: '', versi_draf: 2,
 });
 
 // --- Langkah dari konfigurasi (titik sambung untuk butir berikutnya) ---
 
-export type IdLangkah = 'anamnesis' | 'tanda_vital' | 'pemeriksaan' | 'diagnosis' | 'tindakan' | 'resep' | 'penunjang' | 'tindak_lanjut' | 'ringkasan';
+export type IdLangkah = 'subjective' | 'objective' | 'assessment' | 'plan' | 'implementasi' | 'evaluasi' | 'anamnesis' | 'tanda_vital' | 'pemeriksaan' | 'diagnosis' | 'tindakan' | 'resep' | 'penunjang' | 'tindak_lanjut' | 'ringkasan';
 export type KonfigLangkah = {
   id: IdLangkah;
   judul: string;
   /** Bagian catatan yang diisi langkah ini (kosong untuk langkah tanpa catatan). */
   bagian?: BagianKlinis;
+  bagianGrup?: readonly BagianKlinis[];
   /** false = langkah belum tersedia: menampilkan penjelasan `menyusul` dan dapat dilewati. Butir berikutnya cukup mengubahnya menjadi true dan memasang isinya. */
   aktif: boolean;
   menyusul?: 'resep' | 'penunjang';
 };
 
-/** Sembilan langkah Pemeriksaan klinis (3.3). Semua langkah aktif. */
+/** Kelompok SOAPIE menggabungkan bagian catatan dan modul layanan. */
 export const LANGKAH_PEMERIKSAAN: readonly KonfigLangkah[] = [
-  { id: 'anamnesis', judul: KLINIS.langkah.anamnesis, bagian: 'anamnesis', aktif: true },
-  { id: 'tanda_vital', judul: KLINIS.langkah.tandaVital, bagian: 'tanda_vital', aktif: true },
-  { id: 'pemeriksaan', judul: KLINIS.langkah.pemeriksaan, bagian: 'pemeriksaan', aktif: true },
-  { id: 'diagnosis', judul: KLINIS.langkah.diagnosis, bagian: 'diagnosis', aktif: true },
-  { id: 'tindakan', judul: KLINIS.langkah.tindakan, bagian: 'tindakan', aktif: true },
-  { id: 'resep', judul: KLINIS.langkah.resep, aktif: true },
-  { id: 'penunjang', judul: KLINIS.langkah.penunjang, aktif: true },
-  { id: 'tindak_lanjut', judul: KLINIS.langkah.tindakLanjut, bagian: 'tindak_lanjut', aktif: true },
+  { id: 'subjective', judul: 'S — Subjective', bagianGrup: ['anamnesis'], aktif: true },
+  { id: 'objective', judul: 'O — Objective', bagianGrup: ['tanda_vital', 'pemeriksaan'], aktif: true },
+  { id: 'assessment', judul: 'A — Assessment', bagianGrup: ['assessment', 'diagnosis'], aktif: true },
+  { id: 'plan', judul: 'P — Plan', bagianGrup: ['plan', 'tindak_lanjut'], aktif: true },
+  { id: 'implementasi', judul: 'I — Implementation', bagianGrup: ['implementasi', 'tindakan'], aktif: true },
+  { id: 'evaluasi', judul: 'E — Evaluation', bagianGrup: ['evaluasi'], aktif: true },
   { id: 'ringkasan', judul: KLINIS.langkah.ringkasan, aktif: true },
 ];
+
+export const bagianLangkah = (l: KonfigLangkah): readonly BagianKlinis[] => l.bagianGrup ?? (l.bagian ? [l.bagian] : []);
+
+/** Draf sebelum SOAPIE menyimpan indeks dari sembilan langkah lama. */
+export function langkahDraf(mode: ModePemeriksaan, langkah: number, nilai: unknown): number {
+  if (mode === 'skrining' || (nilai && typeof nilai === 'object' && 'versi_draf' in nilai && nilai.versi_draf === 2)) return langkah;
+  return [0, 1, 1, 2, 4, 3, 3, 3, 6][langkah] ?? 0;
+}
 
 /** Skrining perawat: tanda vital sebagai bagian terpisah dari modal yang sama. */
 export const LANGKAH_SKRINING: readonly KonfigLangkah[] = [
@@ -92,10 +104,11 @@ export const LANGKAH_SKRINING: readonly KonfigLangkah[] = [
 ];
 
 export const daftarLangkah = (mode: ModePemeriksaan): readonly KonfigLangkah[] => (mode === 'skrining' ? LANGKAH_SKRINING : LANGKAH_PEMERIKSAAN);
-export const bagianDiModal = (mode: ModePemeriksaan): BagianKlinis[] => daftarLangkah(mode).flatMap((l) => (l.aktif && l.bagian ? [l.bagian] : []));
+export const bagianDiModal = (mode: ModePemeriksaan): BagianKlinis[] => daftarLangkah(mode).flatMap((l) => l.aktif ? [...bagianLangkah(l)] : []);
 
 /** Nama bagian catatan untuk tampilan (ringkasan dan pesan galat). */
 export const LABEL_BAGIAN: Record<BagianKlinis, string> = {
+  ...LABEL_NARASI,
   anamnesis: KLINIS.langkah.anamnesis, tanda_vital: KLINIS.langkah.tandaVital, pemeriksaan: KLINIS.langkah.pemeriksaan, diagnosis: KLINIS.langkah.diagnosis,
   tindakan: KLINIS.langkah.tindakan, tindak_lanjut: KLINIS.langkah.tindakLanjut,
 };
@@ -125,6 +138,7 @@ const teks = (v: string | null | undefined) => v ?? '';
 /** Keadaan formulir dari catatan tersimpan di server (bagian yang belum ada dibiarkan kosong). */
 export function keadaanDariServer(b: BagianServer): KeadaanPemeriksaan {
   const k = awalKeadaan();
+  for (const n of BAGIAN_NARASI) k[n] = b[n]?.isi?.isi ?? '';
   const a = b.anamnesis.isi;
   if (a) {
     k.anamnesis = { keluhan_utama: a.keluhan_utama, penyerta: teks(a.penyerta) };
@@ -135,7 +149,7 @@ export function keadaanDariServer(b: BagianServer): KeadaanPemeriksaan {
   const pm = b.pemeriksaan.isi;
   if (pm) for (const f of PEMERIKSAAN_BIDANG) k.pemeriksaan[f] = teks(pm[f]);
   k.diagnosis = (b.diagnosis.isi?.item ?? []).map((d) => ({ kode: d.kode, nama: d.nama, peran: d.peran, snomed: teks(d.snomed) }));
-  k.tindakan = (b.tindakan.isi?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama, mulai: keInputLokal(t.mulai), selesai: keInputLokal(t.selesai) }));
+  k.tindakan = (b.tindakan.isi?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama, performer_id: t.performer_id, mulai: keInputLokal(t.mulai), selesai: keInputLokal(t.selesai) }));
   const tl = b.tindak_lanjut.isi;
   if (tl) k.tindak_lanjut = { jenis: tl.jenis, tujuan: teks(tl.tujuan), spri: teks(tl.spri), catatan: teks(tl.catatan) };
   return k;
@@ -144,11 +158,12 @@ export function keadaanDariServer(b: BagianServer): KeadaanPemeriksaan {
 /** Isi yang dikirim ke API untuk satu bagian (server menormalkan dan memvalidasi ulang). */
 export function isiBagian(bagian: BagianKlinis, k: KeadaanPemeriksaan): unknown {
   switch (bagian) {
+    case 'assessment': case 'plan': case 'implementasi': case 'evaluasi': return { isi: k[bagian] };
     case 'anamnesis': return { ...k.anamnesis, ...k.riwayat };
     case 'tanda_vital': return { ...k.tanda_vital };
     case 'pemeriksaan': return { ...k.pemeriksaan };
     case 'diagnosis': return { item: k.diagnosis.map((d) => ({ kode: d.kode, nama: d.nama, peran: d.peran, snomed: d.snomed })) };
-    case 'tindakan': return { item: k.tindakan.map((t) => ({ kode: t.kode, nama: t.nama, mulai: dariInputLokal(t.mulai), selesai: dariInputLokal(t.selesai) })) };
+    case 'tindakan': return { item: k.tindakan.map((t) => ({ kode: t.kode, nama: t.nama, performer_id: t.performer_id, mulai: dariInputLokal(t.mulai), selesai: dariInputLokal(t.selesai) })) };
     case 'tindak_lanjut': return { ...k.tindak_lanjut };
   }
 }
@@ -170,6 +185,7 @@ export const adaPerubahanBagian = (bagian: BagianKlinis, k: KeadaanPemeriksaan, 
 export function bagianKosong(bagian: BagianKlinis, k: KeadaanPemeriksaan): boolean {
   const kosong = (o: Record<string, string>) => Object.values(o).every((v) => v.trim() === '');
   switch (bagian) {
+    case 'assessment': case 'plan': case 'implementasi': case 'evaluasi': return !k[bagian].trim();
     case 'anamnesis': return kosong(k.anamnesis) && kosong(k.riwayat);
     case 'tanda_vital': return kosong(k.tanda_vital);
     case 'pemeriksaan': return kosong(k.pemeriksaan);
@@ -209,7 +225,7 @@ export function syaratSelesaiTerpenuhi(disahkan: Record<BagianKlinis, boolean>, 
 }
 
 export const disahkanDari = (b: BagianServer): Record<BagianKlinis, boolean> =>
-  Object.fromEntries(BAGIAN_KLINIS.map((n) => [n, b[n].pengesahan !== null])) as Record<BagianKlinis, boolean>;
+  Object.fromEntries(BAGIAN_KLINIS.map((n) => [n, b[n]?.pengesahan != null])) as Record<BagianKlinis, boolean>;
 
 export type StatusRingkasan = 'belum_diisi' | 'tanpa_perubahan' | 'akan_disimpan' | 'sudah_sah';
 /** Keadaan tiap bagian di ringkasan akhir. */
@@ -315,21 +331,24 @@ export const daftarAlergi = (alergi: string | null): string[] => (alergi ?? '').
 
 /** Isi singkat untuk ringkasan akhir: keluhan, alergi, diagnosis, tindakan, dan rencana. */
 export function ringkasanIsi(k: KeadaanPemeriksaan): BagianRingkasan[] {
-  const strip = (v: string) => (v.trim() ? v.trim() : '-');
-  const jenisLabel = (j: string) => KLINIS.tindakLanjut.jenisOpsi.find((o) => o.nilai === j)?.label ?? '-';
+  const text = (v: string) => v.trim() || '-';
+  const narasi = (b: BagianNarasi) => ({ label: LABEL_NARASI[b], nilai: text(k[b]) });
+  const jenis = KLINIS.tindakLanjut.jenisOpsi.find((o) => o.nilai === k.tindak_lanjut.jenis)?.label ?? '-';
   return [
-    { judul: KLINIS.langkah.anamnesis, baris: [{ label: KLINIS.anamnesis.keluhanUtama, nilai: strip(k.anamnesis.keluhan_utama) }, { label: KLINIS.anamnesis.alergi, nilai: strip(k.riwayat.alergi) }] },
-    {
-      judul: KLINIS.langkah.diagnosis,
-      baris: k.diagnosis.length ? k.diagnosis.map((d) => ({ label: d.kode, nilai: `${d.nama} (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})` })) : [{ label: '-', nilai: KLINIS.diagnosis.kosong }],
-    },
-    {
-      judul: KLINIS.langkah.tindakan,
-      baris: k.tindakan.length ? k.tindakan.map((t) => ({ label: t.kode, nilai: t.nama })) : [{ label: '-', nilai: KLINIS.ringkasan.bagianBelum }],
-    },
-    {
-      judul: KLINIS.langkah.tindakLanjut,
-      baris: [{ label: KLINIS.tindakLanjut.jenis, nilai: jenisLabel(k.tindak_lanjut.jenis) }, ...(k.tindak_lanjut.tujuan.trim() ? [{ label: KLINIS.tindakLanjut.tujuan, nilai: k.tindak_lanjut.tujuan.trim() }] : [])],
-    },
+    { judul: 'S — Subjective', baris: [
+      { label: KLINIS.anamnesis.keluhanUtama, nilai: text(k.anamnesis.keluhan_utama) },
+      { label: KLINIS.anamnesis.penyerta, nilai: text(k.anamnesis.penyerta) },
+      { label: KLINIS.anamnesis.riwayatPribadi, nilai: text(k.riwayat.riwayat_pribadi) },
+      { label: KLINIS.anamnesis.riwayatKeluarga, nilai: text(k.riwayat.riwayat_keluarga) },
+      { label: KLINIS.anamnesis.alergi, nilai: text(k.riwayat.alergi) },
+    ] },
+    { judul: 'O — Objective', baris: [
+      ...TANDA_VITAL.map((t) => ({ label: KLINIS.tandaVital[t.kunci], nilai: k.tanda_vital[t.kunci] ? `${k.tanda_vital[t.kunci]} ${t.satuan}` : '-' })),
+      ...PEMERIKSAAN_BIDANG.map((b) => ({ label: KLINIS.pemeriksaan[b], nilai: text(k.pemeriksaan[b]) })),
+    ] },
+    { judul: 'A — Assessment', baris: [narasi('assessment'), ...k.diagnosis.map((d) => ({ label: d.kode, nilai: `${d.nama} (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})` }))] },
+    { judul: 'P — Plan', baris: [narasi('plan'), { label: KLINIS.tindakLanjut.jenis, nilai: jenis }, { label: KLINIS.tindakLanjut.tujuan, nilai: text(k.tindak_lanjut.tujuan) }, { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) }] },
+    { judul: 'I — Implementation', baris: [narasi('implementasi'), ...k.tindakan.map((t) => ({ label: t.kode, nilai: t.nama }))] },
+    { judul: 'E — Evaluation', baris: [narasi('evaluasi')] },
   ];
 }

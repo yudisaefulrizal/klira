@@ -626,6 +626,7 @@ model Kunjungan {
   lanjutan        Kunjungan[]        @relation("KunjunganAsal")
   peserta         PesertaKunjungan[]
   antrean         Antrean?
+  narasi_klinis   NarasiKlinis[]
   anamnesis       Anamnesis[]
   observasi       Observasi[]
   diagnosis       Diagnosis[]
@@ -2055,4 +2056,29 @@ model EventPanggilan {
 
   @@index([fasyankes_id, tanggal, id])
   @@map("event_panggilan")
+}
+
+
+enum BagianNarasi {
+  assessment
+  plan
+  implementasi
+  evaluasi
+}
+
+model NarasiKlinis {
+  id           Int @id @default(autoincrement())
+  fasyankes_id Int
+  kunjungan_id Int
+  bagian       BagianNarasi
+  isi          String? @db.Text
+  versi        Int
+  dibuat_oleh  Int?
+  dibuat_pada  DateTime @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, bagian, versi])
+  @@index([fasyankes_id, kunjungan_id])
+  @@map("narasi_klinis")
 }

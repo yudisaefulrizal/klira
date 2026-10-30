@@ -87,11 +87,16 @@ export const tindakLanjutIsi = z
   .transform((d) => ({ ...d, tujuan: d.jenis === 'pulang' ? null : d.tujuan, spri: d.jenis === 'rawat_inap' ? d.spri : null }));
 export type TindakLanjutIsi = z.infer<typeof tindakLanjutIsi>;
 
+export const narasiKlinisIsi = z.object({ isi: teksNull(10000) });
+export type NarasiKlinisIsi = z.infer<typeof narasiKlinisIsi>;
+
 /** Skema isi per bagian; `alasan` wajib saat memperbaiki bagian yang sudah disahkan. */
 export const SKEMA_BAGIAN = {
+  assessment: narasiKlinisIsi, plan: narasiKlinisIsi, implementasi: narasiKlinisIsi, evaluasi: narasiKlinisIsi,
   anamnesis: anamnesisIsi, tanda_vital: tandaVitalIsi, pemeriksaan: pemeriksaanIsi, diagnosis: diagnosisIsi, tindakan: tindakanIsi, tindak_lanjut: tindakLanjutIsi,
 } as const satisfies Record<BagianKlinis, z.ZodType>;
 export type IsiBagian = {
+  assessment: NarasiKlinisIsi; plan: NarasiKlinisIsi; implementasi: NarasiKlinisIsi; evaluasi: NarasiKlinisIsi;
   anamnesis: AnamnesisIsi; tanda_vital: TandaVitalIsi; pemeriksaan: PemeriksaanIsi; diagnosis: DiagnosisIsi; tindakan: TindakanIsi; tindak_lanjut: TindakLanjutIsi;
 };
 

@@ -7,7 +7,7 @@ export type { IzinAwal } from '@klira/shared';
 export type {
   Fasyankes, KredensialSatusehat, Lokasi, Pengguna, ProfilProfesi, Pasien, WaliKeluarga,
   JadwalPraktik, TarifLayanan, Wilayah, RiwayatProfil, Kunjungan, PesertaKunjungan, Antrean, Persetujuan, TeksPersetujuan, UrutanNomorRm,
-  Anamnesis, Observasi, Diagnosis, Tindakan, TindakLanjut, VersiCatatan, PengesahanCatatan, KodeTerminologi, FavoritDokter, TemplatCatatan, KeluargaPasien,
+  NarasiKlinis, Anamnesis, Observasi, Diagnosis, Tindakan, TindakLanjut, VersiCatatan, PengesahanCatatan, KodeTerminologi, FavoritDokter, TemplatCatatan, KeluargaPasien,
   MasterPemeriksaan, OrderPenunjang, Spesimen, HasilPenunjang, Tagihan, ItemTagihan, Addendum,
   JenisAkun, Izin, PenugasanJenis, IzinPerAkun, PeringatanIzin, Sesi, LogAudit,
 } from '@prisma/client';

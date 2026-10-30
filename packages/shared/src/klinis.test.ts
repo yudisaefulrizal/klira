@@ -49,7 +49,7 @@ describe('skema catatan klinis', () => {
   });
 
   it('semua bagian punya skema', () => {
-    expect(Object.keys(SKEMA_BAGIAN)).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut']);
+    expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'].sort());
   });
 });
 

@@ -1,5 +1,5 @@
-import { KLINIS, PEMERIKSAAN_BIDANG, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL } from '@klira/shared';
-import type { BagianKlinis, BagianKlinisDto, FavoritDto } from '@klira/shared';
+import { LABEL_NARASI, KLINIS, PEMERIKSAAN_BIDANG, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL } from '@klira/shared';
+import type { BagianNarasi, BagianKlinis, BagianKlinisDto, FavoritDto } from '@klira/shared';
 import { cariTerminologi } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan';
@@ -225,4 +225,13 @@ export function LangkahRingkasan({ k, ubah, rencana, status, bagian, labelBagian
       <Peringatan nada="biru">{r.penjelasanSimpan}</Peringatan>
     </Kolom>
   );
+}
+
+
+export function LangkahNarasi({ bagian, k, ubah, galat, server }: DasarLangkah & { bagian: BagianNarasi }) {
+  return <Kolom>
+    <InfoPengesahan bagian={server} />
+    <GalatBagian galat={galat} />
+    <AreaTeks id={`narasi-${bagian}`} label={LABEL_NARASI[bagian]} value={k[bagian]} maxLength={10000} onChange={(e) => ubah({ [bagian]: e.target.value })} />
+  </Kolom>;
 }

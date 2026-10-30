@@ -93,7 +93,7 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
     await prisma.peringatanIzin.deleteMany({ where });
-    for (const m of [prisma.anamnesis, prisma.observasi, prisma.diagnosis, prisma.tindakan, prisma.tindakLanjut, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.favoritDokter, prisma.templatCatatan, prisma.keluargaPasien, prisma.draf] as any[]) {
+    for (const m of [prisma.narasiKlinis, prisma.anamnesis, prisma.observasi, prisma.diagnosis, prisma.tindakan, prisma.tindakLanjut, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.favoritDokter, prisma.templatCatatan, prisma.keluargaPasien, prisma.draf] as any[]) {
       await m.deleteMany({ where });
     }
     await prisma.kodeTerminologi.deleteMany({ where: { kode: { startsWith: awalan } } });
@@ -330,4 +330,23 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect(baris.length).toBeGreaterThan(0);
     expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'kunjungan', aksi: 'perbaikan' } })).toBeGreaterThanOrEqual(2);
   });
+
+  it('narasi SOAPIE tersimpan berversi, dibaca kembali, dan dibatasi fasyankes', async () => {
+    const kunj = await buatKunjungan(fas, pasienA, 'pemeriksaan');
+    const kosong = await panggil('PUT', klinis(kunj, 'evaluasi'), 'dokter', { isi: { isi: '' } });
+    expect(kosong.badan.data).toMatchObject({ tersimpan: false, bagian: { isi: null, pengesahan: null } });
+    for (const bagian of ['assessment', 'plan', 'implementasi', 'evaluasi']) {
+      const h = await panggil('PUT', klinis(kunj, bagian), 'dokter', { isi: { isi: `Isi ${bagian}` } });
+      expect(h.status).toBe(200);
+      expect(h.badan.data.bagian).toMatchObject({ isi: { isi: `Isi ${bagian}` }, verifikasi: 'sah', pengesahan: { versi: 1, pengguna_id: id.dokter } });
+    }
+    const ubah = await panggil('PUT', klinis(kunj, 'evaluasi'), 'dokter', { isi: { isi: 'Respons membaik' }, alasan: 'Melengkapi hasil evaluasi' });
+    expect(ubah.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, isi: { isi: 'Respons membaik' } });
+    const lama = await prisma.versiCatatan.findFirst({ where: { fasyankes_id: fas, entitas: 'evaluasi', entitas_id: kunj } });
+    expect(lama?.isi_lama).toEqual({ isi: 'Isi evaluasi' });
+    const baca = await panggil('GET', `/kunjungan/${kunj}/klinis`, 'perekam');
+    expect(baca.badan.data.bagian.evaluasi).toMatchObject({ isi: { isi: 'Respons membaik' }, verifikasi: 'sah' });
+    expect((await panggil('GET', `/kunjungan/${kunj}/klinis`, 'lain')).status).toBe(404);
+  });
+
 });

@@ -1,7 +1,7 @@
 /** Konstanta modul klinis (4.2, 4.8): bagian catatan, tanda vital dengan kode LOINC dan satuan UCUM, bidang pemeriksaan. */
 
 /** Bagian pemeriksaan klinis; tiap bagian disahkan sendiri (satu pengesahan per bagian, entitas_id = id kunjungan). */
-export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut'] as const;
+export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'] as const;
 export type BagianKlinis = (typeof BAGIAN_KLINIS)[number];
 
 export type DefinisiTandaVital = { kunci: string; loinc: string; satuan: string; min: number; max: number };
@@ -40,3 +40,10 @@ export const BATAS_PERBAIKAN_JAM = 48;
 /** Pembeda kode diagnosis ICD-10 (mis. I10, E11.9) dan tindakan ICD-9 CM (mis. 89.52). */
 export const POLA_ICD10 = /^[A-Z]\d{2}(\.[0-9A-Z]{1,4})?$/;
 export const POLA_ICD9CM = /^\d{2}(\.\d{1,2})?$/;
+
+/** Bagian narasi yang melengkapi data klinis terstruktur. */
+export const BAGIAN_NARASI = ['assessment', 'plan', 'implementasi', 'evaluasi'] as const;
+export type BagianNarasi = (typeof BAGIAN_NARASI)[number];
+export const LABEL_NARASI: Record<BagianNarasi, string> = {
+  assessment: 'Penilaian klinis', plan: 'Rencana pelayanan', implementasi: 'Pelaksanaan pelayanan', evaluasi: 'Evaluasi',
+};

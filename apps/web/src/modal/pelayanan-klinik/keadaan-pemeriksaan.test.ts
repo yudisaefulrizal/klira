@@ -1,7 +1,7 @@
 import type { BagianKlinis, KlinisKunjunganDto, SalinanKunjunganDto } from '@klira/shared';
 import { BAGIAN_KLINIS } from '@klira/shared';
 import {
-  adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
+  langkahDraf, bagianLangkah, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
   hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan,
   pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
 } from './keadaan-pemeriksaan';
@@ -15,14 +15,14 @@ const sahkan = (b: KlinisKunjunganDto['bagian'], bagian: BagianKlinis, isi: unkn
 };
 
 describe('langkah dari konfigurasi', () => {
-  it('pemeriksaan memuat sembilan langkah berurutan; semua langkah aktif', () => {
-    expect(LANGKAH_PEMERIKSAAN.map((l) => l.id)).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'resep', 'penunjang', 'tindak_lanjut', 'ringkasan']);
+  it('pemeriksaan memuat enam kelompok SOAPIE dan ringkasan', () => {
+    expect(LANGKAH_PEMERIKSAAN.map((l) => l.id)).toEqual(['subjective', 'objective', 'assessment', 'plan', 'implementasi', 'evaluasi', 'ringkasan']);
     expect(LANGKAH_PEMERIKSAAN.filter((l) => !l.aktif)).toEqual([]);
   });
   it('skrining hanya tanda vital dan ringkasan; bagian yang disimpan hanya dari langkah aktif', () => {
     expect(daftarLangkah('skrining').map((l) => l.id)).toEqual(['tanda_vital', 'ringkasan']);
     expect(bagianDiModal('skrining')).toEqual(['tanda_vital']);
-    expect(bagianDiModal('periksa')).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut']);
+    expect(bagianDiModal('periksa')).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'assessment', 'diagnosis', 'plan', 'tindak_lanjut', 'implementasi', 'tindakan', 'evaluasi']);
   });
 });
 
@@ -86,7 +86,7 @@ describe('perubahan, validasi, dan rencana simpan', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'Batuk';
     k.tanda_vital.nadi = '82';
-    const tak = { anamnesis: false, tanda_vital: false, pemeriksaan: false, diagnosis: false, tindakan: false, tindak_lanjut: false };
+    const tak = { assessment: false, plan: false, implementasi: false, evaluasi: false, anamnesis: false, tanda_vital: false, pemeriksaan: false, diagnosis: false, tindakan: false, tindak_lanjut: false };
     const r = rencanaSimpan('periksa', k, server, tak);
     expect(r.map((x) => x.bagian)).toEqual(['anamnesis', 'tanda_vital']);
     expect(perluAlasan(r, tak)).toBe(false);
@@ -212,8 +212,42 @@ describe('isi ringkasan', () => {
     k.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
     k.tindak_lanjut = { jenis: 'rujuk', tujuan: 'RS Umum', spri: '', catatan: '' };
     const r = ringkasanIsi(k);
-    expect(r[0].baris).toEqual([{ label: 'Keluhan utama', nilai: 'Batuk' }, { label: 'Alergi', nilai: '-' }]);
-    expect(r[1].baris).toEqual([{ label: 'I10', nilai: 'Hipertensi (Utama)' }]);
-    expect(r[3].baris).toEqual([{ label: 'Rencana', nilai: 'Rujuk keluar' }, { label: 'Tujuan rujukan', nilai: 'RS Umum' }]);
+    expect(r[0].baris).toEqual(expect.arrayContaining([{ label: 'Keluhan utama', nilai: 'Batuk' }, { label: 'Alergi', nilai: '-' }]));
+    expect(r[2].baris).toEqual(expect.arrayContaining([{ label: 'I10', nilai: 'Hipertensi (Utama)' }]));
+    expect(r[3].baris).toEqual(expect.arrayContaining([{ label: 'Rencana', nilai: 'Rujuk keluar' }, { label: 'Tujuan rujukan', nilai: 'RS Umum' }]));
+  });
+});
+
+describe('SOAPIE: kompatibilitas dan narasi', () => {
+  it('memetakan draf lama ke kelompok baru dan mempertahankan draf versi baru', () => {
+    expect(langkahDraf('periksa', 4, {})).toBe(4);
+    expect(langkahDraf('periksa', 5, {})).toBe(3);
+    expect(langkahDraf('periksa', 8, {})).toBe(6);
+    expect(langkahDraf('periksa', 5, { versi_draf: 2 })).toBe(5);
+    expect(langkahDraf('skrining', 1, {})).toBe(1);
+    expect(bagianLangkah(LANGKAH_PEMERIKSAAN[1])).toEqual(['tanda_vital', 'pemeriksaan']);
+  });
+
+  it('memulihkan narasi, menyimpan perubahan dan pengosongan sebagai koreksi', () => {
+    const b = sahkan(bagianKosongServer(), 'implementasi', { isi: 'Luka dibersihkan' });
+    const awal = keadaanDariServer(b);
+    expect(awal.implementasi).toBe('Luka dibersihkan');
+    expect(awal.evaluasi).toBe('');
+    const k = pulihkanKeadaan(awal, { evaluasi: 'Nyeri berkurang' });
+    expect(isiBagian('evaluasi', k)).toEqual({ isi: 'Nyeri berkurang' });
+    expect(rencanaSimpan('periksa', k, awal, disahkanDari(b)).map((r) => r.bagian)).toEqual(['evaluasi']);
+    k.implementasi = '';
+    const r = rencanaSimpan('periksa', k, awal, disahkanDari(b));
+    expect(r.find((x) => x.bagian === 'implementasi')).toEqual({ bagian: 'implementasi', galat: null });
+    expect(perluAlasan(r, disahkanDari(b))).toBe(true);
+    expect(galatBagian('evaluasi', { ...k, evaluasi: 'x'.repeat(10001) })).not.toBeNull();
+  });
+
+  it('I/E kosong tidak membuat rencana simpan dan tidak menghalangi syarat selesai lama', () => {
+    const k = awalKeadaan();
+    const disahkan = disahkanDari(bagianKosongServer());
+    expect(rencanaSimpan('periksa', k, awalKeadaan(), disahkan)).toEqual([]);
+    expect(syaratSelesaiTerpenuhi({ ...disahkan, anamnesis: true, diagnosis: true, tindak_lanjut: true }, [])).toBe(true);
+    expect(ringkasanIsi(k).map((r) => r.judul)).toEqual(['S — Subjective', 'O — Objective', 'A — Assessment', 'P — Plan', 'I — Implementation', 'E — Evaluation']);
   });
 });

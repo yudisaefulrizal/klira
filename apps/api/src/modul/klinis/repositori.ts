@@ -72,6 +72,10 @@ async function bacaVersi<K extends BagianKlinis>(c: Klien, bagian: K, fasyankesI
 async function bacaVersiLepas(c: Klien, bagian: BagianKlinis, fasyankesId: number, kunjunganId: number, versi: number | null): Promise<unknown> {
   const where = { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, versi: versi ?? -1 };
   switch (bagian) {
+    case 'assessment': case 'plan': case 'implementasi': case 'evaluasi': {
+      const n = await c.narasiKlinis.findFirst({ where: { ...where, bagian } });
+      return n ? { isi: n.isi } : null;
+    }
     case 'anamnesis': {
       const a = await c.anamnesis.findFirst({ where });
       return a ? { keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, alergi: a.alergi } satisfies AnamnesisIsi : null;
@@ -119,6 +123,10 @@ async function bacaTerbaru<K extends BagianKlinis>(c: Klien, bagian: K, fasyanke
 async function tulisIsi(tx: Prisma.TransactionClient, bagian: BagianKlinis, isi: unknown, fasyankesId: number, kunjunganId: number, versi: number, oleh: number, waktu: Date): Promise<void> {
   const dasar = { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, versi, dibuat_oleh: oleh };
   switch (bagian) {
+    case 'assessment': case 'plan': case 'implementasi': case 'evaluasi': {
+      await tx.narasiKlinis.create({ data: { ...dasar, bagian, isi: (isi as { isi: string | null }).isi } });
+      return;
+    }
     case 'anamnesis': {
       const a = isi as AnamnesisIsi;
       await tx.anamnesis.create({ data: { ...dasar, keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, alergi: a.alergi } });

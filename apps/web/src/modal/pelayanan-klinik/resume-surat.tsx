@@ -1,3 +1,4 @@
+import { DetailSoapie } from './detail-soapie';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { REKAM_MEDIS, TOMBOL } from '@klira/shared';
 import type { DokumenKunjunganDto } from '@klira/shared';
@@ -90,6 +91,10 @@ export function ResumeSurat({ kunjunganId, onTutup, onSelesai }: Props) {
       id: 'resume', judul: R.langkah.resume, selesai: !g.ringkasan && !g.diagnosis_akhir && !g.terapi,
       isi: (
         <Kolom>
+          <details>
+            <summary>Catatan pemeriksaan SOAPIE</summary>
+            <DetailSoapie kunjunganId={kunjunganId} />
+          </details>
           {!ada && <span style={kecil}>{R.saran}</span>}
           <AreaTeks id="rs-ringkasan" label={R.ringkasan} value={k.ringkasan} maxLength={3000} onChange={set('ringkasan')} aria-invalid={tampil('ringkasan') ? true : undefined} />
           {tampil('ringkasan') && <Peringatan>{g.ringkasan}</Peringatan>}

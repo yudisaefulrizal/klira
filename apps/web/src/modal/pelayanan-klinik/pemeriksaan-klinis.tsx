@@ -18,15 +18,17 @@ import { useDrafOtomatis } from '../../util/draf-otomatis';
 import { batasi } from '../../util/langkah';
 import { KonteksKlinis } from './konteks-klinis';
 import {
-  awalKeadaan, bagianDiModal, daftarLangkah, disahkanDari, isiBagian, keadaanDariServer, LABEL_BAGIAN, pakaiTemplat, perluAlasan, pulihkanKeadaan, rencanaSimpan, salinKeKeadaan, statusRingkasan,
+  awalKeadaan, bagianLangkah, langkahDraf, bagianDiModal, daftarLangkah, disahkanDari, isiBagian, keadaanDariServer, LABEL_BAGIAN, pakaiTemplat, perluAlasan, pulihkanKeadaan, rencanaSimpan, salinKeKeadaan, statusRingkasan,
   syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
 } from './keadaan-pemeriksaan';
 import type { BagianSalinan, KeadaanPemeriksaan, ModePemeriksaan } from './keadaan-pemeriksaan';
 import {
-  LangkahAnamnesis, LangkahDiagnosis, LangkahMenyusul, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
+  LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahMenyusul, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
 } from './langkah-pemeriksaan';
 import { LangkahPenunjang } from './langkah-penunjang';
 import { LangkahResep } from './langkah-resep';
+import { RingkasanOrderKunjungan } from './ringkasan-order-kunjungan';
+import { HasilPenunjangKunjungan } from './hasil-penunjang-kunjungan';
 import { PanelFavorit } from './panel-favorit';
 import { PanelKeluarga } from './panel-keluarga';
 import { PanelRiwayat } from './panel-riwayat';
@@ -48,8 +50,7 @@ type Props = {
 const labelBagian = LABEL_BAGIAN;
 
 /**
- * Modal Pemeriksaan klinis (3.3, MODAL-BERTAHAP): Anamnesis > Tanda vital > Pemeriksaan > Diagnosis > Tindakan > Resep > Order penunjang >
- * Rencana tindak lanjut > Ringkasan. Daftar langkah dari konfigurasi (keadaan-pemeriksaan). Perawat memakai mode skrining (tanda vital saja).
+ * Modal Pemeriksaan klinis: S > O > A > P > I > E > Ringkasan. Daftar langkah dari konfigurasi (keadaan-pemeriksaan). Perawat memakai mode skrining (tanda vital saja).
  * Simpan = pengesahan catatan per bagian yang berubah. Draf otomatis disimpan di SERVER (data kesehatan tidak boleh di penyimpanan lokal
  * komputer bersama), kedaluwarsa di server, dan dihapus saat selesai.
  */
@@ -104,14 +105,14 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (!klinis || !drafSiap || formSiap) return;
     const dasar = keadaanDariServer(klinis.bagian);
     if (pulihan) {
-      const n = batasi(pulihan.langkah, konfig.length);
+      const n = batasi(langkahDraf(mode, pulihan.langkah, pulihan.nilai), konfig.length);
       setKeadaan(pulihkanKeadaan(dasar, pulihan.nilai));
       setIndeks(n);
       setDikunjungi(Array.from({ length: n + 1 }, (_x, i) => i));
       setDrafDipulihkan(true);
     } else setKeadaan(dasar);
     setFormSiap(true);
-  }, [klinis, drafSiap, formSiap, pulihan, konfig.length]);
+  }, [klinis, drafSiap, formSiap, pulihan, konfig.length, mode]);
 
   const ubah = useCallback((p: Partial<KeadaanPemeriksaan>) => setKeadaan((k) => ({ ...k, ...p })), []);
   const pindah = (n: number) => {
@@ -123,7 +124,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const rencana = useMemo(() => rencanaSimpan(mode, keadaan, server, disahkan), [mode, keadaan, server, disahkan]);
   const galatDi = (bagian?: BagianKlinis) => (tampilGalat && bagian ? rencana.find((r) => r.bagian === bagian)?.galat ?? null : null);
   const alasanPerlu = perluAlasan(rencana, disahkan);
-  const bisaSelesai = mode === 'periksa' && !!klinis && klinis.kunjungan.tahap_layanan === 'pemeriksaan' && syaratSelesaiTerpenuhi(disahkan, rencana);
+  const bisaSelesai = mode === 'periksa' && !!klinis && klinis.kunjungan.tahap_layanan === 'pemeriksaan' && syaratSelesaiTerpenuhi(disahkan, rencana) && (['anamnesis', 'diagnosis', 'tindak_lanjut'] as const).every((b) => klinis.bagian[b].verifikasi === 'sah' || rencana.some((r) => r.bagian === b && !r.galat));
   const pilihSelesai = selesaiDipilih && bisaSelesai;
   const adaYangDikirim = rencana.length > 0 || pilihSelesai;
   const statusBagian = Object.fromEntries(BAGIAN_KLINIS.map((b) => [b, statusRingkasan(b, keadaan, server, !!disahkan[b])])) as Parameters<typeof LangkahRingkasan>[0]['status'];
@@ -137,6 +138,27 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (!klinis || !formSiap) return galatMuat ? <Peringatan>{galatMuat}</Peringatan> : <span style={{ color: token.warna.teksRedup }}>{KLINIS.konteks.memuat}</span>;
     if (!l.aktif) return <LangkahMenyusul langkah={l} onLewati={berikut} />;
     switch (l.id) {
+      case 'subjective': return <LangkahAnamnesis {...dasar('anamnesis')} />;
+      case 'objective': return <Kolom>
+        <LangkahTandaVital {...dasar('tanda_vital')} />
+        <LangkahPemeriksaan {...dasar('pemeriksaan')} />
+        <HasilPenunjangKunjungan kunjunganId={kunjunganId} />
+      </Kolom>;
+      case 'assessment': return <Kolom>
+        <LangkahNarasi bagian="assessment" {...dasar('assessment')} />
+        <LangkahDiagnosis {...dasar('diagnosis')} favorit={favoritDari('diagnosis')} />
+      </Kolom>;
+      case 'plan': return <Kolom>
+        <LangkahNarasi bagian="plan" {...dasar('plan')} />
+        <LangkahResep kunjunganId={kunjunganId} onResepDiajukan={() => { adaTersimpan.current = true; }} />
+        <LangkahPenunjang kunjunganId={kunjunganId} cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} onOrderDipesan={() => { adaTersimpan.current = true; }} />
+        <LangkahTindakLanjut {...dasar('tindak_lanjut')} />
+      </Kolom>;
+      case 'implementasi': return <Kolom>
+        <LangkahNarasi bagian="implementasi" {...dasar('implementasi')} />
+        <LangkahTindakan {...dasar('tindakan')} favorit={favoritDari('tindakan')} />
+      </Kolom>;
+      case 'evaluasi': return <LangkahNarasi bagian="evaluasi" {...dasar('evaluasi')} />;
       case 'anamnesis': return <LangkahAnamnesis {...dasar(l.bagian)} />;
       case 'tanda_vital': return <LangkahTandaVital {...dasar(l.bagian)} />;
       case 'pemeriksaan': return <LangkahPemeriksaan {...dasar(l.bagian)} />;
@@ -147,17 +169,19 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar(l.bagian)} />;
       default:
         return (
-          <LangkahRingkasan
+          <Kolom><LangkahRingkasan
             k={keadaan} ubah={ubah} rencana={rencana} status={statusBagian} bagian={bagianDiModal(mode)} labelBagian={labelBagian} perluAlasan={alasanPerlu}
             bisaSelesai={bisaSelesai} tampilSelesai={mode === 'periksa'} selesai={selesaiDipilih} onSelesai={setSelesaiDipilih}
           />
+          {mode === 'periksa' && <RingkasanOrderKunjungan kunjunganId={kunjunganId} />}
+          </Kolom>
         );
     }
   };
 
   const langkah: LangkahModal[] = konfig.map((l, n) => ({
     id: l.id, judul: l.judul, isi: isiLangkah(l),
-    selesai: !!l.bagian && !!disahkan[l.bagian] && dikunjungi.includes(n) && indeks !== n && !galatDi(l.bagian),
+    selesai: bagianLangkah(l).some((b) => disahkan[b]) && bagianLangkah(l).every((b) => !rencana.some((r) => r.bagian === b) && !galatDi(b)) && dikunjungi.includes(n) && indeks !== n,
   }));
 
   async function kirim() {
@@ -165,7 +189,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (masalah >= 0) {
       setTampilGalat(true);
       setGalat(rencana[masalah].galat);
-      const n = konfig.findIndex((l) => l.bagian === rencana[masalah].bagian);
+      const n = konfig.findIndex((l) => bagianLangkah(l).includes(rencana[masalah].bagian));
       pindah(n >= 0 ? n : konfig.length - 1);
       return;
     }
@@ -266,8 +290,8 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         onTutup={hasil ? onSelesai : tutup}
         lindungiTutup={formSiap && adaPerubahan(server, keadaan)}
         onLanjut={(dari) => {
-          const b = konfig[dari]?.bagian;
-          const g = b ? rencana.find((r) => r.bagian === b)?.galat : null;
+          const bagian = bagianLangkah(konfig[dari]);
+          const g = rencana.find((r) => bagian.includes(r.bagian) && r.galat)?.galat;
           if (g) {
             setTampilGalat(true);
             setGalat(g);

@@ -10,12 +10,14 @@ import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
+import { DetailSoapie } from './detail-soapie';
 import { tanggalPendek } from '../../util/format';
 
 type Props = { pasienId: number; nama: string; kecualiKunjunganId?: number; onTutup: () => void };
 
 /** PANEL Riwayat: kunjungan sebelumnya pasien secara ringkas (keluhan, diagnosis, tindak lanjut); pembukaannya tercatat di audit. */
 export function PanelRiwayat({ pasienId, nama, kecualiKunjunganId, onTutup }: Props) {
+  const [terbuka, setTerbuka] = useState<number | null>(null);
   const [data, setData] = useState<RiwayatKunjunganDto[] | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   useEffect(() => {
@@ -50,6 +52,8 @@ export function PanelRiwayat({ pasienId, nama, kecualiKunjunganId, onTutup }: Pr
               {r.diagnosis.length === 0 ? p.tanpaDiagnosis : r.diagnosis.map((d) => `${d.kode} ${d.nama}${d.peran === 'utama' ? '' : ` (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})`}`).join('; ')}
             </div>
             {r.tindak_lanjut && <div><span style={{ color: token.warna.teksRedup }}>{p.tindakLanjut}: </span>{jenisLanjut(r.tindak_lanjut)}</div>}
+            <Tombol type="button" varian="teks" onClick={() => setTerbuka(terbuka === r.id ? null : r.id)}>{terbuka === r.id ? 'Tutup catatan SOAPIE' : 'Lihat catatan SOAPIE'}</Tombol>
+            {terbuka === r.id && <DetailSoapie kunjunganId={r.id} />}
           </Kolom>
         </Kartu>
       ))}

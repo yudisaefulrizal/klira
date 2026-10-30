@@ -932,7 +932,7 @@ export const REKAM_MEDIS = {
   perbaikan: {
     judul: 'Perbaiki catatan', bagian: 'Bagian catatan', pilihBagian: 'Pilih bagian...', alasan: 'Alasan perbaikan', alasanPetunjuk: 'Alasan wajib dan tersimpan bersama versi lama.', ajukan: 'Simpan perbaikan', mengajukan: 'Menyimpan...',
     diterapkan: 'Perbaikan diterapkan sebagai versi baru; versi lama tetap tersimpan.', diajukanPesan: 'Perbaikan melewati 2x24 jam atau bukan dari pembuat catatan: diajukan ke persetujuan.', belumDisahkan: 'Bagian ini belum disahkan; isi lewat Pemeriksaan klinis.',
-    gagal: 'Perbaikan gagal disimpan.', bagianLabel: { anamnesis: 'Anamnesis', tanda_vital: 'Tanda vital', pemeriksaan: 'Pemeriksaan', diagnosis: 'Diagnosis', tindakan: 'Tindakan', tindak_lanjut: 'Rencana tindak lanjut' } as Record<string, string>,
+    gagal: 'Perbaikan gagal disimpan.', bagianLabel: { assessment: 'Penilaian klinis', plan: 'Rencana pelayanan', implementasi: 'Pelaksanaan pelayanan', evaluasi: 'Evaluasi', anamnesis: 'Anamnesis', tanda_vital: 'Tanda vital', pemeriksaan: 'Pemeriksaan', diagnosis: 'Diagnosis', tindakan: 'Tindakan', tindak_lanjut: 'Rencana tindak lanjut' } as Record<string, string>,
     batasInfo: 'Pembuat catatan dapat memperbaiki langsung dalam 2x24 jam sejak pengesahan terakhir.', sudahAda: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.',
   },
   tinjau: {
