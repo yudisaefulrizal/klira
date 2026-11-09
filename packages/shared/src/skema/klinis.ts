@@ -169,7 +169,7 @@ export const cariTerminologiMasukan = z.object({
   batas: z.coerce.number().int().min(1).max(50).default(10),
 });
 export type CariTerminologiMasukan = z.infer<typeof cariTerminologiMasukan>;
-export type KodeTerminologiDto = { sistem: SistemTerminologi; kode: string; nama: string; contoh: boolean; nama_indonesia?: string; status_padanan?: 'komunitas' };
+export type KodeTerminologiDto = { sistem: SistemTerminologi; kode: string; nama: string; contoh: boolean; nama_indonesia?: string; status_padanan?: 'komunitas'; nama_tindakan_kptl?: { kode: string; nama: string }[] };
 
 // Favorit dan templat
 export const favoritMasukan = z.object({ jenis: z.enum(JENIS_FAVORIT), kode: teksWajib(50), nama: teksWajib(255) });

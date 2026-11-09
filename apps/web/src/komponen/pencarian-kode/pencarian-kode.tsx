@@ -89,7 +89,7 @@ export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = fal
             <Kolom tag="li" jarak="tanpa" garis="atas" halus key={h.kode}>
               <Tombol type="button" varian="langkah" penuh onClick={() => pilih(h)}>
                 <strong style={{ minWidth: token.ukuran.kolomKode }}>{h.kode}</strong>
-                <span style={{ flexGrow: 1 }}>{h.nama_indonesia ?? h.nama}{h.nama_indonesia && <small style={{ display: 'block', color: token.warna.teksRedup }}>{h.nama} · Padanan komunitas</small>}</span>
+                <span style={{ flexGrow: 1 }}>{h.nama_indonesia ?? h.nama}{h.nama_indonesia && <small style={{ display: 'block', color: token.warna.teksRedup }}>{h.nama} · Padanan komunitas</small>}{h.nama_tindakan_kptl?.map((n) => <small key={n.kode} style={{ display: 'block', color: token.warna.teksRedup }}>Nama tindakan KPTL: {n.nama} ({n.kode})</small>)}</span>
                 {h.contoh && <Lencana warna="kuning">{KLINIS.diagnosis.contoh}</Lencana>}
               </Tombol>
             </Kolom>

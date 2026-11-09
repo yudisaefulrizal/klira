@@ -30,6 +30,7 @@ export function KamusKode({ judul, sistem, onTutup, onPilih }: Props) {
     <Kolom jarak="sm">
       <span style={{ color: token.warna.teksRedup }}>Pilih kode dari referensi yang tersedia.</span>
       {sistem === 'icd10' && <small style={{ color: token.warna.teksRedup }}>Padanan Indonesia dari komunitas, belum diverifikasi klinis. Nama resmi Inggris tetap ditampilkan.</small>}
+      {sistem === 'icd9cm' && <small style={{ color: token.warna.teksRedup }}>Nama tindakan Indonesia mengikuti pemetaan KPTL SATUSEHAT; bukan terjemahan harfiah ICD-9-CM.</small>}
       <Sebaris bungkus jarak="xs" role="group" aria-label="Awalan kode">
         {['', ...indeks].map((huruf) => <Tombol key={huruf} type="button" varian={awalan === huruf ? 'utama' : 'sekunder'} aria-pressed={awalan === huruf}
           onClick={() => { if (huruf === awalan && halaman === 1) return; setHasil(null); setHalaman(1); setAwalan(huruf); }} style={{ minWidth: 32, padding: '0 8px', height: 32 }}>{huruf || 'Semua'}</Tombol>)}
@@ -44,7 +45,7 @@ export function KamusKode({ judul, sistem, onTutup, onPilih }: Props) {
         {hasil.data.map((kode) => <li key={kode.kode} style={{ borderBottom: `1px solid ${token.warna.garis}` }}>
           <Tombol type="button" varian="langkah" penuh onClick={() => onPilih(kode)} style={{ alignItems: 'flex-start', gap: 12 }}>
             <strong style={{ minWidth: 64 }}>{kode.kode}</strong>
-            <span style={{ flex: 1, overflowWrap: 'anywhere' }}>{kode.nama_indonesia ?? kode.nama}{kode.nama_indonesia && <small style={{ display: 'block', color: token.warna.teksRedup }}>{kode.nama}</small>}</span>
+            <span style={{ flex: 1, overflowWrap: 'anywhere' }}>{kode.nama_indonesia ?? kode.nama}{kode.nama_indonesia && <small style={{ display: 'block', color: token.warna.teksRedup }}>{kode.nama}</small>}{kode.nama_tindakan_kptl?.map((n) => <small key={n.kode} style={{ display: 'block', color: token.warna.teksRedup }}>Nama tindakan KPTL: {n.nama} ({n.kode})</small>)}</span>
             {kode.contoh && <Lencana warna="kuning">Contoh</Lencana>}
           </Tombol>
         </li>)}

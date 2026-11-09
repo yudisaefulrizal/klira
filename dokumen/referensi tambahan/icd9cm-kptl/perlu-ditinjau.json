@@ -1,0 +1,72 @@
+[
+  {
+    "kode": "14.00",
+    "nama_sumber": "Removal of foreign body from posterior segment of eye, not otherwise",
+    "nama_primer": "Removal of foreign body from posterior segment of eye, not otherwise specified",
+    "nama_kptl": "Removal Benda Asing Mata, Belakang (Posterior), x",
+    "kode_kptl": "15311.ST005.x"
+  },
+  {
+    "kode": "17.7",
+    "nama_sumber": "Intravenous infusion",
+    "nama_primer": "Other diagnostic and therapeutic procedures",
+    "nama_kptl": "Pasang Infus",
+    "kode_kptl": "12802.x.x"
+  },
+  {
+    "kode": "21.07",
+    "nama_sumber": "Control of epistaxis by excision of nasal mucosa and skin grafting o",
+    "nama_primer": "Control of epistaxis by excision of nasal mucosa and skin grafting of septum and lateral nasal wall",
+    "nama_kptl": "Kontrol Epistaksis dengan Eksisi Mukosa Hidung dan Graft kulit ke Septum & Dinding Lateral Hidung",
+    "kode_kptl": "12044"
+  },
+  {
+    "kode": "41.0",
+    "nama_sumber": "Bone marrow or hematopoietic stem cell transplant",
+    "nama_primer": "Bone marrow or hematopoietic stemm cell transplant",
+    "nama_kptl": "Transplantasi sumsum tulang, x, x",
+    "kode_kptl": "14905.x.x"
+  },
+  {
+    "kode": "51.59",
+    "nama_sumber": "Incision of other bile duct",
+    "nama_primer": "Incision of bile duct",
+    "nama_kptl": "Insisi Saluran Empedu Lainnya",
+    "kode_kptl": "15448"
+  },
+  {
+    "kode": "52.21",
+    "nama_sumber": "Endoscopic excision or destruction of lesion or tissue of pancreatic duct",
+    "nama_primer": "Endoscopic excision or destruction of lesion or tissue of pancreatic",
+    "nama_kptl": "Eksisi Lesi Pankreas, Endoskopi",
+    "kode_kptl": "15454.PD001"
+  },
+  {
+    "kode": "53.5",
+    "nama_sumber": "Repair of other hernia of anterior abdominal wall (without graft or prosthesis)",
+    "nama_primer": "Repair of other hernia of anterior abdominal wall (without graft or",
+    "nama_kptl": "Repair Hernia, x, x, x, x, Epigastrik",
+    "kode_kptl": "13974.x.x.x.x.HR005"
+  },
+  {
+    "kode": "79.79",
+    "nama_sumber": "Closed reduction of dislocation of other specified site",
+    "nama_primer": "Closed reduction of dislocation of other specified site, except temp",
+    "nama_kptl": "Reduksi Dislokasi Sendi, Tertutup, Spesifik Lainnya",
+    "kode_kptl": "13722.PD011.SI002"
+  },
+  {
+    "kode": "86.9",
+    "nama_sumber": "Other repair and reconstruction of skin and subcutaneous tissue",
+    "nama_primer": "Other operations on skin and subcutaneous tissue",
+    "nama_kptl": "Eksisi Kulit untuk Graft",
+    "kode_kptl": "15647"
+  },
+  {
+    "kode": "88.36",
+    "nama_sumber": "Other soft tissue x-ray of lower limb",
+    "nama_primer": "Lymphangiogram of lower limb",
+    "nama_kptl": "Radiografi Jaringan Lunak Ekstremitas Bawah",
+    "kode_kptl": "31648"
+  }
+]

@@ -56,3 +56,15 @@ test('padanan komunitas memperluas pencarian Indonesia tanpa mengganti nama resm
   expect((await repo.cariTerminologi('icd9cm', '89.52', 1))[0].nama_indonesia).toBeUndefined();
   expect(prisma.kodeTerminologi.findMany).not.toHaveBeenCalled();
 });
+
+test('nama KPTL membantu pencarian Indonesia tanpa mengganti nama atau kode ICD9CM', async () => {
+  const repo = new RepositoriKlinisPrisma();
+  const hasil = await repo.cariTerminologi('icd9cm', 'elektrokardiografi', 50);
+  const ekg = hasil.find((k) => k.kode === '89.52');
+  expect(ekg).toMatchObject({ nama: 'Electrocardiogram', nama_tindakan_kptl: [{ kode: '10925.x', nama: 'Elektrokardiografi (EKG)' }] });
+  const kamus = await repo.kamusTerminologi(kamusTerminologiMasukan.parse({ sistem: 'icd9cm', awalan: '0' }));
+  expect(kamus.data.find((k) => k.kode === '00.01')?.nama_tindakan_kptl?.[0].nama).toContain('USG Terapi');
+  // Nama sumber berbeda: mapping ini harus tetap disisihkan.
+  expect((await repo.cariTerminologi('icd9cm', '17.7', 1))[0].nama_tindakan_kptl).toBeUndefined();
+  expect(prisma.kodeTerminologi.findMany).not.toHaveBeenCalled();
+});

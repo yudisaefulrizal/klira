@@ -77,7 +77,7 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
     kirimHasil(res, await layanan.hapusDraf(pengguna(res), p.data.id, p.data.alur));
   }));
 
-  rute.get('/kunjungan/:id/konteks-klinis', masuk, lihatKlinis, bungkus(async (req, res) => {
+  rute.get('/kunjungan/:id/konteks-klinis', masuk, wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['farmasi', 'lihat'], ['farmasi', 'input']), bungkus(async (req, res) => {
     const id = idParam.safeParse(req.params);
     if (!id.success) return tidakAda(res);
     kirimHasil(res, await layanan.konteks(pengguna(res), id.data.id, alamatDari(req)));
