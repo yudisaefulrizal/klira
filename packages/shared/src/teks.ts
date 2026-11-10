@@ -930,6 +930,16 @@ export const KASIR = {
     petunjuk: 'Isi harga agar tagihan lengkap, bisa dibayar, dan kunjungan bisa ditutup. Harga yang sudah terisi tidak bisa diubah dari sini. Agar item berikutnya otomatis berharga, isi harga di master pemeriksaan atau atur di Tarif layanan.',
     harga: (nama: string) => `Harga ${nama} (Rp)`, simpan: 'Simpan harga', menyimpan: 'Menyimpan...', tersimpan: 'Harga tersimpan.', tautanTarif: 'Buka Tarif layanan',
   },
+  /** Menambah item tagihan dari master tarif (konsultasi, visite, tindakan, kamar) dan menghapus item tambahan. */
+  tambah: {
+    judul: 'Tambah item dari tarif', petunjuk: 'Untuk konsultasi, visite dokter, tindakan, atau kamar. Harga mengikuti master tarif (harga JKN untuk pasien JKN).',
+    tarif: 'Tarif layanan', pilih: 'Pilih tarif', jumlah: 'Jumlah', simpan: 'Tambah', menyimpan: 'Menambah...', hapus: 'Hapus', menghapus: 'Menghapus...', tanpaTarif: 'Belum ada tarif aktif. Tambahkan di Daftar pasien > Tarif.',
+    manual: 'Tambahan kasir',
+  },
+  jkn: {
+    ditanggung: 'Ditanggung JKN', petunjukBayar: 'Pasien JKN: biaya ditanggung BPJS dan diklaim setelah kunjungan ditutup. Catat pembayaran hanya untuk biaya di luar tanggungan (mis. naik kelas).',
+    petunjukTutup: 'Pasien JKN: kunjungan bisa ditutup tanpa pembayaran. Tagihan tetap tercatat sebagai dasar klaim.', alasan: 'Ditanggung JKN (diklaim ke BPJS)',
+  },
   judul: 'Kasir dan klaim',
   tab: { shift: 'Shift dan rekap harian', klaim: 'Klaim JKN/BPJS' },
   tabLabel: 'Tab Kasir dan klaim',
@@ -957,6 +967,7 @@ export const KASIR = {
     berhasil: 'Kunjungan ditutup.', berhasilPesan: 'Data kunjungan siap dikodekan dan dikirim; tagihan terkunci.', kembaliKasir: 'Lengkapi yang belum, lalu kembali ke sini.', tanpaIzin: 'Anda tidak memiliki izin menutup kunjungan.',
   },
   galat: {
+    pilihTarif: 'Pilih tarif layanan.', tarifTidakAda: 'Tarif tidak ditemukan atau tidak aktif.', itemBukanManual: 'Hanya item tambahan kasir yang bisa dihapus.', hapusMelebihiBayar: 'Item tidak bisa dihapus: total tagihan akan lebih kecil dari yang sudah dibayar.',
     angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', jumlahMinimal: 'Jumlah minimal 1.', metode: 'Pilih metode bayar.', alasanWajib: 'Alasan wajib diisi.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
     itemTidakAda: 'Item tagihan tidak ditemukan.', hargaSudahAda: 'Harga item ini sudah terisi dan tidak dapat diubah dari sini.', tagihanTerkunci: 'Tagihan kunjungan yang sudah ditutup tidak dapat diubah.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', tahapSalah: 'Kunjungan belum di tahap kasir atau sudah ditutup.', tagihanBelumLengkap: 'Tagihan belum lengkap: ada item tanpa harga.', tagihanKosong: 'Belum ada tagihan pada kunjungan ini.', sudahLunas: 'Tagihan sudah lunas.',

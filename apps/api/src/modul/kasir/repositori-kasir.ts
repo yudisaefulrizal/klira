@@ -1,6 +1,7 @@
 import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
-import type { MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto } from '@klira/shared';
+import { hargaTarif } from '@klira/shared';
+import type { MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto, TarifKasirDto } from '@klira/shared';
 import { totalTagihan, keItemDto, statusTagihanDari } from './repositori';
 
 export type KunjunganKasir = { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
@@ -9,6 +10,8 @@ export type HasilBayarRepo =
   | { ok: true; pembayaran: PembayaranDto; tagihan: TagihanKasir; kembalian: number }
   | { ok: false; sebab: 'tahap_salah' | 'tagihan_kosong' | 'tagihan_belum_lengkap' | 'sudah_lunas' | 'tanpa_shift' };
 export type HasilLengkapiHargaRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'sudah_berharga' | 'terkunci' };
+export type HasilTambahItemRepo = { ok: true; nama: string; harga: number; jumlah: number } | { ok: false; sebab: 'tarif_tidak_ada' | 'terkunci' };
+export type HasilHapusItemRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'bukan_manual' | 'terkunci' | 'melebihi_bayar' };
 export type HasilTutupRepo = { ok: true } | { ok: false; sebab: 'tahap_salah' | 'tagihan_belum_lengkap' | 'resep_belum' | 'belum_lunas_alasan' | 'bentrok' };
 
 const hariWib = (d = new Date()): string => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
@@ -144,17 +147,75 @@ export class RepositoriKasirPrisma {
     });
   }
 
-  // ---- Tutup kunjungan ----
-  /** Tutup bila di tahap kasir, tagihan lengkap, semua resep diserahkan; belum lunas hanya dengan alasan. Pembaruan bersyarat tahap (gagal diam bila sudah berubah). */
-  async tutup(fasyankesId: number, kunjunganId: number, alasan: string | null): Promise<HasilTutupRepo> {
+  // ---- Item tambahan dari tarif ----
+  /** Tarif aktif yang boleh ditambahkan kasir (obat dikecualikan: obat lewat resep agar stok tercatat), harga sesuai cara pembayaran. */
+  async tarifAktif(fasyankesId: number, caraPembayaran: 'umum' | 'jkn'): Promise<TarifKasirDto[]> {
+    const t = await prisma.tarifLayanan.findMany({ where: { fasyankes_id: fasyankesId, aktif: true, jenis: { not: 'obat' } }, orderBy: [{ jenis: 'asc' }, { nama: 'asc' }] });
+    return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, jenis: x.jenis as TarifKasirDto['jenis'], harga: hargaTarif(x, caraPembayaran) ?? x.harga_umum }));
+  }
+
+  /** Status pembayaran dihitung ulang setelah item berubah (lunas bisa kembali menjadi sebagian). */
+  private async hitungUlang(tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0], tagihanId: number): Promise<void> {
+    const t = await tx.tagihan.findUniqueOrThrow({ where: { id: tagihanId }, include: { item: { select: { jumlah: true, harga: true } }, pembayaran: { select: { jumlah: true } } } });
+    const total = totalTagihan(t.item);
+    const dibayar = t.pembayaran.reduce((s, p) => s + p.jumlah, 0);
+    await tx.tagihan.update({
+      where: { id: tagihanId },
+      data: { status_tagihan: statusTagihanDari(t.item.map((i) => i.harga)), status_pembayaran: dibayar <= 0 ? 'belum' : dibayar >= total ? 'lunas' : 'sebagian' },
+    });
+  }
+
+  /** Tambah item dari tarif ke tagihan kunjungan (tagihan dibuat bila belum ada); tidak untuk kunjungan yang sudah ditutup. */
+  async tambahItem(fasyankesId: number, oleh: number, kunjunganId: number, tarifId: number, jumlah: number): Promise<HasilTambahItemRepo> {
     return prisma.$transaction(async (tx) => {
+      const k = await tx.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, select: { tahap_layanan: true, cara_pembayaran: true } });
+      if (!k || k.tahap_layanan === 'ditutup') return { ok: false, sebab: 'terkunci' } as const;
+      const tarif = await tx.tarifLayanan.findFirst({ where: { id: tarifId, fasyankes_id: fasyankesId, aktif: true, jenis: { not: 'obat' } } });
+      if (!tarif) return { ok: false, sebab: 'tarif_tidak_ada' } as const;
+      const harga = hargaTarif(tarif, k.cara_pembayaran) ?? tarif.harga_umum;
+      const tagihan = await tx.tagihan.upsert({ where: { kunjungan_id: kunjunganId }, update: {}, create: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, dibuat_oleh: oleh } });
+      await tx.itemTagihan.create({
+        data: { fasyankes_id: fasyankesId, tagihan_id: tagihan.id, jenis: tarif.jenis, tarif_layanan_id: tarif.id, kode: tarif.kode, nama: tarif.nama, jumlah, harga, manual: true, dibuat_oleh: oleh },
+      });
+      await this.hitungUlang(tx, tagihan.id);
+      return { ok: true, nama: tarif.nama, harga, jumlah } as const;
+    });
+  }
+
+  /** Hapus item tambahan kasir selama kunjungan belum ditutup dan total tidak menjadi lebih kecil dari yang sudah dibayar. */
+  async hapusItem(fasyankesId: number, kunjunganId: number, itemId: number): Promise<HasilHapusItemRepo> {
+    return prisma.$transaction(async (tx) => {
+      const kunci = await tx.$queryRaw<{ id: number }[]>`SELECT id FROM tagihan WHERE kunjungan_id = ${kunjunganId} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
+      if (!kunci.length) return { ok: false, sebab: 'tidak_ada' } as const;
+      const item = await tx.itemTagihan.findFirst({ where: { id: itemId, tagihan_id: kunci[0].id } });
+      if (!item) return { ok: false, sebab: 'tidak_ada' } as const;
+      if (!item.manual) return { ok: false, sebab: 'bukan_manual' } as const;
       const k = await tx.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, select: { tahap_layanan: true } });
+      if (!k || k.tahap_layanan === 'ditutup') return { ok: false, sebab: 'terkunci' } as const;
+      const t = await tx.tagihan.findUniqueOrThrow({ where: { id: kunci[0].id }, include: { item: { select: { jumlah: true, harga: true } }, pembayaran: { select: { jumlah: true } } } });
+      const dibayar = t.pembayaran.reduce((s, p) => s + p.jumlah, 0);
+      if (totalTagihan(t.item) - (item.harga ?? 0) * item.jumlah < dibayar) return { ok: false, sebab: 'melebihi_bayar' } as const;
+      await tx.itemTagihan.delete({ where: { id: item.id } });
+      await this.hitungUlang(tx, t.id);
+      return { ok: true, nama: item.nama } as const;
+    });
+  }
+
+  // ---- Tutup kunjungan ----
+  /**
+   * Tutup bila di tahap kasir, tagihan lengkap, semua resep diserahkan; belum lunas hanya dengan alasan, kecuali kunjungan JKN
+   * (alasan otomatis `alasanJkn`: biaya diklaim ke BPJS). Pembaruan bersyarat tahap (gagal diam bila sudah berubah).
+   */
+  async tutup(fasyankesId: number, kunjunganId: number, alasan: string | null, alasanJkn: string): Promise<HasilTutupRepo> {
+    return prisma.$transaction(async (tx) => {
+      const k = await tx.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, select: { tahap_layanan: true, cara_pembayaran: true } });
       if (!k || k.tahap_layanan !== 'kasir') return { ok: false, sebab: 'tahap_salah' } as const;
       const t = await tx.tagihan.findUnique({ where: { kunjungan_id: kunjunganId }, include: { item: { select: { jumlah: true, harga: true } }, pembayaran: { select: { jumlah: true } } } });
       if (t && t.status_tagihan !== 'lengkap') return { ok: false, sebab: 'tagihan_belum_lengkap' } as const;
       if (await tx.resep.count({ where: { kunjungan_id: kunjunganId, fasyankes_id: fasyankesId, status: { not: 'diserahkan' } } })) return { ok: false, sebab: 'resep_belum' } as const;
       const total = t ? totalTagihan(t.item) : 0;
       const lunas = (t?.pembayaran.reduce((s, p) => s + p.jumlah, 0) ?? 0) >= total;
+      if (!lunas && k.cara_pembayaran === 'jkn' && !(alasan && alasan.trim())) alasan = alasanJkn;
       if (!lunas && !(alasan && alasan.trim())) return { ok: false, sebab: 'belum_lunas_alasan' } as const;
       const ubah = await tx.kunjungan.updateMany({ where: { id: kunjunganId, fasyankes_id: fasyankesId, tahap_layanan: 'kasir' }, data: { tahap_layanan: 'ditutup', status: 'finished', selesai: new Date(), waktu_tutup: new Date() } });
       if (!ubah.count) return { ok: false, sebab: 'bentrok' } as const;

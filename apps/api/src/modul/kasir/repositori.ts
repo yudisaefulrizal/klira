@@ -43,8 +43,8 @@ export async function tambahItemTagihanDalam(tx: Prisma.TransactionClient, fasya
   return tagihan.id;
 }
 
-export const keItemDto = (i: { id: number; jenis: ItemTagihanDto['jenis']; kode: string; nama: string; jumlah: number; harga: number | null; order_penunjang_id: number | null }): ItemTagihanDto => ({
-  id: i.id, jenis: i.jenis, kode: i.kode, nama: i.nama, jumlah: i.jumlah, harga: i.harga, order_penunjang_id: i.order_penunjang_id,
+export const keItemDto = (i: { id: number; jenis: ItemTagihanDto['jenis']; kode: string; nama: string; jumlah: number; harga: number | null; order_penunjang_id: number | null; manual?: boolean }): ItemTagihanDto => ({
+  id: i.id, jenis: i.jenis, kode: i.kode, nama: i.nama, jumlah: i.jumlah, harga: i.harga, order_penunjang_id: i.order_penunjang_id, manual: i.manual ?? false,
 });
 
 export const totalTagihan = (item: readonly { jumlah: number; harga: number | null }[]): number => item.reduce((s, i) => s + (i.harga ?? 0) * i.jumlah, 0);

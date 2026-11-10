@@ -42,7 +42,7 @@ export function TutupKunjungan({ kunjunganId, onTutup, onSelesai }: Props) {
     setMemproses(true);
     setGalat(null);
     try {
-      setG(await tutupKunjungan(kunjunganId, g.syarat.lunas ? {} : { alasan }));
+      setG(await tutupKunjungan(kunjunganId, g.syarat.lunas || (g.syarat.ditanggung_jkn && !alasan.trim()) ? {} : { alasan }));
       setSelesai(true);
     } catch (e) {
       setGalat(e instanceof GalatApi ? e.message : KASIR.bayar.gagal);
@@ -86,7 +86,8 @@ export function TutupKunjungan({ kunjunganId, onTutup, onSelesai }: Props) {
             </Sebaris>
           ))}
           {!g.syarat.tagihan_lengkap && <LengkapiHarga kunjunganId={kunjunganId} gambaran={g} onUbah={setG} />}
-          {!g.syarat.lunas && g.tagihan.sisa > 0 && (
+          {!g.syarat.lunas && g.tagihan.sisa > 0 && g.syarat.ditanggung_jkn && <Peringatan nada="biru"><strong>{KASIR.jkn.ditanggung}.</strong> {KASIR.jkn.petunjukTutup}</Peringatan>}
+          {!g.syarat.lunas && g.tagihan.sisa > 0 && !g.syarat.ditanggung_jkn && (
             <>
               <Peringatan>{T.alasanPetunjuk} Sisa tagihan {rupiah(g.tagihan.sisa)}.</Peringatan>
               <AreaTeks id="tutup-alasan" label={T.alasan} value={alasan} maxLength={300} onChange={(e) => setAlasan(e.target.value)} />

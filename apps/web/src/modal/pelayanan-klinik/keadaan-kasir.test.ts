@@ -1,8 +1,18 @@
 import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi';
-import { awalBayar, awalShift, bisaTutup, daftarSyarat, diterapkan, galatBayar, galatBukaShift, galatTutupShift, kembalian, selisihShift } from './keadaan-kasir';
+import { awalBayar, awalShift, bisaTutup, daftarSyarat, diterapkan, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, kembalian, selisihShift } from './keadaan-kasir';
 
-const gambaran = (syarat: Partial<{ tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean }> = {}) =>
-  ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ...syarat } }) as never;
+const gambaran = (syarat: Partial<{ tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean; ditanggung_jkn: boolean }> = {}) =>
+  ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ditanggung_jkn: false, ...syarat } }) as never;
+
+describe('tambah item dari tarif', () => {
+  it('tarif wajib dipilih dan jumlah bilangan bulat minimal 1', () => {
+    expect(galatTambahItem('', '1')).toBeTruthy();
+    expect(galatTambahItem('3', '0')).toBeTruthy();
+    expect(galatTambahItem('3', '1,5')).toBeTruthy();
+    expect(galatTambahItem('3', '')).toBeTruthy();
+    expect(galatTambahItem('3', '2')).toBeNull();
+  });
+});
 
 describe('pembayaran', () => {
   it('awal memakai sisa tagihan; jumlah wajib bilangan bulat positif dan metode sah', () => {
@@ -41,6 +51,9 @@ describe('syarat tutup kunjungan', () => {
     expect(bisaTutup(gambaran({ resep_diserahkan: false }), 'alasan')).toBe(false);
     expect(bisaTutup(gambaran({ lunas: false }), '')).toBe(false);
     expect(bisaTutup(gambaran({ lunas: false }), 'akan melunasi besok')).toBe(true);
+    // JKN: biaya diklaim ke BPJS, boleh ditutup tanpa pembayaran dan tanpa alasan; syarat wajib lain tetap berlaku.
+    expect(bisaTutup(gambaran({ lunas: false, ditanggung_jkn: true }), '')).toBe(true);
+    expect(bisaTutup(gambaran({ lunas: false, ditanggung_jkn: true, resep_diserahkan: false }), '')).toBe(false);
   });
 });
 

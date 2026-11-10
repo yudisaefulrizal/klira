@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KASIR, METODE_BAYAR } from '@klira/shared';
 import type { KasirKunjunganDto, MetodeBayar } from '@klira/shared';
-import { catatPembayaran, kasirKunjungan } from '../../api-klien/kasir';
+import { catatPembayaran, hapusItemTagihan, kasirKunjungan } from '../../api-klien/kasir';
 import { GalatApi } from '../../api-klien/klien';
 import { token } from '../../gaya/token';
 import { ModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap';
@@ -19,6 +19,8 @@ import type { KeadaanBayar } from './keadaan-kasir';
 import { KepalaPasien } from './kepala-pasien';
 import { rupiah } from './keadaan-order-lab';
 import { LengkapiHarga } from './lengkapi-harga';
+import { TambahItemTarif } from './tambah-item-tarif';
+import { Tombol } from '../../komponen/ui/tombol';
 
 type Props = { kunjunganId: number; onTutup: () => void; onSelesai: () => void };
 const B = KASIR.bayar;
@@ -39,7 +41,7 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   const muat = useCallback(async (sesuaikan = false) => {
     const h = await kasirKunjungan(kunjunganId);
     setG(h);
-    if (sesuaikan) setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 ? String(h.tagihan.sisa) : '' }));
+    if (sesuaikan) setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 && !h.syarat.ditanggung_jkn ? String(h.tagihan.sisa) : '' }));
     return h;
   }, [kunjunganId]);
 
@@ -48,6 +50,12 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   }, [muat]);
 
   const t = g?.tagihan;
+  /** Gambaran baru dari server (tambah/hapus item, lengkapi harga): jumlah bayar mengikuti sisa terbaru. */
+  const terapkan = (h: KasirKunjunganDto) => {
+    setG(h);
+    setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 && !h.syarat.ditanggung_jkn ? String(h.tagihan.sisa) : '' }));
+    setBerubah(true);
+  };
   const gb = galatBayar(bayar);
   const kemb = useMemo(() => (t ? kembalian(bayar, t.sisa) : 0), [bayar, t]);
 
@@ -79,21 +87,29 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
     });
   };
 
+  /** Pasien JKN tidak wajib membayar: tanpa jumlah diisi, tombol utama menjadi Selesai. */
+  const perluBayar = !!t && t.sisa > 0 && !(g?.syarat.ditanggung_jkn && !bayar.jumlah.trim());
+
   const langkah: LangkahModal[] = [
     {
       id: 'tagihan', judul: B.langkah.tagihan, selesai: !!t && t.status_tagihan === 'lengkap',
       isi: !t ? <span style={{ color: token.warna.teksRedup }}>{KASIR.memuat}</span> : (
         <Kolom>
           <h3 style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{B.tagihanJudul}</h3>
+          {g?.syarat.ditanggung_jkn && <Peringatan nada="biru"><strong>{KASIR.jkn.ditanggung}.</strong> {KASIR.jkn.petunjukBayar}</Peringatan>}
           {t.status_tagihan !== 'lengkap' && <Peringatan>{B.tagihanBelum}</Peringatan>}
-          {g && t.status_tagihan !== 'lengkap' && (
-            <LengkapiHarga kunjunganId={kunjunganId} gambaran={g} onUbah={(h) => { setG(h); setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 ? String(h.tagihan.sisa) : '' })); setBerubah(true); }} />
-          )}
+          {g && t.status_tagihan !== 'lengkap' && <LengkapiHarga kunjunganId={kunjunganId} gambaran={g} onUbah={terapkan} />}
           <Bingkai halus padding="tanpa" arah="kolom" jarak="tanpa" style={{ overflow: 'hidden' }}>
             <Tabel kolom={KOLOM_TAGIHAN} label={B.tagihanJudul}>
               {t.item.map((i) => (
                 <BarisTabel key={i.id}>
-                  <SelTabel>{i.nama}</SelTabel>
+                  <SelTabel>
+                    {i.nama}
+                    {i.manual && <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}> · {KASIR.tambah.manual}</span>}
+                    {i.manual && g?.kunjungan.tahap_layanan !== 'ditutup' && (
+                      <> · <Tombol type="button" varian="teks" disabled={memproses} aria-label={`${KASIR.tambah.hapus} ${i.nama}`} onClick={() => void jalankan(async () => terapkan(await hapusItemTagihan(kunjunganId, i.id)))}>{KASIR.tambah.hapus}</Tombol></>
+                    )}
+                  </SelTabel>
                   <SelTabel>{i.jumlah}</SelTabel>
                   <SelTabel>{i.harga === null ? '-' : rupiah(i.harga)}</SelTabel>
                   <SelTabel style={{ textAlign: 'right' }}>{i.harga === null ? '-' : rupiah(i.harga * i.jumlah)}</SelTabel>
@@ -101,14 +117,16 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
               ))}
             </Tabel>
           </Bingkai>
-          <DaftarRingkasan bagian={[{ judul: '', baris: [{ label: B.total, nilai: rupiah(t.total) }, { label: B.dibayar, nilai: rupiah(t.dibayar) }, { label: B.sisa, nilai: t.sisa === 0 ? B.lunas : rupiah(t.sisa) }] }]} />
+          <DaftarRingkasan bagian={[{ judul: '', baris: [{ label: B.total, nilai: rupiah(t.total) }, { label: B.dibayar, nilai: rupiah(t.dibayar) }, { label: B.sisa, nilai: t.sisa === 0 ? B.lunas : g?.syarat.ditanggung_jkn ? `${rupiah(t.sisa)} (${KASIR.jkn.ditanggung})` : rupiah(t.sisa) }] }]} />
+          {g && <TambahItemTarif kunjunganId={kunjunganId} gambaran={g} onUbah={terapkan} />}
         </Kolom>
       ),
     },
     {
-      id: 'pembayaran', judul: B.langkah.pembayaran, selesai: !!t && t.sisa === 0 && t.total > 0,
+      id: 'pembayaran', judul: B.langkah.pembayaran, selesai: !!t && t.total > 0 && (t.sisa === 0 || !!g?.syarat.ditanggung_jkn),
       isi: !t || !g ? <span style={{ color: token.warna.teksRedup }}>{KASIR.memuat}</span> : (
         <Kolom>
+          {g.syarat.ditanggung_jkn && <Peringatan nada="biru"><strong>{KASIR.jkn.ditanggung}.</strong> {KASIR.jkn.petunjukBayar}</Peringatan>}
           {!g.shift_terbuka && <Peringatan>{B.tanpaShift}</Peringatan>}
           {t.status_tagihan !== 'lengkap' && <Peringatan>{B.tagihanBelum}</Peringatan>}
           <h3 style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{B.pembayaranJudul}</h3>
@@ -143,9 +161,9 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
       catatan={info ? <Peringatan nada="biru">{info}</Peringatan> : undefined}
       galat={galat}
       onTutup={() => { if (!memproses) (berubah ? onSelesai : onTutup)(); }}
-      labelKirim={t && t.sisa > 0 ? (memproses ? B.mencatat : B.catat) : B.selesai}
-      kirimNonaktif={memproses || (!!t && t.sisa > 0 && (!g?.shift_terbuka || t.status_tagihan !== 'lengkap')) || !t}
-      onKirim={t && t.sisa > 0 ? catat : (berubah ? onSelesai : onTutup)}
+      labelKirim={perluBayar ? (memproses ? B.mencatat : B.catat) : B.selesai}
+      kirimNonaktif={memproses || (perluBayar && (!g?.shift_terbuka || t?.status_tagihan !== 'lengkap')) || !t}
+      onKirim={perluBayar ? catat : (berubah ? onSelesai : onTutup)}
     />
   );
 }

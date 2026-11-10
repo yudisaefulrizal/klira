@@ -20,11 +20,14 @@ export function buatLayananKasir({ repo, farmasi, audit }: { repo: RepositoriKas
   async function gambaran(p: Pelaku, kunjunganId: number): Promise<KasirKunjunganDto | null> {
     const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
     if (!k) return null;
-    const [tagihan, resep, shift] = await Promise.all([repo.tagihan(p.fasyankes_id, kunjunganId), farmasi.resepKunjungan(p.fasyankes_id, kunjunganId), repo.shiftTerbuka(p.fasyankes_id, p.id)]);
+    const [tagihan, resep, shift, tarif] = await Promise.all([
+      repo.tagihan(p.fasyankes_id, kunjunganId), farmasi.resepKunjungan(p.fasyankes_id, kunjunganId), repo.shiftTerbuka(p.fasyankes_id, p.id), repo.tarifAktif(p.fasyankes_id, k.cara_pembayaran),
+    ]);
     return {
-      kunjungan: k, tagihan, resep, shift_terbuka: !!shift,
+      kunjungan: k, tagihan, resep, shift_terbuka: !!shift, tarif,
       syarat: {
         tahap_kasir: k.tahap_layanan === 'kasir', tagihan_lengkap: tagihan.status_tagihan === 'lengkap', resep_diserahkan: resep.every((r: ResepDto) => r.status === 'diserahkan'), lunas: tagihan.sisa === 0,
+        ditanggung_jkn: k.cara_pembayaran === 'jkn',
       },
     };
   }
@@ -84,16 +87,37 @@ export function buatLayananKasir({ repo, farmasi, audit }: { repo: RepositoriKas
       return { ok: true, data: (await gambaran(p, kunjunganId))! };
     },
 
+    async tambahItem(p: Pelaku, kunjunganId: number, m: { tarif_id: number; jumlah: number }, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
+      const h = await repo.tambahItem(p.fasyankes_id, p.id, kunjunganId, m.tarif_id, m.jumlah);
+      if (!h.ok) return h.sebab === 'terkunci' ? gagal('konflik', G.tagihanTerkunci) : gagal('tidak_valid', G.tarifTidakAda, 'tarif_id');
+      await catat(p, 'input', 'item_tagihan', kunjunganId, `Item tagihan ditambah kasir: ${h.nama} x${h.jumlah} @ ${rp(h.harga)}`, alamat);
+      return { ok: true, data: (await gambaran(p, kunjunganId))! };
+    },
+
+    async hapusItem(p: Pelaku, kunjunganId: number, itemId: number, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
+      const h = await repo.hapusItem(p.fasyankes_id, kunjunganId, itemId);
+      if (!h.ok) {
+        if (h.sebab === 'tidak_ada') return gagal('tidak_ditemukan', G.itemTidakAda);
+        return gagal('konflik', { bukan_manual: G.itemBukanManual, terkunci: G.tagihanTerkunci, melebihi_bayar: G.hapusMelebihiBayar }[h.sebab]);
+      }
+      await catat(p, 'perbaikan', 'item_tagihan', itemId, `Item tagihan tambahan dihapus: ${h.nama} (kunjungan ${kunjunganId})`, alamat);
+      return { ok: true, data: (await gambaran(p, kunjunganId))! };
+    },
+
     async tutup(p: Pelaku, kunjunganId: number, m: TutupKunjunganMasukan, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
       if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-      const h = await repo.tutup(p.fasyankes_id, kunjunganId, m.alasan?.trim() || null);
+      const h = await repo.tutup(p.fasyankes_id, kunjunganId, m.alasan?.trim() || null, KASIR.jkn.alasan);
       if (!h.ok) {
         const pesan = { tahap_salah: G.tahapSalah, tagihan_belum_lengkap: G.tagihanBelumLengkap, resep_belum: G.resepBelumDiserahkan, belum_lunas_alasan: G.belumLunasAlasan, bentrok: G.bentrok }[h.sebab];
         return gagal('konflik', pesan, h.sebab === 'belum_lunas_alasan' ? 'alasan' : undefined);
       }
       kabarkanLayarPanggilan(p.fasyankes_id);
-      await catat(p, 'perbaikan', 'kunjungan', kunjunganId, `Kunjungan ditutup${m.alasan?.trim() ? ` belum lunas (${m.alasan.trim()})` : ''}`, alamat);
-      return { ok: true, data: (await gambaran(p, kunjunganId))! };
+      const g = (await gambaran(p, kunjunganId))!;
+      const alasanTutup = g.tagihan.alasan_tutup_belum_lunas;
+      await catat(p, 'perbaikan', 'kunjungan', kunjunganId, `Kunjungan ditutup${alasanTutup ? ` belum lunas (${alasanTutup})` : ''}`, alamat);
+      return { ok: true, data: g };
     },
   };
 }

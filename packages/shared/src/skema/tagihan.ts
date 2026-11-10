@@ -4,6 +4,8 @@ import type { StatusPembayaran, StatusTagihan } from '../status';
 export type ItemTagihanDto = {
   id: number; jenis: 'konsultasi' | 'tindakan' | 'lab' | 'kamar' | 'obat'; kode: string; nama: string; jumlah: number; harga: number | null; order_penunjang_id: number | null;
   item_resep_id?: number | null;
+  /** Ditambahkan kasir dari tarif; hanya item ini yang bisa dihapus. */
+  manual?: boolean;
 };
 export type TagihanDto = {
   id: number | null;

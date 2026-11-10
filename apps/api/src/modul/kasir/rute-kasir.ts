@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
-import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHargaMasukan, tutupKunjunganMasukan, tutupShiftMasukan } from '@klira/shared';
+import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHargaMasukan, tambahItemTarifMasukan, tutupKunjunganMasukan, tutupShiftMasukan } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import { wajibMasuk } from '../../middleware/auth';
 import { alamatDari } from '../../middleware/audit';
@@ -12,7 +12,7 @@ import type { LayananKasir } from './layanan-kasir';
 
 /**
  * Rute kasir (3.1, 3.3, 4.5): shift dan rekap, pembayaran, tutup kunjungan. Izin fitur `kasir` (lihat, input, perbaikan);
- * shift dimiliki akun yang membuka. Semua dibatasi pada fasyankes akun; tidak ada rute hapus.
+ * shift dimiliki akun yang membuka. Semua dibatasi pada fasyankes akun; satu-satunya hapus adalah item tambahan kasir sebelum tutup.
  */
 export function buatRuteKasirLengkap(layananAkses: LayananAkses, layananIzin: LayananIzin, layanan: LayananKasir): Router {
   const rute = Router();
@@ -62,6 +62,19 @@ export function buatRuteKasirLengkap(layananAkses: LayananAkses, layananIzin: La
     const m = lengkapiHargaMasukan.safeParse(req.body ?? {});
     if (!m.success) return galatValidasi(res, m.error);
     kirimHasil(res, await layanan.lengkapiHarga(pengguna(res), id.data.id, itemId.data.id, m.data, alamatDari(req)));
+  }));
+  rute.post('/kunjungan/:id/tagihan/item', masuk, wajibIzin('kasir', 'input'), bungkus(async (req, res) => {
+    const id = idParam.safeParse(req.params);
+    if (!id.success) return tidakAda(res);
+    const m = tambahItemTarifMasukan.safeParse(req.body ?? {});
+    if (!m.success) return galatValidasi(res, m.error);
+    kirimHasil(res, await layanan.tambahItem(pengguna(res), id.data.id, m.data, alamatDari(req)), 201);
+  }));
+  rute.delete('/kunjungan/:id/tagihan/item/:itemId', masuk, wajibIzin('kasir', 'perbaikan'), bungkus(async (req, res) => {
+    const id = idParam.safeParse(req.params);
+    const itemId = idParam.safeParse({ id: req.params.itemId });
+    if (!id.success || !itemId.success) return tidakAda(res);
+    kirimHasil(res, await layanan.hapusItem(pengguna(res), id.data.id, itemId.data.id, alamatDari(req)));
   }));
   rute.post('/kunjungan/:id/tutup', masuk, wajibIzin('kasir', 'perbaikan'), bungkus(async (req, res) => {
     const id = idParam.safeParse(req.params);

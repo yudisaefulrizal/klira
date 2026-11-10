@@ -1,4 +1,4 @@
-import { bayarMasukan, bukaShiftMasukan, KASIR, tutupShiftMasukan } from '@klira/shared';
+import { bayarMasukan, bukaShiftMasukan, KASIR, tambahItemTarifMasukan, tutupShiftMasukan } from '@klira/shared';
 import type { KasirKunjunganDto, MetodeBayar } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
@@ -24,6 +24,13 @@ export function diterapkan(k: KeadaanBayar, sisa: number): number {
   return Number.isInteger(j) && j > 0 ? Math.min(j, sisa) : 0;
 }
 
+// ---- Tambah item dari tarif ----
+/** Pesan galat pertama isian tambah item (tarif dan jumlah), atau null bila sah. */
+export function galatTambahItem(tarifId: string, jumlah: string): string | null {
+  const h = tambahItemTarifMasukan.safeParse({ tarif_id: tarifId ? Number(tarifId) : undefined, jumlah });
+  return h.success ? null : h.error.issues[0]?.message ?? KASIR.galat.pilihTarif;
+}
+
 // ---- Syarat tutup ----
 /** Daftar syarat tutup kunjungan dari gambaran kasir; `lunas` bukan penghalang (butuh alasan), sisanya wajib. */
 export function daftarSyarat(g: KasirKunjunganDto): { kunci: 'tahap' | 'tagihan' | 'resep' | 'lunas'; ok: boolean; wajib: boolean }[] {
@@ -34,8 +41,9 @@ export function daftarSyarat(g: KasirKunjunganDto): { kunci: 'tahap' | 'tagihan'
     { kunci: 'lunas', ok: g.syarat.lunas, wajib: false },
   ];
 }
+/** Belum lunas butuh alasan, kecuali kunjungan JKN (biaya diklaim ke BPJS; alasan dicatat otomatis oleh server). */
 export const bisaTutup = (g: KasirKunjunganDto, alasan: string): boolean =>
-  daftarSyarat(g).every((s) => s.ok || !s.wajib) && (g.syarat.lunas || alasan.trim().length > 0);
+  daftarSyarat(g).every((s) => s.ok || !s.wajib) && (g.syarat.lunas || g.syarat.ditanggung_jkn || alasan.trim().length > 0);
 
 // ---- Shift ----
 export type KeadaanShift = { kas: string; alasan: string };

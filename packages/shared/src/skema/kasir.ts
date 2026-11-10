@@ -27,6 +27,12 @@ export type TutupKunjunganMasukan = z.infer<typeof tutupKunjunganMasukan>;
 
 /** Melengkapi harga item tagihan yang belum berharga (mis. pemeriksaan tanpa tarif). Harga yang sudah terisi tidak dapat diubah lewat jalur ini. */
 export const lengkapiHargaMasukan = z.object({ harga: bulat(100_000_000) });
+
+/** Kasir menambah item tagihan dari master tarif (konsultasi, visite, tindakan, kamar, lab); harga mengikuti tarif dan cara pembayaran. */
+export const tambahItemTarifMasukan = z.object({ tarif_id: z.number({ error: KASIR.galat.pilihTarif }).int().positive(KASIR.galat.pilihTarif), jumlah: bulat(1000, 1) });
+export type TambahItemTarifMasukan = z.input<typeof tambahItemTarifMasukan>;
+/** Tarif yang bisa ditambahkan kasir; harga sudah disesuaikan dengan cara pembayaran kunjungan. */
+export type TarifKasirDto = { id: number; kode: string; nama: string; jenis: 'konsultasi' | 'tindakan' | 'lab' | 'kamar'; harga: number };
 export type LengkapiHargaMasukan = z.input<typeof lengkapiHargaMasukan>;
 
 export const bukaShiftMasukan = z.object({ kas_awal: bulat(1_000_000_000) });
@@ -43,13 +49,16 @@ export type ShiftDto = {
 export type RekapHarianDto = { tanggal: string; per_metode: Record<MetodeBayar, number>; total: number; jumlah_pembayaran: number; shift: ShiftDto[] };
 export type ShiftSayaDto = { terbuka: ShiftDto | null };
 
-export type SyaratTutupDto = { tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean };
+/** `ditanggung_jkn`: kunjungan JKN boleh ditutup tanpa pembayaran dan tanpa alasan (biaya diklaim ke BPJS). */
+export type SyaratTutupDto = { tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean; ditanggung_jkn: boolean };
 /** Gambaran kasir satu kunjungan untuk pembayaran dan syarat tutup kunjungan; resep hanya sebagai status pendamping. */
 export type KasirKunjunganDto = {
   kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
   tagihan: TagihanDto & { pembayaran: PembayaranDto[]; dibayar: number; sisa: number };
   resep: ResepDto[];
   shift_terbuka: boolean;
+  /** Tarif aktif yang bisa ditambahkan ke tagihan (tanpa obat: obat lewat resep agar stok tercatat). */
+  tarif: TarifKasirDto[];
   syarat: SyaratTutupDto;
 };
 export type HasilSerahTerimaDto = { resep: ResepDto[]; kekurangan: { master_obat_id: number; nama: string; butuh: number; tersedia: number }[] };

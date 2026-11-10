@@ -1129,6 +1129,8 @@ model ItemTagihan {
   harga              Int?
   order_penunjang_id Int?       @unique
   item_resep_id      Int?       @unique
+  /// Ditambahkan kasir dari master tarif (konsultasi, visite, tindakan, kamar); hanya item ini yang boleh dihapus sebelum tutup.
+  manual             Boolean    @default(false)
   dibuat_oleh        Int?
   dibuat_pada        DateTime   @default(now()) @db.DateTime(3)
 

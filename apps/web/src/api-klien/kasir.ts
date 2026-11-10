@@ -8,4 +8,6 @@ export const rekapHarian = (tanggal?: string) => panggilApi<RekapHarianDto>('GET
 export const kasirKunjungan = (kunjunganId: number) => panggilApi<KasirKunjunganDto>('GET', `/kunjungan/${kunjunganId}/kasir`);
 export const catatPembayaran = (kunjunganId: number, m: Record<string, unknown>) => panggilApi<HasilBayarDto>('POST', `/kunjungan/${kunjunganId}/pembayaran`, m);
 export const tutupKunjungan = (kunjunganId: number, m: Record<string, unknown> = {}) => panggilApi<KasirKunjunganDto>('POST', `/kunjungan/${kunjunganId}/tutup`, m);
+export const tambahItemTagihan = (kunjunganId: number, tarif_id: number, jumlah: number) => panggilApi<KasirKunjunganDto>('POST', `/kunjungan/${kunjunganId}/tagihan/item`, { tarif_id, jumlah });
+export const hapusItemTagihan = (kunjunganId: number, itemId: number) => panggilApi<KasirKunjunganDto>('DELETE', `/kunjungan/${kunjunganId}/tagihan/item/${itemId}`);
 export const lengkapiHargaItem = (kunjunganId: number, itemId: number, harga: string) => panggilApi<KasirKunjunganDto>('POST', `/kunjungan/${kunjunganId}/tagihan/item/${itemId}/harga`, { harga });
