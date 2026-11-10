@@ -10,21 +10,19 @@ const bilanganBulat = (maks: number) =>
   z.preprocess((v) => (v === '' || v === null ? undefined : v), z.coerce.number({ error: FARMASI.galat.angka }).int(FARMASI.galat.angka).min(0, FARMASI.galat.negatif).max(maks));
 
 export const NILAI_JENIS_MUTASI = ['terima', 'keluar', 'koreksi'] as const;
-export const TINGKAT_KFA = [91, 92, 93, 94] as const;
 /** Ambang stok menipis (satuan) dan kedaluwarsa dekat (hari) untuk penanda di tabel. */
 export const AMBANG_STOK_MENIPIS = 50;
 export const AMBANG_HARI_KEDALUWARSA = 90;
 
-/** Pencarian Referensi KFA (baca-saja): minimal dua huruf, dibatasi hasilnya. */
+/** Pencarian katalog KFA (baca-saja): minimal dua huruf, dibatasi hasilnya. */
 export const filterKfa = z.object({
   cari: z.string().trim().min(2, FARMASI.galat.cariPendek).max(100),
-  tingkat: z.preprocess(kosongJadiTiada, z.coerce.number().int().refine((n) => (TINGKAT_KFA as readonly number[]).includes(n)).optional()),
   batas: z.coerce.number().int().min(1).max(50).default(20),
 });
 export type FilterKfa = z.infer<typeof filterKfa>;
+/** Satu produk KFA (tingkat 93). `lokal` bila berasal dari tambahan/ubahan klinik, bukan katalog resmi. */
 export type ReferensiKfaDto = {
-  id: number; kode: string; tingkat: number; nama: string; bentuk_sediaan: string | null; rute: string | null; satuan: string | null; kekuatan: string | null;
-  nomor_izin_edar: string | null; produsen: string | null; generik: boolean; status: string; contoh: boolean;
+  kode: string; nama: string; bentuk_sediaan: string | null; satuan: string | null; status: string; lokal: boolean;
 };
 
 export const filterMasterObat = z.object({
@@ -37,7 +35,7 @@ export type FilterMasterObat = z.infer<typeof filterMasterObat>;
 
 /** Master obat klinik: satu kode KFA per baris (tanpa obat ketik bebas), satuan dan harga milik klinik. */
 export const masterObatMasukan = z.object({
-  kfa_id: idPositif,
+  kfa_kode: teksWajib(30),
   nama_tampil: teksWajib(200),
   satuan: teksWajib(50),
   harga: bilanganBulat(100_000_000),
@@ -52,7 +50,7 @@ export const ubahMasterObatMasukan = z
 export type UbahMasterObatMasukan = z.infer<typeof ubahMasterObatMasukan>;
 
 export type MasterObatDto = {
-  id: number; kfa_id: number; kfa_kode: string; kfa_nama: string; kfa_tingkat: number; kfa_contoh: boolean; nama_tampil: string; satuan: string; harga: number; aktif: boolean;
+  id: number; kfa_kode: string; kfa_nama: string; nama_tampil: string; satuan: string; harga: number; aktif: boolean;
   bentuk_sediaan?: string | null; rute?: string | null;
   stok_total: number; kedaluwarsa_terdekat: string | null; status_stok: StatusStok;
 };

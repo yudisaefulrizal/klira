@@ -99,7 +99,7 @@ export function DaftarMaster({ search, ubahAlamat, jenisDaftar }: { search: stri
       {subbagian.length > 1 && <Tab daftar={subbagian} aktif={jenis} label={MASTER.pilihJenis} onPilih={(j) => terapkan({ jenis: j }, true)} />}
       <Kartu id={`panel-${jenis}`} role={subbagian.length > 1 ? 'tabpanel' : undefined} aria-labelledby={subbagian.length > 1 ? `tab-${jenis}` : undefined} style={{ padding: 0, overflow: 'hidden' }}>
         <Sebaris jarak="md" padding="md" bungkus sejajar="akhir">
-          <div style={{ fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{MASTER.jenis[jenis]}</div>
+          <div style={{ flexGrow: 1 }} />
           <Isian id="cari-master" label={MASTER.cari} type="search" value={cari} onChange={(e) => setCari(e.target.value)} />
           {def.punyaStatus && (
             <Pilihan

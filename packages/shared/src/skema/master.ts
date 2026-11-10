@@ -91,6 +91,8 @@ export type BidangMaster = {
   nilaiAwal?: string;
   /** Pilihan bernilai bilangan (mis. hari); dikirim sebagai angka. */
   numerik?: boolean;
+  /** Penjelasan singkat di bawah kolom untuk istilah teknis. */
+  petunjuk?: string;
 };
 export type KolomMaster = { kunci: string; label: string };
 export type DefinisiMaster = { bidang: readonly BidangMaster[]; kolom: readonly KolomMaster[]; punyaStatus: boolean };
@@ -98,11 +100,12 @@ export type DefinisiMaster = { bidang: readonly BidangMaster[]; kolom: readonly 
 const opsiDari = (peta: Record<string | number, string>): OpsiMasterDto[] => Object.entries(peta).map(([nilai, label]) => ({ nilai, label }));
 const B = MASTER.bidang;
 const K = MASTER.kolom;
+const P = MASTER.petunjuk;
 const bidangLokasi = (induk: BidangMaster[]): BidangMaster[] => [
   { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 },
   ...induk,
-  { kunci: 'status_operasional', label: B.status_operasional, tipe: 'pilihan', wajib: true, opsi: opsiDari(MASTER.operasional), nilaiAwal: 'O' },
-  { kunci: 'ihs_location_id', label: B.ihs_location_id, tipe: 'teks', maks: 100 },
+  { kunci: 'status_operasional', label: B.status_operasional, tipe: 'pilihan', wajib: true, opsi: opsiDari(MASTER.operasional), nilaiAwal: 'O', petunjuk: P.status_operasional },
+  { kunci: 'ihs_location_id', label: B.ihs_location_id, tipe: 'teks', maks: 100, petunjuk: P.ihs_location_id },
 ];
 
 export const DEFINISI_MASTER: Record<JenisMaster, DefinisiMaster> = {
@@ -113,21 +116,21 @@ export const DEFINISI_MASTER: Record<JenisMaster, DefinisiMaster> = {
   },
   ruang: {
     bidang: bidangLokasi([{ kunci: 'induk_id', label: B.induk_poli, tipe: 'rujukan', rujukan: 'poli' }]),
-    kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'induk_nama', label: K.induk }, { kunci: 'ihs_location_id', label: K.ihs }],
+    kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'induk_nama', label: K.indukPoli }, { kunci: 'ihs_location_id', label: K.ihs }],
     punyaStatus: true,
   },
   bed: {
     bidang: bidangLokasi([{ kunci: 'induk_id', label: B.induk_ruang, tipe: 'rujukan', rujukan: 'ruang', wajib: true }]),
-    kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'induk_nama', label: K.induk }, { kunci: 'ihs_location_id', label: K.ihs }],
+    kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'induk_nama', label: K.indukRuang }, { kunci: 'ihs_location_id', label: K.ihs }],
     punyaStatus: true,
   },
   praktisi: {
     bidang: [
       { kunci: 'pengguna_id', label: B.pengguna_id, tipe: 'rujukan', rujukan: 'pengguna-tanpa-profil', wajib: true, hanyaTambah: true },
       { kunci: 'profesi', label: B.profesi, tipe: 'teks', wajib: true, maks: 100 },
-      { kunci: 'nomor_sip', label: B.nomor_sip, tipe: 'teks', maks: 100 },
+      { kunci: 'nomor_sip', label: B.nomor_sip, tipe: 'teks', maks: 100, petunjuk: P.nomor_sip },
       { kunci: 'masa_berlaku_sip', label: B.masa_berlaku_sip, tipe: 'tanggal' },
-      { kunci: 'ihs_practitioner_id', label: B.ihs_practitioner_id, tipe: 'teks', maks: 100 },
+      { kunci: 'ihs_practitioner_id', label: B.ihs_practitioner_id, tipe: 'teks', maks: 100, petunjuk: P.ihs_practitioner_id },
     ],
     kolom: [{ kunci: 'pengguna_nama', label: K.praktisi }, { kunci: 'profesi', label: K.profesi }, { kunci: 'nomor_sip', label: K.sip }, { kunci: 'masa_berlaku_sip', label: K.berlaku }, { kunci: 'ihs_practitioner_id', label: K.ihs }],
     punyaStatus: true,
@@ -151,8 +154,8 @@ export const DEFINISI_MASTER: Record<JenisMaster, DefinisiMaster> = {
       { kunci: 'kode', label: B.kode, tipe: 'teks', wajib: true, maks: 50 },
       { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 },
       { kunci: 'jenis', label: B.jenis, tipe: 'pilihan', wajib: true, opsi: opsiDari(MASTER.jenisTarif), nilaiAwal: 'konsultasi' },
-      { kunci: 'harga_umum', label: B.harga_umum, tipe: 'angka', wajib: true },
-      { kunci: 'harga_jkn', label: B.harga_jkn, tipe: 'angka' },
+      { kunci: 'harga_umum', label: B.harga_umum, tipe: 'angka', wajib: true, petunjuk: P.perubahanHarga },
+      { kunci: 'harga_jkn', label: B.harga_jkn, tipe: 'angka', petunjuk: P.perubahanHarga },
     ],
     kolom: [{ kunci: 'kode', label: K.kode }, { kunci: 'nama', label: K.nama }, { kunci: 'jenis', label: K.jenis }, { kunci: 'harga_umum', label: K.hargaUmum }, { kunci: 'harga_jkn', label: K.hargaJkn }],
     punyaStatus: true,

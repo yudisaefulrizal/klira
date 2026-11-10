@@ -1,4 +1,4 @@
-import { FARMASI, KASIR } from '@klira/shared';
+import { FARMASI, KASIR, ringkasPerubahanHarga, rupiahTeks } from '@klira/shared';
 import type {
   HasilSerahTerimaDto, SerahTerimaMasukan, FilterKfa, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MasterObatMasukan, MutasiStokDto, MutasiStokMasukan, PenggunaSaya,
   ReferensiKfaDto, ResepDto, ResepMasukan, RiwayatObatDto, StokObatDto, TelaahMasukan, UbahMasterObatMasukan,
@@ -17,23 +17,25 @@ export function buatLayananFarmasi({ repo, audit }: DependensiFarmasi) {
     audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
 
   return {
-    cariKfa: (f: FilterKfa): Promise<ReferensiKfaDto[]> => repo.cariKfa(f),
+    cariKfa: (p: Pelaku, f: FilterKfa): Promise<ReferensiKfaDto[]> => repo.cariKfa(p.fasyankes_id, f),
     daftarMaster: (p: Pelaku, f: FilterMasterObat): Promise<HalamanMasterObatDto> => repo.daftarMaster(p.fasyankes_id, f),
 
     async buatMaster(p: Pelaku, m: MasterObatMasukan, alamat?: string): Promise<Hasil<MasterObatDto>> {
-      const k = await repo.kfa(m.kfa_id);
-      if (!k) return gagal('tidak_valid', G.kfaTidakAda, 'kfa_id');
-      if (k.status !== 'aktif') return gagal('tidak_valid', G.kfaTidakAktif, 'kfa_id');
-      const hasil = await repo.buatMaster(p.fasyankes_id, p.id, m);
-      if (hasil === 'duplikat') return gagal('konflik', G.obatTertaut, 'kfa_id');
-      await catat(p, 'input', 'master_obat', hasil.id, `Obat ${hasil.nama_tampil} (KFA ${hasil.kfa_kode}) ditambahkan ke master`, alamat);
+      const k = await repo.kfa(p.fasyankes_id, m.kfa_kode);
+      if (!k) return gagal('tidak_valid', G.kfaTidakAda, 'kfa_kode');
+      if (k.status !== 'aktif') return gagal('tidak_valid', G.kfaTidakAktif, 'kfa_kode');
+      const hasil = await repo.buatMaster(p.fasyankes_id, p.id, m, k);
+      if (hasil === 'duplikat') return gagal('konflik', G.obatTertaut, 'kfa_kode');
+      await catat(p, 'input', 'master_obat', hasil.id, `Obat ${hasil.nama_tampil} (KFA ${hasil.kfa_kode}) ditambahkan ke master, harga ${rupiahTeks(hasil.harga)}`, alamat);
       return { ok: true, data: hasil };
     },
 
     async ubahMaster(p: Pelaku, id: number, m: UbahMasterObatMasukan, alamat?: string): Promise<Hasil<MasterObatDto>> {
+      const sebelum = await repo.master(p.fasyankes_id, id);
       const hasil = await repo.ubahMaster(p.fasyankes_id, id, m);
       if (!hasil) return gagal('tidak_ditemukan', G.obatTidakAda);
-      await catat(p, 'perbaikan', 'master_obat', id, `Master obat ${hasil.nama_tampil} diubah (${Object.keys(m).join(', ')})`, alamat);
+      const harga = sebelum ? ringkasPerubahanHarga([['harga', sebelum.harga, hasil.harga]]) : null;
+      await catat(p, 'perbaikan', 'master_obat', id, harga ? `Harga obat diubah (${harga}): ${hasil.nama_tampil}` : `Master obat ${hasil.nama_tampil} diubah (${Object.keys(m).join(', ')})`, alamat);
       return { ok: true, data: hasil };
     },
 

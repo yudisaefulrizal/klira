@@ -12,7 +12,7 @@ export function buatRuteInstagramPublik(akses: LayananAkses) {
     let result = 'gagal';
     try { result = await selesaikanLogin(req, akses); } catch { /* Callback must never expose tokens, codes or provider response bodies. */ }
     res.setHeader('Cache-Control', 'no-store'); res.setHeader('Referrer-Policy', 'no-referrer');
-    res.redirect(302, `/pengaturan?tab=instagram&instagram=${encodeURIComponent(result)}`);
+    res.redirect(302, `/pesan?kanal=instagram&instagram=${encodeURIComponent(result)}`);
   });
   r.get('/webhook/instagram', (req, res) => {
     const token = process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN;

@@ -260,7 +260,7 @@ export function buatRuteWhatsapp(akses: LayananAkses, izin: LayananIzin) {
         koneksi.status !== 'terhubung' ||
         !tersedia(koneksi.detak)
       )
-        return tolak(res, 'WhatsApp belum terhubung. Hubungkan melalui Pengaturan → WhatsApp.', 409);
+        return tolak(res, 'WhatsApp belum terhubung. Hubungkan melalui menu Pesan → WhatsApp.', 409);
       const { teks, media } = hasil.data;
       if (
         media &&

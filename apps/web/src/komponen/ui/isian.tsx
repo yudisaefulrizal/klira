@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes } from 'react';
 import { token } from '../../gaya/token';
+import { InfoBantuan } from './info-bantuan';
 
 /** Gaya dasar kontrol formulir; dipakai bersama oleh Isian dan Pilihan. */
 export const gayaKontrol = {
@@ -13,7 +14,7 @@ export const gayaKontrol = {
   fontSize: token.huruf.ukuran.dasar,
 } as const;
 
-type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; galat?: string };
+type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; id: string; galat?: string; /** Penjelasan istilah teknis; tampil sebagai ikon info di samping label. */ petunjuk?: string };
 
 /** Pesan galat bidang (di bawah kontrol); dipakai bersama Isian dan Pilihan. */
 export function PesanGalat({ id, children }: { id: string; children: string }) {
@@ -24,12 +25,15 @@ export function PesanGalat({ id, children }: { id: string; children: string }) {
   );
 }
 
-export function Isian({ label, id, style, galat, ...sisa }: Props) {
+export function Isian({ label, id, style, galat, petunjuk, ...sisa }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
-      <label htmlFor={id} style={{ fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang }}>
-        {label}
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.xs }}>
+        <label htmlFor={id} style={{ fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang }}>
+          {label}
+        </label>
+        {petunjuk && <InfoBantuan label={label}>{petunjuk}</InfoBantuan>}
+      </div>
       <input
         id={id}
         style={{ ...gayaKontrol, ...(galat ? { borderColor: token.warna.status.merah.teks } : {}), ...style }}

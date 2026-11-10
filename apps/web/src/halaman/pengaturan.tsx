@@ -1,59 +1,72 @@
 import { useEffect } from 'react';
-import { PENGGUNA } from '@klira/shared';
 import { Tab } from '../komponen/ui/tab';
 import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab';
 import { useNavigasi } from '../util/navigasi';
-import { tabPengaturanDiizinkan } from '../util/tab-pengaturan';
-import type { IdTabPengaturan } from '../util/tab-pengaturan';
-import { TabAudit } from './pengaturan/tab-audit';
+import { HALAMAN_PENGATURAN, tabDiizinkan } from '../util/tab-pengaturan';
+import type { IdTabAkses, IdTabKlinik } from '../util/tab-pengaturan';
 import { TabJenisAkun } from './pengaturan/tab-jenis-akun';
-import { TabMaster } from './pengaturan/tab-master';
 import { TabProfil } from './pengaturan/tab-profil';
+import { TabBackup } from './pengaturan/tab-backup';
 import { TabKeamanan } from './pengaturan/tab-keamanan';
 import { TabPengguna } from './pengaturan/tab-pengguna';
 import { TabPeringatan } from './pengaturan/tab-peringatan';
 import { Sebaris } from '../komponen/ui/susunan';
 
-const HALAMAN = 'pengaturan';
 const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
 
-/** Halaman Pengaturan (3.1): tab dari alamat (?tab=), jika tidak ada dipakai tab terakhir (5.1h). */
-export function HalamanPengaturan() {
-  const { pengguna } = usePengguna();
-  const { search, ganti } = useNavigasi();
-  const tabBoleh = pengguna ? tabPengaturanDiizinkan(pengguna) : [];
-  const ids = tabBoleh.map((t) => t.id);
+/** Rangka halaman bertab: tab dari alamat (?tab=), jika tidak ada dipakai tab terakhir (5.1h). */
+function useTabPengaturan<T extends string>(kunci: 'akses' | 'klinik', daftar: readonly { id: T; label: string }[]) {
+  const { search, path, ganti } = useNavigasi();
+  const ids = daftar.map((t) => t.id);
   const dariAlamat = new URLSearchParams(search).get('tab');
-  const aktif: IdTabPengaturan | undefined = ids.length ? pilihTab(ids, dariAlamat, bacaTabTerakhir(HALAMAN, ids, simpanan())) : undefined;
-
+  const aktif: T | undefined = ids.length ? pilihTab(ids, dariAlamat, bacaTabTerakhir(kunci, ids, simpanan())) : undefined;
   useEffect(() => {
-    if (dariAlamat === 'instagram' || dariAlamat === 'whatsapp') {
-      const hasil = new URLSearchParams(search).get('instagram');
-      ganti(`/pesan?kanal=${dariAlamat}${hasil ? `&instagram=${encodeURIComponent(hasil)}` : ''}`);
-      return;
-    }
     if (!aktif) return;
-    simpanTabTerakhir(HALAMAN, aktif, simpanan());
-    if (dariAlamat !== aktif) ganti(`/${HALAMAN}?tab=${aktif}`);
-  }, [aktif, dariAlamat, ganti, search]);
+    simpanTabTerakhir(kunci, aktif, simpanan());
+    if (dariAlamat !== aktif) ganti(`${path}?tab=${aktif}`);
+  }, [aktif, dariAlamat, ganti, kunci, path]);
+  return { aktif, search, dariAlamat, ubahAlamat: (q: string) => ganti(`${path}${q}`), pilih: (id: T) => ganti(`${path}?tab=${id}`) };
+}
 
-  const ubahAlamat = (q: string) => ganti(`/${HALAMAN}${q}`);
+function Kepala({ judul, children }: { judul: string; children?: React.ReactNode }) {
+  return (
+    <Sebaris tag="header" jarak="md" bungkus>
+      <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{judul}</h1>
+      {children}
+    </Sebaris>
+  );
+}
 
+/** Akses dan keamanan: pengguna, jenis akun, daftar peringatan izin, dan keamanan. */
+export function HalamanAkses() {
+  const { pengguna } = usePengguna();
+  const h = HALAMAN_PENGATURAN.akses;
+  const tabBoleh = pengguna ? tabDiizinkan(h.tab, pengguna) : [];
+  const { aktif, search, dariAlamat, ubahAlamat, pilih } = useTabPengaturan<IdTabAkses>('akses', tabBoleh);
   return (
     <>
-      <Sebaris tag="header" jarak="md" bungkus>
-        <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{PENGGUNA.judulHalaman}</h1>
-        {aktif && <Tab daftar={tabBoleh} aktif={aktif} label={PENGGUNA.judulHalaman} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />}
-      </Sebaris>
+      <Kepala judul={h.judul}>{aktif && <Tab daftar={tabBoleh} aktif={aktif} label={h.judul} onPilih={pilih} />}</Kepala>
       {aktif === 'pengguna' && <TabPengguna search={dariAlamat === 'pengguna' ? search : ''} ubahAlamat={ubahAlamat} />}
       {aktif === 'jenis-akun' && <TabJenisAkun />}
       {aktif === 'peringatan' && <TabPeringatan search={dariAlamat === 'peringatan' ? search : ''} ubahAlamat={ubahAlamat} />}
-      {aktif === 'master' && <TabMaster search={dariAlamat === 'master' ? search : ''} ubahAlamat={ubahAlamat} />}
-      {aktif === 'profil' && <TabProfil />}
       {aktif === 'keamanan' && <TabKeamanan />}
-      {aktif === 'audit' && <TabAudit search={dariAlamat === 'audit' ? search : ''} ubahAlamat={ubahAlamat} />}
+    </>
+  );
+}
+
+/** Pengaturan klinik: profil (termasuk website) dan backup. */
+export function HalamanPengaturanKlinik() {
+  const { pengguna } = usePengguna();
+  const h = HALAMAN_PENGATURAN.klinik;
+  const tabBoleh = pengguna ? tabDiizinkan(h.tab, pengguna) : [];
+  const { aktif, pilih } = useTabPengaturan<IdTabKlinik>('klinik', tabBoleh);
+  return (
+    <>
+      <Kepala judul={h.judul}>{aktif && <Tab daftar={tabBoleh} aktif={aktif} label={h.judul} onPilih={pilih} />}</Kepala>
+      {aktif === 'profil' && <TabProfil />}
+      {aktif === 'backup' && <TabBackup />}
     </>
   );
 }

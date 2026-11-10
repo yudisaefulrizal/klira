@@ -73,6 +73,17 @@ export function buatLayananKasir({ repo, farmasi, audit }: { repo: RepositoriKas
       return { ok: true, data: { pembayaran: h.pembayaran, tagihan: h.tagihan, kembalian: h.kembalian } };
     },
 
+    async lengkapiHarga(p: Pelaku, kunjunganId: number, itemId: number, m: { harga: number }, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
+      const h = await repo.lengkapiHarga(p.fasyankes_id, kunjunganId, itemId, m.harga);
+      if (!h.ok) {
+        if (h.sebab === 'tidak_ada') return gagal('tidak_ditemukan', G.itemTidakAda);
+        return gagal('konflik', h.sebab === 'terkunci' ? G.tagihanTerkunci : G.hargaSudahAda);
+      }
+      await catat(p, 'perbaikan', 'item_tagihan', itemId, `Harga item "${h.nama}" dilengkapi ${rp(m.harga)}`, alamat);
+      return { ok: true, data: (await gambaran(p, kunjunganId))! };
+    },
+
     async tutup(p: Pelaku, kunjunganId: number, m: TutupKunjunganMasukan, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
       if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
       const h = await repo.tutup(p.fasyankes_id, kunjunganId, m.alasan?.trim() || null);

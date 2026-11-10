@@ -9,7 +9,7 @@ const pelaku = { id: 7, fasyankes_id: 1 };
 const T = new Date('2026-10-25T03:00:00Z');
 
 const master = (id: number, p: Partial<MasterBaris> = {}): MasterBaris => ({
-  id, kode: `K${id}`, nama: `Pemeriksaan ${id}`, kode_loinc: '718-7', loinc_contoh: true, jenis_spesimen: 'Darah', satuan: 'g/dL', rujukan_min: 12, rujukan_maks: 16, rujukan_teks: '12 - 16 g/dL',
+  id, kode: `K${id}`, nama: `Pemeriksaan ${id}`, kode_loinc: '718-7', jenis_spesimen: 'Darah', satuan: 'g/dL', rujukan_min: 12, rujukan_maks: 16, rujukan_teks: '12 - 16 g/dL',
   aktif: true, tarif: null, tarif_layanan_id: null, ...p,
 });
 const order = (p: Partial<OrderBaris> = {}): OrderBaris => ({

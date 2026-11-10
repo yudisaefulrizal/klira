@@ -12,8 +12,7 @@
     "migrasi:terapkan": "node ../../skrip/dengan-env.mjs node ../../node_modules/prisma/build/index.js migrate deploy",
     "seed": "node ../../skrip/dengan-env.mjs node dist/seed/seed.js",
     "seed:wilayah": "node ../../skrip/dengan-env.mjs node dist/seed/wilayah.js",
-    "seed:terminologi": "node ../../skrip/dengan-env.mjs node dist/seed/terminologi.js",
-    "seed:kfa": "node ../../skrip/dengan-env.mjs node dist/seed/kfa.js"
+    "seed:terminologi": "node ../../skrip/dengan-env.mjs node dist/seed/terminologi.js"
   },
   "dependencies": {
     "@klira/shared": "*",

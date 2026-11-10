@@ -1,5 +1,4 @@
-import { KELOMPOK_MASTER } from '../util/lokasi-master';
-import { MASUK, NAVIGASI, halamanMenuDiizinkan } from '@klira/shared';
+import { HALAMAN_AWAL, MASUK, NAVIGASI, halamanMenuDiizinkan } from '@klira/shared';
 import { token } from '../gaya/token';
 import { usePengguna } from '../util/konteks-pengguna';
 import { Tombol } from './ui/tombol';
@@ -19,8 +18,7 @@ export function MenuSamping({
 }) {
   const { pengguna, keluar } = usePengguna();
   if (!pengguna) return null;
-  const halamanInduk = KELOMPOK_MASTER.find(k => k.path === aktif)?.induk ?? aktif;
-  const adaMenuInduk = halamanMenuDiizinkan(pengguna.fitur).some(h => h.path === halamanInduk);
+  const adaMenuInduk = halamanMenuDiizinkan(pengguna.fitur).some(h => h.path === aktif);
   return (
     <Kolom
       tag="nav"
@@ -39,7 +37,7 @@ export function MenuSamping({
         <LogoKlira />
       </Sebaris>
       {halamanMenuDiizinkan(pengguna.fitur).map((h) => {
-        const on = h.path === halamanInduk || (!adaMenuInduk && h.path === '/pengaturan');
+        const on = h.path === aktif || (!adaMenuInduk && h.path === HALAMAN_AWAL.berandaTugas);
         return (
           <a
             key={h.path}

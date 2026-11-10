@@ -1,5 +1,5 @@
 import type {
-  FilterRekapLab, HasilBuatOrderDto, HasilMasukan, MasterPemeriksaanDto, OrderLabKirim, OrderPenunjangDto, RekapLabDto, SpesimenMasukan, TarifLabDto,
+  FilterRekapLab, HasilBuatOrderDto, HasilMasukan, LoincDto, MasterPemeriksaanDto, OrderLabKirim, OrderPenunjangDto, RekapLabDto, SpesimenMasukan, TarifLabDto,
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
@@ -22,6 +22,7 @@ export function queryMaster(f: { cari?: string; aktif?: boolean }): string {
   return q.toString();
 }
 export const daftarMasterPemeriksaan = (f: { cari?: string; aktif?: boolean } = {}) => panggilApi<MasterPemeriksaanDto[]>('GET', `/penunjang/master?${queryMaster(f)}`);
+export const cariLoinc = (cari: string, batas?: number) => panggilApi<LoincDto[]>('GET', `/penunjang/loinc?${new URLSearchParams({ cari: cari.trim(), ...(batas ? { batas: String(batas) } : {}) }).toString()}`);
 export const tarifLab = () => panggilApi<TarifLabDto[]>('GET', '/penunjang/tarif');
 export const buatMasterPemeriksaan = (m: Record<string, unknown>) => panggilApi<MasterPemeriksaanDto>('POST', '/penunjang/master', m);
 export const ubahMasterPemeriksaan = (id: number, m: Record<string, unknown>) => panggilApi<MasterPemeriksaanDto>('PATCH', `/penunjang/master/${id}`, m);

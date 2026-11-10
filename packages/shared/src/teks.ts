@@ -1,5 +1,6 @@
 /** Teks antarmuka berulang (bagian 5.2f). */
 export const TOMBOL = {
+  penjelasan: 'Lihat penjelasan',
   simpan: 'Simpan',
   batal: 'Batal',
   kembali: 'Kembali',
@@ -372,6 +373,22 @@ export const KEAMANAN = {
   backupKosong: 'Belum ada riwayat backup.',
   backupGagalMuat: 'Riwayat backup gagal dimuat.',
   tanpaLokasi: '-',
+  sistemJudul: 'Cadangan dan reset sistem',
+  sistemPetunjuk: 'Unduh cadangan seluruh data secara berkala, terutama sebelum memulihkan atau mereset.',
+  unduh: 'Unduh backup sistem',
+  unggah: 'Unggah backup sistem',
+  reset: 'Reset sistem',
+  pulihJudul: 'Pulihkan dari backup?',
+  pulihPesan: (nama: string) => `Semua data saat ini akan dihapus dan diganti dengan isi "${nama}". Tindakan ini tidak bisa dibatalkan.`,
+  pulihYa: 'Hapus dan pulihkan',
+  pulihBerhasil: 'Backup berhasil dipulihkan. Silakan masuk kembali.',
+  pulihGagal: 'Backup gagal dipulihkan.',
+  resetJudul: 'Reset sistem?',
+  resetPesan: 'Semua data akan dihapus dan sistem kembali seperti baru. Ketik RESET untuk melanjutkan.',
+  resetYa: 'Reset sistem',
+  resetBerhasil: 'Sistem berhasil direset. Silakan masuk kembali.',
+  resetGagal: 'Sistem gagal direset.',
+  memproses: 'Memproses...',
   sebelumnya: 'Sebelumnya',
   berikutnya: 'Berikutnya',
 } as const;
@@ -406,7 +423,7 @@ export const MASTER = {
   aktifJudul: (nama: string) => `Aktifkan ${nama}?`,
   nonaktifPesan: 'Data tidak dihapus; tetap tersimpan untuk riwayat dan dapat diaktifkan kembali.',
   aktifPesan: 'Data akan dapat dipakai kembali.',
-  catatanPraktisi: 'Praktisi adalah pengguna yang sudah punya profil profesi. Akun dibuat di tab Pengguna dan akses.',
+  catatanPraktisi: 'Praktisi adalah pengguna yang sudah punya profil profesi. Akun dibuat di Akses dan keamanan → Pengguna dan akses.',
   catatanWilayah: 'Referensi wilayah dari berkas aplikasi, hanya baca. Pembaruan mengikuti versi referensi yang disertakan aplikasi.',
   contoh: 'Contoh',
   resmi: 'Impor',
@@ -439,8 +456,16 @@ export const MASTER = {
     berlaku_dari: 'Berlaku dari', berlaku_sampai: 'Berlaku sampai',
     kode: 'Kode', jenis: 'Jenis', harga_umum: 'Harga umum (Rp)', harga_jkn: 'Harga JKN (Rp, opsional)',
   },
+  /** Penjelasan singkat di bawah kolom isian master yang memakai istilah teknis. */
+  petunjuk: {
+    perubahanHarga: 'Perubahan harga hanya berlaku untuk layanan berikutnya. Tagihan yang sudah ada tidak berubah. Perubahan tercatat di log audit.',
+    status_operasional: 'Operasional berarti dapat dipakai untuk melayani pasien (poli hanya bisa dipilih saat mendaftarkan kunjungan bila operasional). Pilih "Tidak operasional" bila ditutup sementara.',
+    ihs_location_id: 'Kode lokasi ini di SATUSEHAT (Kemenkes) untuk keperluan integrasi. Boleh dikosongkan bila belum terdaftar.',
+    ihs_practitioner_id: 'Kode tenaga kesehatan ini di SATUSEHAT (Kemenkes) untuk keperluan integrasi. Boleh dikosongkan bila belum ada.',
+    nomor_sip: 'Nomor Surat Izin Praktik (SIP) tenaga kesehatan. Boleh dikosongkan.',
+  },
   kolom: {
-    induk: 'Induk', sip: 'Nomor SIP', berlaku: 'Berlaku SIP', praktisi: 'Praktisi', poli: 'Poli', hari: 'Hari', jam: 'Jam', kuota: 'Kuota', periode: 'Periode',
+    induk: 'Induk', indukPoli: 'Poli', indukRuang: 'Ruang', sip: 'Nomor SIP', berlaku: 'Berlaku SIP', praktisi: 'Praktisi', poli: 'Poli', hari: 'Hari', jam: 'Jam', kuota: 'Kuota', periode: 'Periode',
     kode: 'Kode', jenis: 'Jenis', hargaUmum: 'Harga umum', hargaJkn: 'Harga JKN', nama: 'Nama', profesi: 'Profesi', tingkat: 'Tingkat', indukKode: 'Kode induk', ihs: 'IHS ID', asal: 'Asal',
   },
 } as const;
@@ -478,10 +503,12 @@ export const PROFIL_KLINIK = {
 /** Daftar pasien (3.1): halaman awal akun klinis dan administrasi. */
 export const DAFTAR_PASIEN = {
   judul: 'Daftar pasien',
+  tab: { antrean: 'Antrean pasien', poli: 'Poli', praktisi: 'Praktisi', jadwal: 'Jadwal praktik' },
   cari: 'Cari pasien',
   petunjukCari: 'Cari nama, nomor RM, NIK, atau nomor JKN',
   registrasi: 'Registrasi pasien baru',
   daftarkanKunjungan: 'Daftarkan kunjungan',
+  aksiLainnya: 'Aksi lainnya',
   filterTahap: 'Filter tahap layanan',
   semua: 'Semua',
   tahapPanjang: { menunggu_skrining: 'Menunggu skrining', pemeriksaan: 'Menunggu pemeriksaan', resep: 'Resep menunggu', kasir: 'Menunggu pembayaran', ditutup: 'Selesai', batal: 'Batal' } as Record<string, string>,
@@ -765,9 +792,19 @@ export const PENUNJANG = {
     judulTambah: 'Tambah pemeriksaan', judulUbah: 'Ubah pemeriksaan',
     bidang: {
       kode: 'Kode lokal', nama: 'Nama pemeriksaan', kode_loinc: 'Kode LOINC', jenis_spesimen: 'Jenis spesimen', satuan: 'Satuan (UCUM)', rujukan_min: 'Rujukan minimum', rujukan_maks: 'Rujukan maksimum',
-      rujukan_teks: 'Rujukan teks (kualitatif)', tarif_layanan_id: 'Tarif layanan (jenis lab)', aktif: 'Aktif',
+      rujukan_teks: 'Rujukan teks (kualitatif)', tarif_layanan_id: 'Tarif layanan (jenis lab)', harga_umum: 'Harga umum (Rp)', harga_jkn: 'Harga JKN (Rp, opsional)', aktif: 'Aktif',
     },
-    petunjukLoinc: 'Contoh format: 718-7. Kode contoh dari seed bertanda contoh.', tanpaTarif: 'Tanpa tarif', contoh: 'Kode contoh', aktif: 'Aktif', nonaktif: 'Nonaktif', tersimpan: 'Pemeriksaan tersimpan.',
+    petunjuk: {
+      kode_loinc: 'LOINC adalah kode standar internasional untuk jenis pemeriksaan lab (contoh: 718-7 = Hemoglobin). Ketik nama dalam bahasa Inggris atau kodenya, lalu pilih dari daftar. Boleh dikosongkan.',
+      satuan: 'Satuan hasil dalam standar UCUM, misalnya g/dL, mg/dL, atau 10*3/uL. Boleh dikosongkan.',
+      rujukan_min: 'Batas bawah dan batas atas nilai normal untuk pemeriksaan ini; ditetapkan oleh laboratorium klinik sendiri.',
+      harga_umum: 'Harga yang ditagihkan ke pasien umum. Isi 0 bila pemeriksaan tanpa biaya. Tarif dibuat otomatis, tidak perlu mengisinya lagi di Tarif layanan. Perubahan harga hanya berlaku untuk layanan berikutnya; tagihan yang sudah ada tidak berubah.',
+      harga_jkn: 'Harga khusus peserta JKN. Boleh dikosongkan.',
+    },
+    hargaWajib: 'Isi harga (0 bila tanpa biaya).',
+    cariLoincPetunjuk: 'Ketik nama (bahasa Inggris) atau kode LOINC', loincTidakAda: 'Tidak ada kode LOINC yang cocok.', hasilLoinc: 'Hasil pencarian LOINC', gagalCariLoinc: 'Pencarian LOINC gagal.',
+    hakCiptaLoinc: 'Sumber: LOINC® (loinc.org), hak cipta Regenstrief Institute, Inc. Lisensi: loinc.org/license.',
+    tanpaTarif: 'Tanpa tarif', aktif: 'Aktif', nonaktif: 'Nonaktif', tersimpan: 'Pemeriksaan tersimpan.',
     nonaktifkan: 'Nonaktifkan', aktifkan: 'Aktifkan',
   },
   aksi: { order: 'Order lab', spesimen: 'Ambil spesimen', hasil: 'Hasil lab', persetujuan: 'Persetujuan tindakan' },
@@ -802,11 +839,11 @@ export const PENUNJANG = {
     gagalSebagian: (nama: string) => `Hasil "${nama}" gagal diproses. Hasil sebelumnya sudah tersimpan.`, rujukanTidakAda: 'Tanpa rentang rujukan',
   },
   galat: {
-    angka: 'Isi dengan angka.', loinc: 'Kode LOINC tidak valid (contoh: 718-7).', rentang: 'Rujukan minimum tidak boleh lebih besar dari maksimum.', tidakAdaPerubahan: 'Tidak ada perubahan.',
+    cariPendek: 'Ketik minimal dua huruf.', angka: 'Isi dengan angka.', loinc: 'Pilih kode LOINC dari hasil pencarian, atau isi dengan format seperti 718-7.', rentang: 'Rujukan minimum tidak boleh lebih besar dari maksimum.', tidakAdaPerubahan: 'Tidak ada perubahan.',
     pilihPemeriksaan: 'Pilih minimal satu pemeriksaan.', pemeriksaanGanda: 'Pemeriksaan tidak boleh ganda.', waktuMasaDepan: 'Waktu pengambilan tidak boleh di masa depan.', pilihInterpretasi: 'Pilih interpretasi hasil.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganDitutup: 'Kunjungan sudah ditutup. Order baru tidak dapat dibuat.', pemeriksaanTidakAda: 'Pemeriksaan tidak ditemukan atau tidak aktif.', orderTidakAda: 'Order tidak ditemukan.',
     statusTidakSah: 'Status order tidak mengizinkan tindakan ini. Muat ulang data.', petugasTidakSah: 'Petugas bukan pengguna fasyankes ini.', kodeGanda: 'Kode pemeriksaan sudah dipakai.', masterTidakAda: 'Pemeriksaan tidak ditemukan.',
-    tarifTidakSah: 'Tarif harus bertipe lab dan milik klinik ini.', hasilBelumAda: 'Hasil belum diisi.', sudahValidasi: 'Hasil sudah divalidasi dan tidak dapat diubah.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
+    tarifTidakSah: 'Tarif harus bertipe lab dan milik klinik ini.', tarifBentrok: 'Kode ini sudah dipakai tarif layanan jenis lain. Ganti kode pemeriksaan.', hasilBelumAda: 'Hasil belum diisi.', sudahValidasi: 'Hasil sudah divalidasi dan tidak dapat diubah.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
     sumberBelumAda: 'Tidak ada pemeriksaan yang cocok.', entitasAddendum: 'Jenis addendum tidak dikenal.', asalWajib: 'Asal spesimen wajib diisi.', waktuWajib: 'Waktu pengambilan wajib diisi.',
     pilihOrder: 'Pilih minimal satu order.', nilaiWajib: 'Isi nilai hasil.',
   },
@@ -846,16 +883,19 @@ export const FARMASI = {
     kosong: 'Belum ada obat di master.', gagalMuat: 'Master obat gagal dimuat.', contoh: 'Kode contoh', tersimpan: 'Obat tersimpan.',
     kolom: { nama: 'Nama tampil', kfa: 'Kode KFA', satuan: 'Satuan', harga: 'Harga', stok: 'Stok', kedaluwarsa: 'Kedaluwarsa terdekat', status: 'Status', tindakan: 'Tindakan' },
     catatan: 'Setiap obat tertaut satu kode KFA, tanpa obat ketik bebas. Telaah dan penyiapan resep dibuka dari Daftar pasien; penyerahan obat oleh farmasi mengurangi stok.',
-    judulTambah: 'Tambah obat dari KFA', judulUbah: 'Ubah obat', cariKfa: 'Cari di Referensi KFA', cariKfaPetunjuk: 'Ketik minimal dua huruf nama atau bahan', kfaTidakAda: 'Tidak ada hasil di Referensi KFA.',
-    kfaContohInfo: 'Referensi KFA berisi data contoh sampai berkas resmi diimpor.', pilihKfa: 'Pilih kode KFA', terpilih: 'Kode KFA terpilih',
+    judulTambah: 'Tambah obat dari KFA', judulUbah: 'Ubah obat', cariKfa: 'Cari di Referensi KFA', cariKfaPetunjuk: 'Ketik minimal dua huruf nama atau bahan', kfaTidakAda: 'Tidak ada hasil di Referensi KFA.', kfaBatasHasil: 'Menampilkan hasil teratas. Tambahkan kata kunci agar lebih tepat.', kfaTidakAktif: 'Tidak aktif', kfaLokal: 'Tambahan klinik',
+    pilihKfa: 'Pilih kode KFA', terpilih: 'Kode KFA terpilih',
     bidang: { nama_tampil: 'Nama tampil', satuan: 'Satuan', harga: 'Harga per satuan (Rp)', aktif: 'Aktif' },
+    petunjukHarga: 'Perubahan harga hanya berlaku untuk resep berikutnya. Tagihan yang sudah ada tidak berubah. Perubahan tercatat di log audit.',
   },
   status: { aman: 'Aman', menipis: 'Menipis', kedaluwarsa_dekat: 'Kedaluwarsa dekat', habis: 'Habis' },
   mutasi: {
-    judul: 'Mutasi stok', obat: 'Obat', jenis: 'Jenis mutasi', batch: 'Batch', batchBaru: 'Batch baru', kedaluwarsa: 'Tanggal kedaluwarsa', jumlah: 'Jumlah', alasan: 'Alasan', simpan: 'Catat mutasi', menyimpan: 'Mencatat...',
+    judul: 'Mutasi stok', obat: 'Obat', jenis: 'Jenis mutasi', batch: 'Nomor batch (lot)', batchBaru: 'Batch baru', batchContoh: 'Tertera di kemasan, mis. B2410A',
+    penjelasanBatch: 'Batch (nomor lot) adalah kode produksi yang tercetak di kemasan obat, biasanya di dekat tulisan "Batch No." atau "Lot". Obat dengan batch yang sama berasal dari produksi yang sama dan punya tanggal kedaluwarsa yang sama. Dengan mencatat batch, sistem menyerahkan obat yang paling cepat kedaluwarsa lebih dulu. Bila di kemasan tidak ada nomornya, isi bebas, misalnya tanggal terima (2026-11-10).',
+    batchRiwayat: (b: string) => `Batch ${b}`, opsiBatch: (b: string, n: number, satuan: string, kedaluwarsa: string) => `${b} · sisa ${n} ${satuan} · kedaluwarsa ${kedaluwarsa}`, kedaluwarsa: 'Tanggal kedaluwarsa', jumlah: 'Jumlah', alasan: 'Alasan', simpan: 'Catat mutasi', menyimpan: 'Mencatat...',
     jenisLabel: { terima: 'Terima barang', keluar: 'Keluar (rusak, hilang, dll.)', koreksi: 'Koreksi stok opname' } as Record<string, string>,
     petunjukTerima: 'Penerimaan menambah stok batch; batch baru perlu tanggal kedaluwarsa.', petunjukKeluar: 'Mengurangi stok batch yang ada; alasan wajib.', petunjukKoreksi: 'Jumlah diisi sebagai jumlah sebenarnya di batch itu; alasan wajib.',
-    pilihBatch: 'Pilih batch...', tersimpan: 'Mutasi tercatat.', gagal: 'Mutasi gagal dicatat.', riwayat: 'Riwayat mutasi', stokSekarang: (n: number, satuan: string) => `Stok batch sekarang ${n} ${satuan}`,
+    pilihBatch: 'Pilih nomor batch...', tersimpan: 'Mutasi tercatat.', gagal: 'Mutasi gagal dicatat.', riwayat: 'Riwayat mutasi', stokSekarang: (n: number, satuan: string) => `Stok batch sekarang ${n} ${satuan}`,
   },
   riwayat: {
     kolom: { nomor: 'Nomor resep', pasien: 'Pasien', dokter: 'Dokter', item: 'Obat', status: 'Status', waktu: 'Diajukan' }, filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal',
@@ -865,7 +905,7 @@ export const FARMASI = {
     langkah: 'Resep', judul: 'Resep kunjungan ini', kosong: 'Belum ada resep pada kunjungan ini.', petunjuk: 'Isi obat, jumlah, dan aturan pakai sesuai rencana terapi.',
     cariObat: 'Cari obat', pilihObat: 'Pilih obat...', jumlah: 'Jumlah', aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute', tambahItem: 'Tambah obat', hapusItem: 'Buang',
     ajukan: 'Ajukan resep', mengajukan: 'Mengajukan...', terajukan: (n: string) => `Resep ${n} diajukan ke farmasi.`, tagihanInfo: 'Biaya obat masuk tagihan kunjungan saat resep diajukan.',
-    tanpaStok: 'Stok belum tercatat', harga: (rp: string) => `Harga ${rp}`, gagalMuat: 'Resep gagal dimuat.', gagal: 'Resep gagal diajukan.', belumAdaMaster: 'Belum ada obat di master. Minta apoteker menambahkannya di halaman Farmasi.',
+    tanpaStok: 'Stok belum tercatat', harga: (rp: string) => `Harga ${rp}`, gagalMuat: 'Resep gagal dimuat.', tanpaIzin: 'Akun Anda belum punya izin menulis resep. Minta admin menambahkan izin Resep (input) pada peran Anda.', gagal: 'Resep gagal diajukan.', belumAdaMaster: 'Belum ada obat di master. Minta apoteker menambahkannya di halaman Farmasi.',
     nomor: (n: string) => `Resep ${n}`, daftarObat: 'Obat',
   },
   telaah: {
@@ -884,6 +924,12 @@ export const FARMASI = {
 } as const;
 
 export const KASIR = {
+  /** Melengkapi harga item tagihan yang belum berharga, langsung dari dialog pembayaran dan tutup kunjungan. */
+  lengkapi: {
+    judul: 'Item belum punya harga',
+    petunjuk: 'Isi harga agar tagihan lengkap, bisa dibayar, dan kunjungan bisa ditutup. Harga yang sudah terisi tidak bisa diubah dari sini. Agar item berikutnya otomatis berharga, isi harga di master pemeriksaan atau atur di Tarif layanan.',
+    harga: (nama: string) => `Harga ${nama} (Rp)`, simpan: 'Simpan harga', menyimpan: 'Menyimpan...', tersimpan: 'Harga tersimpan.', tautanTarif: 'Buka Tarif layanan',
+  },
   judul: 'Kasir dan klaim',
   tab: { shift: 'Shift dan rekap harian', klaim: 'Klaim JKN/BPJS' },
   tabLabel: 'Tab Kasir dan klaim',
@@ -912,6 +958,7 @@ export const KASIR = {
   },
   galat: {
     angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', jumlahMinimal: 'Jumlah minimal 1.', metode: 'Pilih metode bayar.', alasanWajib: 'Alasan wajib diisi.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
+    itemTidakAda: 'Item tagihan tidak ditemukan.', hargaSudahAda: 'Harga item ini sudah terisi dan tidak dapat diubah dari sini.', tagihanTerkunci: 'Tagihan kunjungan yang sudah ditutup tidak dapat diubah.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', tahapSalah: 'Kunjungan belum di tahap kasir atau sudah ditutup.', tagihanBelumLengkap: 'Tagihan belum lengkap: ada item tanpa harga.', tagihanKosong: 'Belum ada tagihan pada kunjungan ini.', sudahLunas: 'Tagihan sudah lunas.',
     jumlahLebih: 'Jumlah melebihi sisa tagihan.', tanpaShift: 'Buka shift kasir terlebih dahulu.', shiftSudahAda: 'Anda sudah memiliki shift terbuka.', shiftTidakAda: 'Tidak ada shift terbuka.', resepBelumSiap: 'Ada resep yang belum siap di farmasi.', tidakAdaResep: 'Tidak ada resep yang perlu diserahkan.',
     stokKurang: 'Stok tercatat kurang untuk sebagian obat. Setujui dengan alasan bila stok fisik tersedia.', resepBelumDiserahkan: 'Masih ada resep yang belum diserahkan.', belumLunasAlasan: 'Tagihan belum lunas: isi alasan untuk tetap menutup.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
@@ -989,9 +1036,10 @@ export const REKAM_MEDIS = {
 } as const;
 
 export const RAWAT_INAP = {
+  tab: { papan: 'Papan bed', ruang: 'Daftar ruang', bed: 'Daftar bed' },
   judul: 'Rawat inap', memuat: 'Memuat...', gagalMuat: 'Papan bed gagal dimuat.',
   papan: {
-    ringkasan: (t: number, i: number, k: number) => `${t} bed: ${i} terisi, ${k} kosong`, ruangTanpa: 'Tanpa ruang', kosong: 'Belum ada bed. Tambahkan lokasi berjenis bed di Pengaturan > Master.', menunggu: 'Menunggu ruangan', menungguKosong: 'Tidak ada pasien yang menunggu ruangan.',
+    ringkasan: (t: number, i: number, k: number) => `${t} bed: ${i} terisi, ${k} kosong`, ruangTanpa: 'Tanpa ruang', kosong: 'Belum ada bed. Tambahkan ruang dan bed terlebih dahulu.', tambahRuang: 'Tambah ruang dan bed', menunggu: 'Menunggu ruangan', menungguKosong: 'Tidak ada pasien yang menunggu ruangan.',
     admisi: 'Admisi pasien', penempatan: 'Ubah penempatan', cppt: 'Catatan harian', pemulangan: 'Pemulangan', kosongBed: 'Bed kosong', sejak: (waktu: string) => `Sejak ${waktu}`, dpjp: (nama: string) => `DPJP ${nama}`, labelPapan: 'Papan bed', tindakan: 'Tindakan',
     tempatkan: 'Tempatkan di bed', bedLabel: 'Bed',
   },
@@ -1125,6 +1173,21 @@ export const BERANDA = {
     insidenBelum: (n: number) => `${n} insiden belum selesai diberitahukan`, dpia: (n: number) => `${n} DPIA jatuh tempo tinjau ulang`, musnah: (n: number) => `${n} pemusnahan lewat jadwal`,
   },
   satusehat: { judul: 'SATUSEHAT', info: 'Status kirim dan antrean kirim tampil di sini setelah integrasi SATUSEHAT aktif.' },
+  /** Daftar periksa pengaturan awal: apa yang masih kurang sebelum klinik dapat melayani sampai penagihan. */
+  kesiapan: {
+    judul: 'Pengaturan awal klinik', ringkasan: (siap: number, total: number) => `${siap} dari ${total} siap`, semuaSiap: 'Semua pengaturan dasar sudah siap.', atur: 'Atur', lihat: 'Lihat daftar', gagal: 'Daftar pengaturan gagal dimuat.',
+    spanduk: (n: number) => `Pengaturan awal belum lengkap (${n} yang perlu dibereskan).`,
+    item: {
+      poli: { label: 'Poli operasional', petunjuk: 'Pasien didaftarkan ke poli. Tambah di Daftar pasien → tab Poli.' },
+      praktisi: { label: 'Praktisi dengan profil', petunjuk: 'Dokter dan tenaga kesehatan perlu profil profesi. Akun dibuat di Akses dan keamanan, profilnya di Daftar pasien → tab Praktisi.' },
+      jadwal: { label: 'Jadwal praktik', petunjuk: 'Jadwal dokter per poli dan hari.' },
+      tarif: { label: 'Tarif konsultasi', petunjuk: 'Tanpa tarif konsultasi, biaya jasa dokter tidak muncul di tagihan. Tambah di Kasir dan klaim → Tarif layanan.' },
+      obat: { label: 'Obat di master', petunjuk: 'Obat dipilih dari katalog KFA lalu diberi harga dan stok di Farmasi.' },
+      pemeriksaan: { label: 'Pemeriksaan lab', petunjuk: 'Daftar pemeriksaan yang bisa dipesan, lengkap dengan harga, di Penunjang.' },
+      pemeriksaan_tanpa_tarif: { label: (n: number) => `${n} pemeriksaan lab belum punya harga`, petunjuk: 'Pemeriksaan tanpa harga membuat tagihan tidak lengkap dan kunjungan tidak bisa ditutup.' },
+      sip_kedaluwarsa: { label: (n: number) => `${n} SIP praktisi sudah lewat masa berlaku`, petunjuk: 'Perbarui masa berlaku SIP di profil praktisi.' },
+    },
+  },
 } as const;
 
 export const TEKS = { beranda: BERANDA, pdp: PDP, klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN } as const;

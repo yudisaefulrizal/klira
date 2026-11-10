@@ -5,6 +5,7 @@ import type {
   StatusResep, StokObatDto, TelaahMasukan, UbahMasterObatMasukan,
 } from '@klira/shared';
 import { tambahItemTagihanDalam, totalTagihan } from '../kasir/repositori';
+import { ambilKatalogKfa, cariKatalogKfa } from './katalog-kfa';
 
 export type Kekurangan = { master_obat_id: number; nama: string; butuh: number; tersedia: number };
 export type HasilSerahRepo =
@@ -72,20 +73,20 @@ export class RepositoriFarmasiPrisma {
     });
   }
 
-  /** Referensi KFA (global, baca-saja): pencarian nama atau kode, dibatasi jumlah hasil. */
-  async cariKfa(f: FilterKfa): Promise<ReferensiKfaDto[]> {
-    const baris = await prisma.referensiKfa.findMany({
-      where: { ...(f.tingkat ? { tingkat: f.tingkat } : {}), OR: [{ nama: { contains: f.cari } }, { kode: { contains: f.cari } }] },
-      orderBy: [{ nama: 'asc' }], take: f.batas,
+  private kfaLokal(fasyankesId: number, kode?: string) {
+    return prisma.kfaLokal.findMany({
+      where: { fasyankes_id: fasyankesId, ...(kode ? { kode } : {}) },
+      select: { kode: true, nama: true, bentuk_sediaan: true, satuan: true, status: true },
     });
-    return baris.map((k) => ({
-      id: k.id, kode: k.kode, tingkat: k.tingkat, nama: k.nama, bentuk_sediaan: k.bentuk_sediaan, rute: k.rute, satuan: k.satuan, kekuatan: k.kekuatan,
-      nomor_izin_edar: k.nomor_izin_edar, produsen: k.produsen, generik: k.generik, status: k.status, contoh: k.contoh,
-    }));
   }
 
-  kfa(id: number) {
-    return prisma.referensiKfa.findUnique({ where: { id }, select: { id: true, status: true, nama: true, satuan: true } });
+  /** Katalog KFA (JSON statis) digabung dengan tambahan/ubahan klinik (tabel `kfa_lokal`): pencarian per kata, dibatasi jumlah hasil. */
+  async cariKfa(fasyankesId: number, f: FilterKfa): Promise<ReferensiKfaDto[]> {
+    return cariKatalogKfa(f.cari, f.batas, await this.kfaLokal(fasyankesId));
+  }
+
+  async kfa(fasyankesId: number, kode: string): Promise<ReferensiKfaDto | null> {
+    return ambilKatalogKfa(kode, await this.kfaLokal(fasyankesId, kode));
   }
 
   /** Stok yang belum kedaluwarsa dijumlah per obat; kedaluwarsa terdekat hanya dari batch yang masih berisi. */
@@ -103,12 +104,12 @@ export class RepositoriFarmasiPrisma {
     return hasil;
   }
 
-  private keMasterDto(m: { id: number; kfa_id: number; nama_tampil: string; satuan: string; harga: number; aktif: boolean; kfa: { kode: string; nama: string; tingkat: number; contoh: boolean; bentuk_sediaan?: string | null; rute?: string | null } }, ringkas?: { total: number; terdekat: string | null }): MasterObatDto {
+  private keMasterDto(m: { id: number; kfa_kode: string; kfa_nama: string; bentuk_sediaan: string | null; nama_tampil: string; satuan: string; harga: number; aktif: boolean }, ringkas?: { total: number; terdekat: string | null }): MasterObatDto {
     const total = ringkas?.total ?? 0;
     const terdekat = ringkas?.terdekat ?? null;
     return {
-      id: m.id, kfa_id: m.kfa_id, kfa_kode: m.kfa.kode, kfa_nama: m.kfa.nama, kfa_tingkat: m.kfa.tingkat, kfa_contoh: m.kfa.contoh, nama_tampil: m.nama_tampil, satuan: m.satuan, harga: m.harga, aktif: m.aktif,
-      bentuk_sediaan: m.kfa.bentuk_sediaan ?? null, rute: m.kfa.rute ?? null,
+      id: m.id, kfa_kode: m.kfa_kode, kfa_nama: m.kfa_nama, nama_tampil: m.nama_tampil, satuan: m.satuan, harga: m.harga, aktif: m.aktif,
+      bentuk_sediaan: m.bentuk_sediaan,
       stok_total: total, kedaluwarsa_terdekat: terdekat, status_stok: statusStokDari(total, terdekat),
     };
   }
@@ -117,28 +118,27 @@ export class RepositoriFarmasiPrisma {
     const where: Prisma.MasterObatWhereInput = {
       fasyankes_id: fasyankesId,
       ...(f.aktif === undefined ? {} : { aktif: f.aktif }),
-      ...(f.cari ? { OR: [{ nama_tampil: { contains: f.cari } }, { kfa: { kode: { contains: f.cari } } }, { kfa: { nama: { contains: f.cari } } }] } : {}),
+      ...(f.cari ? { OR: [{ nama_tampil: { contains: f.cari } }, { kfa_kode: { contains: f.cari } }, { kfa_nama: { contains: f.cari } }] } : {}),
     };
     const [total, baris] = await Promise.all([
       prisma.masterObat.count({ where }),
-      prisma.masterObat.findMany({ where, include: { kfa: true }, orderBy: [{ nama_tampil: 'asc' }], skip: (f.halaman - 1) * f.ukuran, take: f.ukuran }),
+      prisma.masterObat.findMany({ where, orderBy: [{ nama_tampil: 'asc' }], skip: (f.halaman - 1) * f.ukuran, take: f.ukuran }),
     ]);
     const ringkas = await this.ringkasStok(fasyankesId, baris.map((b) => b.id));
     return { data: baris.map((b) => this.keMasterDto(b, ringkas.get(b.id))), halaman: f.halaman, ukuran: f.ukuran, total };
   }
 
   async master(fasyankesId: number, id: number): Promise<MasterObatDto | null> {
-    const m = await prisma.masterObat.findFirst({ where: { id, fasyankes_id: fasyankesId }, include: { kfa: true } });
+    const m = await prisma.masterObat.findFirst({ where: { id, fasyankes_id: fasyankesId } });
     if (!m) return null;
     return this.keMasterDto(m, (await this.ringkasStok(fasyankesId, [m.id])).get(m.id));
   }
 
   /** 'duplikat' bila kode KFA sudah ada di master klinik ini. */
-  async buatMaster(fasyankesId: number, oleh: number, d: MasterObatMasukan): Promise<MasterObatDto | 'duplikat'> {
+  async buatMaster(fasyankesId: number, oleh: number, d: MasterObatMasukan, kfa: ReferensiKfaDto): Promise<MasterObatDto | 'duplikat'> {
     try {
       const m = await prisma.masterObat.create({
-        data: { fasyankes_id: fasyankesId, kfa_id: d.kfa_id, nama_tampil: d.nama_tampil, satuan: d.satuan, harga: d.harga, aktif: d.aktif, dibuat_oleh: oleh },
-        include: { kfa: true },
+        data: { fasyankes_id: fasyankesId, kfa_kode: kfa.kode, kfa_nama: kfa.nama, bentuk_sediaan: kfa.bentuk_sediaan, nama_tampil: d.nama_tampil, satuan: d.satuan, harga: d.harga, aktif: d.aktif, dibuat_oleh: oleh },
       });
       return this.keMasterDto(m);
     } catch (e) {

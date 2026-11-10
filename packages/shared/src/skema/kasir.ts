@@ -25,6 +25,10 @@ export type SerahTerimaMasukan = z.input<typeof serahTerimaMasukan>;
 export const tutupKunjunganMasukan = z.object({ alasan: teksOpsional(300) });
 export type TutupKunjunganMasukan = z.infer<typeof tutupKunjunganMasukan>;
 
+/** Melengkapi harga item tagihan yang belum berharga (mis. pemeriksaan tanpa tarif). Harga yang sudah terisi tidak dapat diubah lewat jalur ini. */
+export const lengkapiHargaMasukan = z.object({ harga: bulat(100_000_000) });
+export type LengkapiHargaMasukan = z.input<typeof lengkapiHargaMasukan>;
+
 export const bukaShiftMasukan = z.object({ kas_awal: bulat(1_000_000_000) });
 export const tutupShiftMasukan = z.object({ kas_akhir: bulat(1_000_000_000), alasan_selisih: teksOpsional(300) });
 export type BukaShiftMasukan = z.input<typeof bukaShiftMasukan>;

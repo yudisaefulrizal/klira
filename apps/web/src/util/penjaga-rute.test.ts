@@ -40,23 +40,24 @@ describe('penjaga rute', () => {
     const kasir = { ...dasar, fitur: ['pendaftaran', 'kasir'] };
     expect(putuskanRute('/kasir-klaim', kasir)).toEqual({ tipe: 'tampil' });
     expect(putuskanRute('/rekam-medis', kasir)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
-    expect(putuskanRute('/pengaturan', kasir)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
-    expect(putuskanRute('/pengaturan', { ...kasir, fitur: ['akses'] })).toEqual({ tipe: 'tampil' });
+    expect(putuskanRute('/akses', kasir)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
+    expect(putuskanRute('/akses', { ...kasir, fitur: ['akses'] })).toEqual({ tipe: 'tampil' });
+    expect(putuskanRute('/pengaturan-klinik', { ...kasir, fitur: ['profil-klinik'] })).toEqual({ tipe: 'tampil' });
   });
 });
 
-describe('rute pengelolaan master kontekstual', () => {
-  const rute = ['/pasien/layanan', '/rawat-inap/ruangan', '/kasir-klaim/tarif'];
-  it('pemegang izin master dapat mengelola data tanpa memperoleh akses ke data klinis', () => {
+describe('pengelolaan master sebagai tab di halaman pemiliknya', () => {
+  const rute = ['/pasien', '/rawat-inap', '/kasir-klaim'];
+  it('pemegang izin master dapat membuka halaman pemilik master tanpa akses ke halaman klinis lain', () => {
     const admin: PenggunaSaya = { ...dasar, halaman_awal: '/beranda', fitur: ['master'], izin: [{ fitur: 'master', aksi: 'lihat', cakupan: 'unit' }] };
     for (const path of rute) expect(putuskanRute(path, admin)).toEqual({ tipe: 'tampil' });
-    for (const path of ['/pasien', '/rawat-inap', '/kasir-klaim']) expect(putuskanRute(path, admin)).toEqual({ tipe: 'alihkan', ke: '/beranda' });
+    for (const path of ['/farmasi', '/penunjang', '/rekam-medis']) expect(putuskanRute(path, admin)).toEqual({ tipe: 'alihkan', ke: '/beranda' });
   });
-  it('fitur klinis atau kasir saja tidak memberikan izin pengelolaan master', () => {
-    const klinis = { ...dasar, fitur: ['pendaftaran', 'klinis', 'kasir'], izin: [] };
-    for (const path of rute) expect(putuskanRute(path, klinis)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
+  it('tanpa izin master, halaman rawat inap dan kasir tetap menurut fitur klinis atau kasir', () => {
+    const pendaftaran = { ...dasar, fitur: ['pendaftaran'], izin: [] };
+    for (const path of ['/rawat-inap', '/kasir-klaim']) expect(putuskanRute(path, pendaftaran)).toEqual({ tipe: 'alihkan', ke: '/pasien' });
   });
-  it('sesi dan kewajiban ganti kredensial tetap berlaku untuk alamat master baru', () => {
+  it('sesi dan kewajiban ganti kredensial tetap berlaku', () => {
     for (const path of rute) {
       expect(putuskanRute(path, null)).toEqual({ tipe: 'alihkan', ke: '/masuk' });
       expect(putuskanRute(path, { ...dasar, wajib_ganti_kredensial: true, izin: [{ fitur: 'master', aksi: 'lihat', cakupan: 'unit' }] })).toEqual({ tipe: 'alihkan', ke: '/ganti-kredensial' });

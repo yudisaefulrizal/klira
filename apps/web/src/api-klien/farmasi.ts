@@ -11,7 +11,7 @@ export function queryMasterObat(f: Partial<FilterMasterObat>): string {
   if (f.ukuran) q.set('ukuran', String(f.ukuran));
   return q.toString();
 }
-export const cariKfa = (cari: string) => panggilApi<ReferensiKfaDto[]>('GET', `/farmasi/kfa?${new URLSearchParams({ cari: cari.trim() }).toString()}`);
+export const cariKfa = (cari: string, batas?: number) => panggilApi<ReferensiKfaDto[]>('GET', `/farmasi/kfa?${new URLSearchParams({ cari: cari.trim(), ...(batas ? { batas: String(batas) } : {}) }).toString()}`);
 export const daftarMasterObat = (f: Partial<FilterMasterObat> = {}) => panggilApi<HalamanMasterObatDto>('GET', `/farmasi/master?${queryMasterObat(f)}`);
 export const buatMasterObat = (m: Record<string, unknown>) => panggilApi<MasterObatDto>('POST', '/farmasi/master', m);
 export const ubahMasterObat = (id: number, m: Record<string, unknown>) => panggilApi<MasterObatDto>('PATCH', `/farmasi/master/${id}`, m);

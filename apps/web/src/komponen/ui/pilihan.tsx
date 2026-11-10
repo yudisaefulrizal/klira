@@ -1,16 +1,20 @@
 import type { SelectHTMLAttributes } from 'react';
 import { token } from '../../gaya/token';
+import { InfoBantuan } from './info-bantuan';
 import { PesanGalat, gayaKontrol } from './isian';
 
 type Opsi = { nilai: string; label: string };
-type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> & { label: string; id: string; opsi: readonly Opsi[]; galat?: string };
+type Props = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'children'> & { label: string; id: string; opsi: readonly Opsi[]; galat?: string; petunjuk?: string };
 
-export function Pilihan({ label, id, opsi, style, galat, ...sisa }: Props) {
+export function Pilihan({ label, id, opsi, style, galat, petunjuk, ...sisa }: Props) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: token.jarak.xs }}>
-      <label htmlFor={id} style={{ fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang }}>
-        {label}
-      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: token.jarak.xs }}>
+        <label htmlFor={id} style={{ fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang }}>
+          {label}
+        </label>
+        {petunjuk && <InfoBantuan label={label}>{petunjuk}</InfoBantuan>}
+      </div>
       <select id={id} style={{ ...gayaKontrol, ...(galat ? { borderColor: token.warna.status.merah.teks } : {}), ...style }} aria-invalid={galat ? true : undefined} aria-describedby={galat ? `${id}-galat` : undefined} {...sisa}>
         {opsi.map((o) => <option key={o.nilai} value={o.nilai}>{o.label}</option>)}
       </select>

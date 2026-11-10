@@ -15,9 +15,9 @@ d('farmasi (master obat, stok, resep, telaah) terhadap klira_uji', () => {
   let kunjB = 0;
   let kunjTutup = 0;
   let kunjLain = 0;
-  let kfa1 = 0;
-  let kfa2 = 0;
-  let kfaMati = 0;
+  const kfa1 = `${kode}-1`;
+  const kfa2 = `${kode}-2`;
+  const kfaMati = `${kode}-3`;
   const id: Record<string, number> = {};
   const ids: Record<string, number> = {};
   const cookie: Record<string, string> = {};
@@ -57,8 +57,8 @@ d('farmasi (master obat, stok, resep, telaah) terhadap klira_uji', () => {
     const p = await prisma.pasien.create({ data: { fasyankes_id: fasId, nomor_rm: rm, nama: `Pasien ${rm}`, tanggal_lahir: new Date('1980-01-01'), jenis_kelamin: 'perempuan' } });
     return (await prisma.kunjungan.create({ data: { fasyankes_id: fasId, pasien_id: p.id, jenis: 'AMB', tahap_layanan: tahap } })).id;
   };
-  const tambahObat = (kfaId: number, ekstra: object = {}, siapa = 'apoteker') =>
-    panggil('POST', '/farmasi/master', siapa, { kfa_id: kfaId, nama_tampil: 'Obat Uji', satuan: 'tablet', harga: 1000, ...ekstra });
+  const tambahObat = (kfaKode: string, ekstra: object = {}, siapa = 'apoteker') =>
+    panggil('POST', '/farmasi/master', siapa, { kfa_kode: kfaKode, nama_tampil: 'Obat Uji', satuan: 'tablet', harga: 1000, ...ekstra });
   const mutasi = (obatId: number, ekstra: object, siapa = 'apoteker') => panggil('POST', '/farmasi/mutasi', siapa, { master_obat_id: obatId, ...ekstra });
   const telaahLengkap = { administratif: true, farmasetik: true, klinis: true };
 
@@ -80,9 +80,11 @@ d('farmasi (master obat, stok, resep, telaah) terhadap klira_uji', () => {
     kunjB = await buatKunjungan(fas, `${kode}-B`);
     kunjTutup = await buatKunjungan(fas, `${kode}-T`, 'ditutup');
     kunjLain = await buatKunjungan(fasLain, `${kode}-L`);
-    kfa1 = (await prisma.referensiKfa.create({ data: { kode: `${kode}-1`, tingkat: 92, nama: `Uji parasetamol ${kode} tablet`, satuan: 'tablet', contoh: true } })).id;
-    kfa2 = (await prisma.referensiKfa.create({ data: { kode: `${kode}-2`, tingkat: 92, nama: `Uji amoksisilin ${kode} kapsul`, satuan: 'kapsul', contoh: true } })).id;
-    kfaMati = (await prisma.referensiKfa.create({ data: { kode: `${kode}-3`, tingkat: 92, nama: `Uji tidak aktif ${kode}`, status: 'tidak_aktif', contoh: true } })).id;
+    await prisma.kfaLokal.createMany({ data: [
+      { fasyankes_id: fas, kode: kfa1, nama: `Uji parasetamol ${kode} tablet`, satuan: 'tablet' },
+      { fasyankes_id: fas, kode: kfa2, nama: `Uji amoksisilin ${kode} kapsul`, satuan: 'kapsul' },
+      { fasyankes_id: fas, kode: kfaMati, nama: `Uji tidak aktif ${kode}`, status: 'nonaktif' },
+    ] });
     for (const k of ['apoteker', 'dokter', 'perawat', 'lainApoteker', 'lainDokter']) await login(k);
   });
 
@@ -92,7 +94,7 @@ d('farmasi (master obat, stok, resep, telaah) terhadap klira_uji', () => {
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
     for (const m of [prisma.peringatanIzin, prisma.izinPerAkun, prisma.pesertaKunjungan, prisma.draf, prisma.mutasiStok, prisma.stokObat, prisma.telaahResep, prisma.itemTagihan, prisma.itemResep, prisma.tagihan, prisma.resep, prisma.masterObat] as any[]) await m.deleteMany({ where });
-    await prisma.referensiKfa.deleteMany({ where: { kode: { startsWith: kode } } });
+    await prisma.kfaLokal.deleteMany({ where });
     await prisma.kunjungan.deleteMany({ where });
     await prisma.pasien.deleteMany({ where });
     await prisma.penugasanJenis.deleteMany({ where });
@@ -103,25 +105,32 @@ d('farmasi (master obat, stok, resep, telaah) terhadap klira_uji', () => {
     await prisma.$disconnect();
   });
 
-  it('pencarian KFA butuh izin farmasi input, minimal dua huruf, dan mengembalikan tingkat serta penanda contoh', async () => {
+  it('pencarian KFA butuh izin farmasi input, minimal dua huruf; menggabungkan katalog JSON dan tambahan klinik sendiri', async () => {
     expect((await panggil('GET', `/farmasi/kfa?cari=${kode}`, null)).status).toBe(401);
     expect((await panggil('GET', `/farmasi/kfa?cari=${kode}`, 'dokter')).status).toBe(403);
     expect((await panggil('GET', '/farmasi/kfa?cari=a', 'apoteker')).status).toBe(400);
     const h = await panggil('GET', `/farmasi/kfa?cari=${kode}`, 'apoteker');
     expect(h.status).toBe(200);
     expect(h.badan.data.length).toBe(3);
-    expect(h.badan.data[0]).toMatchObject({ tingkat: 92, contoh: true });
+    expect(h.badan.data[0]).toMatchObject({ lokal: true });
+    // Tambahan satu klinik tidak terlihat oleh klinik lain.
+    expect((await panggil('GET', `/farmasi/kfa?cari=${kode}`, 'lainApoteker')).badan.data.length).toBe(0);
+    // Katalog resmi (JSON statis) ikut dicari dan dibatasi jumlahnya.
+    const resmi = await panggil('GET', '/farmasi/kfa?cari=paracetamol&batas=5', 'apoteker');
+    expect(resmi.badan.data.length).toBeGreaterThan(0);
+    expect(resmi.badan.data.length).toBeLessThanOrEqual(5);
+    expect(resmi.badan.data[0]).toMatchObject({ lokal: false });
   });
 
   it('master obat: apoteker menambah dari KFA, KFA ganda atau tidak aktif ditolak, dokter hanya membaca, ubah dan nonaktif tercatat', async () => {
     expect((await tambahObat(kfa1, {}, 'dokter')).status).toBe(403);
-    expect((await tambahObat(99_999_999)).status).toBe(400);
+    expect((await tambahObat('kode-tidak-ada-99999999')).status).toBe(400);
     expect((await tambahObat(kfaMati)).status).toBe(400);
     expect((await tambahObat(kfa1, { harga: -5 })).status).toBe(400);
     expect((await tambahObat(kfa1, { satuan: '' })).status).toBe(400);
     const a = await tambahObat(kfa1, { nama_tampil: 'Parasetamol 500', satuan: 'tablet', harga: 500 });
     expect(a.status).toBe(201);
-    expect(a.badan.data).toMatchObject({ kfa_kode: `${kode}-1`, harga: 500, aktif: true, stok_total: 0, status_stok: 'habis', kfa_contoh: true });
+    expect(a.badan.data).toMatchObject({ kfa_kode: `${kode}-1`, harga: 500, aktif: true, stok_total: 0, status_stok: 'habis', kfa_nama: `Uji parasetamol ${kode} tablet` });
     expect((await tambahObat(kfa1)).status).toBe(409);
     const b = await tambahObat(kfa2, { nama_tampil: 'Amoksisilin 500', satuan: 'kapsul', harga: 1500 });
     expect(b.status).toBe(201);

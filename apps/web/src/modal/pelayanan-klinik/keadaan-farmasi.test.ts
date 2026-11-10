@@ -1,6 +1,6 @@
 import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisResepKosong, biayaResep, bentukMutasi, bentukResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
 
-const kfa = { id: 7, kode: 'contoh-1', tingkat: 92, nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, rute: null, satuan: 'tablet', kekuatan: null, nomor_izin_edar: null, produsen: null, generik: true, status: 'aktif', contoh: true };
+const kfa = { kode: '93000001', nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, satuan: 'tablet', status: 'aktif', lokal: false };
 
 describe('master obat', () => {
   it('memilih KFA mengisi nama dan satuan awal tanpa menimpa isian klinik', () => {
@@ -10,13 +10,13 @@ describe('master obat', () => {
   });
   it('tambah butuh kode KFA, nama, satuan, dan harga bilangan bulat tidak negatif', () => {
     const g = galatMasterObat(awalMasterObat(), false);
-    expect(Object.keys(g).sort()).toEqual(['harga', 'kfa_id', 'nama_tampil', 'satuan']);
+    expect(Object.keys(g).sort()).toEqual(['harga', 'kfa_kode', 'nama_tampil', 'satuan']);
     expect(galatMasterObat({ ...pilihKfa(awalMasterObat(), kfa), harga: '500' }, false)).toEqual({});
     expect(galatMasterObat({ ...pilihKfa(awalMasterObat(), kfa), harga: '-1' }, false).harga).toBeTruthy();
     expect(galatMasterObat({ ...pilihKfa(awalMasterObat(), kfa), harga: '1,5' }, false).harga).toBeTruthy();
   });
   it('ubah hanya mengirim bidang yang berubah dan tidak menyentuh aktif bila tidak diubah', () => {
-    const awal = awalMasterObat({ id: 1, kfa_id: 7, kfa_kode: 'c', kfa_nama: 'n', kfa_tingkat: 92, kfa_contoh: true, nama_tampil: 'A', satuan: 'tablet', harga: 500, aktif: false, stok_total: 0, kedaluwarsa_terdekat: null, status_stok: 'habis' });
+    const awal = awalMasterObat({ id: 1, kfa_kode: 'c', kfa_nama: 'n', nama_tampil: 'A', satuan: 'tablet', harga: 500, aktif: false, stok_total: 0, kedaluwarsa_terdekat: null, status_stok: 'habis' });
     expect(perubahanMasterObat(awal, { ...awal, harga: '600' })).toEqual({ harga: '600' });
     expect(perubahanMasterObat(awal, awal)).toEqual({});
   });

@@ -14,3 +14,18 @@ Sertakan direktori apps/api/data saat mengemas aplikasi (berada di luar dist).
 Pembaruan: ambil snapshot berlisensi dari sumber, konversi pasangan SQL kode/nama
 menjadi objek JSON, catat commit/tanggal, dan jalankan tes wilayah. Jangan menghasilkan
 kode dari nama atau nomor urut CSV lama. Perubahan kode pasien lama tidak dimigrasikan otomatis.
+
+# Katalog KFA
+
+kfa.json memuat produk obat KFA tingkat 93 (15.691 produk) dari repositori satusehat-integration (ivanwilliammd),
+commit e4c3667, diubah dengan `python3 skrip/buat-json-kfa.py`. Asal, checksum, pemetaan kolom, dan batasnya ada di
+`dokumen/referensi tambahan/satusehat-integration-ivanwilliammd/README.md`. Server memuatnya sekali dan mencari di memori;
+tambahan dan ubahan klinik ada di tabel `kfa_lokal`. Sertakan direktori ini saat mengemas aplikasi.
+
+# Katalog LOINC
+
+loinc.json memuat 56.732 kode LOINC laboratorium aktif (LOINC 2.74) dari repositori satusehat-integration (ivanwilliammd),
+commit e4c3667, dibuat dengan `python3 skrip/buat-json-loinc.py`. Dipakai untuk saran kode di master pemeriksaan lab.
+Asal, checksum, filter, dan lisensi LOINC (hak cipta Regenstrief Institute, Inc.) ada di
+`dokumen/referensi tambahan/satusehat-integration-ivanwilliammd/README.md`. Sertakan direktori ini saat mengemas aplikasi.
+

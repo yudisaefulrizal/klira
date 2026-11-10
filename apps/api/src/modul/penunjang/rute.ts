@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
 import {
-  filterMasterPemeriksaan, filterRekapLab, GALAT, hasilMasukan, idParam, masterPemeriksaanMasukan, orderLabMasukan, spesimenMasukan, ubahMasterPemeriksaanMasukan,
+  filterLoinc, filterMasterPemeriksaan, filterRekapLab, GALAT, hasilMasukan, idParam, masterPemeriksaanMasukan, orderLabMasukan, spesimenMasukan, ubahMasterPemeriksaanMasukan,
 } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import { wajibMasuk } from '../../middleware/auth';
@@ -40,6 +40,11 @@ export function buatRutePenunjang(layananAkses: LayananAkses, layananIzin: Layan
     const f = filterMasterPemeriksaan.safeParse(req.query);
     if (!f.success) return galatValidasi(res, f.error);
     res.json({ data: await layanan.daftarMaster(pengguna(res), f.data) });
+  }));
+  rute.get('/penunjang/loinc', masuk, wajibIzinSalahSatu(['penunjang', 'input'], ['penunjang', 'perbaikan']), bungkus(async (req, res) => {
+    const f = filterLoinc.safeParse(req.query);
+    if (!f.success) return galatValidasi(res, f.error);
+    res.json({ data: layanan.cariLoinc(f.data) });
   }));
   rute.get('/penunjang/tarif', masuk, wajibIzin('penunjang', 'lihat'), bungkus(async (_req, res) => {
     res.json({ data: await layanan.tarifLab(pengguna(res)) });

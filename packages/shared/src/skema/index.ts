@@ -20,3 +20,4 @@ export * from './dokumen-rm';
 export * from './rawat-inap';
 export * from './klaim';
 export * from './pdp';
+export * from './kesiapan';

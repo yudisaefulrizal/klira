@@ -27,11 +27,11 @@ export function galatMasterObat(k: KeadaanMasterObat, ubah: boolean): Record<str
     const h = ubahMasterObatMasukan.safeParse({ nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif });
     return h.success ? {} : petakan(h.error.issues);
   }
-  const g = petakan(masterObatMasukan.safeParse({ kfa_id: k.kfa?.id ?? 0, nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif }).error?.issues ?? []);
-  if (!k.kfa) g.kfa_id = FARMASI.galat.kfaTidakAda;
+  const g = petakan(masterObatMasukan.safeParse({ kfa_kode: k.kfa?.kode ?? '', nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif }).error?.issues ?? []);
+  if (!k.kfa) g.kfa_kode = FARMASI.galat.kfaTidakAda;
   return g;
 }
-export const bentukTambahObat = (k: KeadaanMasterObat): Record<string, unknown> => ({ kfa_id: k.kfa?.id, nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif });
+export const bentukTambahObat = (k: KeadaanMasterObat): Record<string, unknown> => ({ kfa_kode: k.kfa?.kode, nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif });
 
 /** Hanya bidang yang berubah dikirim saat mengubah (PATCH). */
 export function perubahanMasterObat(awal: KeadaanMasterObat, k: KeadaanMasterObat): Record<string, unknown> {

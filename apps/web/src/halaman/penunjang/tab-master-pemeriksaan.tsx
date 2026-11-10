@@ -79,7 +79,7 @@ export function TabMasterPemeriksaan() {
             <BarisTabel key={m.id}>
               <SelTabel style={{ fontWeight: token.huruf.berat.tebal }}>{m.kode}</SelTabel>
               <SelTabel>{m.nama}</SelTabel>
-              <SelTabel>{m.kode_loinc ?? '-'}{m.loinc_contoh && <> <Lencana warna="kuning">{M.contoh}</Lencana></>}</SelTabel>
+              <SelTabel>{m.kode_loinc ?? '-'}</SelTabel>
               <SelTabel>{m.satuan ?? '-'}</SelTabel>
               <SelTabel>{teksRujukan(m)}</SelTabel>
               <SelTabel>{m.tarif ? rupiah(m.tarif.harga_umum) : M.tanpaTarif}</SelTabel>

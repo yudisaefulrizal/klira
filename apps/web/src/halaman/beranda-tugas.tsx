@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BERANDA, punyaIzin } from '@klira/shared';
 import { ambilRingkasanPdp } from '../api-klien/beranda';
 import { GalatApi } from '../api-klien/klien';
+import { KesiapanAwal } from '../komponen/kesiapan-awal';
 import { Kartu } from '../komponen/ui/kartu';
 import { Lencana } from '../komponen/ui/lencana';
 import { Peringatan } from '../komponen/ui/peringatan';
@@ -37,6 +38,7 @@ export function HalamanBerandaTugas() {
     <>
       <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal }}>{BERANDA.judul}</h1>
       {galat && <Peringatan>{galat}</Peringatan>}
+      <KesiapanAwal mode="kartu" />
       {tugas === null && !galat && <span style={{ color: token.warna.teksRedup }}>{BERANDA.memuat}</span>}
       {bolehPdp && tugas && (
         <Kartu susun="sm" aria-label={BERANDA.pdp.judul}>

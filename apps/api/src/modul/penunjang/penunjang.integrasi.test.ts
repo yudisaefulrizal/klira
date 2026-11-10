@@ -119,6 +119,36 @@ d('penunjang, addendum, tagihan, dan persetujuan terhadap klira_uji', () => {
     await prisma.$disconnect();
   });
 
+  it('master pemeriksaan dengan harga: tarif lab dibuat otomatis, ditautkan, diperbarui saat harga diubah, dan kode tarif jenis lain ditolak', async () => {
+    const kodeMaster = `${kode}-HRG`;
+    const buat = (badan: object) => panggil('POST', '/penunjang/master', 'analis', { kode: kodeMaster, nama: 'Uji Harga', ...badan });
+    const a = await buat({ harga_umum: '25000', harga_jkn: '' });
+    expect(a.status).toBe(201);
+    expect(a.badan.data.tarif).toMatchObject({ kode: kodeMaster, nama: 'Uji Harga', harga_umum: 25_000, harga_jkn: null });
+    const tarif = await prisma.tarifLayanan.findUniqueOrThrow({ where: { fasyankes_id_kode: { fasyankes_id: fas, kode: kodeMaster } } });
+    expect(tarif).toMatchObject({ jenis: 'lab', harga_umum: 25_000, aktif: true });
+    const id = a.badan.data.id;
+    const ubah = await panggil('PATCH', `/penunjang/master/${id}`, 'analis', { harga_umum: '30000', harga_jkn: '20000' });
+    expect(ubah.status).toBe(200);
+    expect(ubah.badan.data.tarif).toMatchObject({ id: tarif.id, harga_umum: 30_000, harga_jkn: 20_000 });
+    expect(await prisma.tarifLayanan.count({ where: { fasyankes_id: fas, kode: kodeMaster } })).toBe(1);
+    // audit mencatat nilai lama dan baru
+    expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'tarif_layanan', entitas_id: tarif.id, keterangan: { contains: 'harga umum Rp 25.000 → Rp 30.000' } } })).toBe(1);
+    expect((await panggil('PATCH', `/penunjang/master/${id}`, 'analis', { harga_umum: '-1' })).status).toBe(400);
+    expect((await panggil('PATCH', `/penunjang/master/${id}`, 'analis', { harga_umum: 'abc' })).status).toBe(400);
+    // kode pemeriksaan bertabrakan dengan tarif jenis lain
+    await prisma.tarifLayanan.create({ data: { fasyankes_id: fas, kode: `${kode}-KONS`, nama: 'Konsultasi', jenis: 'konsultasi', harga_umum: 50_000 } });
+    const bentrok = await panggil('POST', '/penunjang/master', 'analis', { kode: `${kode}-KONS`, nama: 'Bentrok', harga_umum: 1000 });
+    expect(bentrok.status).toBe(409);
+    expect(bentrok.badan.galat.pesan).toMatch(/tarif/i);
+    expect(await prisma.masterPemeriksaan.count({ where: { fasyankes_id: fas, kode: `${kode}-KONS` } })).toBe(0);
+    // tanpa harga: tidak membuat tarif
+    const tanpa = await panggil('POST', '/penunjang/master', 'analis', { kode: `${kode}-NOHRG`, nama: 'Tanpa Harga' });
+    expect(tanpa.status).toBe(201);
+    expect(tanpa.badan.data.tarif).toBeNull();
+    expect(await prisma.tarifLayanan.count({ where: { fasyankes_id: fas, kode: `${kode}-NOHRG` } })).toBe(0);
+  });
+
   it('master pemeriksaan: analis membuat dan mengubah, dokter hanya membaca, kode ganda dan tarif luar klinik ditolak', async () => {
     const tarifLain = await prisma.tarifLayanan.create({ data: { fasyankes_id: fasLain, kode: `${kode}-X`, nama: 'Tarif lain', jenis: 'lab', harga_umum: 1 } });
     const dasar = { kode: 'HB', nama: 'Hemoglobin', kode_loinc: '718-7', satuan: 'g/dL', rujukan_min: '12,0', rujukan_maks: 16, jenis_spesimen: 'Darah vena', tarif_layanan_id: tarifId };
@@ -129,7 +159,7 @@ d('penunjang, addendum, tagihan, dan persetujuan terhadap klira_uji', () => {
     expect((await panggil('POST', '/penunjang/master', 'analis', { ...dasar, tarif_layanan_id: tarifLain.id })).status).toBe(400);
     const a = await panggil('POST', '/penunjang/master', 'analis', dasar);
     expect(a.status).toBe(201);
-    expect(a.badan.data).toMatchObject({ kode: 'HB', rujukan_min: 12, rujukan_maks: 16, loinc_contoh: false, aktif: true, tarif: { harga_umum: 30_000, harga_jkn: 20_000 } });
+    expect(a.badan.data).toMatchObject({ kode: 'HB', rujukan_min: 12, rujukan_maks: 16, aktif: true, tarif: { harga_umum: 30_000, harga_jkn: 20_000 } });
     m1 = a.badan.data.id;
     expect((await panggil('POST', '/penunjang/master', 'analis', dasar)).status).toBe(409);
     m2 = (await panggil('POST', '/penunjang/master', 'analis', { kode: 'GDS', nama: 'Glukosa sewaktu', satuan: 'mg/dL', rujukan_maks: 200 })).badan.data.id;

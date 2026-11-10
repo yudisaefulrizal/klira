@@ -7,7 +7,7 @@ import {
 import { awalMasterPemeriksaan, bentukMasterPemeriksaan, galatMasterPemeriksaan, perubahanMaster } from './keadaan-master-pemeriksaan';
 
 const master = (id: number, p: Partial<MasterPemeriksaanDto> = {}): MasterPemeriksaanDto => ({
-  id, kode: `K${id}`, nama: `Tes ${id}`, kode_loinc: null, loinc_contoh: false, jenis_spesimen: null, satuan: null, rujukan_min: null, rujukan_maks: null, rujukan_teks: null, aktif: true, tarif: null, ...p,
+  id, kode: `K${id}`, nama: `Tes ${id}`, kode_loinc: null, jenis_spesimen: null, satuan: null, rujukan_min: null, rujukan_maks: null, rujukan_teks: null, aktif: true, tarif: null, ...p,
 });
 const order = (id: number, p: Partial<OrderPenunjangDto> = {}): OrderPenunjangDto => ({
   id, kunjungan_id: 5, pasien_id: 2, nama: `Tes ${id}`, kode_loinc: null, prioritas: 'rutin', catatan: null, status: 'dipesan', dibuat_pada: '2026-10-25T01:00:00Z', dibuat_oleh_nama: 'Dr. A',

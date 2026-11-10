@@ -134,6 +134,9 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     const lab = kunjunganIds.length
       ? await prisma.orderPenunjang.groupBy({ by: ['kunjungan_id', 'status'], where: { fasyankes_id: fasyankesId, kunjungan_id: { in: kunjunganIds }, status: { not: 'divalidasi' } }, _count: { _all: true } })
       : [];
+    const resepAda = new Set(
+      kunjunganIds.length ? (await prisma.resep.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: { in: kunjunganIds } }, select: { kunjungan_id: true }, distinct: ['kunjungan_id'] })).map((r) => r.kunjungan_id) : [],
+    );
     const hitungLab = (kunjunganId: number) => {
       let perluSpesimen = 0;
       let perluHasil = 0;
@@ -154,6 +157,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
         mulai: iso(k.mulai),
         antrean: k.antrean ? { id: k.antrean.id, kode: kodeAntrean(k.antrean.nomor), status: k.antrean.status } : null,
         lab: hitungLab(k.id),
+        ada_resep: resepAda.has(k.id),
       };
       return {
         id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, jenis_kelamin: p.jenis_kelamin, umur_tahun: umurTahun(tgl(p.tanggal_lahir)),

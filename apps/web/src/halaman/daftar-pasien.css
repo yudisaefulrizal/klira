@@ -59,6 +59,7 @@
 .halaman-pasien .pasien-tombol-ikon:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--warna-utama); }
 .halaman-pasien .pasien-tombol-ikon:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: 3px; }
 .halaman-pasien .pasien-tombol-ikon[aria-label='Batalkan'] { color: var(--status-merah-teks) !important; }
+.halaman-pasien .pasien-tombol-ikon[data-ubah='ya'] { color: var(--status-kuning-teks) !important; background: var(--status-kuning-latar) !important; }
 .pasien-isian-ikon { position: relative; }
 .pasien-isian-ikon > .pasien-ikon {
   position: absolute;

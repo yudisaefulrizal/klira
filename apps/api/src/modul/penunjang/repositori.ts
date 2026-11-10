@@ -55,8 +55,8 @@ export interface RepositoriPenunjang {
   tarifLab(fasyankesId: number): Promise<TarifLabDto[]>;
   tarifLabSah(fasyankesId: number, id: number): Promise<boolean>;
   /** null bila kode sudah dipakai. */
-  buatMaster(fasyankesId: number, oleh: number, d: MasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null>;
-  ubahMaster(fasyankesId: number, id: number, d: UbahMasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null>;
+  buatMaster(fasyankesId: number, oleh: number, d: MasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null | 'tarif_bentrok'>;
+  ubahMaster(fasyankesId: number, id: number, d: UbahMasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null | 'tarif_bentrok'>;
   /** Isi kanonik hasil sekarang untuk deteksi perubahan setelah divalidasi (null bila belum ada hasil). */
   isiHasil(fasyankesId: number, orderId: number): Promise<unknown>;
 }
@@ -70,12 +70,12 @@ async function petakanMaster(fasyankesId: number, baris: BarisMasterDb[]): Promi
   const tarif = tarifIds.length ? await prisma.tarifLayanan.findMany({ where: { id: { in: tarifIds }, fasyankes_id: fasyankesId } }) : [];
   const peta = new Map(tarif.map((t) => [t.id, tarifDto(t)]));
   return baris.map((b) => ({
-    id: b.id, kode: b.kode, nama: b.nama, kode_loinc: b.kode_loinc, loinc_contoh: b.loinc_contoh, jenis_spesimen: b.jenis_spesimen, satuan: b.satuan, rujukan_min: b.rujukan_min,
+    id: b.id, kode: b.kode, nama: b.nama, kode_loinc: b.kode_loinc, jenis_spesimen: b.jenis_spesimen, satuan: b.satuan, rujukan_min: b.rujukan_min,
     rujukan_maks: b.rujukan_maks, rujukan_teks: b.rujukan_teks, aktif: b.aktif, tarif: b.tarif_layanan_id ? peta.get(b.tarif_layanan_id) ?? null : null, tarif_layanan_id: b.tarif_layanan_id,
   }));
 }
 const keMasterDto = (m: MasterBaris): MasterPemeriksaanDto => ({
-  id: m.id, kode: m.kode, nama: m.nama, kode_loinc: m.kode_loinc, loinc_contoh: m.loinc_contoh, jenis_spesimen: m.jenis_spesimen, satuan: m.satuan, rujukan_min: m.rujukan_min,
+  id: m.id, kode: m.kode, nama: m.nama, kode_loinc: m.kode_loinc, jenis_spesimen: m.jenis_spesimen, satuan: m.satuan, rujukan_min: m.rujukan_min,
   rujukan_maks: m.rujukan_maks, rujukan_teks: m.rujukan_teks, aktif: m.aktif, tarif: m.tarif,
 });
 
@@ -257,24 +257,59 @@ export class RepositoriPenunjangPrisma implements RepositoriPenunjang {
     return (await prisma.tarifLayanan.count({ where: { id, fasyankes_id: fasyankesId, jenis: 'lab', aktif: true } })) > 0;
   }
 
-  async buatMaster(fasyankesId: number, oleh: number, d: MasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null> {
+  /**
+   * Memastikan tarif lab untuk pemeriksaan: memperbarui tarif yang sudah tertaut, atau memakai/membuat tarif berkode sama dengan pemeriksaan.
+   * 'bentrok' bila kode itu sudah dipakai tarif jenis lain. Dipanggil dalam transaksi yang sama dengan penyimpanan master.
+   */
+  private async pastikanTarif(tx: Prisma.TransactionClient, fasyankesId: number, oleh: number, p: { kode: string; nama: string; harga_umum: number; harga_jkn?: number | null; tarifId: number | null }): Promise<number | 'bentrok'> {
+    const harga = { harga_umum: p.harga_umum, ...(p.harga_jkn !== undefined ? { harga_jkn: p.harga_jkn } : {}), aktif: true };
+    if (p.tarifId) {
+      const diubah = await tx.tarifLayanan.updateMany({ where: { id: p.tarifId, fasyankes_id: fasyankesId, jenis: 'lab' }, data: harga });
+      if (diubah.count) return p.tarifId;
+    }
+    const ada = await tx.tarifLayanan.findUnique({ where: { fasyankes_id_kode: { fasyankes_id: fasyankesId, kode: p.kode } } });
+    if (ada) {
+      if (ada.jenis !== 'lab') return 'bentrok';
+      await tx.tarifLayanan.update({ where: { id: ada.id }, data: harga });
+      return ada.id;
+    }
+    return (await tx.tarifLayanan.create({ data: { fasyankes_id: fasyankesId, kode: p.kode, nama: p.nama, jenis: 'lab', harga_umum: p.harga_umum, harga_jkn: p.harga_jkn ?? null, dibuat_oleh: oleh } })).id;
+  }
+
+  async buatMaster(fasyankesId: number, oleh: number, d: MasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null | 'tarif_bentrok'> {
+    const { harga_umum, harga_jkn, ...dasar } = d;
     try {
-      const m = await prisma.masterPemeriksaan.create({ data: { fasyankes_id: fasyankesId, jenis: 'lab', ...d, loinc_contoh: false, dibuat_oleh: oleh } });
-      return keMasterDto((await petakanMaster(fasyankesId, [m]))[0]);
+      return await prisma.$transaction(async (tx) => {
+        let tarifId = dasar.tarif_layanan_id ?? null;
+        if (harga_umum !== null && harga_umum !== undefined) {
+          const t = await this.pastikanTarif(tx, fasyankesId, oleh, { kode: dasar.kode, nama: dasar.nama, harga_umum, harga_jkn, tarifId });
+          if (t === 'bentrok') return 'tarif_bentrok' as const;
+          tarifId = t;
+        }
+        const m = await tx.masterPemeriksaan.create({ data: { fasyankes_id: fasyankesId, jenis: 'lab', ...dasar, tarif_layanan_id: tarifId, dibuat_oleh: oleh } });
+        return keMasterDto((await petakanMaster(fasyankesId, [m]))[0]);
+      });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') return null;
       throw e;
     }
   }
 
-  async ubahMaster(fasyankesId: number, id: number, d: UbahMasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null> {
+  async ubahMaster(fasyankesId: number, id: number, d: UbahMasterPemeriksaanMasukan): Promise<MasterPemeriksaanDto | null | 'tarif_bentrok'> {
     const ada = await prisma.masterPemeriksaan.findFirst({ where: { id, fasyankes_id: fasyankesId } });
     if (!ada) return null;
-    // Kode LOINC yang diubah pengguna bukan lagi contoh seed.
-    const loinc = d.kode_loinc !== undefined && d.kode_loinc !== ada.kode_loinc ? { loinc_contoh: false } : {};
+    const { harga_umum, harga_jkn, ...dasar } = d;
     try {
-      const m = await prisma.masterPemeriksaan.update({ where: { id }, data: { ...d, ...loinc, diubah_pada: new Date() } });
-      return keMasterDto((await petakanMaster(fasyankesId, [m]))[0]);
+      return await prisma.$transaction(async (tx) => {
+        let tarifLink = dasar.tarif_layanan_id !== undefined ? dasar.tarif_layanan_id : ada.tarif_layanan_id;
+        if (harga_umum !== null && harga_umum !== undefined) {
+          const t = await this.pastikanTarif(tx, fasyankesId, ada.dibuat_oleh ?? 0, { kode: dasar.kode ?? ada.kode, nama: dasar.nama ?? ada.nama, harga_umum, harga_jkn, tarifId: tarifLink ?? null });
+          if (t === 'bentrok') return 'tarif_bentrok' as const;
+          tarifLink = t;
+        }
+        const m = await tx.masterPemeriksaan.update({ where: { id }, data: { ...dasar, ...(tarifLink !== undefined ? { tarif_layanan_id: tarifLink } : {}), diubah_pada: new Date() } });
+        return keMasterDto((await petakanMaster(fasyankesId, [m]))[0]);
+      });
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') throw new BentrokError();
       throw e;

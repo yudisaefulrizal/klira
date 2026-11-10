@@ -180,7 +180,7 @@ export function buatRuteInstagram(akses: LayananAkses, izin: LayananIzin) {
       const user = pengguna(res);
       const koneksi = await prisma.igKoneksi.findUnique({ where: { id: 1 } });
       if (!koneksi || koneksi.fasyankes_id !== user.fasyankes_id || !koneksi.aktif || koneksi.penyedia !== 'meta' || koneksi.status !== 'terhubung' || !koneksi.access_token || !koneksi.token_berakhir || koneksi.token_berakhir.getTime() <= Date.now() || !koneksi.webhook_aktif)
-        return tolak(res, 'Instagram belum terhubung. Buka Pengaturan → Instagram.', 409);
+        return tolak(res, 'Instagram belum terhubung. Buka menu Pesan → Instagram.', 409);
       const { teks, media } = hasil.data;
       if (media && teks) return tolak(res, 'Kirim gambar dan teks secara terpisah.');
       if (

@@ -19,3 +19,4 @@ export * from './layar-panggilan';
 
 export * from './website-klinik';
 export type { WilayahDto, HasilCariWilayah } from './wilayah';
+export * from './harga';

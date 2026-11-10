@@ -34,7 +34,7 @@ it('memverifikasi tanda tangan pada body mentah sebelum membaca database', async
 });
 it('menolak callback tanpa sesi dan tidak memantulkan kode atau token ke URL', async () => {
   const res = await fetch(`${url}/auth/instagram/callback?state=${'a'.repeat(64)}&code=rahasia`, { redirect: 'manual' });
-  expect(res.status).toBe(302); expect(res.headers.get('location')).toBe('/pengaturan?tab=instagram&instagram=izin');
+  expect(res.status).toBe(302); expect(res.headers.get('location')).toBe('/pesan?kanal=instagram&instagram=izin');
 });
 it('menolak signed_request palsu dan menerbitkan status hanya setelah pemrosesan selesai', async () => {
   expect((await fetch(`${url}/instagram/data-deletion`, { method: 'POST', body: new URLSearchParams({ signed_request: 'fake' }) })).status).toBe(403);

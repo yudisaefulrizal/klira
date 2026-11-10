@@ -18,6 +18,7 @@ import { awalBayar, bentukBayar, diterapkan, galatBayar, kembalian } from './kea
 import type { KeadaanBayar } from './keadaan-kasir';
 import { KepalaPasien } from './kepala-pasien';
 import { rupiah } from './keadaan-order-lab';
+import { LengkapiHarga } from './lengkapi-harga';
 
 type Props = { kunjunganId: number; onTutup: () => void; onSelesai: () => void };
 const B = KASIR.bayar;
@@ -85,6 +86,9 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
         <Kolom>
           <h3 style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{B.tagihanJudul}</h3>
           {t.status_tagihan !== 'lengkap' && <Peringatan>{B.tagihanBelum}</Peringatan>}
+          {g && t.status_tagihan !== 'lengkap' && (
+            <LengkapiHarga kunjunganId={kunjunganId} gambaran={g} onUbah={(h) => { setG(h); setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 ? String(h.tagihan.sisa) : '' })); setBerubah(true); }} />
+          )}
           <Bingkai halus padding="tanpa" arah="kolom" jarak="tanpa" style={{ overflow: 'hidden' }}>
             <Tabel kolom={KOLOM_TAGIHAN} label={B.tagihanJudul}>
               {t.item.map((i) => (

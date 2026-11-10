@@ -1,13 +1,14 @@
 import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
 import type { MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto } from '@klira/shared';
-import { totalTagihan, keItemDto } from './repositori';
+import { totalTagihan, keItemDto, statusTagihanDari } from './repositori';
 
 export type KunjunganKasir = { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
 export type TagihanKasir = TagihanDto & { pembayaran: PembayaranDto[]; dibayar: number; sisa: number };
 export type HasilBayarRepo =
   | { ok: true; pembayaran: PembayaranDto; tagihan: TagihanKasir; kembalian: number }
   | { ok: false; sebab: 'tahap_salah' | 'tagihan_kosong' | 'tagihan_belum_lengkap' | 'sudah_lunas' | 'tanpa_shift' };
+export type HasilLengkapiHargaRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'sudah_berharga' | 'terkunci' };
 export type HasilTutupRepo = { ok: true } | { ok: false; sebab: 'tahap_salah' | 'tagihan_belum_lengkap' | 'resep_belum' | 'belum_lunas_alasan' | 'bentrok' };
 
 const hariWib = (d = new Date()): string => new Date(d.getTime() + 7 * 3_600_000).toISOString().slice(0, 10);
@@ -125,6 +126,22 @@ export class RepositoriKasirPrisma {
     const tagihan = await this.tagihan(fasyankesId, kunjunganId);
     const p = tagihan.pembayaran.find((x) => x.id === hasil.id)!;
     return { ok: true, pembayaran: p, tagihan, kembalian: hasil.kembalian };
+  }
+
+  // ---- Melengkapi harga item ----
+  /** Mengisi harga item yang masih kosong (tidak menimpa harga yang ada) lalu menghitung ulang status tagihan; tidak untuk kunjungan yang sudah ditutup. */
+  async lengkapiHarga(fasyankesId: number, kunjunganId: number, itemId: number, harga: number): Promise<HasilLengkapiHargaRepo> {
+    return prisma.$transaction(async (tx) => {
+      const item = await tx.itemTagihan.findFirst({ where: { id: itemId, fasyankes_id: fasyankesId, tagihan: { kunjungan_id: kunjunganId } }, include: { tagihan: { select: { id: true } } } });
+      if (!item) return { ok: false, sebab: 'tidak_ada' } as const;
+      const k = await tx.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, select: { tahap_layanan: true } });
+      if (!k || k.tahap_layanan === 'ditutup') return { ok: false, sebab: 'terkunci' } as const;
+      const diubah = await tx.itemTagihan.updateMany({ where: { id: itemId, harga: null }, data: { harga } });
+      if (!diubah.count) return { ok: false, sebab: 'sudah_berharga' } as const;
+      const semua = await tx.itemTagihan.findMany({ where: { tagihan_id: item.tagihan.id }, select: { harga: true } });
+      await tx.tagihan.update({ where: { id: item.tagihan.id }, data: { status_tagihan: statusTagihanDari(semua.map((x) => x.harga)) } });
+      return { ok: true, nama: item.nama } as const;
+    });
   }
 
   // ---- Tutup kunjungan ----

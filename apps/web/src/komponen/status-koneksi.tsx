@@ -27,8 +27,10 @@ export function StatusKoneksi() {
     <span className="status-koneksi-ikon" data-nada={nadaServer} role="img" aria-label={labelServer} data-tooltip={labelServer} tabIndex={0}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01M11 6.5h6M11 17.5h6"/></svg><Penanda nada={nadaServer}/>
     </span>
-    <span className="status-koneksi-ikon" data-nada={nadaLayar} role="img" aria-label={labelLayar} data-tooltip={labelLayar} tabIndex={0}>
+    {fasilitas ? <a className="status-koneksi-ikon status-koneksi-tautan" data-nada={nadaLayar} href={`/layar-panggilan/${fasilitas}`} target="_blank" rel="noopener noreferrer" aria-label={`${labelLayar}. Buka layar panggilan`} data-tooltip={`${labelLayar} — klik untuk membuka`}>
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="19" height="14" rx="2"/><path d="M8 21h8m-4-4v4m-5-10h5m-5-4h9"/></svg><Penanda nada={nadaLayar}/>
-    </span>
+    </a> : <span className="status-koneksi-ikon" data-nada={nadaLayar} role="img" aria-label={labelLayar} data-tooltip={labelLayar} tabIndex={0}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="3" width="19" height="14" rx="2"/><path d="M8 21h8m-4-4v4m-5-10h5m-5-4h9"/></svg><Penanda nada={nadaLayar}/>
+    </span>}
   </div>;
 }

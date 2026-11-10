@@ -30,7 +30,7 @@ export function buatRuteFarmasi(layananAkses: LayananAkses, layananIzin: Layanan
   rute.get('/farmasi/kfa', masuk, wajibIzin('farmasi', 'input'), bungkus(async (req, res) => {
     const f = filterKfa.safeParse(req.query);
     if (!f.success) return galatValidasi(res, f.error);
-    res.json({ data: await layanan.cariKfa(f.data) });
+    res.json({ data: await layanan.cariKfa(pengguna(res), f.data) });
   }));
   rute.get('/farmasi/master', masuk, bacaMaster, bungkus(async (req, res) => {
     const f = filterMasterObat.safeParse(req.query);

@@ -11,7 +11,6 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
   let server: any;
   let fas = 0;
   let fasLain = 0;
-  let kfaId = 0;
   let obatId = 0;
   const id: Record<string, number> = {};
   const cookie: Record<string, string> = {};
@@ -79,8 +78,7 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     await buatPengguna('apoteker', '9990000000000005', [['farmasi', 'lihat'], ['farmasi', 'input']]);
     await buatPengguna('lainApoteker', '9990000000000006', [['farmasi', 'lihat'], ['farmasi', 'input']], fasLain);
     await buatPengguna('lainKasir', '9990000000000004', KASIR, fasLain);
-    kfaId = (await prisma.referensiKfa.create({ data: { kode: `${kode}-K`, tingkat: 92, nama: `Uji obat ${kode}`, contoh: true } })).id;
-    obatId = (await prisma.masterObat.create({ data: { fasyankes_id: fas, kfa_id: kfaId, nama_tampil: 'Obat Kasir', satuan: 'tablet', harga: 1000 } })).id;
+    obatId = (await prisma.masterObat.create({ data: { fasyankes_id: fas, kfa_kode: `${kode}-K`, kfa_nama: `Uji obat ${kode}`, nama_tampil: 'Obat Kasir', satuan: 'tablet', harga: 1000 } })).id;
     const jauh = (hari: number) => new Date(Date.now() + hari * 86_400_000);
     await prisma.stokObat.create({ data: { fasyankes_id: fas, master_obat_id: obatId, batch: 'B-DEKAT', kedaluwarsa: jauh(60), jumlah: 6 } });
     await prisma.stokObat.create({ data: { fasyankes_id: fas, master_obat_id: obatId, batch: 'B-JAUH', kedaluwarsa: jauh(400), jumlah: 20 } });
@@ -94,7 +92,6 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
     for (const m of [prisma.pembayaran, prisma.shiftKasir, prisma.pengeluaranObat, prisma.mutasiStok, prisma.stokObat, prisma.itemTagihan, prisma.tagihan, prisma.itemResep, prisma.resep, prisma.masterObat, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
-    await prisma.referensiKfa.deleteMany({ where: { kode: { startsWith: kode } } });
     await prisma.kunjungan.deleteMany({ where });
     await prisma.pasien.deleteMany({ where });
     await prisma.penugasanJenis.deleteMany({ where });
@@ -243,6 +240,32 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     expect((await tutup(lunas.kunj)).status).toBe(200);
     const kosong = await siapkan({ harga: [] });
     expect((await tutup(kosong.kunj)).status).toBe(200); // tanpa tagihan: lunas
+  });
+
+  it('melengkapi harga item: hanya item tanpa harga, butuh izin perbaikan, tagihan jadi lengkap, tercatat di audit, tidak untuk kunjungan ditutup atau klinik lain', async () => {
+    const harga = (kunj: number, itemId: number, badan: unknown, siapa = 'kasir') => panggil('POST', `/kunjungan/${kunj}/tagihan/item/${itemId}/harga`, siapa, badan);
+    const s = await siapkan({ harga: [40_000, null] });
+    const item = await prisma.itemTagihan.findMany({ where: { tagihan: { kunjungan_id: s.kunj } }, orderBy: { id: 'asc' } });
+    const [berharga, kosong] = [item[0].id, item[1].id];
+    expect((await harga(s.kunj, kosong, { harga: 25_000 }, 'dokter')).status).toBe(403);
+    expect((await harga(s.kunj, kosong, { harga: 'abc' })).status).toBe(400);
+    expect((await harga(s.kunj, kosong, { harga: -5 })).status).toBe(400);
+    expect((await harga(s.kunj, kosong, { harga: 25_000 }, 'lainKasir')).status).toBe(404);
+    const tertukar = await siapkan({ harga: [null] });
+    expect((await harga(s.kunj, (await prisma.itemTagihan.findFirstOrThrow({ where: { tagihan: { kunjungan_id: tertukar.kunj } } })).id, { harga: 1 })).status).toBe(404); // item milik kunjungan lain
+    const sudah = await harga(s.kunj, berharga, { harga: 1 });
+    expect(sudah.status).toBe(409); // harga yang sudah terisi tidak diubah
+    expect((await prisma.itemTagihan.findUniqueOrThrow({ where: { id: berharga } })).harga).toBe(40_000);
+    const ok = await harga(s.kunj, kosong, { harga: 25_000 });
+    expect(ok.status).toBe(200);
+    expect(ok.badan.data.tagihan).toMatchObject({ status_tagihan: 'lengkap', total: 65_000 });
+    expect(ok.badan.data.syarat.tagihan_lengkap).toBe(true);
+    expect((await prisma.tagihan.findUniqueOrThrow({ where: { kunjungan_id: s.kunj } })).status_tagihan).toBe('lengkap');
+    expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'item_tagihan', entitas_id: kosong, aksi: 'perbaikan' } })).toBe(1);
+    expect((await harga(s.kunj, kosong, { harga: 30_000 })).status).toBe(409);
+    const ditutup = await siapkan({ tahap: 'ditutup', harga: [null] });
+    const itemTutup = await prisma.itemTagihan.findFirstOrThrow({ where: { tagihan: { kunjungan_id: ditutup.kunj } } });
+    expect((await harga(ditutup.kunj, itemTutup.id, { harga: 5_000 })).status).toBe(409);
   });
 
   it('gambaran kasir kunjungan memuat tagihan, resep, status shift, dan syarat tutup', async () => {

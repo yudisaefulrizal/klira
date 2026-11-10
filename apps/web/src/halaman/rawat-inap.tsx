@@ -1,4 +1,7 @@
-import { TautanKelolaMaster } from '../komponen/tautan-kelola-master';
+import { KelolaMasterTab } from '../komponen/kelola-master-tab';
+import { Tab } from '../komponen/ui/tab';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab';
+import { useNavigasi } from '../util/navigasi';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KELAS_RAWAT, RAWAT_INAP, STATUS_BED } from '@klira/shared';
 import type { BedDto, PapanDto } from '@klira/shared';
@@ -22,9 +25,10 @@ type Pasien = { kunjungan_id: number; nama: string; nomor_rm: string };
 type Modal = { jenis: 'admisi' } | { jenis: 'cppt' | 'penempatan' | 'pulang'; pasien: Pasien } | null;
 const kecil = { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil } as const;
 
-/** Halaman Rawat inap (3.1): papan bed per ruang dengan penghuninya dan daftar menunggu ruangan; admisi, penempatan, catatan harian, dan pemulangan dibuka sebagai modal. */
-export function HalamanRawatInap() {
+/** Papan bed (3.1): papan bed per ruang dengan penghuninya dan daftar menunggu ruangan; admisi, penempatan, catatan harian, dan pemulangan dibuka sebagai modal. */
+function PapanBed() {
   const boleh = useIzin();
+  const { ganti } = useNavigasi();
   const [papan, setPapan] = useState<PapanDto | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [muat, setMuat] = useState(0);
@@ -58,9 +62,7 @@ export function HalamanRawatInap() {
 
   return (
     <>
-      <Sebaris tag="header" jarak="md" bungkus>
-        <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{RAWAT_INAP.judul}</h1>
-        <TautanKelolaMaster kelompok="ruangan" />
+      <Sebaris jarak="md" bungkus sebaran="akhir">
         {papan && <span style={{ color: token.warna.teksRedup }}>{P.ringkasan(papan.ringkasan.total, papan.ringkasan.terisi, papan.ringkasan.kosong)}</span>}
         {bisaInput && <Tombol type="button" onClick={() => setModal({ jenis: 'admisi' })}>{P.admisi}</Tombol>}
       </Sebaris>
@@ -77,7 +79,14 @@ export function HalamanRawatInap() {
           ))}
         </Kartu>
       )}
-      {papan && !papan.bed.length && <Peringatan nada="biru">{P.kosong}</Peringatan>}
+      {papan && !papan.bed.length && (
+        <Peringatan nada="biru">
+          <Sebaris jarak="sm" bungkus sejajar="tengah">
+            <span style={{ flexGrow: 1 }}>{P.kosong}</span>
+            {boleh('master', 'lihat') && <Tombol type="button" varian="teks" onClick={() => ganti('/rawat-inap?tab=ruang')}>{P.tambahRuang}</Tombol>}
+          </Sebaris>
+        </Peringatan>
+      )}
       {perRuang.map(([ruang, bed]) => (
         <Kolom key={ruang} jarak="sm">
           <h2 style={{ margin: 0, fontSize: token.huruf.ukuran.besar }}>{ruang}</h2>
@@ -105,6 +114,34 @@ export function HalamanRawatInap() {
       {modal?.jenis === 'cppt' && <CatatanHarian kunjunganId={modal.pasien.kunjungan_id} pasien={modal.pasien} onTutup={selesai} />}
       {modal?.jenis === 'penempatan' && <UbahPenempatan kunjunganId={modal.pasien.kunjungan_id} onTutup={() => setModal(null)} onSelesai={selesai} />}
       {modal?.jenis === 'pulang' && <PemulanganRawatInap kunjunganId={modal.pasien.kunjungan_id} pasien={modal.pasien} onTutup={() => setModal(null)} onSelesai={selesai} />}
+    </>
+  );
+}
+
+const HALAMAN = 'rawat-inap';
+const simpanan = () => (typeof sessionStorage === 'undefined' ? null : sessionStorage);
+
+/** Halaman Rawat inap: tab Papan bed (akses klinis) dan Daftar ruang serta Daftar bed (pengelola master). Tab hanya tampil bila lebih dari satu yang boleh dibuka. */
+export function HalamanRawatInap() {
+  const boleh = useIzin();
+  const { search, ganti } = useNavigasi();
+  const daftar = [
+    ...(boleh('klinis', 'lihat') ? [{ id: 'papan' as const, label: RAWAT_INAP.tab.papan }] : []),
+    ...(boleh('master', 'lihat') ? [{ id: 'ruang' as const, label: RAWAT_INAP.tab.ruang }, { id: 'bed' as const, label: RAWAT_INAP.tab.bed }] : []),
+  ];
+  const ids = daftar.map((t) => t.id);
+  const aktif = ids.length ? pilihTab(ids, new URLSearchParams(search).get('tab'), bacaTabTerakhir(HALAMAN, ids, simpanan())) : undefined;
+  useEffect(() => {
+    if (aktif) simpanTabTerakhir(HALAMAN, aktif, simpanan());
+  }, [aktif]);
+  return (
+    <>
+      <Sebaris tag="header" jarak="md" bungkus>
+        <h1 style={{ margin: 0, fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: 1 }}>{RAWAT_INAP.judul}</h1>
+        {aktif && daftar.length > 1 && <Tab daftar={daftar} aktif={aktif} label={RAWAT_INAP.judul} onPilih={(id) => ganti(`/${HALAMAN}?tab=${id}`)} />}
+      </Sebaris>
+      {aktif === 'papan' && <PapanBed />}
+      {(aktif === 'ruang' || aktif === 'bed') && <KelolaMasterTab jenis={aktif} />}
     </>
   );
 }

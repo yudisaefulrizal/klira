@@ -1,5 +1,3 @@
-import { HalamanKelolaMaster } from './halaman/kelola-master';
-import { KELOMPOK_MASTER } from './util/lokasi-master';
 import { PenyediaPesan as PenyediaInstagram } from './komponen/instagram/konteks-pesan';
 import { PanelPesan as PanelInstagram } from './komponen/instagram/pesan';
 import { HalamanStatistik } from './halaman/statistik';
@@ -17,7 +15,8 @@ import { HalamanFarmasi } from './halaman/farmasi';
 import { HalamanGantiKredensial } from './halaman/ganti-kredensial';
 import { HalamanKasirKlaim } from './halaman/kasir-klaim';
 import { HalamanMasuk } from './halaman/masuk';
-import { HalamanPengaturan } from './halaman/pengaturan';
+import { HalamanAkses, HalamanPengaturanKlinik } from './halaman/pengaturan';
+import { HalamanLogAudit } from './halaman/log-audit';
 import { HalamanPelindunganData } from './halaman/pelindungan-data';
 import { HalamanRawatInap } from './halaman/rawat-inap';
 import { HalamanRekamMedis } from './halaman/rekam-medis';
@@ -37,12 +36,14 @@ const HALAMAN_TANPA_MENU: Record<string, () => ReactElement> = {
 const HALAMAN_MENU_ISI: Record<string, () => ReactElement> = Object.fromEntries(
   HALAMAN_MENU.map((h) => [h.path, () => <HalamanSementara judul={h.label} />]),
 );
-Object.assign(HALAMAN_MENU_ISI, Object.fromEntries(KELOMPOK_MASTER.map(k => [k.path, HalamanKelolaMaster])), {
+Object.assign(HALAMAN_MENU_ISI, {
   [HALAMAN_AWAL.daftarPasien]: HalamanDaftarPasien,
   [HALAMAN_AWAL.berandaTugas]: HalamanBerandaTugas,
   '/statistik': HalamanStatistik,
   '/pesan': HalamanPesan,
-  '/pengaturan': HalamanPengaturan,
+  '/akses': HalamanAkses,
+  '/pengaturan-klinik': HalamanPengaturanKlinik,
+  '/log-audit': HalamanLogAudit,
   '/penunjang': HalamanPenunjang,
   '/farmasi': HalamanFarmasi,
   '/kasir-klaim': HalamanKasirKlaim,

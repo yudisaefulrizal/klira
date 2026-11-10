@@ -1,12 +1,16 @@
 import { SerahTerimaObat } from '../modal/pelayanan-klinik/serah-terima-obat';
-import { TautanKelolaMaster } from '../komponen/tautan-kelola-master';
+import { KelolaMasterTab } from '../komponen/kelola-master-tab';
+import { Tab } from '../komponen/ui/tab';
+import { pilihTab } from '../util/ingatan-tab';
 import { IkonPasien, TombolIkonPasien, type NamaIkonPasien } from '../komponen/ikon-pasien';
+import { KesiapanAwal } from '../komponen/kesiapan-awal';
+import { MenuAksi } from '../komponen/menu-aksi';
 import './daftar-pasien.css';
 import { EditPasien } from '../modal/pelayanan-klinik/edit-pasien';
 import { usePesan } from '../komponen/pesan/konteks-pesan';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS, TAHAP_LAYANAN,
+  tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS, TAHAP_LAYANAN,
 } from '@klira/shared';
 import type { AksiAntrean, DaftarPasienDto, PasienBarisDto } from '@klira/shared';
 import { aksiAntrean } from '../api-klien/kunjungan';
@@ -37,7 +41,7 @@ import { PemeriksaanKlinis } from '../modal/pelayanan-klinik/pemeriksaan-klinis'
 import { RegistrasiPasien } from '../modal/pelayanan-klinik/registrasi-pasien';
 import { usePengguna } from '../util/konteks-pengguna';
 import { useNavigasi } from '../util/navigasi';
-import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from '../util/penyaring-pasien';
+import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from '../util/penyaring-pasien';
 import type { AksiBaris, KeadaanPasien } from '../util/penyaring-pasien';
 import { Sebaris } from '../komponen/ui/susunan';
 
@@ -72,7 +76,7 @@ const labelAksi = (a: AksiAntrean, status: string): string =>
   a === 'panggil' && status === 'dipanggil' ? DAFTAR_PASIEN.aksi.panggilUlang : DAFTAR_PASIEN.aksi[a === 'batal' ? 'batal' : a];
 
 /** Satu daftar pasien dengan tindakan mengikuti tahap pelayanan dan izin akun. */
-export function HalamanDaftarPasien() {
+function AntreanPasien() {
   const { pengguna } = usePengguna();
   const { search, ganti } = useNavigasi();
   const boleh = useIzin();
@@ -121,6 +125,8 @@ export function HalamanDaftarPasien() {
   }, []);
 
   const tanggalAktif = keadaan.tanggal ?? tanggalWib(sekarang);
+  const hariIni = tanggalWib(sekarang);
+  const kemarin = tanggalWib(new Date(sekarang.getTime() - 24 * 60 * 60 * 1000));
   const { cari: cariAktif, halaman: halamanAktif } = keadaan;
   useEffect(() => {
     let batal = false;
@@ -159,6 +165,32 @@ export function HalamanDaftarPasien() {
 
   const pasienDari = (b: PasienBarisDto): PasienTerpilih => ({ id: b.id, nama: b.nama, nomor_rm: b.nomor_rm });
 
+  /** Satu-satunya tempat perilaku klik tindakan baris; dipakai tombol langsung dan item menu "Aksi lainnya". */
+  const klikAksi = (b: PasienBarisDto, { jenis }: AksiBaris) => {
+    const k = b.kunjungan;
+    if (jenis === 'buka') return setTerbuka({ jenis: 'detail', pasien: pasienDari(b) });
+    if (jenis === 'riwayat' || jenis === 'keluarga') return setTerbuka({ jenis, pasien: pasienDari(b) });
+    if (jenis === 'daftarkan') return setTerbuka({ jenis: 'kunjungan', pasien: pasienDari(b) });
+    if (jenis === 'batal') return setTerbuka({ jenis: 'batal-antrean', baris: b });
+    if (!k) return undefined;
+    if (jenis === 'skrining' || jenis === 'periksa') return setTerbuka({ jenis: 'pemeriksaan', mode: jenis, kunjunganId: k.id, pasien: pasienDari(b) });
+    if (jenis === 'order_lab') return setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b), cara: k.cara_pembayaran === 'jkn' ? 'jkn' : 'umum' });
+    if (jenis === 'persetujuan' || jenis === 'spesimen' || jenis === 'hasil_lab' || jenis === 'telaah' || jenis === 'bayar' || jenis === 'serah_obat' || jenis === 'tutup_kunjungan') {
+      return setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b) });
+    }
+    return void jalankanAksi(b, jenis);
+  };
+  const teksAksi = ({ jenis, ubah }: AksiBaris, status: string): string => (ubah ? `${DAFTAR_PASIEN.aksi[jenis as keyof typeof DAFTAR_PASIEN.aksi]} (ubah)` : labelAksi(jenis as AksiAntrean, status));
+  const tombolAksi = (b: PasienBarisDto, a: AksiBaris) => {
+    const { jenis, ubah } = a;
+    const status = b.kunjungan?.antrean?.status ?? '';
+    const panggilUlang = jenis === 'panggil' && status === 'dipanggil';
+    const dasar = { label: teksAksi(a, status), key: `${jenis}${ubah ? '-ubah' : ''}`, type: 'button' as const, onClick: () => klikAksi(b, a) };
+    if (jenis === 'panggil') return <TombolIkonPasien {...dasar} ikon={panggilUlang ? 'panggil-ulang' : ikonAksi(jenis)} varian={panggilUlang ? 'teks' : 'sekunder'} disabled={memprosesAksi} />;
+    if (jenis === 'skrining' || jenis === 'periksa') return <TombolIkonPasien {...dasar} ikon={ikonAksi(jenis)} />;
+    return <TombolIkonPasien {...dasar} ikon={ikonAksi(jenis)} varian={jenis === 'buka' || jenis === 'riwayat' || jenis === 'keluarga' ? 'teks' : 'sekunder'} />;
+  };
+
   return (
     <section className="halaman-pasien">
       <header className="pasien-header">
@@ -172,15 +204,15 @@ export function HalamanDaftarPasien() {
             <Isian id="tanggal-pasien" label="Tanggal kunjungan" type="date" value={tanggalAktif}
               onChange={(e) => { if (e.target.value) terapkan({ tanggal: e.target.value }); }} />
           </div>
-          {keadaan.tanggal && <TombolIkonPasien ikon="hari-ini" label="Hari ini" varian="teks" onClick={() => {
+          <TombolIkonPasien ikon="hari-ini" label="Hari ini" varian={tanggalAktif === hariIni ? 'sekunder' : 'teks'} aria-pressed={tanggalAktif === hariIni} onClick={() => {
             const q = new URLSearchParams(queryPasien({ ...keadaan, halaman: 1 }));
             q.delete('tanggal');
             ganti(`/pasien?${q}`);
-          }} />}
+          }} />
+          <TombolIkonPasien ikon="tanggal" label="Kemarin" varian={tanggalAktif === kemarin ? 'sekunder' : 'teks'} aria-pressed={tanggalAktif === kemarin}
+            onClick={() => terapkan({ tanggal: kemarin })} />
         </div>
         <div className="pasien-aksi-utama">
-          <TautanKelolaMaster kelompok="layanan" />
-          {pengguna && <a className="pasien-buka-layar" href={`/layar-panggilan/${pengguna.fasyankes_id}`} target="_blank" rel="noopener noreferrer">Layar panggilan ↗</a>}
           <HanyaDenganIzin fitur="kunjungan" aksi="input">
             <TombolIkonPasien ikon="kunjungan-baru" label={DAFTAR_PASIEN.daftarkanKunjungan} varian="sekunder" onClick={() => setTerbuka({ jenis: 'kunjungan' })} />
           </HanyaDenganIzin>
@@ -190,6 +222,7 @@ export function HalamanDaftarPasien() {
         </div>
       </header>
       {galat && <Peringatan>{galat}</Peringatan>}
+      <KesiapanAwal mode="spanduk" />
       <Kartu className="pasien-tabel" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="pasien-tabel-judul">
           <h2>{DAFTAR_PASIEN.judul}</h2>
@@ -199,7 +232,7 @@ export function HalamanDaftarPasien() {
           {hasil?.data.map((b) => {
             const k = b.kunjungan;
             const tunggu = k && k.tahap_layanan !== 'ditutup' && k.antrean?.status !== 'batal' ? lamaMenunggu(k.mulai, sekarang) : null;
-            const aksi = aksiBaris(b, boleh);
+            const { utama, lainnya } = kelompokAksi(b, aksiBaris(b, boleh));
             return (
               <BarisTabel key={b.id}>
                 <SelTabel style={{ fontWeight: token.huruf.berat.tebal }}>
@@ -234,28 +267,13 @@ export function HalamanDaftarPasien() {
                 <SelTabel style={{ textAlign: 'right' }}>
                   <Sebaris sebaris jarak="sm" bungkus sejajar="regang" sebaran="akhir">
                     {boleh('whatsapp', 'lihat') && <TombolIkonPasien ikon="whatsapp" label="WhatsApp" varian="teks" onClick={() => pesan.bukaPasien({ id: b.id, nama: b.nama })} />}
-                    {aksi.map(({ jenis }) => {
-                      if (jenis === 'buka') return <TombolIkonPasien ikon={ikonAksi('buka')} label={DAFTAR_PASIEN.aksi.buka} key="buka" type="button" varian="teks" onClick={() => setTerbuka({ jenis: 'detail', pasien: pasienDari(b) })} />;
-                      if (jenis === 'skrining' || jenis === 'periksa') {
-                        return (
-                          <TombolIkonPasien ikon={ikonAksi(jenis)} label={DAFTAR_PASIEN.aksi[jenis]} key={jenis} type="button" onClick={() => k && setTerbuka({ jenis: 'pemeriksaan', mode: jenis, kunjunganId: k.id, pasien: pasienDari(b) })} />
-                        );
-                      }
-                      if (jenis === 'persetujuan' || jenis === 'spesimen' || jenis === 'hasil_lab' || jenis === 'telaah' || jenis === 'bayar' || jenis === 'serah_obat' || jenis === 'tutup_kunjungan') {
-                        return <TombolIkonPasien ikon={ikonAksi(jenis)} label={DAFTAR_PASIEN.aksi[jenis]} key={jenis} type="button" varian="sekunder" onClick={() => k && setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b) })} />;
-                      }
-                      if (jenis === 'order_lab') {
-                        return <TombolIkonPasien ikon={ikonAksi(jenis)} label={DAFTAR_PASIEN.aksi[jenis]} key={jenis} type="button" varian="sekunder" onClick={() => k && setTerbuka({ jenis, kunjunganId: k.id, pasien: pasienDari(b), cara: k.cara_pembayaran === 'jkn' ? 'jkn' : 'umum' })} />;
-                      }
-                      if (jenis === 'riwayat' || jenis === 'keluarga') {
-                        return <TombolIkonPasien ikon={ikonAksi(jenis)} label={DAFTAR_PASIEN.aksi[jenis]} key={jenis} type="button" varian="teks" onClick={() => setTerbuka({ jenis, pasien: pasienDari(b) })} />;
-                      }
-                      if (jenis === 'daftarkan') return <TombolIkonPasien ikon={ikonAksi('daftarkan')} label={DAFTAR_PASIEN.aksi.daftarkan} key="daftarkan" type="button" varian="sekunder" onClick={() => setTerbuka({ jenis: 'kunjungan', pasien: pasienDari(b) })} />;
-                      if (jenis === 'batal') return <TombolIkonPasien ikon={ikonAksi('batal')} label={DAFTAR_PASIEN.aksi.batal} key="batal" type="button" varian="teks" disabled={memprosesAksi} onClick={() => setTerbuka({ jenis: 'batal-antrean', baris: b })} />;
-                      return (
-                        <TombolIkonPasien ikon={jenis === 'panggil' && k?.antrean?.status === 'dipanggil' ? 'panggil-ulang' : ikonAksi(jenis)} label={labelAksi(jenis, k?.antrean?.status ?? '')} key={jenis} type="button" varian={jenis === 'panggil' && k?.antrean?.status === 'dipanggil' ? 'teks' : 'sekunder'} disabled={memprosesAksi} onClick={() => void jalankanAksi(b, jenis)} />
-                      );
-                    })}
+                    {utama.map((a) => tombolAksi(b, a))}
+                    {lainnya.length > 0 && (
+                      <MenuAksi label={DAFTAR_PASIEN.aksiLainnya} items={lainnya.map((a) => ({
+                        kunci: `${a.jenis}${a.ubah ? '-ubah' : ''}`, label: teksAksi(a, k?.antrean?.status ?? ''), ikon: <IkonPasien nama={a.ubah ? 'edit' : ikonAksi(a.jenis)} />,
+                        disabled: memprosesAksi && (a.jenis === 'panggil' || a.jenis === 'batal'), onPilih: () => klikAksi(b, a),
+                      }))} />
+                    )}
                   </Sebaris>
                 </SelTabel>
               </BarisTabel>
@@ -304,3 +322,21 @@ export function HalamanDaftarPasien() {
   );
 }
 
+/** Daftar pasien; pengelola master mendapat tab Poli, Praktisi, dan Jadwal praktik. Tab hanya tampil bila akun berhak atas lebih dari satu. */
+export function HalamanDaftarPasien() {
+  const boleh = useIzin();
+  const { search, ganti } = useNavigasi();
+  const T = DAFTAR_PASIEN.tab;
+  const daftar = [
+    ...(FITUR_AKSES_PASIEN.some((f) => boleh(f, 'lihat')) ? [{ id: 'antrean' as const, label: T.antrean }] : []),
+    ...(boleh('master', 'lihat') ? [{ id: 'poli' as const, label: T.poli }, { id: 'praktisi' as const, label: T.praktisi }, { id: 'jadwal' as const, label: T.jadwal }] : []),
+  ];
+  const ids = daftar.map((t) => t.id);
+  const aktif = ids.length ? pilihTab(ids, new URLSearchParams(search).get('tab'), null) : 'antrean';
+  return (
+    <>
+      {daftar.length > 1 && <Tab daftar={daftar} aktif={aktif} label={DAFTAR_PASIEN.judul} onPilih={(id) => ganti(id === 'antrean' ? '/pasien' : `/pasien?tab=${id}`)} />}
+      {aktif === 'antrean' ? <AntreanPasien /> : <KelolaMasterTab jenis={aktif} />}
+    </>
+  );
+}

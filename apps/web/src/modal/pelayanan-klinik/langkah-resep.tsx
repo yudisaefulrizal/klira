@@ -67,6 +67,7 @@ export function LangkahResep({ baris, onUbah, tampilGalat, disabled }: Props) {
     <Kolom>
       {galat && <Peringatan>{galat}</Peringatan>}
       <h4 style={{ margin: 0, fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }}>Obat</h4>
+      {!bolehResep && <Peringatan nada="biru">{R.tanpaIzin}</Peringatan>}
       {bolehResep && !obat && !galat && <span style={{ color: token.warna.teksRedup }}>{FARMASI.memuat}</span>}
       {bolehResep && obat && (
         obat.length === 0 ? <Peringatan nada="biru">{R.belumAdaMaster}</Peringatan> : (

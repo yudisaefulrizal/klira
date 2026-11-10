@@ -1,10 +1,11 @@
-import { ADDENDUM_TEKS, bolehAksiOrder, hasilJadiAddendum, PENUNJANG } from '@klira/shared';
+import { ADDENDUM_TEKS, bolehAksiOrder, hasilJadiAddendum, PENUNJANG, ringkasPerubahanHarga } from '@klira/shared';
 import type {
-  FilterMasterPemeriksaan, FilterRekapLab, HasilBuatOrderDto, HasilMasukan, MasterPemeriksaanDto, MasterPemeriksaanMasukan, OrderLabMasukan, OrderPenunjangDto, PenggunaSaya, RekapLabDto, SpesimenMasukan,
+  FilterLoinc, FilterMasterPemeriksaan, FilterRekapLab, LoincDto, HasilBuatOrderDto, HasilMasukan, MasterPemeriksaanDto, MasterPemeriksaanMasukan, OrderLabMasukan, OrderPenunjangDto, PenggunaSaya, RekapLabDto, SpesimenMasukan,
   TarifLabDto, UbahMasterPemeriksaanMasukan,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import { gagal } from '../hasil';
+import { cariKatalogLoinc } from './katalog-loinc';
 import type { Hasil } from '../hasil';
 import { keDto as keDtoPengesahan } from '../rekam-medis/layanan';
 import type { LayananPengesahan } from '../rekam-medis/layanan';
@@ -157,13 +158,18 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
     },
 
     daftarMaster: (p: Pelaku, f: FilterMasterPemeriksaan): Promise<MasterPemeriksaanDto[]> => repo.daftarMaster(p.fasyankes_id, f),
+    cariLoinc: (f: FilterLoinc): LoincDto[] => cariKatalogLoinc(f.cari, f.batas),
     tarifLab: (p: Pelaku): Promise<TarifLabDto[]> => repo.tarifLab(p.fasyankes_id),
 
     async buatMaster(p: Pelaku, m: MasterPemeriksaanMasukan, alamat?: string): Promise<Hasil<MasterPemeriksaanDto>> {
       if (m.tarif_layanan_id && !(await repo.tarifLabSah(p.fasyankes_id, m.tarif_layanan_id))) return gagal('tidak_valid', PENUNJANG.galat.tarifTidakSah, 'tarif_layanan_id');
       const d = await repo.buatMaster(p.fasyankes_id, p.id, { ...m, kode: m.kode.trim() });
+      if (d === 'tarif_bentrok') return gagal('konflik', PENUNJANG.galat.tarifBentrok, 'kode');
       if (!d) return gagal('konflik', PENUNJANG.galat.kodeGanda, 'kode');
       await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'master_pemeriksaan', entitas_id: d.id, keterangan: `Master pemeriksaan ${d.kode} dibuat`, alamat });
+      if (d.tarif && m.harga_umum !== null && m.harga_umum !== undefined) {
+        await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'tarif_layanan', entitas_id: d.tarif.id, keterangan: `Tarif lab ${d.tarif.kode} ditetapkan lewat master pemeriksaan: ${ringkasPerubahanHarga([['harga umum', null, d.tarif.harga_umum], ['harga JKN', null, d.tarif.harga_jkn]])}`, alamat });
+      }
       return { ok: true, data: d };
     },
 
@@ -175,15 +181,20 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
       const min = m.rujukan_min !== undefined ? m.rujukan_min : sekarangDto.rujukan_min;
       const maks = m.rujukan_maks !== undefined ? m.rujukan_maks : sekarangDto.rujukan_maks;
       if (min !== null && maks !== null && min > maks) return gagal('tidak_valid', PENUNJANG.galat.rentang, 'rujukan_maks');
-      let d: MasterPemeriksaanDto | null;
+      let d: MasterPemeriksaanDto | null | 'tarif_bentrok';
       try {
         d = await repo.ubahMaster(p.fasyankes_id, id, m.kode !== undefined ? { ...m, kode: m.kode.trim() } : m);
       } catch (e) {
         if (e instanceof BentrokError) return gagal('konflik', PENUNJANG.galat.kodeGanda, 'kode');
         throw e;
       }
+      if (d === 'tarif_bentrok') return gagal('konflik', PENUNJANG.galat.tarifBentrok, 'kode');
       if (!d) return gagal('tidak_ditemukan', PENUNJANG.galat.masterTidakAda);
       await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'master_pemeriksaan', entitas_id: id, keterangan: `Master pemeriksaan ${d.kode} diubah`, alamat });
+      const harga = d.tarif ? ringkasPerubahanHarga([['harga umum', sekarangDto.tarif?.harga_umum, d.tarif.harga_umum], ['harga JKN', sekarangDto.tarif?.harga_jkn, d.tarif.harga_jkn]]) : null;
+      if (d.tarif && harga) {
+        await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'tarif_layanan', entitas_id: d.tarif.id, keterangan: `Harga tarif lab ${d.tarif.kode} diubah lewat master pemeriksaan: ${harga}`, alamat });
+      }
       return { ok: true, data: d };
     },
   };

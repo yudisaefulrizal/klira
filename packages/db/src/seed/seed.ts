@@ -2,8 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
 import { hashKataSandi } from '../kata-sandi';
 import { seedTerminologiContoh } from './terminologi';
-import { seedKfaContoh } from './kfa';
-import { seedPenunjangContoh } from './penunjang';
 
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
 export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv = process.env): Promise<void> {
@@ -37,13 +35,10 @@ export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv 
     });
   }
   await seedTeksPersetujuan(prisma);
-  await seedPenunjangContoh(prisma, fas.id);
   await seedPimpinanPertama(prisma, fas.id, env);
   // Wilayah contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
   // Terminologi contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
   if ((await prisma.kodeTerminologi.count()) === 0) await seedTerminologiContoh(prisma);
-  // Referensi KFA contoh hanya bila tabel kosong.
-  if ((await prisma.referensiKfa.count()) === 0) await seedKfaContoh(prisma);
 }
 
 /** Teks general consent bawaan (versi 1, semua klinik); klinik dapat menambah versi sendiri. Idempoten. */

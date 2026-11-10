@@ -1,4 +1,4 @@
-import { KELOMPOK_MASTER } from './lokasi-master';
+import { HALAMAN_KELOLA_MASTER } from './lokasi-master';
 import { halamanMenuDiizinkan, punyaIzin } from '@klira/shared';
 import type { PenggunaSaya } from '@klira/shared';
 
@@ -9,7 +9,7 @@ export type KeputusanRute = { tipe: 'tampil' } | { tipe: 'alihkan'; ke: string }
 
 /** Halaman yang boleh dibuka akun ini (5.1m: yang tak diizinkan tidak ditampilkan). */
 export function halamanDiizinkan(pengguna: PenggunaSaya): string[] {
-  return [...new Set([pengguna.halaman_awal, ...halamanMenuDiizinkan(pengguna.fitur).map((h) => h.path), ...(punyaIzin(pengguna, 'master', 'lihat') ? KELOMPOK_MASTER.map(k => k.path) : [])])];
+  return [...new Set([pengguna.halaman_awal, ...halamanMenuDiizinkan(pengguna.fitur).map((h) => h.path), ...(punyaIzin(pengguna, 'master', 'lihat') ? HALAMAN_KELOLA_MASTER : [])])];
 }
 
 /**

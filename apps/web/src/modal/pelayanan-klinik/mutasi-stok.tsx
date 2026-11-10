@@ -53,7 +53,7 @@ export function MutasiStok({ obat, onTutup, onSelesai }: Props) {
   const g = galatMutasi(k);
   const tampil = (b: string) => (dicoba ? g[b] : undefined);
   const dariDaftar = k.jenis !== 'terima';
-  const opsiBatch = [{ nilai: '', label: MU.pilihBatch }, ...(stok ?? []).map((s) => ({ nilai: s.batch, label: `${s.batch} · ${s.jumlah} ${obat.satuan} · ${s.kedaluwarsa}` }))];
+  const opsiBatch = [{ nilai: '', label: MU.pilihBatch }, ...(stok ?? []).map((s) => ({ nilai: s.batch, label: MU.opsiBatch(s.batch, s.jumlah, obat.satuan, s.kedaluwarsa) }))];
   const dipilih = stok?.find((s) => s.batch === k.batch);
 
   async function simpan() {
@@ -95,10 +95,10 @@ export function MutasiStok({ obat, onTutup, onSelesai }: Props) {
         <Pilihan id="mutasi-jenis" label={MU.jenis} opsi={OPSI_JENIS} value={k.jenis} onChange={(e) => setK(gantiJenisMutasi(k, e.target.value as KeadaanMutasi['jenis']))} />
         <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{k.jenis === 'terima' ? MU.petunjukTerima : k.jenis === 'keluar' ? MU.petunjukKeluar : MU.petunjukKoreksi}</span>
         {dariDaftar ? (
-          <Pilihan id="mutasi-batch" label={MU.batch} opsi={opsiBatch} value={k.batch} onChange={(e) => setK(pilihBatch(k, stok ?? [], e.target.value))} galat={tampil('batch')} />
+          <Pilihan id="mutasi-batch" label={MU.batch} petunjuk={MU.penjelasanBatch} opsi={opsiBatch} value={k.batch} onChange={(e) => setK(pilihBatch(k, stok ?? [], e.target.value))} galat={tampil('batch')} />
         ) : (
           <Baris>
-            <Isian id="mutasi-batch" label={MU.batch} value={k.batch} onChange={(e) => setK({ ...k, batch: e.target.value })} galat={tampil('batch')} autoComplete="off" />
+            <Isian id="mutasi-batch" label={MU.batch} petunjuk={MU.penjelasanBatch} placeholder={MU.batchContoh} value={k.batch} onChange={(e) => setK({ ...k, batch: e.target.value })} galat={tampil('batch')} autoComplete="off" />
             <Isian id="mutasi-kedaluwarsa" label={MU.kedaluwarsa} type="date" value={k.kedaluwarsa} onChange={(e) => setK({ ...k, kedaluwarsa: e.target.value })} galat={tampil('kedaluwarsa')} />
           </Baris>
         )}
@@ -113,7 +113,7 @@ export function MutasiStok({ obat, onTutup, onSelesai }: Props) {
           {riwayat.slice(0, 8).map((m) => (
             <Sebaris key={m.id} jarak="sm" bungkus>
               <Lencana warna={JENIS_MUTASI.warna(m.jenis)}>{JENIS_MUTASI.label(m.jenis)}</Lencana>
-              <Tumbuh tag="span">{m.batch}: {m.jumlah > 0 ? `+${m.jumlah}` : m.jumlah}{m.alasan ? ` (${m.alasan})` : ''}</Tumbuh>
+              <Tumbuh tag="span">{MU.batchRiwayat(m.batch)}: {m.jumlah > 0 ? `+${m.jumlah}` : m.jumlah}{m.alasan ? ` (${m.alasan})` : ''}</Tumbuh>
               <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{m.pengguna_nama ?? '-'} · {formatWaktu(m.waktu)}</span>
             </Sebaris>
           ))}

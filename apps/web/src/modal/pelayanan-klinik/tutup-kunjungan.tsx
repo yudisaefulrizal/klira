@@ -12,6 +12,7 @@ import { Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { bisaTutup, daftarSyarat } from './keadaan-kasir';
 import { KepalaPasien } from './kepala-pasien';
+import { LengkapiHarga } from './lengkapi-harga';
 import { rupiah } from './keadaan-order-lab';
 
 type Props = { kunjunganId: number; onTutup: () => void; onSelesai: () => void };
@@ -84,6 +85,7 @@ export function TutupKunjungan({ kunjunganId, onTutup, onSelesai }: Props) {
               <Lencana warna={s.ok ? 'hijau' : s.wajib ? 'merah' : 'kuning'}>{s.ok ? T.ok : T.belum}</Lencana>
             </Sebaris>
           ))}
+          {!g.syarat.tagihan_lengkap && <LengkapiHarga kunjunganId={kunjunganId} gambaran={g} onUbah={setG} />}
           {!g.syarat.lunas && g.tagihan.sisa > 0 && (
             <>
               <Peringatan>{T.alasanPetunjuk} Sisa tagihan {rupiah(g.tagihan.sisa)}.</Peringatan>

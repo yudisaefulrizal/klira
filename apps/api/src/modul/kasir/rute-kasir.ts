@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
-import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, tutupKunjunganMasukan, tutupShiftMasukan } from '@klira/shared';
+import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHargaMasukan, tutupKunjunganMasukan, tutupShiftMasukan } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import { wajibMasuk } from '../../middleware/auth';
 import { alamatDari } from '../../middleware/audit';
@@ -54,6 +54,14 @@ export function buatRuteKasirLengkap(layananAkses: LayananAkses, layananIzin: La
     const m = bayarMasukan.safeParse(req.body ?? {});
     if (!m.success) return galatValidasi(res, m.error);
     kirimHasil(res, await layanan.bayar(pengguna(res), id.data.id, m.data, alamatDari(req)), 201);
+  }));
+  rute.post('/kunjungan/:id/tagihan/item/:itemId/harga', masuk, wajibIzin('kasir', 'perbaikan'), bungkus(async (req, res) => {
+    const id = idParam.safeParse(req.params);
+    const itemId = idParam.safeParse({ id: req.params.itemId });
+    if (!id.success || !itemId.success) return tidakAda(res);
+    const m = lengkapiHargaMasukan.safeParse(req.body ?? {});
+    if (!m.success) return galatValidasi(res, m.error);
+    kirimHasil(res, await layanan.lengkapiHarga(pengguna(res), id.data.id, itemId.data.id, m.data, alamatDari(req)));
   }));
   rute.post('/kunjungan/:id/tutup', masuk, wajibIzin('kasir', 'perbaikan'), bungkus(async (req, res) => {
     const id = idParam.safeParse(req.params);

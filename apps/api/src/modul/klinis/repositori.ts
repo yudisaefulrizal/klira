@@ -218,7 +218,8 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
     const [poli, dpjp, anamnesisTerbaru, diagnosisTerbaru, observasiTerbaru] = await Promise.all([
       k.lokasi_id ? prisma.lokasi.findFirst({ where: { id: k.lokasi_id, fasyankes_id: fasyankesId }, select: { nama: true } }) : null,
       k.peserta[0] ? prisma.pengguna.findFirst({ where: { id: k.peserta[0].pengguna_id, fasyankes_id: fasyankesId }, select: { nama: true } }) : null,
-      prisma.anamnesis.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan: { pasien_id: k.pasien_id } }, orderBy: { id: 'desc' }, select: { alergi: true } }),
+      // Alergi adalah data pasien: ambil catatan terbaru yang terisi, jangan tertimpa kunjungan baru yang tidak mengisinya.
+      prisma.anamnesis.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan: { pasien_id: k.pasien_id }, alergi: { not: null }, NOT: { alergi: '' } }, orderBy: { id: 'desc' }, select: { alergi: true } }),
       prisma.diagnosis.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan: { pasien_id: k.pasien_id } }, orderBy: { id: 'desc' }, select: { kunjungan_id: true, versi: true } }),
       prisma.observasi.findFirst({ where: { fasyankes_id: fasyankesId, kelompok: 'tanda_vital', kunjungan: { pasien_id: k.pasien_id } }, orderBy: { id: 'desc' }, select: { kunjungan_id: true, versi: true } }),
     ]);

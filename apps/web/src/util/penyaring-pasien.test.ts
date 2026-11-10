@@ -1,5 +1,5 @@
 import type { PasienBarisDto } from '@klira/shared';
-import { adalahPintasanCari, aksiBaris, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from './penyaring-pasien';
+import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from './penyaring-pasien';
 import { queryDaftarPasien } from '../api-klien/pasien';
 
 describe('satu daftar pasien', () => {
@@ -25,11 +25,58 @@ describe('satu daftar pasien', () => {
   });
 });
 
+describe('pengelompokan tindakan baris', () => {
+  const kunjungan = (ubah: Partial<NonNullable<PasienBarisDto['kunjungan']>> = {}): PasienBarisDto => ({
+    id: 1, nomor_rm: 'X', nama: 'N', jenis_kelamin: 'perempuan', umur_tahun: 30, status_identitas: 'lengkap',
+    kunjungan: {
+      id: 5, jenis: 'AMB', status: 'arrived', tahap_layanan: 'kasir', cara_pembayaran: 'umum', poli_nama: 'Umum', dpjp_nama: null, mulai: '2026-10-25T01:00:00Z', antrean: null,
+      lab: { perlu_spesimen: 0, perlu_hasil: 0 }, ada_resep: false, ...ubah,
+    },
+  });
+  const semua = () => true;
+
+  it('Telaah resep dan Serahkan obat hanya muncul bila kunjungan punya resep', () => {
+    expect(aksiBaris(kunjungan(), semua).map((a) => a.jenis)).not.toContain('serah_obat');
+    expect(aksiBaris(kunjungan(), semua).map((a) => a.jenis)).not.toContain('telaah');
+    const dgnResep = aksiBaris(kunjungan({ ada_resep: true }), semua).map((a) => a.jenis);
+    expect(dgnResep).toContain('serah_obat');
+    expect(dgnResep).toContain('telaah');
+  });
+
+  it('di tahap kasir tanpa order lab: pembayaran dan tutup langsung tampil; sisanya masuk menu', () => {
+    const b = kunjungan();
+    const { utama, lainnya } = kelompokAksi(b, aksiBaris(b, semua));
+    expect(utama.map((a) => a.jenis)).toEqual(['bayar', 'tutup_kunjungan']);
+    expect(lainnya.map((a) => a.jenis)).toEqual(expect.arrayContaining(['persetujuan', 'order_lab', 'spesimen', 'hasil_lab', 'buka', 'riwayat', 'keluarga']));
+    expect(lainnya.some((a) => a.jenis === 'bayar')).toBe(false);
+  });
+
+  it('Ambil spesimen dan Hasil lab naik ke tombol langsung hanya bila ada order yang menunggu', () => {
+    const b = kunjungan({ lab: { perlu_spesimen: 1, perlu_hasil: 0 } });
+    expect(kelompokAksi(b, aksiBaris(b, semua)).utama.map((a) => a.jenis)).toEqual(expect.arrayContaining(['spesimen']));
+    expect(kelompokAksi(b, aksiBaris(b, semua)).utama.map((a) => a.jenis)).not.toContain('hasil_lab');
+    const c = kunjungan({ lab: { perlu_spesimen: 0, perlu_hasil: 2 } });
+    expect(kelompokAksi(c, aksiBaris(c, semua)).utama.map((a) => a.jenis)).toContain('hasil_lab');
+  });
+
+  it('varian ubah selalu masuk menu, langkah yang sedang berjalan tetap tombol langsung', () => {
+    const berjalan = kunjungan({ tahap_layanan: 'pemeriksaan' });
+    const { utama, lainnya } = kelompokAksi(berjalan, aksiBaris(berjalan, semua));
+    expect(utama.map((a) => a.jenis)).toEqual(['periksa']);
+    expect(lainnya.find((a) => a.jenis === 'skrining')?.ubah).toBe(true);
+  });
+
+  it('tanpa kunjungan: Daftarkan kunjungan tampil langsung', () => {
+    const tanpa: PasienBarisDto = { ...kunjungan(), kunjungan: null };
+    expect(kelompokAksi(tanpa, aksiBaris(tanpa, semua)).utama.map((a) => a.jenis)).toEqual(['daftarkan']);
+  });
+});
+
 describe('tindakan per baris', () => {
   const baris = (kunjungan: PasienBarisDto['kunjungan']): PasienBarisDto => ({ id: 1, nomor_rm: 'X', nama: 'N', jenis_kelamin: 'perempuan', umur_tahun: 3, status_identitas: 'lengkap', kunjungan });
   const kunj = (status: 'menunggu' | 'dipanggil' | 'dilayani' | 'selesai' | 'batal' | null): PasienBarisDto['kunjungan'] => ({
     id: 5, jenis: 'AMB', status: 'arrived', tahap_layanan: 'menunggu_skrining', cara_pembayaran: 'umum', poli_nama: 'Umum', dpjp_nama: null, mulai: '2026-10-25T01:00:00Z',
-    antrean: status ? { id: 9, kode: 'A-001', status } : null, lab: { perlu_spesimen: 0, perlu_hasil: 0 },
+    antrean: status ? { id: 9, kode: 'A-001', status } : null, lab: { perlu_spesimen: 0, perlu_hasil: 0 }, ada_resep: true,
   });
   type Boleh = (f: string, a: string) => boolean;
   const semua: Boleh = () => true;

@@ -9,7 +9,9 @@ const asetMenu: Record<string, string> = {
   '/rekam-medis': 'rekam-medis',
   '/satusehat': 'satusehat',
   '/pelindungan-data': 'pelindungan-data',
-  '/pengaturan': 'pengaturan',
+  '/log-audit': 'rekam-medis',
+  '/akses': 'pelindungan-data',
+  '/pengaturan-klinik': 'pengaturan',
   '/beranda': 'beranda-tugas',
 };
 

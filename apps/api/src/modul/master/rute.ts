@@ -9,6 +9,7 @@ import { buatWajibIzin } from '../../middleware/izin';
 import type { LayananAkses } from '../akses/layanan';
 import type { LayananIzin } from '../akses/layanan-izin';
 import type { HasilMaster, LayananMaster } from './layanan';
+import { hitungKesiapan } from './kesiapan';
 import type { MasukanMaster } from './repositori';
 
 function galatValidasi(res: Response, e: z.ZodError): void {
@@ -56,6 +57,10 @@ export function buatRuteMaster(layananAkses: LayananAkses, layananIzin: LayananI
     res.json({ data: await layanan.opsi(pengguna(res), s.data, cari || undefined) });
   }));
 
+  // Harus sebelum '/master/:jenis'. Hanya hitungan; tidak memuat data pribadi.
+  rute.get('/master/kesiapan', masuk, wajibIzin('master', 'lihat'), bungkus(async (_req, res) => {
+    res.json({ data: await hitungKesiapan(pengguna(res).fasyankes_id) });
+  }));
   rute.get('/master/:jenis', masuk, wajibIzin('master', 'lihat'), bungkus(async (req, res) => {
     const j = jenisMaster.safeParse(req.params.jenis);
     if (!j.success) return galatValidasi(res, j.error);

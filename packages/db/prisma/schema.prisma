@@ -1012,7 +1012,7 @@ enum StatusPembayaran {
 }
 
 // Master pemeriksaan penunjang lokal (4.9): satuan UCUM dan rentang rujukan klinik; harga lewat tarif_layanan (jenis lab).
-// loinc_contoh menandai kode LOINC contoh (bukan hasil impor resmi).
+// Kode LOINC dipilih dari katalog statis apps/api/data/loinc.json (atau diisi manual dengan pola yang sah).
 model MasterPemeriksaan {
   id               Int       @id @default(autoincrement())
   fasyankes_id     Int
@@ -1020,7 +1020,6 @@ model MasterPemeriksaan {
   nama             String    @db.VarChar(200)
   jenis            String    @default("lab") @db.VarChar(20)
   kode_loinc       String?   @db.VarChar(30)
-  loinc_contoh     Boolean   @default(false)
   jenis_spesimen   String?   @db.VarChar(100)
   satuan           String?   @db.VarChar(50)
   rujukan_min      Float?
@@ -1174,49 +1173,44 @@ enum JenisMutasi {
   koreksi
 }
 
-// Referensi KFA statis (4.3): kode tingkat 91 bahan, 92 template, 93 produk, 94 kemasan. Diisi lewat impor; baris `contoh` bukan data resmi.
-model ReferensiKfa {
-  id                    Int      @id @default(autoincrement())
-  kode                  String   @unique @db.VarChar(30)
-  tingkat               Int
-  nama                  String   @db.VarChar(255)
-  bentuk_sediaan        String?  @db.VarChar(100)
-  rute                  String?  @db.VarChar(100)
-  satuan                String?  @db.VarChar(50)
-  kekuatan              String?  @db.VarChar(100)
-  nomor_izin_edar       String?  @db.VarChar(100)
-  produsen              String?  @db.VarChar(200)
-  generik               Boolean  @default(false)
-  status                String   @default("aktif") @db.VarChar(30)
-  produk_pengganti_kode String?  @db.VarChar(30)
-  contoh                Boolean  @default(false)
-  diperbarui_pada       DateTime @default(now()) @db.DateTime(3)
+// Tambahan dan ubahan KFA milik klinik (4.3). Katalog KFA resmi statis ada di apps/api/data/kfa.json (baca-saja, bukan tabel);
+// baris di sini menambah produk yang belum ada atau menimpa nama/status produk dengan kode yang sama, hanya untuk klinik pemiliknya.
+model KfaLokal {
+  id             Int       @id @default(autoincrement())
+  fasyankes_id   Int
+  kode           String    @db.VarChar(30)
+  nama           String    @db.VarChar(700)
+  bentuk_sediaan String?   @db.VarChar(100)
+  satuan         String?   @db.VarChar(50)
+  status         String    @default("aktif") @db.VarChar(30)
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime  @default(now()) @db.DateTime(3)
+  diubah_pada    DateTime? @db.DateTime(3)
 
-  master MasterObat[]
-
-  @@index([tingkat])
-  @@index([nama])
-  @@map("referensi_kfa")
+  @@unique([fasyankes_id, kode])
+  @@map("kfa_lokal")
 }
 
 // Master obat klinik: satu kode KFA per baris (tanpa obat ketik bebas); harga dan satuan milik klinik.
+// Kode, nama, dan bentuk sediaan KFA disalin saat obat ditambahkan, sehingga riwayat tidak berubah bila katalog diperbarui.
 model MasterObat {
-  id           Int       @id @default(autoincrement())
-  fasyankes_id Int
-  kfa_id       Int
-  nama_tampil  String    @db.VarChar(200)
-  satuan       String    @db.VarChar(50)
-  harga        Int
-  aktif        Boolean   @default(true)
-  dibuat_oleh  Int?
-  dibuat_pada  DateTime  @default(now()) @db.DateTime(3)
-  diubah_pada  DateTime? @db.DateTime(3)
+  id             Int       @id @default(autoincrement())
+  fasyankes_id   Int
+  kfa_kode       String    @db.VarChar(30)
+  kfa_nama       String    @db.VarChar(700)
+  bentuk_sediaan String?   @db.VarChar(100)
+  nama_tampil    String    @db.VarChar(200)
+  satuan         String    @db.VarChar(50)
+  harga          Int
+  aktif          Boolean   @default(true)
+  dibuat_oleh    Int?
+  dibuat_pada    DateTime  @default(now()) @db.DateTime(3)
+  diubah_pada    DateTime? @db.DateTime(3)
 
-  kfa  ReferensiKfa @relation(fields: [kfa_id], references: [id])
   item ItemResep[]
   stok StokObat[]
 
-  @@unique([fasyankes_id, kfa_id])
+  @@unique([fasyankes_id, kfa_kode])
   @@index([fasyankes_id])
   @@map("master_obat")
 }

@@ -7,6 +7,7 @@ describe('tab Kasir dan klaim menurut izin', () => {
     expect(ids([{ fitur: 'kasir', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['shift']);
     expect(ids([{ fitur: 'klaim', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['klaim']);
     expect(ids([{ fitur: 'kasir', aksi: 'lihat', cakupan: 'unit' }, { fitur: 'klaim', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['shift', 'klaim']);
+    expect(ids([{ fitur: 'master', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['tarif']);
     expect(ids([{ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' }])).toEqual([]);
   });
 });

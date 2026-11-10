@@ -19,7 +19,9 @@ describe('halamanMenuDiizinkan', () => {
   it('menu memuat hanya halaman yang diizinkan', () => {
     expect(path(['kasir'])).toEqual(['/pasien', '/kasir-klaim', '/beranda']);
     expect(path(['pdp'])).toEqual(['/pelindungan-data', '/beranda']);
-    expect(path(['akses', 'audit', 'rekam-medis'])).toContain('/pengaturan');
+    expect(path(['akses', 'audit', 'rekam-medis'])).toEqual(expect.arrayContaining(['/akses', '/pengaturan-klinik']));
+    expect(path(['master'])).toEqual(['/beranda']); // master dikelola dari modul pemiliknya, tanpa menu sendiri
+    expect(path(['profil-klinik'])).toEqual(['/pengaturan-klinik', '/beranda']);
   });
   it('semua halaman bila semua fitur', () => {
     const semua = HALAMAN_MENU.flatMap((h) => h.fitur ?? []);
@@ -52,10 +54,10 @@ describe('paket awal: penunjang dan persetujuan', () => {
 });
 
 describe('izin WhatsApp tunggal', () => {
-  it('hanya menawarkan satu pilihan WhatsApp dan membuka kedua menu terkait', () => {
+  it('hanya menawarkan satu pilihan WhatsApp dan membuka menu Pesan', () => {
     expect(IZIN_AWAL.filter(i => i.fitur === 'whatsapp')).toEqual([{ fitur: 'whatsapp', aksi: 'lihat', cakupan: 'unit' }]);
     expect(IZIN_AWAL.some(i => i.fitur === 'pesan')).toBe(false);
     const paths = halamanMenuDiizinkan(['whatsapp']).map(h => h.path);
-    expect(paths).toEqual(expect.arrayContaining(['/pesan', '/pengaturan']));
+    expect(paths).toEqual(['/pesan', '/beranda']);
   });
 });

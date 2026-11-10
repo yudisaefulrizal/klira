@@ -12,9 +12,19 @@ const angkaNull = z.preprocess((v) => (typeof v === 'string' ? (v.trim() === '' 
 
 /** Kode LOINC: angka, tanda hubung, satu digit pemeriksa (mis. 718-7). */
 export const POLA_LOINC = /^\d{1,7}-\d$/;
+/** Pencarian katalog LOINC (baca-saja): minimal dua huruf, dibatasi hasilnya. */
+export const filterLoinc = z.object({
+  cari: z.string().trim().min(2, PENUNJANG.galat.cariPendek).max(100),
+  batas: z.coerce.number().int().min(1).max(50).default(10),
+});
+export type FilterLoinc = z.infer<typeof filterLoinc>;
+export type LoincDto = { kode: string; nama: string; kelas: string };
 export const NILAI_PRIORITAS = PRIORITAS_ORDER.nilai;
 export const NILAI_INTERPRETASI = INTERPRETASI_HASIL.nilai;
 export const NILAI_STATUS_ORDER = STATUS_ORDER_PENUNJANG.nilai;
+
+/** Harga dalam rupiah (bilangan bulat tidak negatif); kosong menjadi null. */
+const hargaNull = z.preprocess((v) => (typeof v === 'string' ? (v.trim() === '' ? null : Number(v.replace(/\./g, ''))) : kosongJadiNull(v)), z.number({ error: PENUNJANG.galat.angka }).int(PENUNJANG.galat.angka).min(0, PENUNJANG.galat.angka).max(100_000_000, PENUNJANG.galat.angka).nullable());
 
 const masterDasar = {
   kode: teksWajib(50),
@@ -25,6 +35,9 @@ const masterDasar = {
   rujukan_min: angkaNull,
   rujukan_maks: angkaNull,
   rujukan_teks: teksNull(200),
+  /** Bila `harga_umum` diisi, tarif lab (kode sama dengan kode pemeriksaan) dibuat atau diperbarui otomatis dan ditautkan. */
+  harga_umum: hargaNull,
+  harga_jkn: hargaNull,
   tarif_layanan_id: z.preprocess((v) => (typeof v === 'string' && v.trim() !== '' ? Number(v) : kosongJadiNull(v)), idPositif.nullable()),
   aktif: z.boolean().default(true),
 };
@@ -83,7 +96,7 @@ export type FilterRekapLab = z.infer<typeof filterRekapLab>;
 
 export type TarifLabDto = { id: number; kode: string; nama: string; harga_umum: number; harga_jkn: number | null };
 export type MasterPemeriksaanDto = {
-  id: number; kode: string; nama: string; kode_loinc: string | null; loinc_contoh: boolean; jenis_spesimen: string | null; satuan: string | null;
+  id: number; kode: string; nama: string; kode_loinc: string | null; jenis_spesimen: string | null; satuan: string | null;
   rujukan_min: number | null; rujukan_maks: number | null; rujukan_teks: string | null; aktif: boolean; tarif: TarifLabDto | null;
 };
 

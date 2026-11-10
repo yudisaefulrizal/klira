@@ -87,7 +87,9 @@ export const HALAMAN_MENU: readonly HalamanMenu[] = [
   { path: '/rekam-medis', label: 'Rekam medis', fitur: ['rekam-medis', 'klinis'] },
   { path: '/satusehat', label: 'SATUSEHAT', fitur: ['satusehat'] },
   { path: '/pelindungan-data', label: 'Pelindungan data', fitur: ['pdp'] },
-  { path: '/pengaturan', label: 'Pengaturan', fitur: ['akses', 'audit', 'satusehat', 'master', 'profil-klinik', 'whatsapp', 'instagram'] },
+  { path: '/log-audit', label: 'Log audit', fitur: ['audit'] },
+  { path: '/akses', label: 'Akses dan keamanan', fitur: ['akses', 'audit'] },
+  { path: '/pengaturan-klinik', label: 'Pengaturan klinik', fitur: ['profil-klinik', 'akses'] },
   { path: HALAMAN_AWAL.berandaTugas, label: 'Beranda tugas', fitur: null },
 ];
 

@@ -1,4 +1,4 @@
-import { GALAT, MASTER } from '@klira/shared';
+import { GALAT, MASTER, ringkasPerubahanHarga } from '@klira/shared';
 import type { BarisMaster, FilterMaster, Halaman, JenisMaster, JenisMasterUbah, OpsiMasterDto, PenggunaSaya, SumberOpsiMaster } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import type { MasukanMaster, RepositoriMaster } from './repositori';
@@ -68,7 +68,7 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
         const ringkasan = ringkasanSip(null, data as MasukanMaster['praktisi']);
         if (ringkasan) await repo.tambahRiwayatProfil(f, 'sip', baris.pengguna_id as number, ringkasan, p.id);
       }
-      await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'input', entitas: ENTITAS[jenis], entitas_id: baris.id, keterangan: `Tambah master ${jenis}`, alamat });
+      await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'input', entitas: ENTITAS[jenis], entitas_id: baris.id, keterangan: `Tambah master ${jenis}${jenis === 'tarif' ? `: ${ringkasPerubahanHarga([['harga umum', null, baris.harga_umum as number], ['harga JKN', null, (baris.harga_jkn as number | null) ?? null]]) ?? ''}` : ''}`, alamat });
       return { ok: true, data: baris };
     },
 
@@ -83,7 +83,8 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
         const ringkasan = ringkasanSip(lama, data as { profesi?: string; nomor_sip?: string | null; masa_berlaku_sip?: Date | null });
         if (ringkasan) await repo.tambahRiwayatProfil(f, 'sip', lama.pengguna_id as number, ringkasan, p.id);
       }
-      await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Ubah master ${jenis}`, alamat });
+      const harga = jenis === 'tarif' ? ringkasPerubahanHarga([['harga umum', lama.harga_umum as number, baris.harga_umum as number], ['harga JKN', (lama.harga_jkn as number | null) ?? null, (baris.harga_jkn as number | null) ?? null]]) : null;
+      await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Ubah master ${jenis}${harga ? `: ${harga}` : ''}`, alamat });
       return { ok: true, data: baris };
     },
 

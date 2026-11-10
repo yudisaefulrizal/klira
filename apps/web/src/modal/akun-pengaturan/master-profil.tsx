@@ -79,11 +79,11 @@ export function ModalMasterProfil({ jenis, baris, onTutup, onSelesai }: Props) {
     if (b.tipe === 'pilihan' || b.tipe === 'rujukan') {
       const dasar = b.tipe === 'pilihan' ? [...(b.opsi ?? [])] : opsiDenganNilaiSaatIni(opsi[b.rujukan as SumberOpsiMaster] ?? [], b.kunci, baris);
       const semua = b.tipe === 'rujukan' ? [{ nilai: '', label: b.wajib ? MASTER.pilih : MASTER.tanpaPilihan }, ...dasar] : dasar;
-      return <Pilihan key={b.kunci} id={id} label={b.label} value={nilai[b.kunci] ?? ''} opsi={semua} onChange={(e) => atur(b.kunci, e.target.value)} galat={tampilGalat} aria-required={b.wajib} />;
+      return <Pilihan key={b.kunci} id={id} label={b.label} petunjuk={b.petunjuk} value={nilai[b.kunci] ?? ''} opsi={semua} onChange={(e) => atur(b.kunci, e.target.value)} galat={tampilGalat} aria-required={b.wajib} />;
     }
     return (
       <Isian
-        key={b.kunci} id={id} label={b.label} type={JENIS_ISIAN[b.tipe]} value={nilai[b.kunci] ?? ''} maxLength={b.maks}
+        key={b.kunci} id={id} label={b.label} petunjuk={b.petunjuk} type={JENIS_ISIAN[b.tipe]} value={nilai[b.kunci] ?? ''} maxLength={b.maks}
         {...(b.tipe === 'angka' ? { min: 0, step: 1, inputMode: 'numeric' as const } : {})}
         onChange={(e) => atur(b.kunci, e.target.value)} galat={tampilGalat} aria-required={b.wajib}
       />

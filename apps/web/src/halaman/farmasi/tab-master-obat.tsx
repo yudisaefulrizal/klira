@@ -82,7 +82,7 @@ export function TabMasterObat() {
           {hasil?.data.map((o) => (
             <BarisTabel key={o.id}>
               <SelTabel style={{ fontWeight: token.huruf.berat.tebal }}>{o.nama_tampil}</SelTabel>
-              <SelTabel>{o.kfa_kode}{o.kfa_contoh && <> <Lencana warna="kuning">{M.contoh}</Lencana></>}</SelTabel>
+              <SelTabel>{o.kfa_kode}</SelTabel>
               <SelTabel>{o.satuan}</SelTabel>
               <SelTabel>{rupiah(o.harga)}</SelTabel>
               <SelTabel style={{ fontWeight: token.huruf.berat.tebal }}>{o.stok_total}</SelTabel>
