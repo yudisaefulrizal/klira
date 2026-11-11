@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { INDIKATOR_KELAS, KELAS_RAWAT, RAWAT_INAP, TOMBOL } from '@klira/shared';
+import { CARA_PEMBAYARAN, INDIKATOR_KELAS, KELAS_RAWAT, KUNJUNGAN, RAWAT_INAP, TOMBOL } from '@klira/shared';
 import type { AsalAdmisiDto, OpsiRawatInapDto } from '@klira/shared';
 import { admisiRawatInap, ambilAsalAdmisi, ambilOpsiRawatInap } from '../../api-klien/rawat-inap';
 import { GalatApi } from '../../api-klien/klien';
@@ -18,6 +18,7 @@ import { adaPerubahan } from '../../util/draf';
 import { awalAdmisi, bentukAdmisi, galatAdmisi, isiSpriAsal, langkahBermasalahAdmisi } from './keadaan-rawat-inap';
 import type { KeadaanAdmisi } from './keadaan-rawat-inap';
 import { rupiah } from './keadaan-order-lab';
+import { KeteranganAsuransi } from './keterangan-asuransi';
 
 type Props = { onTutup: () => void; onSelesai: () => void };
 const A = RAWAT_INAP.admisi;
@@ -67,6 +68,8 @@ export function AdmisiRawatInap({ onTutup, onSelesai }: Props) {
     return e;
   }, [k, asal]);
   const tampil = (b: string) => (dicoba ? g[b] : undefined);
+  /** Dari rawat jalan, cara bayar mengikuti kunjungan asal. */
+  const caraBayar = asal?.asal?.cara_pembayaran ?? k.cara_pembayaran;
   const set = (b: keyof KeadaanAdmisi) => (e: { target: { value: string } }) => setK({ ...k, [b]: e.target.value });
   const dpjp = [{ nilai: '', label: A.pilihDpjp }, ...(opsi?.dpjp ?? []).map((d) => ({ nilai: String(d.id), label: `${d.nama}${d.profesi ? ` (${d.profesi})` : ''}` }))];
   const bedLabel = (id: string) => opsi?.bed_kosong.find((b) => String(b.id) === id);
@@ -99,8 +102,9 @@ export function AdmisiRawatInap({ onTutup, onSelesai }: Props) {
           {asal?.asal && <Peringatan nada="biru">{A.asalInfo(asal.asal.poli_nama)}</Peringatan>}
           {asal && !asal.asal && !asal.rawat_inap_id && <span style={kecil}>{A.tanpaAsal}</span>}
           {!asal?.asal && k.pasien_id !== null && (
-            <Pilihan id="adm-cara" label="Cara pembayaran" opsi={[{ nilai: 'umum', label: 'Umum' }, { nilai: 'jkn', label: 'JKN' }]} value={k.cara_pembayaran} onChange={(e) => setK({ ...k, cara_pembayaran: e.target.value as KeadaanAdmisi['cara_pembayaran'] })} />
+            <Pilihan id="adm-cara" label={KUNJUNGAN.caraBayar} opsi={KUNJUNGAN.caraBayarOpsi} value={k.cara_pembayaran} onChange={(e) => setK({ ...k, cara_pembayaran: e.target.value as KeadaanAdmisi['cara_pembayaran'] })} />
           )}
+          {k.pasien_id !== null && caraBayar === 'asuransi' && <KeteranganAsuransi pasienId={k.pasien_id} />}
         </Kolom>
       ),
     },
@@ -156,6 +160,7 @@ export function AdmisiRawatInap({ onTutup, onSelesai }: Props) {
               { label: A.dpjpUtama, nilai: opsi?.dpjp.find((d) => String(d.id) === k.dpjp_id)?.nama ?? '-' },
               { label: A.dpjpBersama, nilai: k.dpjp_bersama.map((id) => opsi?.dpjp.find((d) => String(d.id) === id)?.nama).filter(Boolean).join(', ') || '-' },
               { label: A.spri, nilai: k.spri || '-' }, { label: A.keluhan, nilai: k.keluhan_singkat || '-' },
+              { label: KUNJUNGAN.caraBayar, nilai: CARA_PEMBAYARAN.label(caraBayar) },
             ],
           }]} />
         </Kolom>

@@ -1,4 +1,4 @@
-import type { InterpretasiHasil, StatusOrderPenunjang } from './status';
+import type { CaraPembayaran, InterpretasiHasil, StatusOrderPenunjang } from './status';
 
 /** Aturan murni penunjang (4.3, 7), dipakai API dan web. */
 
@@ -48,7 +48,7 @@ export function teksRujukan(m: { rujukan_teks: string | null; rujukan_min: numbe
 }
 
 /** Harga item tagihan: harga JKN untuk kunjungan JKN bila ada, selain itu harga umum; null bila tarif tidak ada. */
-export function hargaTarif(tarif: { harga_umum: number; harga_jkn: number | null } | null, caraPembayaran: 'umum' | 'jkn'): number | null {
+export function hargaTarif(tarif: { harga_umum: number; harga_jkn: number | null } | null, caraPembayaran: CaraPembayaran): number | null {
   if (!tarif) return null;
   return caraPembayaran === 'jkn' && tarif.harga_jkn !== null ? tarif.harga_jkn : tarif.harga_umum;
 }

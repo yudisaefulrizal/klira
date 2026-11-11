@@ -1,6 +1,7 @@
 import { prisma, Prisma } from '@klira/db';
 import { TAHAP_BERJALAN, rentangHariWib, tanggalWib, formatNomorRm, kodeAntrean, umurTahun } from '@klira/shared';
 import type {
+  CaraPembayaran,
   AlasanDuplikat, DaftarPasienDto, FilterPasien, JalurIdentitas, KandidatDuplikatDto, KunjunganAktifDto, PasienBarisDto, PasienDetailDto, StatusIdentitas,
   TahapLayanan, TeksPersetujuanDto,
 } from '@klira/shared';
@@ -28,8 +29,8 @@ export type DataRegistrasi = {
   nomor_paspor: string | null;
   nomor_kitas: string | null;
   jkn_nomor_kartu: string | null;
-  jkn_kelas_hak: string | null;
-  jkn_fktp_terdaftar: string | null;
+  asuransi_nama: string | null;
+  asuransi_nomor_polis: string | null;
   tidak_cakap: boolean;
   wali: { hubungan: string; nama: string; kontak: string | null }[];
   persetujuan: { teks: TeksPersetujuanDto; bentuk: string; penandatangan: 'pasien' | 'wali'; wali_ke: number | null; penandatangan_nama: string };
@@ -118,7 +119,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
     isi: {
       pasien: { id: number; nomor_rm: string; nama: string; jenis_kelamin: 'laki_laki' | 'perempuan'; tanggal_lahir: Date; status_identitas: StatusIdentitas };
       kunjungan: {
-        id: number; jenis: 'AMB' | 'IMP'; status: Parameters<typeof statusDariDb>[0]; tahap_layanan: TahapLayanan; cara_pembayaran: 'umum' | 'jkn'; lokasi_id: number | null; mulai: Date;
+        id: number; jenis: 'AMB' | 'IMP'; status: Parameters<typeof statusDariDb>[0]; tahap_layanan: TahapLayanan; cara_pembayaran: CaraPembayaran; lokasi_id: number | null; mulai: Date;
         antrean: { id: number; nomor: number; status: 'menunggu' | 'dipanggil' | 'dilayani' | 'selesai' | 'batal' } | null;
         peserta: { pengguna_id: number }[];
       } | null;
@@ -173,7 +174,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
       id: p.id, nomor_rm: p.nomor_rm, nik: p.nik, nama: p.nama, nomor_hp: p.nomor_hp, ibu_kandung: p.ibu_kandung, tempat_lahir: p.tempat_lahir, tanggal_lahir: tgl(p.tanggal_lahir),
       jenis_kelamin: p.jenis_kelamin, agama: p.agama, suku: p.suku, bahasa: p.bahasa, pekerjaan: p.pekerjaan, pendidikan: p.pendidikan, status_kawin: p.status_kawin,
       alamat: p.alamat, kode_wilayah: p.kode_wilayah, nomor_paspor: p.nomor_paspor, nomor_kitas: p.nomor_kitas, jkn_nomor_kartu: p.jkn_nomor_kartu,
-      jkn_kelas_hak: p.jkn_kelas_hak, jkn_fktp_terdaftar: p.jkn_fktp_terdaftar, status_identitas: p.status_identitas, jalur_identitas: p.jalur_identitas as JalurIdentitas,
+      asuransi_nama: p.asuransi_nama, asuransi_nomor_polis: p.asuransi_nomor_polis, status_identitas: p.status_identitas, jalur_identitas: p.jalur_identitas as JalurIdentitas,
       tidak_cakap: p.tidak_cakap, wali: p.wali_keluarga.map((w) => ({ id: w.id, hubungan: w.hubungan, nama: w.nama, kontak: w.kontak })),
     };
   }
@@ -245,7 +246,7 @@ export class RepositoriPasienPrisma implements RepositoriPasien {
             fasyankes_id: fasyankesId, nomor_rm: formatNomorRm(urutan.terakhir), nik: d.nik, nama: d.nama, nomor_hp: d.nomor_hp, ibu_kandung: d.ibu_kandung, tempat_lahir: d.tempat_lahir,
             tanggal_lahir: tglDb(d.tanggal_lahir), jenis_kelamin: d.jenis_kelamin, agama: d.agama, suku: d.suku, bahasa: d.bahasa, pekerjaan: d.pekerjaan,
             pendidikan: d.pendidikan, status_kawin: d.status_kawin, alamat: d.alamat, kode_wilayah: d.kode_wilayah, nomor_paspor: d.nomor_paspor,
-            nomor_kitas: d.nomor_kitas, jkn_nomor_kartu: d.jkn_nomor_kartu, jkn_kelas_hak: d.jkn_kelas_hak, jkn_fktp_terdaftar: d.jkn_fktp_terdaftar,
+            nomor_kitas: d.nomor_kitas, jkn_nomor_kartu: d.jkn_nomor_kartu, asuransi_nama: d.asuransi_nama, asuransi_nomor_polis: d.asuransi_nomor_polis,
             status_identitas: d.status_identitas, jalur_identitas: d.jalur_identitas, tidak_cakap: d.tidak_cakap, dibuat_oleh: oleh,
           },
         });

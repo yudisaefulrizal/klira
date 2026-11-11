@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { KASIR } from '../teks';
-import type { MetodeBayar } from '../status';
+import type { CaraPembayaran, MetodeBayar } from '../status';
 import { teksOpsional } from './umum';
 import type { PembayaranDto, TagihanDto } from './tagihan';
 import type { ResepDto } from './farmasi';
@@ -53,7 +53,7 @@ export type ShiftSayaDto = { terbuka: ShiftDto | null };
 export type SyaratTutupDto = { tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean; ditanggung_jkn: boolean };
 /** Gambaran kasir satu kunjungan untuk pembayaran dan syarat tutup kunjungan; resep hanya sebagai status pendamping. */
 export type KasirKunjunganDto = {
-  kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
+  kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
   tagihan: TagihanDto & { pembayaran: PembayaranDto[]; dibayar: number; sisa: number };
   resep: ResepDto[];
   shift_terbuka: boolean;

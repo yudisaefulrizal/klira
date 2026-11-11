@@ -166,16 +166,16 @@ export function LangkahWali({ keadaan: k, ubah, galat, tampilGalat }: Dasar) {
   );
 }
 
-export function LangkahJkn({ keadaan: k, ubah, galat, tampilGalat }: Dasar) {
+export function LangkahPenjamin({ keadaan: k, ubah, galat, tampilGalat }: Dasar) {
   const g = (b: string) => (tampilGalat ? galat[b] : undefined);
   return (
     <Kolom>
-      <p style={teksRedup}>{REGISTRASI.jknPetunjuk}</p>
+      <p style={teksRedup}>{REGISTRASI.penjaminPetunjuk}</p>
+      <Isian id="reg-jkn-kartu" label={REGISTRASI.jknKartu} value={k.jkn_nomor_kartu} inputMode="numeric" onChange={(e) => ubah({ jkn_nomor_kartu: e.target.value })} galat={g('jkn_nomor_kartu')} autoComplete="off" />
       <Baris>
-        <Isian id="reg-jkn-kartu" label={REGISTRASI.jknKartu} value={k.jkn_nomor_kartu} inputMode="numeric" onChange={(e) => ubah({ jkn_nomor_kartu: e.target.value })} galat={g('jkn_nomor_kartu')} autoComplete="off" />
-        <Pilihan id="reg-jkn-kelas" label={REGISTRASI.jknKelas} value={k.jkn_kelas_hak} onChange={(e) => ubah({ jkn_kelas_hak: e.target.value })} opsi={opsiDari(REGISTRASI.jknKelasOpsi)} galat={g('jkn_kelas_hak')} />
+        <Isian id="reg-asuransi-nama" label={REGISTRASI.asuransiNama} value={k.asuransi_nama} maxLength={100} onChange={(e) => ubah({ asuransi_nama: e.target.value })} galat={g('asuransi_nama')} autoComplete="off" />
+        <Isian id="reg-asuransi-polis" label={REGISTRASI.asuransiPolis} value={k.asuransi_nomor_polis} maxLength={50} onChange={(e) => ubah({ asuransi_nomor_polis: e.target.value })} galat={g('asuransi_nomor_polis')} autoComplete="off" />
       </Baris>
-      <Isian id="reg-jkn-fktp" label={REGISTRASI.jknFktp} value={k.jkn_fktp_terdaftar} onChange={(e) => ubah({ jkn_fktp_terdaftar: e.target.value })} galat={g('jkn_fktp_terdaftar')} autoComplete="off" />
     </Kolom>
   );
 }

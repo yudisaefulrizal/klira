@@ -5,7 +5,7 @@ import { AKSI_ANTREAN } from '../alur';
 import { idPositif, teksOpsional } from './umum';
 
 export const NILAI_JENIS_KUNJUNGAN = ['AMB', 'IMP'] as const satisfies readonly JenisKunjungan[];
-export const NILAI_CARA_PEMBAYARAN = ['umum', 'jkn'] as const satisfies readonly CaraPembayaran[];
+export const NILAI_CARA_PEMBAYARAN = ['umum', 'jkn', 'asuransi'] as const satisfies readonly CaraPembayaran[];
 export const NILAI_TAHAP = ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup'] as const satisfies readonly TahapLayanan[];
 export const NILAI_STATUS_ANTREAN = ['menunggu', 'dipanggil', 'dilayani', 'selesai', 'batal'] as const satisfies readonly StatusAntrean[];
 

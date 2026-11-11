@@ -1,5 +1,5 @@
 import { admisiMasukan, catatanHarianMasukan, pemulanganMasukan, penempatanMasukan, TANDA_VITAL } from '@klira/shared';
-import type { AdmisiForm, CatatanHarianForm, KelasRawat, PemulanganForm, PenempatanForm, RawatInapDto } from '@klira/shared';
+import type { AdmisiForm, CaraPembayaran, CatatanHarianForm, KelasRawat, PemulanganForm, PenempatanForm, RawatInapDto } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
 const petakan = (isu: readonly Isu[] | undefined): Record<string, string> => {
@@ -12,7 +12,7 @@ const idAtauNull = (v: string): number | null => (v ? Number(v) : null);
 // ---- Admisi (MODAL-BERTAHAP: Pasien > Ruang dan kelas > DPJP > SPRI > Ringkasan) ----
 export type KeadaanAdmisi = {
   pasien_id: number | null; bed_id: string; kelas: KelasRawat; indikator: 'kelas_tetap' | 'naik_kelas' | 'turun_kelas' | 'titip_rawat'; tarif_id: string; dpjp_id: string; dpjp_bersama: string[]; spri: string; keluhan_singkat: string;
-  cara_pembayaran: 'umum' | 'jkn';
+  cara_pembayaran: CaraPembayaran;
 };
 export const awalAdmisi = (): KeadaanAdmisi => ({ pasien_id: null, bed_id: '', kelas: 'tiga', indikator: 'kelas_tetap', tarif_id: '', dpjp_id: '', dpjp_bersama: [], spri: '', keluhan_singkat: '', cara_pembayaran: 'umum' });
 export const bentukAdmisi = (k: KeadaanAdmisi): AdmisiForm => ({

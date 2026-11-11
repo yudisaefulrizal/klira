@@ -37,7 +37,7 @@ export function bagianDetailPasien(p: PasienDetailDto, namaWilayah?: string): Ba
         ...(p.nomor_paspor ? [{ label: d.paspor, nilai: p.nomor_paspor }] : []), ...(p.nomor_kitas ? [{ label: d.kitas, nilai: p.nomor_kitas }] : []),
       ],
     },
-    { judul: d.jknKartu, baris: [{ label: d.jknKartu, nilai: strip(p.jkn_nomor_kartu) }, { label: d.jknKelas, nilai: strip(p.jkn_kelas_hak) }, { label: d.jknFktp, nilai: strip(p.jkn_fktp_terdaftar) }] },
+    { judul: d.penjamin, baris: [{ label: d.jknKartu, nilai: strip(p.jkn_nomor_kartu) }, { label: d.asuransiNama, nilai: strip(p.asuransi_nama) }, { label: d.asuransiPolis, nilai: strip(p.asuransi_nomor_polis) }] },
     {
       judul: d.wali,
       baris: p.wali.length ? p.wali.map((w) => ({ label: w.hubungan, nilai: w.kontak ? `${w.nama} (${w.kontak})` : w.nama })) : [{ label: d.wali, nilai: d.tanpaWali }],

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { FARMASI } from '../teks';
-import type { JenisMutasi, StatusResep, StatusStok } from '../status';
+import type { CaraPembayaran, JenisMutasi, StatusResep, StatusStok } from '../status';
 import { idPositif, teksOpsional, teksWajib } from './umum';
 
 const kosongJadiTiada = (v: unknown) => (v === '' || v === null ? undefined : v);
@@ -105,7 +105,7 @@ export type ItemResepDto = {
 };
 export type TelaahResepDto = { apoteker_nama: string | null; administratif: boolean; farmasetik: boolean; klinis: boolean; catatan: string | null; waktu: string };
 export type ResepDto = {
-  id: number; kunjungan_id: number; nomor_resep: string; status: StatusResep; jenis_pembiayaan: 'umum' | 'jkn'; dpjp_nama: string | null; dibuat_pada: string;
+  id: number; kunjungan_id: number; nomor_resep: string; status: StatusResep; jenis_pembiayaan: CaraPembayaran; dpjp_nama: string | null; dibuat_pada: string;
   waktu_siap: string | null; item: ItemResepDto[]; telaah: TelaahResepDto | null;
 };
 export type HasilBuatResepDto = { resep: ResepDto; tagihan: { status_tagihan: string; status_pembayaran: string; total: number } };

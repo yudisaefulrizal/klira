@@ -13,7 +13,8 @@ import { Pilihan } from '../../komponen/ui/pilihan';
 import { Baris, Kolom } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { adaPerubahan } from '../../util/draf';
-import { awalKunjungan, bentukKunjungan, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan';
+import { awalKunjungan, bentukKunjungan, dokterPoli, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan';
+import { KeteranganAsuransi } from './keterangan-asuransi';
 import type { KeadaanKunjungan } from './keadaan-kunjungan';
 
 type Props = {
@@ -25,7 +26,7 @@ type Props = {
 };
 
 /**
- * Modal Pendaftaran kunjungan (3.3, MODAL-1): layanan, poli, cara pembayaran, keluhan singkat. Rawat jalan mendapat
+ * Modal Pendaftaran kunjungan (3.3, MODAL-1): layanan, poli dan dokter (terfilter poli), cara pembayaran, keluhan singkat. Rawat jalan mendapat
  * nomor antrean otomatis per poli per hari; nomor SEP JKN boleh menyusul. Bentuk draf otomatis tidak dipasang (isian pendek).
  */
 export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
@@ -75,7 +76,8 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
     };
   }, [kata, pasien, keadaan.pasien_id]);
 
-  const ubah = (p: Partial<KeadaanKunjungan>) => setKeadaan((k) => ubahKunjungan(k, p));
+  const ubah = (p: Partial<KeadaanKunjungan>) => setKeadaan((k) => ubahKunjungan(k, p, opsi?.dpjp ?? []));
+  const dokter = dokterPoli(opsi?.dpjp ?? [], keadaan.lokasi_id);
   const g = galatKunjungan(keadaan);
   const tampil = (b: string) => (dicoba ? g[b] : undefined);
   const daftarTerbuka = hasilTerbuka && !keadaan.pasien_id && calon.length > 0;
@@ -199,6 +201,10 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
               id="kunjungan-poli" label={KUNJUNGAN.poli} value={keadaan.lokasi_id} disabled={keadaan.jenis !== 'AMB'} onChange={(e) => ubah({ lokasi_id: e.target.value })} galat={tampil('lokasi_id')}
               opsi={[{ nilai: '', label: KUNJUNGAN.pilih }, ...(opsi?.poli ?? []).map((p) => ({ nilai: String(p.id), label: p.nama }))]}
             />
+            <Pilihan
+              id="kunjungan-dokter" label={KUNJUNGAN.dokter} value={keadaan.dpjp_id} disabled={keadaan.jenis !== 'AMB' || !keadaan.lokasi_id} onChange={(e) => ubah({ dpjp_id: e.target.value })} galat={tampil('dpjp_id')}
+              opsi={[{ nilai: '', label: KUNJUNGAN.tanpaDokter }, ...dokter.map((d) => ({ nilai: String(d.id), label: d.nama }))]}
+            />
           </Baris>
           <Pilihan id="kunjungan-bayar" label={KUNJUNGAN.caraBayar} value={keadaan.cara_pembayaran} onChange={(e) => ubah({ cara_pembayaran: e.target.value as KeadaanKunjungan['cara_pembayaran'] })} opsi={KUNJUNGAN.caraBayarOpsi} />
           {keadaan.cara_pembayaran === 'jkn' && (
@@ -207,6 +213,7 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
               <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{KUNJUNGAN.sepKet}</span>
             </>
           )}
+          {keadaan.cara_pembayaran === 'asuransi' && keadaan.pasien_id && <KeteranganAsuransi pasienId={Number(keadaan.pasien_id)} />}
           <AreaTeks id="kunjungan-keluhan" label={KUNJUNGAN.keluhan} value={keadaan.keluhan_singkat} maxLength={500} onChange={(e) => ubah({ keluhan_singkat: e.target.value })} />
         </Kolom>
       </form>

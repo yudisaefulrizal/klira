@@ -27,8 +27,8 @@ export type KeadaanRegistrasi = {
   nomor_kitas: string;
   wali: WaliForm[];
   jkn_nomor_kartu: string;
-  jkn_kelas_hak: string;
-  jkn_fktp_terdaftar: string;
+  asuransi_nama: string;
+  asuransi_nomor_polis: string;
   bentuk: 'tertulis' | 'lisan';
   penandatangan: 'pasien' | 'wali';
   /** Indeks wali sebagai teks (nilai pilihan); kosong = belum dipilih. */
@@ -37,22 +37,22 @@ export type KeadaanRegistrasi = {
   konfirmasi_duplikat: boolean;
 };
 
-/** Bidang yang tidak boleh masuk draf lokal: identitas, kontak, JKN, wali, persetujuan (komputer bersama). */
+/** Bidang yang tidak boleh masuk draf lokal: identitas, kontak, penjamin (JKN dan asuransi), wali, persetujuan (komputer bersama). */
 export const BIDANG_SENSITIF_REGISTRASI = [
   'nama', 'nomor_hp', 'nik', 'tanggal_lahir', 'ibu_kandung', 'tempat_lahir', 'alamat', 'kode_wilayah', 'nomor_paspor', 'nomor_kitas', 'wali',
-  'jkn_nomor_kartu', 'jkn_kelas_hak', 'jkn_fktp_terdaftar', 'setuju', 'konfirmasi_duplikat',
+  'jkn_nomor_kartu', 'asuransi_nama', 'asuransi_nomor_polis', 'setuju', 'konfirmasi_duplikat',
 ] as const;
 
 export const awalRegistrasi = (): KeadaanRegistrasi => ({
   nama: '', nomor_hp: '', nik: '', tanggal_lahir: '', ibu_kandung: '', tempat_lahir: '', jenis_kelamin: '', tidak_cakap: false,
   agama: '', suku: '', bahasa: '', pekerjaan: '', pendidikan: '', status_kawin: '',
   alamat: '', kode_wilayah: '', jalur_identitas: 'nik', nomor_paspor: '', nomor_kitas: '',
-  wali: [], jkn_nomor_kartu: '', jkn_kelas_hak: '', jkn_fktp_terdaftar: '',
+  wali: [], jkn_nomor_kartu: '', asuransi_nama: '', asuransi_nomor_polis: '',
   bentuk: 'lisan', penandatangan: 'pasien', wali_ke: '', setuju: false, konfirmasi_duplikat: false,
 });
 
 export const JUMLAH_LANGKAH_REGISTRASI = 6;
-const L = { identitas: 0, sosial: 1, wali: 2, jkn: 3, consent: 4, ringkasan: 5 } as const;
+const L = { identitas: 0, sosial: 1, wali: 2, penjamin: 3, consent: 4, ringkasan: 5 } as const;
 
 /** Bentuk permintaan API dari isian (skema bersama di packages/shared memvalidasi dan menormalkan). */
 export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): RegistrasiPasienKirim {
@@ -70,7 +70,7 @@ export function bentukRegistrasi(k: KeadaanRegistrasi, teksId: number | null): R
     kode_wilayah: k.kode_wilayah,
     nomor_paspor: k.jalur_identitas === 'paspor' ? k.nomor_paspor : undefined,
     nomor_kitas: k.jalur_identitas === 'kitas' ? k.nomor_kitas : undefined,
-    jkn_nomor_kartu: k.jkn_nomor_kartu, jkn_kelas_hak: k.jkn_kelas_hak, jkn_fktp_terdaftar: k.jkn_fktp_terdaftar,
+    jkn_nomor_kartu: k.jkn_nomor_kartu, asuransi_nama: k.asuransi_nama, asuransi_nomor_polis: k.asuransi_nomor_polis,
     tidak_cakap: k.tidak_cakap,
     wali: k.wali.map((w) => ({ hubungan: w.hubungan, nama: w.nama, kontak: w.kontak })),
     persetujuan: {
@@ -90,7 +90,7 @@ const LANGKAH_BIDANG: Record<string, number> = {
   agama: L.sosial, suku: L.sosial, bahasa: L.sosial, pekerjaan: L.sosial, pendidikan: L.sosial, status_kawin: L.sosial,
   alamat: L.identitas, kode_wilayah: L.identitas, jalur_identitas: L.identitas, nomor_paspor: L.identitas, nomor_kitas: L.identitas,
   wali: L.wali,
-  jkn_nomor_kartu: L.jkn, jkn_kelas_hak: L.jkn, jkn_fktp_terdaftar: L.jkn,
+  jkn_nomor_kartu: L.penjamin, asuransi_nama: L.penjamin, asuransi_nomor_polis: L.penjamin,
   persetujuan: L.consent,
 };
 
@@ -206,8 +206,8 @@ export function ringkasanRegistrasi(k: KeadaanRegistrasi, teks: TeksPersetujuanD
       baris: k.wali.length ? k.wali.map((w) => ({ label: w.hubungan, nilai: w.kontak.trim() ? `${w.nama} (${w.kontak.trim()})` : w.nama })) : [{ label: d.wali, nilai: REGISTRASI.waliKosong }],
     },
     {
-      judul: R.jkn,
-      baris: [{ label: d.jknKartu, nilai: nilai(k.jkn_nomor_kartu) }, { label: d.jknKelas, nilai: nilai(k.jkn_kelas_hak) }, { label: d.jknFktp, nilai: nilai(k.jkn_fktp_terdaftar) }],
+      judul: R.penjamin,
+      baris: [{ label: d.jknKartu, nilai: nilai(k.jkn_nomor_kartu) }, { label: d.asuransiNama, nilai: nilai(k.asuransi_nama) }, { label: d.asuransiPolis, nilai: nilai(k.asuransi_nomor_polis) }],
     },
     {
       judul: R.consent,

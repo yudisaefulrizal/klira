@@ -1,6 +1,7 @@
 import { prisma, Prisma } from '@klira/db';
 import { statusStokDari } from '@klira/shared';
 import type {
+  CaraPembayaran,
   FilterKfa, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, MasterObatDto, MasterObatMasukan, MutasiStokDto, MutasiStokMasukan, ReferensiKfaDto, ResepDto, RiwayatObatDto,
   StatusResep, StokObatDto, TelaahMasukan, UbahMasterObatMasukan,
 } from '@klira/shared';
@@ -13,7 +14,7 @@ export type HasilSerahRepo =
   | { ok: false; sebab: 'tidak_ada_resep' | 'belum_siap' | 'sudah_diserahkan' | 'tahap_salah' }
   | { ok: false; sebab: 'stok_kurang'; kekurangan: Kekurangan[] };
 
-export type KunjunganResep = { id: number; pasien_id: number; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
+export type KunjunganResep = { id: number; pasien_id: number; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
 export type ObatMini = { id: number; nama_tampil: string; satuan: string; harga: number };
 export type ItemBaruResep = { master_obat_id: number; aturan_pakai: string; bentuk: string | null; rute: string | null; jumlah: number };
 export type HasilMutasi = { ok: true; stok: StokObatDto } | { ok: false; sebab: 'obat_tidak_ada' | 'batch_tidak_ada' | 'stok_tidak_cukup' };

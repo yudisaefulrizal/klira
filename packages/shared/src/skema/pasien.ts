@@ -59,8 +59,8 @@ export const registrasiPasienMasukan = z
     nomor_paspor: teksOpsional(50),
     nomor_kitas: teksOpsional(50),
     jkn_nomor_kartu: teksOpsional(50),
-    jkn_kelas_hak: teksOpsional(20),
-    jkn_fktp_terdaftar: teksOpsional(200),
+    asuransi_nama: teksOpsional(100),
+    asuransi_nomor_polis: teksOpsional(50),
     tidak_cakap: z.boolean().default(false),
     wali: z.array(waliKeluargaMasukan).max(10).default([]),
     persetujuan: z.object({
@@ -165,8 +165,8 @@ export type PasienDetailDto = {
   nomor_paspor: string | null;
   nomor_kitas: string | null;
   jkn_nomor_kartu: string | null;
-  jkn_kelas_hak: string | null;
-  jkn_fktp_terdaftar: string | null;
+  asuransi_nama: string | null;
+  asuransi_nomor_polis: string | null;
   status_identitas: StatusIdentitas;
   jalur_identitas: JalurIdentitas;
   tidak_cakap: boolean;

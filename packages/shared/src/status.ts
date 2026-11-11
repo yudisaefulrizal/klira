@@ -165,6 +165,7 @@ export type JenisKunjungan = keyof typeof JENIS_KUNJUNGAN.peta;
 export const CARA_PEMBAYARAN = buat({
   umum: { label: 'Umum', warna: 'abu' },
   jkn: { label: 'JKN', warna: 'biru' },
+  asuransi: { label: 'Asuransi lain', warna: 'ungu' },
 });
 export type CaraPembayaran = keyof typeof CARA_PEMBAYARAN.peta;
 

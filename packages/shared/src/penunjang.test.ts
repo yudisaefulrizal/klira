@@ -55,6 +55,7 @@ describe('harga tarif dan addendum', () => {
   it('harga JKN dipakai untuk kunjungan JKN bila ada; tanpa tarif null', () => {
     expect(hargaTarif({ harga_umum: 50_000, harga_jkn: 30_000 }, 'jkn')).toBe(30_000);
     expect(hargaTarif({ harga_umum: 50_000, harga_jkn: null }, 'jkn')).toBe(50_000);
+    expect(hargaTarif({ harga_umum: 50_000, harga_jkn: 30_000 }, 'asuransi')).toBe(50_000); // asuransi lain = harga umum
     expect(hargaTarif({ harga_umum: 50_000, harga_jkn: 30_000 }, 'umum')).toBe(50_000);
     expect(hargaTarif(null, 'umum')).toBeNull();
   });

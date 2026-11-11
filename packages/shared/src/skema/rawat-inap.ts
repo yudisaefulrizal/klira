@@ -1,8 +1,9 @@
 import { z } from 'zod';
 import { RAWAT_INAP } from '../teks';
 import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT } from '../status';
-import type { DisposisiPulang, IndikatorKelas, KelasRawat, StatusBed, StatusPengesahan } from '../status';
+import type { CaraPembayaran, DisposisiPulang, IndikatorKelas, KelasRawat, StatusBed, StatusPengesahan } from '../status';
 import { tandaVitalIsi } from './klinis';
+import { NILAI_CARA_PEMBAYARAN } from './kunjungan';
 import type { PengesahanDto, TandaVitalIsi } from './klinis';
 import { idPositif, teksOpsional, teksWajib } from './umum';
 
@@ -21,7 +22,7 @@ const periksaDpjp = (d: { dpjp_id: number; dpjp_bersama: number[] }, ctx: z.Refi
 export const admisiMasukan = z
   .object({
     pasien_id: idPositif, bed_id: idPositif.nullish(), kelas, indikator, tarif_id: idPositif.nullish(), dpjp_id: idPositif, dpjp_bersama: dpjpBersama, spri: teksNull(100), keluhan_singkat: teksNull(500),
-    cara_pembayaran: z.enum(['umum', 'jkn']).default('umum'),
+    cara_pembayaran: z.enum(NILAI_CARA_PEMBAYARAN).default('umum'),
   })
   .superRefine(periksaDpjp);
 export type AdmisiMasukan = z.output<typeof admisiMasukan>;
@@ -61,14 +62,14 @@ export type OpsiRawatInapDto = {
   dpjp: { id: number; nama: string; profesi: string }[];
 };
 export type AsalAdmisiDto = {
-  asal: { kunjungan_id: number; tahap_layanan: string; poli_nama: string | null; cara_pembayaran: 'umum' | 'jkn'; spri: string | null } | null;
+  asal: { kunjungan_id: number; tahap_layanan: string; poli_nama: string | null; cara_pembayaran: CaraPembayaran; spri: string | null } | null;
   rawat_inap_id: number | null;
   ada_pembayaran: boolean;
 };
 export type PenempatanDto = { id: number; bed_id: number; bed_nama: string | null; ruang_nama: string | null; kelas: KelasRawat; indikator: IndikatorKelas; tarif_id: number | null; tarif_nama: string | null; mulai: string; selesai: string | null };
 export type PemulanganDto = { disposisi: DisposisiPulang; kondisi_pulang: string; diagnosis_akhir: string; ringkasan: string; tindak_lanjut: string | null; waktu: string; dibuat_oleh_nama: string | null };
 export type RawatInapDto = {
-  kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; status: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn'; mulai: string; spri: string | null };
+  kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; status: string; tahap_layanan: string; cara_pembayaran: CaraPembayaran; mulai: string; spri: string | null };
   penempatan: PenempatanDto[];
   dpjp: { id: number; nama: string; tipe: 'ATND' | 'SPRF' }[];
   pemulangan: PemulanganDto | null;

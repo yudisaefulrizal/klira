@@ -39,8 +39,8 @@ export function normalkanRegistrasi(m: RegistrasiPasienMasukan, teks: TeksPerset
     nomor_paspor: jalur === 'paspor' ? kosongJadiNull(m.nomor_paspor) : null,
     nomor_kitas: jalur === 'kitas' ? kosongJadiNull(m.nomor_kitas) : null,
     jkn_nomor_kartu: kosongJadiNull(m.jkn_nomor_kartu),
-    jkn_kelas_hak: kosongJadiNull(m.jkn_kelas_hak),
-    jkn_fktp_terdaftar: kosongJadiNull(m.jkn_fktp_terdaftar),
+    asuransi_nama: kosongJadiNull(m.asuransi_nama),
+    asuransi_nomor_polis: kosongJadiNull(m.asuransi_nomor_polis),
     tidak_cakap: m.tidak_cakap,
     wali,
     persetujuan: {
@@ -87,8 +87,8 @@ export function buatLayananPasien({ repo, audit }: DependensiPasien) {
         alamat: kosongJadiNull(m.alamat),
         kode_wilayah: kosongJadiNull(m.kode_wilayah),
         jkn_nomor_kartu: kosongJadiNull(m.jkn_nomor_kartu),
-        jkn_kelas_hak: kosongJadiNull(m.jkn_kelas_hak),
-        jkn_fktp_terdaftar: kosongJadiNull(m.jkn_fktp_terdaftar),
+        asuransi_nama: kosongJadiNull(m.asuransi_nama),
+        asuransi_nomor_polis: kosongJadiNull(m.asuransi_nomor_polis),
         wali: m.wali.map((w) => ({ ...w, hubungan: w.hubungan.trim(), nama: w.nama.trim(), kontak: kosongJadiNull(w.kontak) })),
       };
       try {

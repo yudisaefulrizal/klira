@@ -1,10 +1,10 @@
 import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
 import { hargaTarif } from '@klira/shared';
-import type { MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto, TarifKasirDto } from '@klira/shared';
+import type { CaraPembayaran, MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto, TarifKasirDto } from '@klira/shared';
 import { totalTagihan, keItemDto, statusTagihanDari } from './repositori';
 
-export type KunjunganKasir = { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
+export type KunjunganKasir = { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
 export type TagihanKasir = TagihanDto & { pembayaran: PembayaranDto[]; dibayar: number; sisa: number };
 export type HasilBayarRepo =
   | { ok: true; pembayaran: PembayaranDto; tagihan: TagihanKasir; kembalian: number }
@@ -149,7 +149,7 @@ export class RepositoriKasirPrisma {
 
   // ---- Item tambahan dari tarif ----
   /** Tarif aktif yang boleh ditambahkan kasir (obat dikecualikan: obat lewat resep agar stok tercatat), harga sesuai cara pembayaran. */
-  async tarifAktif(fasyankesId: number, caraPembayaran: 'umum' | 'jkn'): Promise<TarifKasirDto[]> {
+  async tarifAktif(fasyankesId: number, caraPembayaran: CaraPembayaran): Promise<TarifKasirDto[]> {
     const t = await prisma.tarifLayanan.findMany({ where: { fasyankes_id: fasyankesId, aktif: true, jenis: { not: 'obat' } }, orderBy: [{ jenis: 'asc' }, { nama: 'asc' }] });
     return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, jenis: x.jenis as TarifKasirDto['jenis'], harga: hargaTarif(x, caraPembayaran) ?? x.harga_umum }));
   }

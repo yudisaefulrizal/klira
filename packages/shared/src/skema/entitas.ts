@@ -85,8 +85,8 @@ export const pasienMasukan = z.object({
   nomor_kitas: teksOpsional(50),
   ihs_number: teksOpsional(100),
   jkn_nomor_kartu: teksOpsional(50),
-  jkn_kelas_hak: teksOpsional(20),
-  jkn_fktp_terdaftar: teksOpsional(200),
+  asuransi_nama: teksOpsional(100),
+  asuransi_nomor_polis: teksOpsional(50),
 });
 export const pasien = id.extend(pasienMasukan.shape).extend(jejak.shape);
 

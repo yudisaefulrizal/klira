@@ -178,8 +178,8 @@ Tiga komponen umum dibuat sekali dan dipakai berulang, tidak didaftar sebagai mo
 #### Pelayanan klinik
 | Modal | Dibuka dari | Jenis | Langkah |
 |---|---|---|---|
-| Registrasi pasien baru | Daftar pasien | MODAL-BERTAHAP | Cari duplikat > Identitas > Data sosial > Alamat dan jalur identitas khusus > Wali/keluarga > Cara pembayaran (data JKN) > General consent > Ringkasan |
-| Pendaftaran kunjungan | Daftar pasien | MODAL-1 | Layanan, poli/DPJP, cara pembayaran, keluhan singkat |
+| Registrasi pasien baru | Daftar pasien | MODAL-BERTAHAP | Cari duplikat > Identitas > Data sosial > Alamat dan jalur identitas khusus > Wali/keluarga > Penjamin (nomor kartu JKN, nama asuransi, nomor polis) > General consent > Ringkasan |
+| Pendaftaran kunjungan | Daftar pasien | MODAL-1 | Layanan, poli dan dokter (terfilter poli), cara pembayaran (Umum, JKN, Asuransi lain), keluhan singkat |
 | Pemeriksaan klinis | Daftar pasien | MODAL-BERTAHAP | Anamnesis > Tanda vital > Pemeriksaan > Diagnosis > Tindakan > Resep > Order penunjang > Rencana tindak lanjut > Ringkasan |
 | Riwayat, Salin dari kunjungan sebelumnya, Favorit dan templat, Family folder | Pemeriksaan klinis, Daftar pasien | PANEL | Info pendamping tanpa menutup langkah aktif |
 | Persetujuan tindakan | Pemeriksaan klinis, Rekam medis | MODAL-BERTAHAP | Tindakan > Penjelasan > Persetujuan > Ringkasan |
@@ -255,7 +255,7 @@ Aturan umum:
 | Lokasi | id, fasyankes_id, jenis (poli/ruang/bed), induk, status operasional (U/O), IHS Location ID | Location |
 | Pengguna | id, nama, NIK, username, status, wajib ganti kredensial (ya sampai login pertama selesai) | - |
 | Profil profesi | pengguna_id, profesi, nomor SIP, masa berlaku SIP, IHS Practitioner ID | Practitioner |
-| Pasien | id, nomor RM, NIK, nama, ibu kandung, tempat/tanggal lahir, jenis kelamin, agama, suku, bahasa, pekerjaan, pendidikan, status kawin, alamat dan kode wilayah, paspor/KITAS, IHS Number; data JKN: nomor kartu, kelas hak, FKTP terdaftar | Patient |
+| Pasien | id, nomor RM, NIK, nama, ibu kandung, tempat/tanggal lahir, jenis kelamin, agama, suku, bahasa, pekerjaan, pendidikan, status kawin, alamat dan kode wilayah, paspor/KITAS, IHS Number; data penjamin: nomor kartu JKN, nama asuransi, nomor polis asuransi | Patient |
 | Wali/keluarga | pasien_id, hubungan, nama, kontak | RelatedPerson |
 
 ### 4.1b Akses dan izin
@@ -270,7 +270,7 @@ Aturan umum:
 ### 4.2 Kunjungan dan klinis
 | Entitas | Field kunci | Padanan |
 |---|---|---|
-| Kunjungan | id, pasien_id, jenis (AMB rawat jalan, IMP rawat inap), status (planned/arrived/in-progress/finished), tahap layanan (menunggu skrining, pemeriksaan, resep, kasir, ditutup), kunjungan asal (rawat jalan yang berlanjut ke rawat inap), waktu tutup, mulai, selesai, cara pembayaran, serviceType, Encounter ID | Encounter |
+| Kunjungan | id, pasien_id, jenis (AMB rawat jalan, IMP rawat inap), status (planned/arrived/in-progress/finished), tahap layanan (menunggu skrining, pemeriksaan, resep, kasir, ditutup), kunjungan asal (rawat jalan yang berlanjut ke rawat inap), waktu tutup, mulai, selesai, cara pembayaran (umum, jkn, asuransi; asuransi lain diperlakukan seperti umum di tarif, kasir, dan klaim), serviceType, Encounter ID | Encounter |
 | Riwayat status dan lokasi (rawat inap) | kunjungan_id, lokasi_id, mulai, selesai, kelas (1/2/3/vip/vvip), indikator kelas | statusHistory, location[] |
 | Peserta kunjungan | kunjungan_id, pengguna_id, tipe (ATND/SPRF), mulai, selesai | participant |
 | Anamnesis | kunjungan_id, keluhan utama, penyerta, riwayat pribadi/keluarga, alergi | Condition, AllergyIntolerance |

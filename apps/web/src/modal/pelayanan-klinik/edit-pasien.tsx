@@ -124,10 +124,9 @@ export function EditPasien({ id, nama, onTutup, onSelesai }: { id: number; nama:
                 <Tombol type="button" varian="sekunder" disabled={data.wali.length >= 10} onClick={() => { setWaliAktif(data.wali.length); ubah({ wali: [...data.wali, { id: 0, nama: '', hubungan: '', kontak: '' }] }); }}>Tambah wali/keluarga</Tombol>
               </Kolom>}
 
-              {tab === 'edit-jkn' && <Kolom>
-                {isian('jkn_nomor_kartu', 'Nomor kartu JKN', 50)}
-                {isian('jkn_kelas_hak', 'Kelas hak', 20)}
-                {isian('jkn_fktp_terdaftar', 'FKTP terdaftar')}
+              {tab === 'edit-penjamin' && <Kolom>
+                {isian('jkn_nomor_kartu', REGISTRASI.jknKartu, 50)}
+                <Baris>{isian('asuransi_nama', REGISTRASI.asuransiNama, 100)}{isian('asuransi_nomor_polis', REGISTRASI.asuransiPolis, 50)}</Baris>
               </Kolom>}
             </div>
           </fieldset>

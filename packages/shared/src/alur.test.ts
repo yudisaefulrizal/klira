@@ -1,5 +1,5 @@
 import {
-  aksiAntreanTersedia, bolehAksiAntrean, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan,
+  aksiAntreanTersedia, bolehAksiAntrean, CARA_PEMBAYARAN, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan,
   statusIdentitasDari, tanggalWib, umurTahun,
 } from './index';
 
@@ -85,6 +85,17 @@ describe('skema kunjungan dan penyaring', () => {
     expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'IMP', nomor_sep: 'X' }).success).toBe(false);
     const jkn = kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'IMP', cara_pembayaran: 'jkn', nomor_sep: '' });
     expect(jkn.success).toBe(true);
+  });
+  it('cara bayar asuransi lain diterima tanpa SEP; data penjamin pasien opsional dengan batas panjang', () => {
+    expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2, cara_pembayaran: 'asuransi' }).success).toBe(true);
+    expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2, cara_pembayaran: 'asuransi', nomor_sep: 'X' }).success).toBe(false);
+    expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2, cara_pembayaran: 'lain' }).success).toBe(false);
+    expect(CARA_PEMBAYARAN.label('asuransi')).toBe('Asuransi lain');
+    const r = registrasiPasienMasukan.shape;
+    expect(r.asuransi_nama.safeParse('x'.repeat(100)).success).toBe(true);
+    expect(r.asuransi_nama.safeParse('x'.repeat(101)).success).toBe(false);
+    expect(r.asuransi_nomor_polis.safeParse('x'.repeat(51)).success).toBe(false);
+    expect(Object.keys(r).filter((k) => /kelas_hak|fktp/.test(k))).toEqual([]);
   });
   it('filter pasien bawaan dan cek duplikat menerima isian kosong', () => {
     expect(filterPasien.parse({})).toEqual({ tahap: 'semua', halaman: 1, ukuran: 20 });

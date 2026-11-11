@@ -241,7 +241,7 @@ const PASIEN = [
   ['3273012512010106', 'Rizky Ramadhan', 'laki_laki', '2001-12-25', 'Sumedang', 'Mahasiswa', 'Islam', '081234560106', 'umum'],
   ['3273015707950107', 'Putu Ayu Lestari', 'perempuan', '1995-07-17', 'Denpasar', 'Perawat', 'Hindu', '081234560107', 'umum'],
   ['3273010302680108', 'Hasan Basri', 'laki_laki', '1968-02-03', 'Tasikmalaya', 'Petani', 'Islam', '081234560108', 'jkn'],
-  ['3273014110990109', 'Melati Kusuma', 'perempuan', '1999-10-01', 'Bandung', 'Desainer', 'Buddha', '081234560109', 'umum'],
+  ['3273014110990109', 'Melati Kusuma', 'perempuan', '1999-10-01', 'Bandung', 'Desainer', 'Buddha', '081234560109', 'asuransi'],
   ['3273011504830110', 'Teguh Wibowo', 'laki_laki', '1983-04-15', 'Bogor', 'PNS', 'Islam', '081234560110', 'jkn'],
   ['3273016612970111', 'Anisa Fitriani', 'perempuan', '1997-12-26', 'Bandung', 'Karyawan Swasta', 'Islam', '081234560111', 'umum'],
   ['3273010707550112', 'Darmawan Hadi', 'laki_laki', '1955-07-07', 'Cirebon', 'Pensiunan', 'Islam', '081234560112', 'jkn'],
@@ -258,8 +258,9 @@ async function siapkanPasien() {
       jalur_identitas: 'nik', nik, nama, nomor_hp, tanggal_lahir, jenis_kelamin, tempat_lahir, pekerjaan, agama,
       ibu_kandung: 'Ibu ' + nama.split(' ')[0], bahasa: 'Indonesia', status_kawin: 'Kawin', pendidikan: 'SMA',
       alamat: `Jl. Contoh No. ${id.length + 1}, Bandung (alamat fiktif)`,
-      jkn_nomor_kartu: bayar === 'jkn' ? `000${nik.slice(-10)}` : null, jkn_kelas_hak: bayar === 'jkn' ? 'Kelas 3' : null,
-      jkn_fktp_terdaftar: bayar === 'jkn' ? 'Klinik Demo' : null,
+      jkn_nomor_kartu: bayar === 'jkn' ? `000${nik.slice(-10)}` : null,
+      asuransi_nama: bayar === 'asuransi' ? 'Asuransi Demo Sehat (fiktif)' : null,
+      asuransi_nomor_polis: bayar === 'asuransi' ? `POL-${nik.slice(-6)}` : null,
       persetujuan: { teks_persetujuan_id: teks.id, bentuk: 'tertulis', penandatangan: 'pasien', setuju: true },
     });
     if (p) id.push({ id: p.id, nama, bayar });

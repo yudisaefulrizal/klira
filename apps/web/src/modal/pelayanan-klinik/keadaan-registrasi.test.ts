@@ -4,7 +4,7 @@ import {
 } from './keadaan-registrasi';
 import { saringSensitif } from '../../util/draf';
 import type { KeadaanRegistrasi } from './keadaan-registrasi';
-import { awalKunjungan, bentukKunjungan, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan';
+import { awalKunjungan, bentukKunjungan, dokterPoli, galatKunjungan, keteranganAsuransi, ubahKunjungan } from './keadaan-kunjungan';
 
 const sah = (p: Partial<KeadaanRegistrasi> = {}): KeadaanRegistrasi => ({
   ...awalRegistrasi(), nama: 'Siti', nik: '3201010101900001', tanggal_lahir: '1990-05-01', ibu_kandung: 'Rina', jenis_kelamin: 'perempuan', setuju: true, ...p,
@@ -89,6 +89,15 @@ describe('bentuk registrasi dan bantuan isian', () => {
     expect(r[3].baris[0]).toEqual({ label: 'Ibu', nilai: 'Rina (0812)' });
     expect(r[5].baris).toEqual(expect.arrayContaining([{ label: 'Versi teks 3', nilai: 'GC' }, { label: 'Penandatangan', nilai: 'Rina' }]));
   });
+  it('langkah Penjamin: nomor kartu JKN, nama asuransi, dan nomor polis dikirim dan diringkas; galatnya di langkah 3', () => {
+    const k = sah({ jkn_nomor_kartu: '0001', asuransi_nama: 'Asuransi X', asuransi_nomor_polis: 'POL-1' });
+    expect(bentukRegistrasi(k, 1)).toMatchObject({ jkn_nomor_kartu: '0001', asuransi_nama: 'Asuransi X', asuransi_nomor_polis: 'POL-1' });
+    expect(Object.keys(bentukRegistrasi(k, 1)).filter((b) => b.startsWith('jkn_'))).toEqual(['jkn_nomor_kartu']);
+    const r = ringkasanRegistrasi(k, { id: 1, jenis: 'general', versi: 3, judul: 'GC', tujuan: 't', isi: 'i' });
+    const penjamin = r.find((b) => b.judul === 'Penjamin');
+    expect(penjamin?.baris).toEqual([{ label: 'Nomor kartu JKN', nilai: '0001' }, { label: 'Nama asuransi', nilai: 'Asuransi X' }, { label: 'Nomor polis', nilai: 'POL-1' }]);
+    expect(galatRegistrasi(sah({ asuransi_nomor_polis: 'x'.repeat(51) }), 1, []).perLangkah[3]).toBeTruthy();
+  });
 });
 
 describe('pendaftaran kunjungan', () => {
@@ -107,14 +116,45 @@ describe('pendaftaran kunjungan', () => {
     expect(ubahKunjungan(k, { cara_pembayaran: 'umum' }).nomor_sep).toBe('');
     expect(ubahKunjungan(k, { jenis: 'IMP' }).lokasi_id).toBe('');
   });
+  it('dokter terfilter poli: dikosongkan bila bukan dokter poli baru, terpilih otomatis bila poli hanya punya satu dokter', () => {
+    const dpjp = [
+      { id: 1, nama: 'dr. A', profesi: 'Dokter umum', poli_ids: [3, 4] },
+      { id: 2, nama: 'dr. B', profesi: 'Dokter umum', poli_ids: [3] },
+      { id: 5, nama: 'drg. C', profesi: 'Dokter gigi', poli_ids: [6] },
+    ];
+    expect(dokterPoli(dpjp, '3').map((d) => d.id)).toEqual([1, 2]);
+    expect(dokterPoli(dpjp, '')).toEqual([]);
+    const k = awalKunjungan(1);
+    const di3 = ubahKunjungan(k, { lokasi_id: '3' }, dpjp);
+    expect(di3.dpjp_id).toBe('');
+    const pilihB = ubahKunjungan(di3, { dpjp_id: '2' }, dpjp);
+    expect(ubahKunjungan(pilihB, { lokasi_id: '4' }, dpjp).dpjp_id).toBe('1');
+    expect(ubahKunjungan({ ...pilihB, dpjp_id: '1' }, { lokasi_id: '4' }, dpjp).dpjp_id).toBe('1');
+    expect(ubahKunjungan(pilihB, { lokasi_id: '6' }, dpjp).dpjp_id).toBe('5');
+    expect(ubahKunjungan(pilihB, { lokasi_id: '9' }, dpjp).dpjp_id).toBe('');
+    expect(ubahKunjungan(pilihB, { jenis: 'IMP' }, dpjp).dpjp_id).toBe('');
+    // Memilih "Belum ditentukan" pada poli satu dokter tidak diisi ulang otomatis.
+    const di6 = ubahKunjungan(k, { lokasi_id: '6' }, dpjp);
+    expect(ubahKunjungan(di6, { dpjp_id: '' }, dpjp).dpjp_id).toBe('');
+    expect(bentukKunjungan({ ...pilihB, cara_pembayaran: 'asuransi' })).toMatchObject({ lokasi_id: 3, dpjp_id: 2, cara_pembayaran: 'asuransi' });
+    expect(galatKunjungan({ ...pilihB, cara_pembayaran: 'asuransi' })).toEqual({});
+  });
+  it('asuransi lain: keterangan dari data pasien, null bila belum diisi; SEP hanya JKN', () => {
+    expect(keteranganAsuransi({ asuransi_nama: ' Asuransi X ', asuransi_nomor_polis: 'P-1' })).toEqual({ nama: 'Asuransi X', polis: 'P-1' });
+    expect(keteranganAsuransi({ asuransi_nama: 'Asuransi X', asuransi_nomor_polis: null })).toEqual({ nama: 'Asuransi X', polis: null });
+    expect(keteranganAsuransi({ asuransi_nama: ' ', asuransi_nomor_polis: null })).toBeNull();
+    expect(keteranganAsuransi(null)).toBeNull();
+    const k = { ...awalKunjungan(1), lokasi_id: '3', cara_pembayaran: 'jkn' as const, nomor_sep: 'S' };
+    expect(ubahKunjungan(k, { cara_pembayaran: 'asuransi' }).nomor_sep).toBe('');
+  });
 
 });
 
 describe('draf registrasi tanpa data sensitif', () => {
-  it('NIK, ibu kandung, kontak wali, dan JKN tidak ikut tersimpan', () => {
-    const k = { ...awalRegistrasi(), nik: '3201', ibu_kandung: 'Rina', jkn_nomor_kartu: '000', wali: [{ hubungan: 'ibu', nama: 'R', kontak: '0812' }], agama: 'Islam' };
+  it('NIK, ibu kandung, kontak wali, JKN, dan asuransi tidak ikut tersimpan', () => {
+    const k = { ...awalRegistrasi(), nik: '3201', ibu_kandung: 'Rina', jkn_nomor_kartu: '000', asuransi_nama: 'AsuransiZ', asuransi_nomor_polis: 'POL-77', wali: [{ hubungan: 'ibu', nama: 'R', kontak: '0812' }], agama: 'Islam' };
     const aman = JSON.stringify(saringSensitif(k, BIDANG_SENSITIF_REGISTRASI));
-    for (const rahasia of ['3201', 'Rina', '000', '0812']) expect(aman).not.toContain(rahasia);
+    for (const rahasia of ['3201', 'Rina', '000', '0812', 'AsuransiZ', 'POL-77']) expect(aman).not.toContain(rahasia);
     expect(aman).toContain('Islam');
   });
 });

@@ -19,7 +19,7 @@ import {
 } from './keadaan-registrasi';
 import type { KeadaanRegistrasi } from './keadaan-registrasi';
 import {
-  KonteksPasien, LangkahConsent, LangkahIdentitas, LangkahJkn, LangkahRingkasan, LangkahSosial, LangkahWali,
+  KonteksPasien, LangkahConsent, LangkahIdentitas, LangkahPenjamin, LangkahRingkasan, LangkahSosial, LangkahWali,
 } from './langkah-registrasi';
 
 export const ALUR_REGISTRASI_PASIEN = 'registrasi-pasien';
@@ -34,7 +34,7 @@ type Props = {
 
 /**
  * Modal Registrasi pasien baru (3.3, MODAL-BERTAHAP): Identitas dan alamat (deteksi duplikat otomatis) > Data sosial >
- * Wali/keluarga > Data JKN > General consent > Ringkasan. Satu permintaan, satu transaksi di API; draf otomatis.
+ * Wali/keluarga > Penjamin (JKN dan asuransi lain) > General consent > Ringkasan. Satu permintaan, satu transaksi di API; draf otomatis.
  */
 export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: Props) {
   const { pengguna: saya } = usePengguna();
@@ -132,7 +132,7 @@ export function RegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }: P
     },
     { id: 'sosial', judul: REGISTRASI.langkah.sosial, isi: <LangkahSosial {...dasar} /> },
     { id: 'wali', judul: REGISTRASI.langkah.wali, isi: <LangkahWali {...dasar} /> },
-    { id: 'jkn', judul: REGISTRASI.langkah.jkn, isi: <LangkahJkn {...dasar} /> },
+    { id: 'penjamin', judul: REGISTRASI.langkah.penjamin, isi: <LangkahPenjamin {...dasar} /> },
     { id: 'consent', judul: REGISTRASI.langkah.consent, isi: <LangkahConsent {...dasar} teks={teks} memuat={memuatTeks} galatMuat={galatTeks} /> },
     { id: 'ringkasan', judul: REGISTRASI.langkah.ringkasan, isi: <LangkahRingkasan keadaan={keadaan} teks={teks} /> },
   ].map((l, n) => ({ ...l, selesai: n < JUMLAH_LANGKAH_REGISTRASI - 1 && dikunjungi.includes(n) && indeks !== n && !g.perLangkah[n] }));

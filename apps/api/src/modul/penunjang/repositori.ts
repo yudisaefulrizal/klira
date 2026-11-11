@@ -1,6 +1,7 @@
 import { prisma, Prisma } from '@klira/db';
 import { BAGIAN_KLINIS, hargaTarif, rentangHariWib, teksRujukan } from '@klira/shared';
 import type {
+  CaraPembayaran,
   FilterMasterPemeriksaan, FilterRekapLab, InterpretasiHasil, MasterPemeriksaanDto, MasterPemeriksaanMasukan, PrioritasOrder, RekapLabDto, StatusOrderPenunjang, StatusPembayaran, StatusTagihan,
   TarifLabDto, UbahMasterPemeriksaanMasukan,
 } from '@klira/shared';
@@ -10,7 +11,7 @@ import { tulisPengesahanDalam } from '../rekam-medis/repositori';
 import type { TulisPengesahan } from '../rekam-medis/repositori';
 import { susunIsiHasil } from './isi';
 
-export type KunjunganOrder = { id: number; pasien_id: number; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
+export type KunjunganOrder = { id: number; pasien_id: number; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
 export type MasterBaris = MasterPemeriksaanDto & { tarif_layanan_id: number | null };
 export type OrderBaris = {
   id: number; kunjungan_id: number; pasien_id: number; nama: string; kode_loinc: string | null; prioritas: PrioritasOrder; catatan: string | null; status: StatusOrderPenunjang;

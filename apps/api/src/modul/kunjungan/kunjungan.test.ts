@@ -1,3 +1,4 @@
+import { REGISTRASI } from '@klira/shared';
 import { buatLayananKunjungan } from './layanan';
 import type { RepositoriKunjungan } from './repositori';
 import { statusDariDb, statusKeDb } from './pemetaan';
@@ -17,7 +18,8 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
   const dasarRepo = {
     pasienAda: async (f: number, id: number) => f === 1 && id === 10,
     poliOperasional: async (f: number, id: number) => f === 1 && id === 20,
-    dpjpSah: async (f: number, id: number) => f === 1 && id === 30,
+    dpjpSah: async (f: number, id: number) => f === 1 && (id === 30 || id === 32),
+    dokterDiPoli: async (f: number, id: number, lokasi: number) => f === 1 && id === 30 && lokasi === 20,
     kunjunganBerjalan: async () => false,
     daftarkan: jest.fn(async () => kunjungan),
     tahapSekarang: async (f: number, id: number) => (f === 1 && id === 5 ? 'pemeriksaan' : null),
@@ -38,6 +40,14 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
     expect(h).toMatchObject({ ok: true });
     expect(dasarRepo.daftarkan).toHaveBeenCalledWith(1, 3, expect.objectContaining({ nomor_sep: null, keluhan_singkat: 'batuk' }), new Date('2026-10-25T01:00:00Z'));
     expect(catatan).toEqual([expect.objectContaining({ aksi: 'input', entitas: 'kunjungan' })]);
+  });
+  it('menolak dokter yang tidak bertugas di poli terpilih; dokter boleh kosong', async () => {
+    const l = buat();
+    expect(await l.daftarkan(saya, { ...masukan, dpjp_id: 32 })).toMatchObject({ ok: false, kode: 'tidak_valid', pesan: REGISTRASI.galat.dokterBukanPoli });
+    expect(dasarRepo.daftarkan).not.toHaveBeenCalled();
+    expect(await l.daftarkan(saya, { ...masukan, dpjp_id: undefined })).toMatchObject({ ok: true });
+    // Rawat inap langsung tanpa poli: tidak ada pemeriksaan poli dokter.
+    expect(await l.daftarkan(saya, { ...masukan, jenis: 'IMP', lokasi_id: undefined, dpjp_id: 32 })).toMatchObject({ ok: true });
   });
   it('menolak pasien, poli, atau DPJP di luar fasyankes dan kunjungan berjalan tanpa menyimpan', async () => {
     const l = buat();

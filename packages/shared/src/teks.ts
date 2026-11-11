@@ -536,7 +536,7 @@ export const DAFTAR_PASIEN = {
   detail: {
     nomorRm: 'Nomor RM', nik: 'NIK', nama: 'Nama', ibu: 'Nama ibu kandung', tempatLahir: 'Tempat lahir', tanggalLahir: 'Tanggal lahir', jenisKelamin: 'Jenis kelamin',
     agama: 'Agama', suku: 'Suku', bahasa: 'Bahasa', pekerjaan: 'Pekerjaan', pendidikan: 'Pendidikan', statusKawin: 'Status kawin', alamat: 'Alamat', kodeWilayah: 'Desa/Kelurahan',
-    paspor: 'Nomor paspor', kitas: 'Nomor KITAS', jknKartu: 'Nomor kartu JKN', jknKelas: 'Kelas hak', jknFktp: 'FKTP terdaftar', identitas: 'Status identitas', jalur: 'Jenis identitas',
+    paspor: 'Nomor paspor', kitas: 'Nomor KITAS', jknKartu: 'Nomor kartu JKN', asuransiNama: 'Nama asuransi', asuransiPolis: 'Nomor polis', penjamin: 'Penjamin', identitas: 'Status identitas', jalur: 'Jenis identitas',
     wali: 'Wali / keluarga', tanpaWali: 'Belum ada wali atau keluarga tercatat.', tidakCakap: 'Pasien tidak cakap (diwakili wali)',
   },
   jenisKelamin: { laki_laki: 'Laki-laki', perempuan: 'Perempuan' } as Record<string, string>,
@@ -547,7 +547,7 @@ export const REGISTRASI = {
   judul: 'Registrasi pasien baru',
   langkah: {
     duplikat: 'Cari duplikat', identitas: 'Identitas', sosial: 'Data sosial', alamat: 'Alamat dan jalur identitas khusus',
-    wali: 'Wali/keluarga', jkn: 'Data JKN', consent: 'General consent', ringkasan: 'Ringkasan',
+    wali: 'Wali/keluarga', penjamin: 'Penjamin', consent: 'General consent', ringkasan: 'Ringkasan',
   },
   nama: 'Nama lengkap',
   nik: 'NIK',
@@ -598,11 +598,10 @@ export const REGISTRASI = {
   waliTambah: 'Tambahkan',
   waliHapus: 'Hapus',
   waliKosong: 'Belum ada wali.',
-  jknPetunjuk: 'Data kepesertaan JKN pasien.',
+  penjaminPetunjuk: 'Data kepesertaan JKN dan asuransi lain pasien. Semua isian boleh dikosongkan.',
   jknKartu: 'Nomor kartu JKN',
-  jknKelas: 'Kelas hak',
-  jknKelasOpsi: ['1', '2', '3'],
-  jknFktp: 'FKTP terdaftar',
+  asuransiNama: 'Nama asuransi',
+  asuransiPolis: 'Nomor polis',
   consentMemuat: 'Memuat teks persetujuan...',
   consentGagal: 'Teks persetujuan gagal dimuat.',
   consentTidakAda: 'Belum ada teks general consent aktif. Hubungi pimpinan klinik.',
@@ -613,7 +612,7 @@ export const REGISTRASI = {
   consentPenandatanganOpsi: [{ nilai: 'pasien', label: 'Pasien sendiri' }, { nilai: 'wali', label: 'Wali' }],
   consentWali: 'Wali yang menyetujui',
   consentSetuju: 'Persetujuan telah dibacakan atau dibaca dan diberikan.',
-  ringkasanJudul: { identitas: 'Identitas', sosial: 'Data sosial', alamat: 'Alamat', wali: 'Wali/keluarga', jkn: 'Data JKN', consent: 'General consent' },
+  ringkasanJudul: { identitas: 'Identitas', sosial: 'Data sosial', alamat: 'Alamat', wali: 'Wali/keluarga', penjamin: 'Penjamin', consent: 'General consent' },
   kosongStrip: '-',
   buat: 'Daftarkan pasien',
   membuat: 'Mendaftarkan...',
@@ -639,6 +638,7 @@ export const REGISTRASI = {
     pasienTidakAda: 'Pasien tidak ditemukan.',
     poliTidakSah: 'Poli tidak ditemukan atau tidak operasional.',
     dpjpTidakSah: 'DPJP tidak ditemukan atau tidak aktif.',
+    dokterBukanPoli: 'Dokter ini tidak bertugas di poli terpilih.',
     kunjunganBerjalan: 'Pasien masih memiliki kunjungan yang berjalan.',
     tahapTidakSah: 'Perpindahan tahap layanan ini tidak diizinkan.',
     antreanTidakSah: 'Perubahan status antrean ini tidak diizinkan dari status sekarang.',
@@ -660,7 +660,9 @@ export const KUNJUNGAN = {
   dpjp: 'DPJP',
   tanpaDpjp: 'Belum ditentukan',
   caraBayar: 'Cara pembayaran',
-  caraBayarOpsi: [{ nilai: 'umum', label: 'Umum' }, { nilai: 'jkn', label: 'JKN' }],
+  caraBayarOpsi: [{ nilai: 'umum', label: 'Umum' }, { nilai: 'jkn', label: 'JKN' }, { nilai: 'asuransi', label: 'Asuransi lain' }],
+  dokter: 'Dokter',
+  tanpaDokter: 'Belum ditentukan',
   sep: 'Nomor SEP',
   sepKet: 'Boleh dikosongkan; nomor SEP dapat menyusul.',
   keluhan: 'Keluhan singkat',
@@ -674,6 +676,12 @@ export const KUNJUNGAN = {
   tanpaAntrean: 'Rawat inap langsung tidak memakai antrean poli.',
   selesai: 'Selesai',
   pilih: 'Pilih...',
+  asuransi: {
+    judul: 'Data asuransi pasien',
+    nama: 'Nama asuransi',
+    polis: 'Nomor polis',
+    belumAda: 'Pasien belum memiliki data asuransi. Lengkapi di Edit pasien (langkah Penjamin); pendaftaran tetap bisa dilanjutkan.',
+  },
 } as const;
 
 /** Pemeriksaan klinis (MODAL-BERTAHAP), panel pendamping, dan catatan klinis (3.3, 4.2). */
@@ -692,7 +700,7 @@ export const KLINIS = {
   tombol: { riwayat: 'Riwayat', salin: 'Salin dari kunjungan sebelumnya', favorit: 'Favorit dan templat', keluarga: 'Family folder', simpan: 'Simpan dan sahkan', menyimpan: 'Menyimpan...', skrining: 'Skrining', periksa: 'Periksa' },
   konteks: {
     alergi: 'Alergi', diagnosisAktif: 'Diagnosis aktif', tandaVital: 'Tanda vital', tidakAda: 'Belum tercatat', memuat: 'Memuat data pasien...',
-    gagal: 'Data kunjungan gagal dimuat.', umum: 'Umum', jkn: 'JKN',
+    gagal: 'Data kunjungan gagal dimuat.', umum: 'Umum', jkn: 'JKN', asuransi: 'Asuransi lain',
   },
   anamnesis: {
     keluhanUtama: 'Keluhan utama', penyerta: 'Keluhan penyerta', riwayatPribadi: 'Riwayat penyakit pribadi', riwayatKeluarga: 'Riwayat penyakit keluarga',

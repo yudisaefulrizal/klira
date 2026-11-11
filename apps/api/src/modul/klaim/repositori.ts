@@ -1,9 +1,9 @@
 import { prisma, Prisma } from '@klira/db';
-import type { FilterKlaim, KodeKlaim, RingkasanKlaimDto, StatusKlaim } from '@klira/shared';
+import type { CaraPembayaran, FilterKlaim, KodeKlaim, RingkasanKlaimDto, StatusKlaim } from '@klira/shared';
 import { STATUS_KLAIM } from '@klira/shared';
 
 export type KunjunganKlaim = {
-  id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; jenis: 'AMB' | 'IMP'; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn'; nomor_sep: string | null; spri: string | null; waktu_tutup: Date | null;
+  id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; jenis: 'AMB' | 'IMP'; tahap_layanan: string; cara_pembayaran: CaraPembayaran; nomor_sep: string | null; spri: string | null; waktu_tutup: Date | null;
 };
 export type KlaimBaris = {
   id: number; kunjungan_id: number; nomor_sep: string | null; status: StatusKlaim; tanggal_selesai: Date; batas_pengajuan: Date; diagnosis: KodeKlaim[]; tindakan: KodeKlaim[]; berkas: string[]; catatan: string | null;

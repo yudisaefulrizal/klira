@@ -11,6 +11,8 @@ export interface RepositoriKunjungan {
   kunjunganBerjalan(fasyankesId: number, pasienId: number): Promise<boolean>;
   poliOperasional(fasyankesId: number, id: number): Promise<boolean>;
   dpjpSah(fasyankesId: number, penggunaId: number): Promise<boolean>;
+  /** Dokter bertugas di poli: punya jadwal praktik aktif di poli itu (sumber sama dengan `poli_ids` pada opsi). */
+  dokterDiPoli(fasyankesId: number, penggunaId: number, lokasiId: number): Promise<boolean>;
   opsi(fasyankesId: number): Promise<OpsiKunjunganDto>;
   /** Kunjungan, peserta DPJP (ATND), dan antrean (rawat jalan) dibuat dalam satu transaksi. */
   daftarkan(fasyankesId: number, oleh: number, d: DataKunjungan, sekarang: Date): Promise<KunjunganDto>;
@@ -60,6 +62,10 @@ export class RepositoriKunjunganPrisma implements RepositoriKunjungan {
 
   async dpjpSah(fasyankesId: number, penggunaId: number): Promise<boolean> {
     return (await prisma.pengguna.count({ where: { id: penggunaId, fasyankes_id: fasyankesId, aktif: true, profil_profesi: { some: { aktif: true } } } })) > 0;
+  }
+
+  async dokterDiPoli(fasyankesId: number, penggunaId: number, lokasiId: number): Promise<boolean> {
+    return (await prisma.jadwalPraktik.count({ where: { fasyankes_id: fasyankesId, pengguna_id: penggunaId, lokasi_id: lokasiId, aktif: true } })) > 0;
   }
 
   async opsi(fasyankesId: number): Promise<OpsiKunjunganDto> {

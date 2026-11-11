@@ -25,6 +25,9 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
       if (!(await repo.pasienAda(p.fasyankes_id, m.pasien_id))) return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
       if (m.lokasi_id && m.jenis === 'AMB' && !(await repo.poliOperasional(p.fasyankes_id, m.lokasi_id))) return gagal('tidak_valid', REGISTRASI.galat.poliTidakSah, 'lokasi_id');
       if (m.dpjp_id && !(await repo.dpjpSah(p.fasyankes_id, m.dpjp_id))) return gagal('tidak_valid', REGISTRASI.galat.dpjpTidakSah, 'dpjp_id');
+      if (m.dpjp_id && m.jenis === 'AMB' && m.lokasi_id && !(await repo.dokterDiPoli(p.fasyankes_id, m.dpjp_id, m.lokasi_id))) {
+        return gagal('tidak_valid', REGISTRASI.galat.dokterBukanPoli, 'dpjp_id');
+      }
       if (await repo.kunjunganBerjalan(p.fasyankes_id, m.pasien_id)) return gagal('konflik', REGISTRASI.galat.kunjunganBerjalan);
       let k;
       try {

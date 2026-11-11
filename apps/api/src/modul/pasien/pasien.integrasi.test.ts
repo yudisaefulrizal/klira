@@ -271,6 +271,7 @@ d('pasien, kunjungan, dan antrean terhadap klira_uji', () => {
     const tutup = await prisma.lokasi.findFirstOrThrow({ where: { fasyankes_id: fas, nama: 'Poli Tutup' } });
     expect((await panggil('POST', '/kunjungan', 'petugas', { pasien_id: p5.id, jenis: 'AMB', lokasi_id: tutup.id })).status).toBe(400);
     expect((await panggil('POST', '/kunjungan', 'petugas', { pasien_id: p5.id, jenis: 'AMB', lokasi_id: poliA, dpjp_id: id.dokterlain })).status).toBe(400);
+    expect((await panggil('POST', '/kunjungan', 'petugas', { pasien_id: p5.id, jenis: 'AMB', lokasi_id: poliB, dpjp_id: id.dokter })).status).toBe(400); // dokter tidak bertugas di poli B
     expect((await panggil('POST', '/kunjungan', 'lain', { pasien_id: p5.id, jenis: 'IMP' })).status).toBe(404); // pasien klinik lain
     const lokasiLain = await prisma.lokasi.create({ data: { fasyankes_id: fasLain, nama: 'Poli Lain', jenis: 'poli' } });
     expect((await panggil('POST', '/kunjungan', 'petugas', { pasien_id: p5.id, jenis: 'AMB', lokasi_id: lokasiLain.id })).status).toBe(400);

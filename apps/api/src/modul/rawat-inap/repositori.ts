@@ -3,6 +3,7 @@ import { prisma } from '@klira/db';
 import type { Prisma } from '@klira/db';
 import { hargaTarif, TAHAP_BERJALAN } from '@klira/shared';
 import type {
+  CaraPembayaran,
   AdmisiMasukan, AsalAdmisiDto, BedDto, CatatanHarianMasukan, HasilAdmisiDto, KelasRawat, MenungguRuanganDto, OpsiRawatInapDto, PapanDto, PemulanganDto, PemulanganMasukan, PenempatanDto, PenempatanMasukan, RawatInapDto,
 } from '@klira/shared';
 import { tambahItemTagihanDalam } from '../kasir/repositori';
@@ -23,7 +24,7 @@ const kunci = (tx: Prisma.TransactionClient, tabel: 'pasien' | 'lokasi' | 'kunju
   tx.$queryRawUnsafe(`SELECT id FROM ${tabel} WHERE id = ? AND fasyankes_id = ? FOR UPDATE`, id, fasyankesId);
 
 export type PelakuRi = { fasyankesId: number; oleh: number };
-export type KunjunganRi = { id: number; pasien_id: number; jenis: 'AMB' | 'IMP'; tahap_layanan: string; cara_pembayaran: 'umum' | 'jkn' };
+export type KunjunganRi = { id: number; pasien_id: number; jenis: 'AMB' | 'IMP'; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
 
 /** Akses data Rawat inap: papan bed, admisi, penempatan, DPJP, catatan harian (CPPT), pemulangan. Hanya INSERT dan penutupan periode; tidak ada hapus. */
 export class RepositoriRawatInapPrisma {
