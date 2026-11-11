@@ -1,5 +1,5 @@
 import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi';
-import { awalBayar, awalShift, bisaTutup, daftarSyarat, diterapkan, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, kembalian, selisihShift } from './keadaan-kasir';
+import { awalBayar, awalShift, bentukBayar, bisaTutup, daftarSyarat, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, hapusBaris, ringkasBayar, selisihShift, tambahBaris, ubahBaris } from './keadaan-kasir';
 
 const gambaran = (syarat: Partial<{ tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean; ditanggung_jkn: boolean }> = {}) =>
   ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ditanggung_jkn: false, ...syarat } }) as never;
@@ -15,21 +15,37 @@ describe('tambah item dari tarif', () => {
 });
 
 describe('pembayaran', () => {
-  it('awal memakai sisa tagihan; jumlah wajib bilangan bulat positif dan metode sah', () => {
-    expect(awalBayar(80_000)).toEqual({ metode: 'tunai', jumlah: '80000' });
-    expect(awalBayar(0).jumlah).toBe('');
-    expect(galatBayar({ metode: 'tunai', jumlah: '' }).jumlah).toBeTruthy();
-    expect(galatBayar({ metode: 'tunai', jumlah: '0' }).jumlah).toBeTruthy();
-    expect(galatBayar({ metode: 'tunai', jumlah: '1,5' }).jumlah).toBeTruthy();
-    expect(galatBayar({ metode: 'qris', jumlah: '5000' })).toEqual({});
+  const k = (...baris: [string, string][]) => ({ baris: baris.map(([metode, jumlah]) => ({ metode: metode as 'tunai', jumlah })) });
+  it('awal satu baris tunai berisi sisa tagihan; jumlah wajib bilangan bulat positif dan metode sah', () => {
+    expect(awalBayar(80_000)).toEqual({ baris: [{ metode: 'tunai', jumlah: '80000' }] });
+    expect(awalBayar(0).baris[0].jumlah).toBe('');
+    expect(galatBayar(k(['tunai', '']))['pembayaran.0.jumlah']).toBeTruthy();
+    expect(galatBayar(k(['tunai', '0']))['pembayaran.0.jumlah']).toBeTruthy();
+    expect(galatBayar(k(['tunai', '1,5']))['pembayaran.0.jumlah']).toBeTruthy();
+    expect(galatBayar(k(['qris', '5000']))).toEqual({});
   });
-  it('kembalian dan jumlah terapan dibatasi sisa', () => {
-    expect(kembalian({ metode: 'tunai', jumlah: '100000' }, 80_000)).toBe(20_000);
-    expect(kembalian({ metode: 'tunai', jumlah: '50000' }, 80_000)).toBe(0);
-    expect(kembalian({ metode: 'tunai', jumlah: 'abc' }, 80_000)).toBe(0);
-    expect(diterapkan({ metode: 'tunai', jumlah: '100000' }, 80_000)).toBe(80_000);
-    expect(diterapkan({ metode: 'tunai', jumlah: '30000' }, 80_000)).toBe(30_000);
-    expect(diterapkan({ metode: 'tunai', jumlah: '' }, 80_000)).toBe(0);
+  it('metode ganda ditolak; non-tunai melebihi sisa ditolak, tunai boleh lebih', () => {
+    expect(galatBayar(k(['tunai', '1000'], ['tunai', '2000']))['pembayaran.1.metode']).toBeTruthy();
+    expect(galatBayar(k(['transfer', '50000'], ['qris', '40000']), 80_000).pembayaran).toBeTruthy();
+    expect(galatBayar(k(['transfer', '50000'], ['tunai', '100000']), 80_000)).toEqual({});
+  });
+  it('tambah baris maks 3 dengan metode belum dipakai dan sisa yang belum tertutup; baris pertama tidak bisa dihapus', () => {
+    const satu = { baris: [{ metode: 'tunai' as const, jumlah: '30000' }] };
+    const dua = tambahBaris(satu, 80_000);
+    expect(dua.baris[1]).toEqual({ metode: 'transfer', jumlah: '50000' });
+    const tiga = tambahBaris(dua, 80_000);
+    expect(tiga.baris[2]).toEqual({ metode: 'qris', jumlah: '' });
+    expect(tambahBaris(tiga, 80_000)).toBe(tiga);
+    expect(hapusBaris(tiga, 0)).toBe(tiga);
+    expect(hapusBaris(tiga, 1).baris.map((b) => b.metode)).toEqual(['tunai', 'qris']);
+    expect(ubahBaris(satu, 0, { metode: 'qris' }).baris[0]).toEqual({ metode: 'qris', jumlah: '30000' });
+    expect(bentukBayar(dua)).toEqual({ pembayaran: [{ metode: 'tunai', jumlah: '30000' }, { metode: 'transfer', jumlah: '50000' }] });
+  });
+  it('ringkasan: diterima, diterapkan dibatasi sisa, kembalian hanya dari tunai', () => {
+    expect(ringkasBayar(k(['tunai', '100000']), 80_000)).toEqual({ diterima: 100_000, diterapkan: 80_000, kembalian: 20_000 });
+    expect(ringkasBayar(k(['transfer', '50000'], ['tunai', '50000']), 80_000)).toEqual({ diterima: 100_000, diterapkan: 80_000, kembalian: 20_000 });
+    expect(ringkasBayar(k(['tunai', '30000'], ['qris', '20000']), 80_000)).toEqual({ diterima: 50_000, diterapkan: 50_000, kembalian: 0 });
+    expect(ringkasBayar(k(['tunai', 'abc']), 80_000)).toEqual({ diterima: 0, diterapkan: 0, kembalian: 0 });
   });
 });
 

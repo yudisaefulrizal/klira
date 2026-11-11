@@ -968,7 +968,7 @@ export const KASIR = {
     serahSudah: 'Obat sudah diserahkan.', serah: 'Serahkan obat', menyerahkan: 'Menyerahkan...', serahInfo: 'Penyerahan mengurangi stok (batch terdekat kedaluwarsa lebih dulu) dan tidak dapat dibatalkan.',
     stokKurangJudul: 'Stok kurang', stokKurang: (nama: string, butuh: number, ada: number) => `${nama}: butuh ${butuh}, tersedia ${ada}.`, izinkanStokKurang: 'Tetap serahkan walau stok tercatat kurang', alasanStok: 'Alasan (mis. stok fisik masih ada)', serahTercatat: 'Serah terima tercatat.',
     ringkasanTutup: 'Syarat tutup kunjungan', syarat: { tahap: 'Kunjungan di tahap kasir', tagihan: 'Tagihan lengkap', resep: 'Semua resep sudah diserahkan', lunas: 'Tagihan lunas' }, selesai: 'Selesai', tutupKunjungan: 'Tutup kunjungan',
-    pembayaranTambahan: 'Tambah pembayaran', gagal: 'Tindakan kasir gagal.', penjelasanTutup: 'Tutup kunjungan dilakukan di modal terpisah setelah semuanya selesai.',
+    pembayaranTambahan: 'Tambah pembayaran', tambahMetode: '+ Metode lain', hapusMetode: 'Hapus', metodeKe: (n: number) => `Metode bayar ${n}`, diterimaKe: (n: number) => `Jumlah diterima ${n} (Rp)`, totalDiterima: 'Total diterima', diterapkan: 'Diterapkan ke tagihan', kembalianLabel: 'Kembalian (tunai)', gagal: 'Tindakan kasir gagal.', penjelasanTutup: 'Tutup kunjungan dilakukan di modal terpisah setelah semuanya selesai.',
   },
   tutup: {
     judul: 'Tutup kunjungan', syaratJudul: 'Syarat tutup kunjungan', ok: 'Terpenuhi', belum: 'Belum', alasan: 'Alasan menutup belum lunas', alasanPetunjuk: 'Tagihan belum lunas. Kunjungan tetap bisa ditutup dengan alasan; ini tercatat di audit dan terlihat di rekap.', simpan: 'Tutup kunjungan', menutup: 'Menutup...',
@@ -976,7 +976,7 @@ export const KASIR = {
   },
   galat: {
     pilihTarif: 'Pilih tarif layanan.', tarifTidakAda: 'Tarif tidak ditemukan atau tidak aktif.', itemBukanManual: 'Hanya item tambahan kasir yang bisa dihapus.', hapusMelebihiBayar: 'Item tidak bisa dihapus: total tagihan akan lebih kecil dari yang sudah dibayar.',
-    angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', jumlahMinimal: 'Jumlah minimal 1.', metode: 'Pilih metode bayar.', alasanWajib: 'Alasan wajib diisi.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
+    angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', jumlahMinimal: 'Jumlah minimal 1.', metode: 'Pilih metode bayar.', metodeGanda: 'Metode bayar tidak boleh dipilih dua kali.', barisMinimal: 'Isi minimal satu metode bayar.', barisMaksimal: 'Maksimal tiga metode bayar.', nonTunaiLebih: 'Jumlah transfer dan QRIS melebihi sisa tagihan; kelebihan hanya boleh dari tunai.', alasanWajib: 'Alasan wajib diisi.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
     itemTidakAda: 'Item tagihan tidak ditemukan.', hargaSudahAda: 'Harga item ini sudah terisi dan tidak dapat diubah dari sini.', tagihanTerkunci: 'Tagihan kunjungan yang sudah ditutup tidak dapat diubah.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', tahapSalah: 'Kunjungan belum di tahap kasir atau sudah ditutup.', tagihanBelumLengkap: 'Tagihan belum lengkap: ada item tanpa harga.', tagihanKosong: 'Belum ada tagihan pada kunjungan ini.', sudahLunas: 'Tagihan sudah lunas.',
     jumlahLebih: 'Jumlah melebihi sisa tagihan.', tanpaShift: 'Buka shift kasir terlebih dahulu.', shiftSudahAda: 'Anda sudah memiliki shift terbuka.', shiftTidakAda: 'Tidak ada shift terbuka.', resepBelumSiap: 'Ada resep yang belum siap di farmasi.', tidakAdaResep: 'Tidak ada resep yang perlu diserahkan.',

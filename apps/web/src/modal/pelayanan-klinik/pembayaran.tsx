@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KASIR, METODE_BAYAR } from '@klira/shared';
+import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR } from '@klira/shared';
 import type { KasirKunjunganDto, MetodeBayar } from '@klira/shared';
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan } from '../../api-klien/kasir';
 import { GalatApi } from '../../api-klien/klien';
@@ -14,7 +14,7 @@ import { Pilihan } from '../../komponen/ui/pilihan';
 import { DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { BarisTabel, SelTabel, Tabel } from '../../komponen/ui/tabel';
 import { formatWaktu } from '../../util/penyaring-tab';
-import { awalBayar, bentukBayar, diterapkan, galatBayar, kembalian } from './keadaan-kasir';
+import { awalBayar, bentukBayar, galatBayar, hapusBaris, ringkasBayar, tambahBaris, ubahBaris } from './keadaan-kasir';
 import type { KeadaanBayar } from './keadaan-kasir';
 import { KepalaPasien } from './kepala-pasien';
 import { rupiah } from './keadaan-order-lab';
@@ -41,7 +41,7 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   const muat = useCallback(async (sesuaikan = false) => {
     const h = await kasirKunjungan(kunjunganId);
     setG(h);
-    if (sesuaikan) setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 && !h.syarat.ditanggung_jkn ? String(h.tagihan.sisa) : '' }));
+    if (sesuaikan) setBayar(awalBayar(h.syarat.ditanggung_jkn ? 0 : h.tagihan.sisa));
     return h;
   }, [kunjunganId]);
 
@@ -53,11 +53,11 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   /** Gambaran baru dari server (tambah/hapus item, lengkapi harga): jumlah bayar mengikuti sisa terbaru. */
   const terapkan = (h: KasirKunjunganDto) => {
     setG(h);
-    setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 && !h.syarat.ditanggung_jkn ? String(h.tagihan.sisa) : '' }));
+    setBayar(awalBayar(h.syarat.ditanggung_jkn ? 0 : h.tagihan.sisa));
     setBerubah(true);
   };
-  const gb = galatBayar(bayar);
-  const kemb = useMemo(() => (t ? kembalian(bayar, t.sisa) : 0), [bayar, t]);
+  const gb = galatBayar(bayar, t?.sisa);
+  const ringkas = useMemo(() => (t ? ringkasBayar(bayar, t.sisa) : null), [bayar, t]);
 
   async function jalankan(f: () => Promise<void>) {
     if (memproses) return;
@@ -79,16 +79,16 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
     if (memproses || Object.keys(gb).length || !t || !g?.shift_terbuka || t.status_tagihan !== 'lengkap' || t.sisa <= 0) return;
     void jalankan(async () => {
       const h = await catatPembayaran(kunjunganId, bentukBayar(bayar));
-      setInfo(`${B.tercatat(rupiah(h.pembayaran.jumlah))}${h.kembalian ? ` ${B.kembalian(rupiah(h.kembalian))}.` : ''}`);
+      setInfo(`${B.tercatat(rupiah(h.diterapkan))}${h.kembalian ? ` ${B.kembalian(rupiah(h.kembalian))}.` : ''}`);
       setDicoba(false);
       setBerubah(true);
       setG((sebelum) => sebelum ? { ...sebelum, tagihan: h.tagihan } : sebelum);
-      setBayar((k) => ({ ...k, jumlah: h.tagihan.sisa > 0 ? String(h.tagihan.sisa) : '' }));
+      setBayar(awalBayar(h.tagihan.sisa));
     });
   };
 
   /** Pasien JKN tidak wajib membayar: tanpa jumlah diisi, tombol utama menjadi Selesai. */
-  const perluBayar = !!t && t.sisa > 0 && !(g?.syarat.ditanggung_jkn && !bayar.jumlah.trim());
+  const perluBayar = !!t && t.sisa > 0 && !(g?.syarat.ditanggung_jkn && bayar.baris.every((b) => !b.jumlah.trim()));
 
   const langkah: LangkahModal[] = [
     {
@@ -141,9 +141,22 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
           {t.sisa > 0 && t.total > 0 ? (
             <Kolom>
               <strong>{B.sisa}: {rupiah(t.sisa)}</strong>
-              <Pilihan id="bayar-metode" label={B.metode} opsi={OPSI_METODE} value={bayar.metode} disabled={memproses} onChange={(e) => setBayar({ ...bayar, metode: e.target.value as MetodeBayar })} />
-              <Isian id="bayar-jumlah" label={B.diterima} inputMode="numeric" value={bayar.jumlah} disabled={memproses} onChange={(e) => setBayar({ ...bayar, jumlah: e.target.value })} galat={dicoba ? gb.jumlah : undefined} autoComplete="off" />
-              {kemb > 0 && <Peringatan nada="biru">{B.kembalian(rupiah(kemb))}. Yang dicatat: {rupiah(diterapkan(bayar, t.sisa))}.</Peringatan>}
+              {bayar.baris.map((b, i) => (
+                <Sebaris key={i} jarak="md" bungkus sejajar="akhir">
+                  <Pilihan id={`bayar-metode-${i}`} label={i === 0 ? B.metode : B.metodeKe(i + 1)} opsi={OPSI_METODE} value={b.metode} disabled={memproses} onChange={(e) => setBayar(ubahBaris(bayar, i, { metode: e.target.value as MetodeBayar }))} galat={dicoba ? gb[`pembayaran.${i}.metode`] : undefined} />
+                  <Tumbuh tag="div">
+                    <Isian id={`bayar-jumlah-${i}`} label={i === 0 ? B.diterima : B.diterimaKe(i + 1)} inputMode="numeric" value={b.jumlah} disabled={memproses} onChange={(e) => setBayar(ubahBaris(bayar, i, { jumlah: e.target.value }))} galat={dicoba ? gb[`pembayaran.${i}.jumlah`] : undefined} autoComplete="off" />
+                  </Tumbuh>
+                  {i > 0 && <Tombol type="button" varian="teks" disabled={memproses} aria-label={`${B.hapusMetode} ${B.metodeKe(i + 1)}`} onClick={() => setBayar(hapusBaris(bayar, i))}>{B.hapusMetode}</Tombol>}
+                </Sebaris>
+              ))}
+              {bayar.baris.length < MAKS_BARIS_BAYAR && (
+                <Sebaris><Tombol type="button" varian="sekunder" disabled={memproses} onClick={() => setBayar(tambahBaris(bayar, t.sisa))}>{B.tambahMetode}</Tombol></Sebaris>
+              )}
+              {dicoba && (gb.pembayaran ?? gb['']) && <Peringatan>{gb.pembayaran ?? gb['']}</Peringatan>}
+              {ringkas && ringkas.diterima > 0 && (
+                <DaftarRingkasan bagian={[{ judul: '', baris: [{ label: B.totalDiterima, nilai: rupiah(ringkas.diterima) }, { label: B.diterapkan, nilai: rupiah(ringkas.diterapkan) }, { label: B.kembalianLabel, nilai: rupiah(ringkas.kembalian) }] }]} />
+              )}
             </Kolom>
           ) : t.total > 0 && <Peringatan nada="biru">{B.lunas}</Peringatan>}
         </Kolom>

@@ -370,8 +370,14 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab) {
     const kons = kas?.tarif?.find((t) => t.kode === 'KONS-UMUM');
     const g = kons && await wajib('tambah konsultasi dari tarif (kasir)', 'kasir', 'POST', `/kunjungan/${kid}/tagihan/item`, { tarif_id: kons.id, jumlah: 1 });
     const total = (g ?? kas)?.tagihan?.total ?? 0;
+    // Pasien ketiga dibayar dua metode (QRIS separuh, sisanya tunai dibulatkan: kembalian hanya dari tunai).
+    const barisBayarDemo = (dua, t) => {
+      const tunai = (n) => Math.ceil(n / 10_000) * 10_000 || 10_000;
+      const qris = Math.floor(t / 2);
+      return dua && qris > 0 ? [{ metode: 'qris', jumlah: qris }, { metode: 'tunai', jumlah: tunai(t - qris) }] : [{ metode: 'tunai', jumlah: tunai(t) }];
+    };
     if (p.bayar === 'jkn') console.log(`  • pasien JKN: tagihan Rp${total.toLocaleString('id-ID')} ditanggung JKN, tanpa pembayaran`);
-    else await wajib(`pembayaran Rp${total.toLocaleString('id-ID')} (kasir)`, 'kasir', 'POST', `/kunjungan/${kid}/pembayaran`, { metode: i === 2 ? 'qris' : 'tunai', jumlah: Math.ceil(total / 10_000) * 10_000 || 10_000 });
+    else await wajib(`pembayaran Rp${total.toLocaleString('id-ID')} (kasir)`, 'kasir', 'POST', `/kunjungan/${kid}/pembayaran`, { pembayaran: barisBayarDemo(i === 2, total) });
     await wajib('serah terima obat (apoteker)', 'apoteker', 'POST', `/kunjungan/${kid}/serah-terima-obat`, {});
     await wajib('tutup kunjungan (kasir)', 'kasir', 'POST', `/kunjungan/${kid}/tutup`, {});
   }

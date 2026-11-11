@@ -39,9 +39,9 @@ test('penyerahan memerlukan sesi dan izin farmasi; izin kasir saja tidak cukup',
   expect(bayar).not.toHaveBeenCalled();
 });
 test('izin farmasi tidak memberi akses mencatat pembayaran', async () => {
-  expect((await panggil('/kunjungan/12/pembayaran', 'farmasi', { metode: 'tunai', jumlah: 5000 })).status).toBe(403);
+  expect((await panggil('/kunjungan/12/pembayaran', 'farmasi', { pembayaran: [{ metode: 'tunai', jumlah: 5000 }] })).status).toBe(403);
   expect(bayar).not.toHaveBeenCalled();
-  expect((await panggil('/kunjungan/12/pembayaran', 'kasir', { metode: 'tunai', jumlah: 5000 })).status).toBe(201);
+  expect((await panggil('/kunjungan/12/pembayaran', 'kasir', { pembayaran: [{ metode: 'tunai', jumlah: 5000 }] })).status).toBe(201);
   expect(serahTerima).not.toHaveBeenCalled();
 });
 test('penyerahan menolak stok override tanpa alasan dan id tidak sah sebelum layanan', async () => {

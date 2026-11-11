@@ -1,14 +1,14 @@
 import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
-import { hargaTarif } from '@klira/shared';
-import type { CaraPembayaran, MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto, TarifKasirDto } from '@klira/shared';
+import { hargaTarif, rincianBayar } from '@klira/shared';
+import type { BarisBayar, CaraPembayaran, MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto, TarifKasirDto } from '@klira/shared';
 import { totalTagihan, keItemDto, statusTagihanDari } from './repositori';
 
 export type KunjunganKasir = { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
 export type TagihanKasir = TagihanDto & { pembayaran: PembayaranDto[]; dibayar: number; sisa: number };
 export type HasilBayarRepo =
-  | { ok: true; pembayaran: PembayaranDto; tagihan: TagihanKasir; kembalian: number }
-  | { ok: false; sebab: 'tahap_salah' | 'tagihan_kosong' | 'tagihan_belum_lengkap' | 'sudah_lunas' | 'tanpa_shift' };
+  | { ok: true; pembayaran: PembayaranDto[]; tagihan: TagihanKasir; diterima: number; diterapkan: number; kembalian: number }
+  | { ok: false; sebab: 'tahap_salah' | 'tagihan_kosong' | 'tagihan_belum_lengkap' | 'sudah_lunas' | 'tanpa_shift' | 'non_tunai_lebih' };
 export type HasilLengkapiHargaRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'sudah_berharga' | 'terkunci' };
 export type HasilTambahItemRepo = { ok: true; nama: string; harga: number; jumlah: number } | { ok: false; sebab: 'tarif_tidak_ada' | 'terkunci' };
 export type HasilHapusItemRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'bukan_manual' | 'terkunci' | 'melebihi_bayar' };
@@ -102,10 +102,11 @@ export class RepositoriKasirPrisma {
 
   // ---- Pembayaran ----
   /**
-   * Pembayaran dalam transaksi dengan kunci baris tagihan. Jumlah yang diterapkan dibatasi sisa tagihan (selebihnya menjadi kembalian);
+   * Pembayaran beberapa metode dalam SATU transaksi dengan kunci baris tagihan (gagal satu, gagal semua). Non-tunai total wajib <= sisa;
+   * tunai diterapkan sebatas sisa setelah non-tunai (selebihnya kembalian, tidak dicatat). Satu baris Pembayaran per metode yang diterapkan > 0;
    * status pembayaran dihitung ulang (belum, sebagian, lunas). Hanya ditambah, tidak pernah diubah atau dihapus.
    */
-  async bayar(fasyankesId: number, kasirId: number, kunjunganId: number, metode: MetodeBayar, diterima: number): Promise<HasilBayarRepo> {
+  async bayar(fasyankesId: number, kasirId: number, kunjunganId: number, baris: BarisBayar[]): Promise<HasilBayarRepo> {
     const hasil = await prisma.$transaction(async (tx) => {
       // Kunci baris tagihan HARUS pernyataan pertama: pembacaan biasa sebelum kunci mengambil potret (REPEATABLE READ) yang sudah usang setelah menunggu.
       const kunci = await tx.$queryRaw<{ id: number }[]>`SELECT id FROM tagihan WHERE kunjungan_id = ${kunjunganId} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
@@ -120,15 +121,21 @@ export class RepositoriKasirPrisma {
       if (sisa <= 0) return { ok: false, sebab: 'sudah_lunas' } as const;
       const shift = await tx.shiftKasir.findFirst({ where: { fasyankes_id: fasyankesId, kasir_id: kasirId, tutup: null }, orderBy: { id: 'desc' } });
       if (!shift) return { ok: false, sebab: 'tanpa_shift' } as const;
-      const diterapkan = Math.min(diterima, sisa);
-      const p = await tx.pembayaran.create({ data: { fasyankes_id: fasyankesId, tagihan_id: t.id, shift_id: shift.id, metode, jumlah: diterapkan, kasir_id: kasirId } });
-      await tx.tagihan.update({ where: { id: t.id }, data: { status_pembayaran: dibayar + diterapkan >= total ? 'lunas' : 'sebagian' } });
-      return { ok: true, id: p.id, kembalian: diterima - diterapkan } as const;
+      const r = rincianBayar(baris, sisa);
+      if (r.non_tunai_lebih) return { ok: false, sebab: 'non_tunai_lebih' } as const;
+      const ids: number[] = [];
+      for (const b of r.per_baris) {
+        if (b.diterapkan <= 0) continue; // tunai seluruhnya kembalian (non-tunai sudah menutup sisa)
+        const p = await tx.pembayaran.create({ data: { fasyankes_id: fasyankesId, tagihan_id: t.id, shift_id: shift.id, metode: b.metode, jumlah: b.diterapkan, kasir_id: kasirId } });
+        ids.push(p.id);
+      }
+      await tx.tagihan.update({ where: { id: t.id }, data: { status_pembayaran: dibayar + r.diterapkan >= total ? 'lunas' : 'sebagian' } });
+      return { ok: true, ids, diterima: r.diterima, diterapkan: r.diterapkan, kembalian: r.kembalian } as const;
     });
     if (!hasil.ok) return hasil;
     const tagihan = await this.tagihan(fasyankesId, kunjunganId);
-    const p = tagihan.pembayaran.find((x) => x.id === hasil.id)!;
-    return { ok: true, pembayaran: p, tagihan, kembalian: hasil.kembalian };
+    const pembayaran = hasil.ids.map((id) => tagihan.pembayaran.find((x) => x.id === id)!);
+    return { ok: true, pembayaran, tagihan, diterima: hasil.diterima, diterapkan: hasil.diterapkan, kembalian: hasil.kembalian };
   }
 
   // ---- Melengkapi harga item ----

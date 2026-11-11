@@ -9,9 +9,37 @@ const bulat = (maks: number, min = 0) =>
   z.preprocess((v) => (v === '' || v === null ? undefined : v), z.coerce.number({ error: KASIR.galat.angka }).int(KASIR.galat.angka).min(min, min > 0 ? KASIR.galat.jumlahMinimal : KASIR.galat.negatif).max(maks));
 export const NILAI_METODE_BAYAR = ['tunai', 'transfer', 'qris'] as const;
 
-/** Pembayaran: jumlah yang DITERIMA; yang diterapkan ke tagihan dibatasi sisa (kembalian tidak dicatat sebagai pembayaran). */
-export const bayarMasukan = z.object({ metode: z.enum(NILAI_METODE_BAYAR, { error: KASIR.galat.metode }), jumlah: bulat(1_000_000_000, 1) });
+export const MAKS_BARIS_BAYAR = 3;
+const barisBayar = z.object({ metode: z.enum(NILAI_METODE_BAYAR, { error: KASIR.galat.metode }), jumlah: bulat(1_000_000_000, 1) });
+/**
+ * Pembayaran satu tagihan dengan 1 sampai 3 metode (metode tidak boleh ganda). Jumlah adalah yang DITERIMA per metode;
+ * non-tunai total tidak boleh melebihi sisa (diperiksa server terhadap sisa terkini), kelebihan tunai menjadi kembalian.
+ */
+export const bayarMasukan = z
+  .object({ pembayaran: z.array(barisBayar, { error: KASIR.galat.barisMinimal }).min(1, KASIR.galat.barisMinimal).max(MAKS_BARIS_BAYAR, KASIR.galat.barisMaksimal) })
+  .superRefine((d, ctx) => {
+    const terlihat = new Set<string>();
+    d.pembayaran.forEach((b, i) => {
+      if (terlihat.has(b.metode)) ctx.addIssue({ code: 'custom', path: ['pembayaran', i, 'metode'], message: KASIR.galat.metodeGanda });
+      terlihat.add(b.metode);
+    });
+  });
 export type BayarMasukan = z.input<typeof bayarMasukan>;
+export type BarisBayar = { metode: MetodeBayar; jumlah: number };
+/** Rincian penerapan pembayaran beberapa metode terhadap sisa tagihan. */
+export type RincianBayar = { diterima: number; non_tunai: number; diterapkan: number; kembalian: number; non_tunai_lebih: boolean; per_baris: (BarisBayar & { diterapkan: number })[] };
+/**
+ * Non-tunai diterapkan penuh (totalnya wajib <= sisa); tunai diterapkan sebatas sisa setelah non-tunai, kelebihannya kembalian.
+ * Kembalian hanya berasal dari tunai dan tidak dicatat sebagai pembayaran.
+ */
+export function rincianBayar(baris: BarisBayar[], sisa: number): RincianBayar {
+  const nonTunai = baris.filter((b) => b.metode !== 'tunai').reduce((s, b) => s + b.jumlah, 0);
+  const ruangTunai = Math.max(0, sisa - nonTunai);
+  const tunai = baris.filter((b) => b.metode === 'tunai').reduce((s, b) => s + b.jumlah, 0);
+  const tunaiDiterapkan = Math.min(tunai, ruangTunai);
+  const per_baris = baris.map((b) => ({ ...b, diterapkan: b.metode === 'tunai' ? tunaiDiterapkan : b.jumlah }));
+  return { diterima: nonTunai + tunai, non_tunai: nonTunai, diterapkan: nonTunai + tunaiDiterapkan, kembalian: tunai - tunaiDiterapkan, non_tunai_lebih: nonTunai > sisa, per_baris };
+}
 
 /** Serah terima obat: stok kurang hanya boleh dilanjutkan dengan persetujuan eksplisit dan alasan (Peringatan stok kurang, 3.2). */
 export const serahTerimaMasukan = z
@@ -62,4 +90,5 @@ export type KasirKunjunganDto = {
   syarat: SyaratTutupDto;
 };
 export type HasilSerahTerimaDto = { resep: ResepDto[]; kekurangan: { master_obat_id: number; nama: string; butuh: number; tersedia: number }[] };
-export type HasilBayarDto = { pembayaran: PembayaranDto; tagihan: KasirKunjunganDto['tagihan']; kembalian: number };
+/** `pembayaran`: baris yang dicatat (satu per metode, tunai sebesar yang diterapkan); `diterima` termasuk kembalian. */
+export type HasilBayarDto = { pembayaran: PembayaranDto[]; tagihan: KasirKunjunganDto['tagihan']; diterima: number; diterapkan: number; kembalian: number };

@@ -199,7 +199,7 @@ Tiga komponen umum dibuat sekali dan dipakai berulang, tidak didaftar sebagai mo
 #### Kasir dan klaim
 | Modal | Dibuka dari | Jenis | Langkah |
 |---|---|---|---|
-| Pembayaran dan serah terima obat | Daftar pasien | MODAL-BERTAHAP | Tagihan > Pembayaran (metode, jumlah, kwitansi) > Serah terima obat (bila ada resep; stok berkurang) |
+| Pembayaran dan serah terima obat | Daftar pasien | MODAL-BERTAHAP | Tagihan > Pembayaran (1 sampai 3 metode masing-masing dengan jumlah, kembalian hanya dari tunai, kwitansi) > Serah terima obat (bila ada resep; stok berkurang) |
 | Tutup kunjungan | Daftar pasien | MODAL-1 | Periksa pembayaran dan order lab ditagih; belum bayar: peringatan dengan alasan |
 | Buka dan tutup shift kasir | Kasir dan klaim | MODAL-1 | Kas awal, kas akhir, selisih dan alasan |
 | Penyiapan klaim | Kasir dan klaim | MODAL-BERTAHAP | Kunjungan dan SEP > Diagnosis dan tindakan > Berkas klaim > Ringkasan |

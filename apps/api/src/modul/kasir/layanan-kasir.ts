@@ -1,6 +1,6 @@
 import { kabarkanLayarPanggilan } from '../layar-panggilan/kanal';
 import { KASIR } from '@klira/shared';
-import type { BukaShiftMasukan, HasilBayarDto, KasirKunjunganDto, PenggunaSaya, RekapHarianDto, ResepDto, ShiftDto, TutupKunjunganMasukan, TutupShiftMasukan } from '@klira/shared';
+import type { BarisBayar, BukaShiftMasukan, HasilBayarDto, KasirKunjunganDto, PenggunaSaya, RekapHarianDto, ResepDto, ShiftDto, TutupKunjunganMasukan, TutupShiftMasukan } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import type { RepositoriFarmasiPrisma } from '../farmasi/repositori';
 import { gagal } from '../hasil';
@@ -65,15 +65,19 @@ export function buatLayananKasir({ repo, farmasi, audit }: { repo: RepositoriKas
       return repo.rekap(p.fasyankes_id, tanggal ?? hariWib());
     },
 
-    async bayar(p: Pelaku, kunjunganId: number, m: { metode: 'tunai' | 'transfer' | 'qris'; jumlah: number }, alamat?: string): Promise<Hasil<HasilBayarDto>> {
+    /** Satu tagihan dibayar 1-3 metode: dicatat dalam satu transaksi dengan satu entri audit. */
+    async bayar(p: Pelaku, kunjunganId: number, m: { pembayaran: BarisBayar[] }, alamat?: string): Promise<Hasil<HasilBayarDto>> {
       if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-      const h = await repo.bayar(p.fasyankes_id, p.id, kunjunganId, m.metode, m.jumlah);
+      const h = await repo.bayar(p.fasyankes_id, p.id, kunjunganId, m.pembayaran);
       if (!h.ok) {
+        if (h.sebab === 'non_tunai_lebih') return gagal('tidak_valid', G.nonTunaiLebih, 'pembayaran');
         const pesan = { tahap_salah: G.tahapSalah, tagihan_kosong: G.tagihanKosong, tagihan_belum_lengkap: G.tagihanBelumLengkap, sudah_lunas: G.sudahLunas, tanpa_shift: G.tanpaShift }[h.sebab];
         return gagal('konflik', pesan);
       }
-      await catat(p, 'input', 'pembayaran', h.pembayaran.id, `Pembayaran ${m.metode} ${rp(h.pembayaran.jumlah)} untuk kunjungan ${kunjunganId}, sisa ${rp(h.tagihan.sisa)}`, alamat);
-      return { ok: true, data: { pembayaran: h.pembayaran, tagihan: h.tagihan, kembalian: h.kembalian } };
+      const rincian = h.pembayaran.map((x) => `${x.metode} ${rp(x.jumlah)}`).join(', ');
+      const kemb = h.kembalian ? `, kembalian ${rp(h.kembalian)}` : '';
+      await catat(p, 'input', 'pembayaran', h.pembayaran[0]?.id ?? null, `Pembayaran ${rincian} untuk kunjungan ${kunjunganId}${kemb}, sisa ${rp(h.tagihan.sisa)}`, alamat);
+      return { ok: true, data: { pembayaran: h.pembayaran, tagihan: h.tagihan, diterima: h.diterima, diterapkan: h.diterapkan, kembalian: h.kembalian } };
     },
 
     async lengkapiHarga(p: Pelaku, kunjunganId: number, itemId: number, m: { harga: number }, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {

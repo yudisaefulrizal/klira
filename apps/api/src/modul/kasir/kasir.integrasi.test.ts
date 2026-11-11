@@ -61,7 +61,9 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     return { kunj: k.id, resepId };
   }
   const bukaShift = (siapa = 'kasir', kasAwal = 100_000) => panggil('POST', '/kasir/shift/buka', siapa, { kas_awal: kasAwal });
-  const bayar = (kunj: number, badan: unknown, siapa = 'kasir') => panggil('POST', `/kunjungan/${kunj}/pembayaran`, siapa, badan);
+  /** Satu baris pembayaran dibungkus bentuk beberapa metode; `bayarBanyak` mengirim badan apa adanya. */
+  const bayarBanyak = (kunj: number, badan: unknown, siapa = 'kasir') => panggil('POST', `/kunjungan/${kunj}/pembayaran`, siapa, badan);
+  const bayar = (kunj: number, baris: unknown, siapa = 'kasir') => bayarBanyak(kunj, { pembayaran: [baris] }, siapa);
   const stokBatch = async (batch: string) => (await prisma.stokObat.findFirst({ where: { master_obat_id: obatId, batch } }))!.jumlah;
 
   const KASIR: [string, string][] = [['kasir', 'lihat'], ['kasir', 'input'], ['kasir', 'perbaikan']];
@@ -139,10 +141,29 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     expect(sebagian.status).toBe(201);
     expect(sebagian.badan.data).toMatchObject({ kembalian: 0, tagihan: { dibayar: 30_000, sisa: 50_000, status_pembayaran: 'sebagian', total: 80_000 } });
     const lunas = await bayar(s.kunj, { metode: 'tunai', jumlah: 100_000 });
-    expect(lunas.badan.data.pembayaran.jumlah).toBe(50_000);
+    expect(lunas.badan.data.pembayaran.map((p: any) => p.jumlah)).toEqual([50_000]);
     expect(lunas.badan.data).toMatchObject({ kembalian: 50_000, tagihan: { sisa: 0, status_pembayaran: 'lunas', dibayar: 80_000 } });
     expect((await bayar(s.kunj, { metode: 'tunai', jumlah: 1 })).status).toBe(409);
     expect(await prisma.pembayaran.count({ where: { fasyankes_id: fas } })).toBeGreaterThanOrEqual(2);
+  });
+
+  it('pembayaran beberapa metode: satu transaksi, satu baris per metode, kembalian hanya tunai, non-tunai tidak boleh melebihi sisa', async () => {
+    const s = await siapkan({ harga: [60_000, 40_000] });
+    expect((await bayarBanyak(s.kunj, { pembayaran: [{ metode: 'qris', jumlah: 1000 }, { metode: 'qris', jumlah: 1000 }] })).status).toBe(400);
+    expect((await bayarBanyak(s.kunj, { pembayaran: [] })).status).toBe(400);
+    const lebih = await bayarBanyak(s.kunj, { pembayaran: [{ metode: 'transfer', jumlah: 70_000 }, { metode: 'qris', jumlah: 40_000 }] });
+    expect(lebih.status).toBe(400);
+    expect(await prisma.pembayaran.count({ where: { tagihan: { kunjungan_id: s.kunj } } })).toBe(0);
+    const sebagian = await bayarBanyak(s.kunj, { pembayaran: [{ metode: 'transfer', jumlah: 20_000 }, { metode: 'tunai', jumlah: 10_000 }] });
+    expect(sebagian.status).toBe(201);
+    expect(sebagian.badan.data).toMatchObject({ diterima: 30_000, diterapkan: 30_000, kembalian: 0, tagihan: { sisa: 70_000, status_pembayaran: 'sebagian' } });
+    const h = await bayarBanyak(s.kunj, { pembayaran: [{ metode: 'transfer', jumlah: 30_000 }, { metode: 'qris', jumlah: 20_000 }, { metode: 'tunai', jumlah: 50_000 }] });
+    expect(h.status).toBe(201);
+    expect(h.badan.data.pembayaran.map((p: any) => [p.metode, p.jumlah])).toEqual([['transfer', 30_000], ['qris', 20_000], ['tunai', 20_000]]);
+    expect(h.badan.data).toMatchObject({ diterima: 100_000, diterapkan: 70_000, kembalian: 30_000, tagihan: { sisa: 0, dibayar: 100_000, status_pembayaran: 'lunas' } });
+    expect(await prisma.pembayaran.count({ where: { tagihan: { kunjungan_id: s.kunj } } })).toBe(5);
+    const audit = await prisma.logAudit.findMany({ where: { fasyankes_id: fas, entitas: 'pembayaran', entitas_id: h.badan.data.pembayaran[0].id } });
+    expect(audit.length).toBe(1);
   });
 
   it('pembayaran serempak tidak melebihi tagihan', async () => {
