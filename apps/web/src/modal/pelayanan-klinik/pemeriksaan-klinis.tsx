@@ -157,7 +157,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       case 'plan': return <Kolom>
         <LangkahTindakLanjut {...dasar('tindak_lanjut')} ringkas />
         <LangkahNarasi bagian="plan" {...dasar('plan')} />
-        <LangkahResep baris={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />
+        <LangkahResep teks={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />
         <KotakCentang id="plan-lab" label="Lab" checked={keadaan.lab_dipilih} disabled={memproses} onChange={(e) => ubah({ lab_dipilih: e.target.checked })} />
         {keadaan.lab_dipilih && <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat && keadaan.lab_dipilih ? galatOrderLab(keadaan.order_lab) : null} />}
       </Kolom>;
@@ -171,7 +171,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
       case 'pemeriksaan': return <LangkahPemeriksaan {...dasar(l.bagian)} />;
       case 'diagnosis': return <LangkahDiagnosis {...dasar(l.bagian)} favorit={favoritDari('diagnosis')} />;
       case 'tindakan': return <LangkahTindakan {...dasar(l.bagian)} favorit={favoritDari('tindakan')} />;
-      case 'resep': return <LangkahResep baris={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />;
+      case 'resep': return <LangkahResep teks={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />;
       case 'penunjang': return <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat && keadaan.lab_dipilih ? galatOrderLab(keadaan.order_lab) : null} />;
       case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar(l.bagian)} />;
       default:

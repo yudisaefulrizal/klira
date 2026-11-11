@@ -1,5 +1,5 @@
 import type {
-  HasilSerahTerimaDto, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MutasiStokDto, ReferensiKfaDto, ResepDto, RiwayatObatDto, StokObatDto, TelaahMasukan,
+  HasilSerahTerimaDto, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, HasilBuatResepDto, HasilSiapDto, MasterObatDto, MutasiStokDto, ReferensiKfaDto, ResepDto, RiwayatObatDto, StokObatDto, TelaahKirim,
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
@@ -28,8 +28,20 @@ export function queryRiwayatObat(f: Partial<FilterRiwayatObat>): string {
 export const riwayatObat = (f: Partial<FilterRiwayatObat>) => panggilApi<RiwayatObatDto>('GET', `/farmasi/riwayat?${queryRiwayatObat(f)}`);
 
 export const resepKunjungan = (kunjunganId: number) => panggilApi<ResepDto[]>('GET', `/kunjungan/${kunjunganId}/resep`);
-export const buatResep = (kunjunganId: number, m: { item: Record<string, unknown>[] }) => panggilApi<HasilBuatResepDto>('POST', `/kunjungan/${kunjunganId}/resep`, m);
-export const telaahResep = (resepId: number, m: TelaahMasukan) => panggilApi<ResepDto>('POST', `/resep/${resepId}/telaah`, m);
+export const buatResep = (kunjunganId: number, m: { teks: string }) => panggilApi<HasilBuatResepDto>('POST', `/kunjungan/${kunjunganId}/resep`, m);
+export const telaahResep = (resepId: number, m: TelaahKirim) => panggilApi<ResepDto>('POST', `/resep/${resepId}/telaah`, m);
 export const siapkanResep = (resepId: number) => panggilApi<HasilSiapDto>('POST', `/resep/${resepId}/siap`);
 
 export const serahkanObat = (kunjunganId: number, m: Record<string, unknown> = {}) => panggilApi<HasilSerahTerimaDto>('POST', `/kunjungan/${kunjunganId}/serah-terima-obat`, m);
+
+/** Seluruh master obat aktif (dimuat per halaman 100) untuk pencarian obat di editor item resep. */
+export async function semuaMasterObatAktif(): Promise<MasterObatDto[]> {
+  const awal = await daftarMasterObat({ aktif: true, ukuran: 100 });
+  const semua = [...awal.data];
+  for (let halaman = 2; semua.length < awal.total; halaman++) {
+    const h = await daftarMasterObat({ aktif: true, ukuran: 100, halaman });
+    if (!h.data.length) break;
+    semua.push(...h.data);
+  }
+  return semua;
+}

@@ -299,12 +299,12 @@ describe('draf order lab bersama pemeriksaan', () => {
 });
 
 
-test('draf resep dipulihkan termasuk jumlah dan aturan pakai, draf lama tetap tanpa resep', () => {
+test('draf teks resep dipulihkan; draf lama berbentuk daftar obat diabaikan', () => {
   const awal = awalKeadaan();
-  const draf = { ...awal, resep: [{ master_obat_id: '7', jumlah: '10', aturan_pakai: '2 x 1', bentuk: 'tablet', rute: 'oral' }] };
+  const draf = { ...awal, resep: 'R/ Parasetamol 500 mg tab ½, CTM 4 mg tab ½, m.f. pulv. dtd No. X, s 3 dd pulv I' };
   expect(pulihkanKeadaan(awal, JSON.parse(JSON.stringify(draf)))).toEqual(draf);
-  expect(pulihkanKeadaan(awal, { plan: 'Kontrol' }).resep).toEqual(awal.resep);
-  expect(pulihkanKeadaan(awal, { resep: [null, 1, { master_obat_id: '7', jumlah: 12 }] }).resep).toEqual([{ ...awal.resep[0], master_obat_id: '7' }]);
+  expect(pulihkanKeadaan(awal, { plan: 'Kontrol' }).resep).toBe('');
+  expect(pulihkanKeadaan(awal, { resep: [{ master_obat_id: '7', jumlah: '10', aturan_pakai: '2 x 1' }] }).resep).toBe('');
 });
 
 

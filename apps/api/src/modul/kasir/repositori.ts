@@ -116,6 +116,27 @@ export async function sinkronItemTindakanDalam(tx: Prisma.TransactionClient, fas
   return 'disinkron';
 }
 
+// ---- Item tagihan obat dari item resep yang disiapkan apoteker (P3) ----
+export type ItemObatResep = { itemResepId: number; master_obat_id: number; nama: string; harga: number; jumlah: number };
+
+/**
+ * Ganti item tagihan obat milik satu resep (dalam transaksi pemanggil): item tagihan yang tertaut item resep lama dihapus lalu dibuat ulang
+ * dari item baru (jenis obat, harga master obat, tertaut `item_resep_id`). Status tagihan dihitung ulang. Item lain tidak tersentuh.
+ */
+export async function gantiItemObatResepDalam(tx: Prisma.TransactionClient, fasyankesId: number, kunjunganId: number, oleh: number, itemResepLama: readonly number[], baru: readonly ItemObatResep[]): Promise<void> {
+  if (itemResepLama.length) await tx.itemTagihan.deleteMany({ where: { fasyankes_id: fasyankesId, item_resep_id: { in: [...itemResepLama] } } });
+  if (baru.length) {
+    await tambahItemTagihanDalam(tx, fasyankesId, kunjunganId, oleh, baru.map((i) => ({
+      jenis: 'obat' as const, tarifId: null, kode: `OBAT-${i.master_obat_id}`, nama: i.nama.slice(0, 200), harga: i.harga, orderPenunjangId: null, jumlah: i.jumlah, itemResepId: i.itemResepId,
+    })));
+    return;
+  }
+  const t = await tx.tagihan.findFirst({ where: { kunjungan_id: kunjunganId, fasyankes_id: fasyankesId }, select: { id: true } });
+  if (!t) return;
+  const semua = await tx.itemTagihan.findMany({ where: { tagihan_id: t.id }, select: { harga: true } });
+  await tx.tagihan.update({ where: { id: t.id }, data: { status_tagihan: statusTagihanDari(semua.map((x) => x.harga)) } });
+}
+
 export const totalTagihan = (item: readonly { jumlah: number; harga: number | null }[]): number => item.reduce((s, i) => s + (i.harga ?? 0) * i.jumlah, 0);
 
 export class RepositoriTagihanPrisma implements RepositoriTagihan {

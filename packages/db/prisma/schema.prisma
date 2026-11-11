@@ -1235,6 +1235,8 @@ model Resep {
   kunjungan_id     Int
   dpjp_id          Int
   nomor_resep      String         @db.VarChar(40)
+  /// Resep ditulis dokter sebagai teks bebas (merek, racikan); item obat diisi apoteker saat telaah (P3).
+  teks             String         @db.Text
   jenis_pembiayaan CaraPembayaran @default(umum)
   status           StatusResep    @default(diajukan)
   waktu_siap       DateTime?      @db.DateTime(3)

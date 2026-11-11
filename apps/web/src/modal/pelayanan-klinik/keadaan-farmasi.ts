@@ -1,5 +1,5 @@
-import { KASIR, FARMASI, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
-import type { MasterObatDto, ReferensiKfaDto, StokObatDto } from '@klira/shared';
+import { KASIR, FARMASI, daftarItemResepMasukan, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
+import type { ItemResepDto, MasterObatDto, ReferensiKfaDto, StokObatDto } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
 /** Galat per bidang dari skema bersama (pesan sama dengan API); kunci = nama bidang, bidang di dalam daftar memakai `item.n.bidang`. */
@@ -62,26 +62,33 @@ export function pilihBatch(k: KeadaanMutasi, stok: readonly StokObatDto[], batch
   return { ...k, batch, kedaluwarsa: s?.kedaluwarsa ?? k.kedaluwarsa, jumlah: k.jenis === 'koreksi' && s ? String(s.jumlah) : k.jumlah };
 }
 
-// ---- Resep ----
+// ---- Resep (dokter): teks bebas, P3 ----
+export const awalResep = (): string => '';
+/** Resep hanya diajukan bila teks berisi selain spasi. */
+export const adaIsianResep = (teks: string): boolean => !!teks.trim();
+export const bentukResep = (teks: string): { teks: string } => ({ teks });
+export const galatResep = (teks: string): Record<string, string> => petakan(resepMasukan.safeParse(bentukResep(teks)).error?.issues ?? []);
+
+// ---- Item resep (apoteker saat telaah) ----
 export type BarisResep = { master_obat_id: string; jumlah: string; aturan_pakai: string; bentuk: string; rute: string };
 export const barisResepKosong = (): BarisResep => ({ master_obat_id: '', jumlah: '1', aturan_pakai: '', bentuk: '', rute: '' });
-/** Baris awal tanpa obat bukan resep; isian sebagian tetap harus divalidasi sebelum Simpan. */
-export const adaIsianResep = (baris: readonly BarisResep[]): boolean => baris.some((b) =>
-  !!(b.master_obat_id.trim() || b.aturan_pakai.trim() || b.bentuk.trim() || b.rute.trim()) || b.jumlah !== '1');
-export const awalResep = (): BarisResep[] => [barisResepKosong()];
 export const ubahBarisResep = (b: readonly BarisResep[], n: number, p: Partial<BarisResep>): BarisResep[] => b.map((x, i) => (i === n ? { ...x, ...p } : x));
-export const hapusBarisResep = (b: readonly BarisResep[], n: number): BarisResep[] => (b.length <= 1 ? [barisResepKosong()] : b.filter((_, i) => i !== n));
-export const bentukResep = (b: readonly BarisResep[]): { item: Record<string, unknown>[] } => ({
-  item: b.map((x) => ({ master_obat_id: Number(x.master_obat_id), jumlah: x.jumlah, aturan_pakai: x.aturan_pakai, bentuk: x.bentuk.trim() || null, rute: x.rute.trim() || null })),
-});
-export function galatResep(b: readonly BarisResep[]): Record<string, string> {
-  const g = petakan(resepMasukan.safeParse(bentukResep(b)).error?.issues ?? []);
+export const hapusBarisResep = (b: readonly BarisResep[], n: number): BarisResep[] => b.filter((_, i) => i !== n);
+/** Item tersimpan menjadi baris editor (urutan sama). */
+export const barisDariItem = (item: readonly ItemResepDto[]): BarisResep[] =>
+  item.map((i) => ({ master_obat_id: String(i.master_obat_id), jumlah: String(i.jumlah), aturan_pakai: i.aturan_pakai, bentuk: i.bentuk ?? '', rute: i.rute ?? '' }));
+export type KirimItemResep = { master_obat_id: number; jumlah: string; aturan_pakai: string; bentuk: string | null; rute: string | null };
+export const bentukItemResep = (b: readonly BarisResep[]): KirimItemResep[] =>
+  b.map((x) => ({ master_obat_id: Number(x.master_obat_id), jumlah: x.jumlah, aturan_pakai: x.aturan_pakai, bentuk: x.bentuk.trim() || null, rute: x.rute.trim() || null }));
+/** Galat per baris (`item.n.bidang`) dari skema bersama; obat wajib dipilih dari master. Obat yang sama boleh lebih dari sekali. */
+export function galatItemResep(b: readonly BarisResep[]): Record<string, string> {
+  const g = petakan((daftarItemResepMasukan.safeParse(bentukItemResep(b)).error?.issues ?? []).map((i) => ({ ...i, path: ['item', ...i.path] })));
   b.forEach((x, n) => {
     if (!x.master_obat_id) g[`item.${n}.master_obat_id`] = FARMASI.galat.obatTidakAda;
   });
   return g;
 }
-/** Perkiraan biaya resep dari harga master obat. */
+/** Perkiraan biaya obat dari harga master obat. */
 export const biayaResep = (b: readonly BarisResep[], obat: readonly { id: number; harga: number }[]): number =>
   b.reduce((s, x) => s + (obat.find((o) => String(o.id) === x.master_obat_id)?.harga ?? 0) * (Number(x.jumlah) || 0), 0);
 
@@ -91,7 +98,7 @@ export const awalTelaah = (t?: { administratif: boolean; farmasetik: boolean; kl
   administratif: t?.administratif ?? false, farmasetik: t?.farmasetik ?? false, klinis: t?.klinis ?? false, catatan: t?.catatan ?? '',
 });
 export const telaahLengkap = (k: KeadaanTelaah): boolean => k.administratif && k.farmasetik && k.klinis;
-export const galatTelaah = (k: KeadaanTelaah): Record<string, string> => petakan(telaahMasukan.safeParse({ ...k, catatan: k.catatan }).error?.issues ?? []);
+export const galatTelaah = (k: KeadaanTelaah): Record<string, string> => petakan(telaahMasukan.safeParse({ administratif: k.administratif, farmasetik: k.farmasetik, klinis: k.klinis, catatan: k.catatan }).error?.issues ?? []);
 
 // ---- Serah terima ----
 export type KeadaanSerah = { izinkan: boolean; alasan: string };

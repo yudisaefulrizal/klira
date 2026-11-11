@@ -1,4 +1,4 @@
-import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisResepKosong, biayaResep, bentukMutasi, bentukResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
+import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
 
 const kfa = { kode: '93000001', nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, satuan: 'tablet', status: 'aktif', lokal: false };
 
@@ -41,26 +41,42 @@ describe('mutasi stok', () => {
   });
 });
 
-describe('resep', () => {
-  it('baris dapat ditambah, diubah, dan dibuang tanpa pernah kosong', () => {
-    let b = awalResep();
+describe('resep dokter (teks bebas)', () => {
+  it('teks wajib, dirapikan, maksimal 2000 karakter', () => {
+    expect(galatResep(awalResep()).teks).toBeTruthy();
+    expect(galatResep('   ').teks).toBeTruthy();
+    expect(galatResep('R/ Parasetamol 500 mg tab ½, CTM 4 mg tab ½, m.f. pulv. dtd No. X, s 3 dd pulv I')).toEqual({});
+    expect(galatResep('x'.repeat(2001)).teks).toBeTruthy();
+    expect(bentukResep('R/ Amoxicillin')).toEqual({ teks: 'R/ Amoxicillin' });
+  });
+});
+
+describe('item resep (apoteker)', () => {
+  it('baris dapat ditambah, diubah, dan dibuang sampai kosong', () => {
+    let b = [barisResepKosong()];
     b = ubahBarisResep(b, 0, { master_obat_id: '1', aturan_pakai: '3 x 1' });
     b = [...b, barisResepKosong()];
     expect(b.length).toBe(2);
     expect(hapusBarisResep(b, 0).length).toBe(1);
-    expect(hapusBarisResep(hapusBarisResep(b, 0), 0)).toEqual(awalResep());
+    expect(hapusBarisResep(hapusBarisResep(b, 0), 0)).toEqual([]);
   });
-  it('galat per baris: obat, aturan pakai, jumlah, dan obat ganda', () => {
-    expect(galatResep(awalResep())['item.0.master_obat_id']).toBeTruthy();
-    const ok = ubahBarisResep(awalResep(), 0, { master_obat_id: '1', aturan_pakai: '3 x 1', jumlah: '5' });
-    expect(galatResep(ok)).toEqual({});
-    expect(galatResep(ubahBarisResep(ok, 0, { jumlah: '0' }))['item.0.jumlah']).toBeTruthy();
-    expect(galatResep(ubahBarisResep(ok, 0, { aturan_pakai: '' }))['item.0.aturan_pakai']).toBeTruthy();
-    expect(galatResep([...ok, ...ok])['item.1.master_obat_id']).toBeTruthy();
-    expect(bentukResep(ok).item[0]).toMatchObject({ master_obat_id: 1, bentuk: null });
+  it('galat per baris: obat, aturan pakai, jumlah bulat; obat sama boleh dua kali', () => {
+    expect(galatItemResep([barisResepKosong()])['item.0.master_obat_id']).toBeTruthy();
+    const ok = ubahBarisResep([barisResepKosong()], 0, { master_obat_id: '1', aturan_pakai: '3 x 1', jumlah: '5' });
+    expect(galatItemResep(ok)).toEqual({});
+    expect(galatItemResep([])).toEqual({});
+    expect(galatItemResep(ubahBarisResep(ok, 0, { jumlah: '0' }))['item.0.jumlah']).toBeTruthy();
+    expect(galatItemResep(ubahBarisResep(ok, 0, { jumlah: '2.5' }))['item.0.jumlah']).toBeTruthy();
+    expect(galatItemResep(ubahBarisResep(ok, 0, { aturan_pakai: '' }))['item.0.aturan_pakai']).toBeTruthy();
+    expect(galatItemResep([...ok, ...ok])).toEqual({});
+    expect(bentukItemResep(ok)[0]).toMatchObject({ master_obat_id: 1, bentuk: null });
+  });
+  it('item tersimpan menjadi baris editor', () => {
+    const item = [{ id: 9, master_obat_id: 3, nama: 'CTM', satuan: 'tablet', aturan_pakai: 'racikan', bentuk: 'puyer', rute: null, jumlah: 5, harga: 100, stok_tersedia: 10 }];
+    expect(barisDariItem(item)).toEqual([{ master_obat_id: '3', jumlah: '5', aturan_pakai: 'racikan', bentuk: 'puyer', rute: '' }]);
   });
   it('biaya resep dari harga master', () => {
-    const b = [...ubahBarisResep(awalResep(), 0, { master_obat_id: '1', jumlah: '10' }), ...ubahBarisResep(awalResep(), 0, { master_obat_id: '2', jumlah: '3' })];
+    const b = [{ ...barisResepKosong(), master_obat_id: '1', jumlah: '10' }, { ...barisResepKosong(), master_obat_id: '2', jumlah: '3' }];
     expect(biayaResep(b, [{ id: 1, harga: 600 }, { id: 2, harga: 1500 }])).toBe(10 * 600 + 3 * 1500);
   });
 });
@@ -76,10 +92,8 @@ describe('telaah', () => {
 });
 
 
-test('resep awal dan baris tambahan kosong tidak diajukan; isian sebagian tetap memerlukan validasi', () => {
+test('resep awal dan teks berisi spasi tidak diajukan', () => {
   expect(adaIsianResep(awalResep())).toBe(false);
-  expect(adaIsianResep([barisResepKosong(), barisResepKosong()])).toBe(false);
-  for (const p of [{ master_obat_id: '7' }, { aturan_pakai: '3 x 1' }, { jumlah: '' }, { jumlah: '2' }, { rute: 'oral' }]) {
-    expect(adaIsianResep([{ ...barisResepKosong(), ...p }])).toBe(true);
-  }
+  expect(adaIsianResep('  \n ')).toBe(false);
+  expect(adaIsianResep('R/ Parasetamol')).toBe(true);
 });

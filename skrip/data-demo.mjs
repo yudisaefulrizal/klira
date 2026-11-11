@@ -187,6 +187,7 @@ const OBAT = [
   ['ambroxol hydrochloride 30 mg tablet', /^Ambroxol Hydrochloride 30 mg Tablet/, 'Ambroksol 30 mg', 'tablet', 450],
   ['antasida doen', /ANTASIDA DOEN/, 'Antasida DOEN', 'tablet', 300],
   ['mefenamic acid 500 mg', /^Mefenamic Acid 500 mg Tablet/, 'Asam mefenamat 500 mg', 'tablet', 600],
+  ['chlorphenamine maleate 4 mg tablet', /^Chlorphenamine Maleate 4 mg Tablet/, 'CTM 4 mg', 'tablet', 150],
 ];
 
 async function siapkanFarmasi() {
@@ -292,24 +293,26 @@ const KASUS = [
     dx: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }],
     // Tindakan klinik tanpa harga acuan: kasir melengkapi harga sebelum pembayaran.
     tindakan: [['TIN-NEBU', '93.94', 'Nebulisasi', 1]],
-    resep: [['Parasetamol 500 mg', '3 x 1 tablet sesudah makan bila demam', 10], ['Ambroksol 30 mg', '3 x 1 tablet', 10], ['Setirizin 10 mg', '1 x 1 tablet malam', 5]] },
+    // Racikan puyer: ½ tab x 10 bungkus = 5 tab per bahan (dibulatkan ke atas).
+    resep: { teks: 'R/ Parasetamol 500 mg tab ½\n    CTM 4 mg tab ½\n    m.f. pulv. dtd No. X\n    s 3 dd pulv I (bila demam)\nR/ Ambroxol 30 mg tab No. X\n    s 3 dd tab I',
+      item: [['Parasetamol 500 mg', 'Racikan puyer: 3 x 1 bungkus bila demam', 5, 'puyer'], ['CTM 4 mg', 'Racikan puyer: 3 x 1 bungkus bila demam', 5, 'puyer'], ['Ambroksol 30 mg', '3 x 1 tablet', 10]] } },
   { keluhan: 'Kontrol tekanan darah tinggi, pusing tengkuk', ttv: { sistolik: 160, diastolik: 100, nadi: 84, suhu: 36.6, respirasi: 18, spo2: 97, berat_badan: 78, tinggi_badan: 168 },
     periksa: { keadaan_umum: 'Baik, kompos mentis', thorax: 'Jantung reguler, murmur (-)', ekstremitas: 'Edema (-)' },
     dx: [{ kode: 'I10', nama: 'Essential (primary) hypertension', peran: 'utama' }], lab: ['KOL', 'AU'],
-    resep: [['Amlodipin 5 mg', '1 x 1 tablet pagi', 30]] },
+    resep: { teks: 'R/ Amlodipine 5 mg tab No. XXX\n    s 1 dd tab I (pagi)', item: [['Amlodipin 5 mg', '1 x 1 tablet pagi', 30]] } },
   { keluhan: 'Nyeri ulu hati dan mual sejak 2 hari', ttv: { sistolik: 110, diastolik: 70, nadi: 80, suhu: 36.8, respirasi: 18, spo2: 99, berat_badan: 55, tinggi_badan: 155 },
     periksa: { keadaan_umum: 'Baik', abdomen: 'Nyeri tekan epigastrium (+)' },
     dx: [{ kode: 'K29.7', nama: 'Gastritis, unspecified', peran: 'utama' }],
-    resep: [['Omeprazol 20 mg', '2 x 1 kapsul sebelum makan', 6], ['Antasida DOEN', '3 x 1 tablet dikunyah', 10]] },
+    resep: { teks: 'R/ Omeprazole 20 mg caps No. VI\n    s 2 dd caps I a.c.\nR/ Antasida DOEN tab No. X\n    s 3 dd tab I (kunyah)', item: [['Omeprazol 20 mg', '2 x 1 kapsul sebelum makan', 6], ['Antasida DOEN', '3 x 1 tablet dikunyah', 10]] } },
   { keluhan: 'Sering haus dan sering BAK, riwayat kencing manis', ttv: { sistolik: 130, diastolik: 85, nadi: 88, suhu: 36.7, respirasi: 18, spo2: 98, berat_badan: 82, tinggi_badan: 165 },
     periksa: { keadaan_umum: 'Baik', ekstremitas: 'Sensibilitas kaki baik' },
     dx: [{ kode: 'E11.9', nama: 'Type 2 diabetes mellitus without complications', peran: 'utama' }], lab: ['GDS'],
-    resep: [['Metformin 500 mg', '2 x 1 tablet sesudah makan', 60]] },
+    resep: { teks: 'R/ Glucophage 500 mg tab No. LX\n    s 2 dd tab I p.c.', item: [['Metformin 500 mg', '2 x 1 tablet sesudah makan', 60]] } },
   { keluhan: 'Luka robek telapak tangan kanan terkena pisau dapur', ttv: { sistolik: 125, diastolik: 80, nadi: 84, suhu: 36.5, respirasi: 16, spo2: 98, berat_badan: 70, tinggi_badan: 163 },
     periksa: { keadaan_umum: 'Baik', ekstremitas: 'Vulnus laceratum palmar dekstra panjang 3 cm, perdarahan aktif minimal' },
     dx: [{ kode: 'S61.9', nama: 'Open wound of wrist and hand part, part unspecified', peran: 'utama' }],
     tindakan: [['TIN-JAHIT-KECIL', '86.59', 'Jahit luka ≤ 5 cm', 1], ['TIN-LUKA', '93.57', 'Perawatan luka sederhana', 1]],
-    resep: [['Ibuprofen 400 mg', '3 x 1 tablet sesudah makan', 10]] },
+    resep: { teks: 'R/ Ibuprofen 400 mg tab No. X\n    s 3 dd tab I p.c. (bila nyeri)', item: [['Ibuprofen 400 mg', '3 x 1 tablet sesudah makan', 10]] } },
 ];
 
 /** Skenario per pasien: sampai tahap mana kunjungannya dibawa. */
@@ -369,14 +372,15 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
       }
       if (target === 'lab') continue;
     }
-    const item = kasus.resep.map(([nama, aturan_pakai, jumlah]) => ({ master_obat_id: idObat[nama], aturan_pakai, jumlah, rute: 'oral' })).filter((x) => x.master_obat_id);
-    const resep = await wajib('resep (dokter)', 'dokter', 'POST', `/kunjungan/${kid}/resep`, { item });
+    // Dokter menulis resep teks bebas (P3); item obat dari stok diisi apoteker saat telaah.
+    const resep = await wajib('resep teks (dokter)', 'dokter', 'POST', `/kunjungan/${kid}/resep`, { teks: kasus.resep.teks });
     await wajib('tindak lanjut pulang (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/tindak_lanjut`, { isi: { jenis: 'pulang', catatan: 'Kontrol 1 minggu bila perlu' } });
     await wajib('selesai pemeriksaan → resep', 'dokter', 'POST', `/kunjungan/${kid}/klinis/selesai`, { tahap: 'resep' });
     if (antreanId) await api('perawat', 'POST', `/antrean/${antreanId}/selesai`);
     if (target === 'resep') continue;
     const resepId = resep?.id ?? resep?.resep?.id;
-    await wajib('telaah resep (apoteker)', 'apoteker', 'POST', `/resep/${resepId}/telaah`, { administratif: true, farmasetik: true, klinis: true, catatan: null });
+    const item = kasus.resep.item.map(([nama, aturan_pakai, jumlah, bentuk]) => ({ master_obat_id: idObat[nama], aturan_pakai, jumlah, bentuk: bentuk ?? null, rute: 'oral' })).filter((x) => x.master_obat_id);
+    await wajib('telaah + item resep (apoteker)', 'apoteker', 'POST', `/resep/${resepId}/telaah`, { administratif: true, farmasetik: true, klinis: true, catatan: null, item });
     await wajib('resep siap (apoteker)', 'apoteker', 'POST', `/resep/${resepId}/siap`, {});
     if (target === 'kasir') continue;
     // Kasir menambah biaya konsultasi dari master tarif (harga JKN untuk pasien JKN).

@@ -1,5 +1,4 @@
-import { awalResep, barisResepKosong } from './keadaan-farmasi';
-import type { BarisResep } from './keadaan-farmasi';
+import { awalResep } from './keadaan-farmasi';
 import { awalOrderLab } from './keadaan-order-lab';
 import type { KeadaanOrderLab } from './keadaan-order-lab';
 import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL, kunciTindakan } from '@klira/shared';
@@ -38,7 +37,8 @@ export type KeadaanPemeriksaan = {
   versi_draf: number;
   lab_dipilih: boolean;
   order_lab: KeadaanOrderLab;
-  resep: BarisResep[];
+  /** Teks resep dokter (P3); diajukan saat simpan pemeriksaan. */
+  resep: string;
 };
 
 /**
@@ -51,13 +51,7 @@ export function pulihkanKeadaan(dasar: KeadaanPemeriksaan, nilai: unknown): Kead
   const hasil: Record<string, unknown> = { ...dasar };
   for (const [kunci, d] of Object.entries(dasar)) {
     const v = n[kunci];
-    if (kunci === 'resep') {
-      if (Array.isArray(v)) {
-        const baris = v.filter((b) => b && typeof b === 'object' && !Array.isArray(b)).map((b) =>
-          Object.fromEntries(Object.entries(barisResepKosong()).map(([bidang, awal]) => [bidang, typeof b[bidang] === 'string' ? b[bidang] : awal])));
-        hasil[kunci] = baris.length ? baris : awalResep();
-      }
-    } else if (kunci === 'order_lab') {
+    if (kunci === 'order_lab') {
       const lab = v as Partial<KeadaanOrderLab> | null;
       if (lab && typeof lab === 'object') hasil[kunci] = {
         pemeriksaan: Array.isArray(lab.pemeriksaan) ? [...new Set(lab.pemeriksaan.filter((id) => Number.isInteger(id) && id > 0))] : [],

@@ -54,7 +54,7 @@ d('kasir (shift, pembayaran, serah terima obat, tutup kunjungan) terhadap klira_
     }
     let resepId = 0;
     if (opsi.resep) {
-      const r = await prisma.resep.create({ data: { fasyankes_id: fasId, kunjungan_id: k.id, dpjp_id: id.kasir, nomor_resep: `${kode}-R${nomor}`, status: opsi.resep } });
+      const r = await prisma.resep.create({ data: { fasyankes_id: fasId, kunjungan_id: k.id, dpjp_id: id.kasir, nomor_resep: `${kode}-R${nomor}`, teks: 'R/ Parasetamol 500 mg No. X', status: opsi.resep } });
       resepId = r.id;
       await prisma.itemResep.create({ data: { fasyankes_id: fasId, resep_id: r.id, master_obat_id: obatId, aturan_pakai: '3 x 1', jumlah: opsi.jumlahObat ?? 10 } });
     }

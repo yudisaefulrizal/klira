@@ -918,15 +918,23 @@ export const FARMASI = {
     pilihBatch: 'Pilih nomor batch...', tersimpan: 'Mutasi tercatat.', gagal: 'Mutasi gagal dicatat.', riwayat: 'Riwayat mutasi', stokSekarang: (n: number, satuan: string) => `Stok batch sekarang ${n} ${satuan}`,
   },
   riwayat: {
-    kolom: { nomor: 'Nomor resep', pasien: 'Pasien', dokter: 'Dokter', item: 'Obat', status: 'Status', waktu: 'Diajukan' }, filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal',
+    kolom: { nomor: 'Nomor resep', pasien: 'Pasien', dokter: 'Dokter', item: 'Resep dokter dan obat disiapkan', status: 'Status', waktu: 'Diajukan' }, filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal',
     kosong: 'Tidak ada resep pada penyaring ini.', gagalMuat: 'Riwayat obat gagal dimuat.', catatan: 'Telaah dan penyiapan resep dibuka dari Daftar pasien. Resep siap dapat diserahkan di sini; pembayaran dicatat terpisah oleh kasir.', jumlahObat: (n: number) => `${n} obat`,
   },
   resep: {
-    langkah: 'Resep', judul: 'Resep kunjungan ini', kosong: 'Belum ada resep pada kunjungan ini.', petunjuk: 'Isi obat, jumlah, dan aturan pakai sesuai rencana terapi.',
-    cariObat: 'Cari obat', pilihObat: 'Pilih obat...', jumlah: 'Jumlah', aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute', tambahItem: 'Tambah obat', hapusItem: 'Buang',
-    ajukan: 'Ajukan resep', mengajukan: 'Mengajukan...', terajukan: (n: string) => `Resep ${n} diajukan ke farmasi.`, tagihanInfo: 'Biaya obat masuk tagihan kunjungan saat resep diajukan.',
-    tanpaStok: 'Stok belum tercatat', harga: (rp: string) => `Harga ${rp}`, gagalMuat: 'Resep gagal dimuat.', tanpaIzin: 'Akun Anda belum punya izin menulis resep. Minta admin menambahkan izin Resep (input) pada peran Anda.', gagal: 'Resep gagal diajukan.', belumAdaMaster: 'Belum ada obat di master. Minta apoteker menambahkannya di halaman Farmasi.',
-    nomor: (n: string) => `Resep ${n}`, daftarObat: 'Obat',
+    langkah: 'Resep', judul: 'Resep kunjungan ini', kosong: 'Belum ada resep pada kunjungan ini.', label: 'Resep',
+    petunjuk: 'Tulis resep bebas seperti di kertas resep, termasuk merek dan racikan (puyer). Apoteker memilih obat dari stok saat telaah.',
+    contoh: 'Contoh: R/ Amoxicillin 500 mg tab No. XV, s 3 dd tab I p.c.',
+    ajukan: 'Ajukan resep', mengajukan: 'Mengajukan...', terajukan: (n: string) => `Resep ${n} diajukan ke farmasi.`, tagihanInfo: 'Biaya obat masuk tagihan kunjungan setelah apoteker mengisi item obat saat telaah.',
+    gagalMuat: 'Resep gagal dimuat.', tanpaIzin: 'Akun Anda belum punya izin menulis resep. Minta admin menambahkan izin Resep (input) pada peran Anda.', gagal: 'Resep gagal diajukan.',
+    nomor: (n: string) => `Resep ${n}`, daftarObat: 'Obat', teksDokter: 'Resep dokter', itemFarmasi: 'Obat disiapkan farmasi', belumAdaItem: 'Obat belum disiapkan farmasi.',
+  },
+  /** Editor item resep oleh apoteker saat telaah (obat dari master obat klinik). */
+  item: {
+    judul: 'Item obat', petunjuk: 'Pilih obat dari master obat klinik sesuai resep dokter. Racikan dicatat total unit yang terpakai, dibulatkan ke atas (mis. ½ tab x 10 bungkus = 5 tab).',
+    jumlah: 'Jumlah', jumlahSatuan: (satuan: string) => `Jumlah (${satuan})`, aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute',
+    tambah: 'Tambah obat', hapus: (n: number) => `Hapus obat baris ${n}`, stok: (n: number, satuan: string) => `Stok ${n} ${satuan}`, kosong: 'Belum ada item obat.',
+    belumAdaMaster: 'Belum ada obat di master. Tambahkan di halaman Farmasi.', biaya: (rp: string) => `Perkiraan biaya obat ${rp}`,
   },
   telaah: {
     judul: 'Telaah dan siapkan resep', resep: (n: string) => `Resep ${n}`, administratif: 'Telaah administratif (identitas pasien, dokter, tanggal, aturan lengkap)', farmasetik: 'Telaah farmasetik (bentuk, dosis, stabilitas, cara pemberian)',
@@ -936,9 +944,9 @@ export const FARMASI = {
   },
   galat: {
     angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', cariPendek: 'Ketik minimal dua huruf.', tanpaPerubahan: 'Tidak ada perubahan.', jumlahMinimal: 'Jumlah minimal 1.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
-    kedaluwarsaWajib: 'Tanggal kedaluwarsa wajib untuk batch baru.', alasanWajib: 'Alasan wajib diisi.', itemWajib: 'Pilih minimal satu obat.', obatGanda: 'Obat tidak boleh ganda dalam satu resep.', catatanTelaahWajib: 'Catatan wajib bila telaah belum terpenuhi.',
+    kedaluwarsaWajib: 'Tanggal kedaluwarsa wajib untuk batch baru.', alasanWajib: 'Alasan wajib diisi.', itemWajib: 'Isi minimal satu item obat sebelum menandai siap.', catatanTelaahWajib: 'Catatan wajib bila telaah belum terpenuhi.',
     kfaTidakAda: 'Kode KFA tidak ditemukan.', kfaTidakAktif: 'Kode KFA tidak aktif.', obatTertaut: 'Obat dengan kode KFA ini sudah ada di master.', obatTidakAda: 'Obat tidak ditemukan atau tidak aktif.', kunjunganTidakAda: 'Kunjungan tidak ditemukan.',
-    kunjunganDitutup: 'Kunjungan sudah ditutup. Resep baru tidak dapat dibuat.', resepTidakAda: 'Resep tidak ditemukan.', statusTidakSah: 'Status resep tidak mengizinkan tindakan ini. Muat ulang data.', telaahBelumLengkap: 'Telaah belum lengkap: ketiga telaah harus terpenuhi.',
+    kunjunganDitutup: 'Kunjungan sudah ditutup. Resep baru tidak dapat dibuat.', resepTidakAda: 'Resep tidak ditemukan.', statusTidakSah: 'Status resep tidak mengizinkan tindakan ini. Muat ulang data.', telaahBelumLengkap: 'Telaah belum lengkap: ketiga telaah harus terpenuhi.', itemTerkunci: 'Item obat tidak dapat diubah: tagihan kunjungan sudah ada pembayaran. Minta kasir menyesuaikan.',
     stokTidakCukup: 'Jumlah keluar melebihi stok batch.', batchTidakAda: 'Batch tidak ditemukan.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', dpjpTidakAda: 'Dokter penanggung jawab tidak ditemukan.',
   },
 } as const;

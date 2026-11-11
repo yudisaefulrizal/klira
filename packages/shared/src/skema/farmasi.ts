@@ -80,6 +80,7 @@ export const mutasiStokMasukan = z
 export type MutasiStokMasukan = z.infer<typeof mutasiStokMasukan>;
 export type MutasiStokDto = { id: number; stok_id: number; batch: string; jenis: JenisMutasi; jumlah: number; alasan: string | null; pengguna_nama: string | null; waktu: string };
 
+/** Item resep diisi apoteker dari master obat klinik; jumlah = unit terpakai dari stok (racikan: total unit, dibulatkan ke atas). Obat yang sama boleh lebih dari sekali. */
 export const itemResepMasukan = z.object({
   master_obat_id: idPositif,
   aturan_pakai: teksWajib(200),
@@ -87,16 +88,10 @@ export const itemResepMasukan = z.object({
   rute: teksOpsional(50),
   jumlah: z.preprocess((v) => (v === '' || v === null ? undefined : v), z.coerce.number({ error: FARMASI.galat.angka }).int(FARMASI.galat.angka).min(1, FARMASI.galat.jumlahMinimal).max(10_000)),
 });
-/** Resep dibuat dokter dari kunjungan (satu resep boleh banyak obat); obat tidak boleh ganda dalam satu resep. */
-export const resepMasukan = z
-  .object({ item: z.array(itemResepMasukan).min(1, FARMASI.galat.itemWajib).max(30) })
-  .superRefine((d, ctx) => {
-    const lihat = new Set<number>();
-    d.item.forEach((i, n) => {
-      if (lihat.has(i.master_obat_id)) ctx.addIssue({ code: 'custom', path: ['item', n, 'master_obat_id'], message: FARMASI.galat.obatGanda });
-      lihat.add(i.master_obat_id);
-    });
-  });
+/** Daftar item resep yang disiapkan apoteker (boleh kosong saat telaah dicatat). */
+export const daftarItemResepMasukan = z.array(itemResepMasukan).max(50);
+/** Resep ditulis dokter sebagai teks bebas (termasuk merek dan racikan); item obat diisi apoteker saat telaah (P3). */
+export const resepMasukan = z.object({ teks: teksWajib(2000) });
 export type ResepMasukan = z.input<typeof resepMasukan>;
 
 export type ItemResepDto = {
@@ -105,7 +100,7 @@ export type ItemResepDto = {
 };
 export type TelaahResepDto = { apoteker_nama: string | null; administratif: boolean; farmasetik: boolean; klinis: boolean; catatan: string | null; waktu: string };
 export type ResepDto = {
-  id: number; kunjungan_id: number; nomor_resep: string; status: StatusResep; jenis_pembiayaan: CaraPembayaran; dpjp_nama: string | null; dibuat_pada: string;
+  id: number; kunjungan_id: number; nomor_resep: string; teks: string; status: StatusResep; jenis_pembiayaan: CaraPembayaran; dpjp_nama: string | null; dibuat_pada: string;
   waktu_siap: string | null; item: ItemResepDto[]; telaah: TelaahResepDto | null;
 };
 export type HasilBuatResepDto = { resep: ResepDto; tagihan: { status_tagihan: string; status_pembayaran: string; total: number } };
@@ -120,16 +115,23 @@ export const filterRiwayatObat = z.object({
 export type FilterRiwayatObat = z.infer<typeof filterRiwayatObat>;
 export type RiwayatObatBarisDto = {
   id: number; kunjungan_id: number; nomor_resep: string; pasien_nama: string; pasien_nomor_rm: string; status: StatusResep; jumlah_item: number; dibuat_pada: string; dpjp_nama: string | null;
+  /** Teks resep dokter dan ringkasan item yang disiapkan farmasi (nama, jumlah, satuan). */
+  teks: string; item: { nama: string; jumlah: number; satuan: string }[];
 };
 export type RiwayatObatDto = { data: RiwayatObatBarisDto[]; halaman: number; ukuran: number; total: number };
 
-/** Telaah resep (administratif, farmasetik, klinis); resep hanya dapat ditandai siap bila ketiganya terpenuhi. */
+/**
+ * Telaah resep (administratif, farmasetik, klinis) bersama item obat yang disiapkan apoteker; disimpan dalam satu transaksi.
+ * Item boleh kosong saat telaah dicatat; resep hanya dapat ditandai siap bila ketiga telaah terpenuhi dan ada minimal satu item.
+ */
 export const telaahMasukan = z
-  .object({ administratif: z.boolean(), farmasetik: z.boolean(), klinis: z.boolean(), catatan: teksOpsional(1000) })
+  .object({ administratif: z.boolean(), farmasetik: z.boolean(), klinis: z.boolean(), catatan: teksOpsional(1000), item: daftarItemResepMasukan.default([]) })
   .superRefine((d, ctx) => {
     if (!(d.administratif && d.farmasetik && d.klinis) && !(d.catatan && d.catatan.trim())) ctx.addIssue({ code: 'custom', path: ['catatan'], message: FARMASI.galat.catatanTelaahWajib });
   });
 export type TelaahMasukan = z.infer<typeof telaahMasukan>;
+/** Bentuk kiriman dari formulir (jumlah item masih berupa teks). */
+export type TelaahKirim = z.input<typeof telaahMasukan>;
 export type HasilSiapDto = { resep: ResepDto; kekurangan: { master_obat_id: number; nama: string; butuh: number; tersedia: number }[]; tahap_kunjungan: string };
 
 /** Status stok sebuah obat dari jumlah total dan kedaluwarsa terdekat (tanggal ISO) pada tanggal acuan. */

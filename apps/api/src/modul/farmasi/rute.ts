@@ -23,8 +23,8 @@ export function buatRuteFarmasi(layananAkses: LayananAkses, layananIzin: Layanan
     (f: (req: Request, res: Response) => Promise<void>): RequestHandler =>
     (req, res, next) => void f(req, res).catch(next);
   const tidakAda = (res: Response) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } } satisfies ResponsGalat);
-  // Master dibaca juga oleh dokter yang menulis resep.
-  const bacaMaster = wajibIzinSalahSatu(['farmasi', 'lihat'], ['resep', 'input']);
+  // Master dibaca apoteker yang mengisi item resep saat telaah (dan dokter berizin resep).
+  const bacaMaster = wajibIzinSalahSatu(['farmasi', 'lihat'], ['farmasi', 'input'], ['resep', 'input']);
   const lihatResep = wajibIzinSalahSatu(['farmasi', 'lihat'], ['farmasi', 'input'], ['resep', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat']);
 
   rute.get('/farmasi/kfa', masuk, wajibIzin('farmasi', 'input'), bungkus(async (req, res) => {

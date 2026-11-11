@@ -5,7 +5,7 @@ import type {
   FilterKfa, FilterMasterObat, FilterRiwayatObat, HalamanMasterObatDto, MasterObatDto, MasterObatMasukan, MutasiStokDto, MutasiStokMasukan, ReferensiKfaDto, ResepDto, RiwayatObatDto,
   StatusResep, StokObatDto, TelaahMasukan, UbahMasterObatMasukan,
 } from '@klira/shared';
-import { tambahItemTagihanDalam, totalTagihan } from '../kasir/repositori';
+import { gantiItemObatResepDalam, totalTagihan } from '../kasir/repositori';
 import { ambilKatalogKfa, cariKatalogKfa } from './katalog-kfa';
 
 export type Kekurangan = { master_obat_id: number; nama: string; butuh: number; tersedia: number };
@@ -17,7 +17,13 @@ export type HasilSerahRepo =
 export type KunjunganResep = { id: number; pasien_id: number; tahap_layanan: string; cara_pembayaran: CaraPembayaran };
 export type ObatMini = { id: number; nama_tampil: string; satuan: string; harga: number };
 export type ItemBaruResep = { master_obat_id: number; aturan_pakai: string; bentuk: string | null; rute: string | null; jumlah: number };
+export type HasilTelaahRepo = 'ok' | 'status_berubah' | 'tagihan_terkunci';
 export type HasilMutasi = { ok: true; stok: StokObatDto } | { ok: false; sebab: 'obat_tidak_ada' | 'batch_tidak_ada' | 'stok_tidak_cukup' };
+
+type ItemBanding = { master_obat_id: number; aturan_pakai: string; bentuk: string | null; rute: string | null; jumlah: number };
+/** Daftar item sama persis (urutan, obat, jumlah, aturan, bentuk, rute): item dan tagihan tidak perlu diganti. */
+export const samaItemResep = (a: readonly ItemBanding[], b: readonly ItemBanding[]): boolean =>
+  a.length === b.length && a.every((x, n) => x.master_obat_id === b[n].master_obat_id && x.jumlah === b[n].jumlah && x.aturan_pakai === b[n].aturan_pakai && (x.bentuk ?? null) === (b[n].bentuk ?? null) && (x.rute ?? null) === (b[n].rute ?? null));
 
 const tglIso = (d: Date): string => d.toISOString().slice(0, 10);
 const awalHariUtc = (): Date => new Date(`${tglIso(new Date())}T00:00:00.000Z`);
@@ -209,7 +215,7 @@ export class RepositoriFarmasiPrisma {
     const nama = new Map(orang.map((o) => [o.id, o.nama]));
     const ringkas = await this.ringkasStok(fasyankesId, [...new Set(baris.flatMap((b) => b.item.map((i) => i.master_obat_id)))]);
     return baris.map((r) => ({
-      id: r.id, kunjungan_id: r.kunjungan_id, nomor_resep: r.nomor_resep, status: r.status, jenis_pembiayaan: r.jenis_pembiayaan, dpjp_nama: nama.get(r.dpjp_id) ?? null,
+      id: r.id, kunjungan_id: r.kunjungan_id, nomor_resep: r.nomor_resep, teks: r.teks, status: r.status, jenis_pembiayaan: r.jenis_pembiayaan, dpjp_nama: nama.get(r.dpjp_id) ?? null,
       dibuat_pada: r.dibuat_pada.toISOString(), waktu_siap: r.waktu_siap?.toISOString() ?? null,
       item: r.item.map((i) => ({
         id: i.id, master_obat_id: i.master_obat_id, nama: i.master.nama_tampil, satuan: i.master.satuan, aturan_pakai: i.aturan_pakai, bentuk: i.bentuk, rute: i.rute, jumlah: i.jumlah,
@@ -229,10 +235,10 @@ export class RepositoriFarmasiPrisma {
   }
 
   /**
-   * Resep dan item dibuat bersama item tagihan obat (harga master x jumlah) dalam satu transaksi. Nomor resep berurutan per hari
-   * (R-TTTTBBHH-NNN); bila dua pengajuan serempak mendapat nomor sama, keunikan memaksa ulang.
+   * Resep teks dokter dibuat tanpa item dan tanpa item tagihan (P3): item obat dan tagihannya diisi apoteker saat telaah. Nomor resep berurutan
+   * per hari (R-TTTTBBHH-NNN); bila dua pengajuan serempak mendapat nomor sama, keunikan memaksa ulang.
    */
-  async buatResep(d: { fasyankesId: number; kunjungan: KunjunganResep; dpjpId: number; oleh: number; item: ItemBaruResep[]; obat: ObatMini[] }): Promise<{ resepId: number; tagihan: { status_tagihan: string; status_pembayaran: string; total: number } }> {
+  async buatResep(d: { fasyankesId: number; kunjungan: KunjunganResep; dpjpId: number; oleh: number; teks: string }): Promise<{ resepId: number; tagihan: { status_tagihan: string; status_pembayaran: string; total: number } }> {
     for (let percobaan = 0; ; percobaan++) {
       try {
         return await prisma.$transaction(async (tx) => {
@@ -240,19 +246,10 @@ export class RepositoriFarmasiPrisma {
           const urut = (await tx.resep.count({ where: { fasyankes_id: d.fasyankesId, dibuat_pada: { gte: awal } } })) + 1;
           const nomor = `R-${tglIso(awal).replaceAll('-', '')}-${String(urut + percobaan).padStart(3, '0')}`;
           const resep = await tx.resep.create({
-            data: { fasyankes_id: d.fasyankesId, kunjungan_id: d.kunjungan.id, dpjp_id: d.dpjpId, nomor_resep: nomor, jenis_pembiayaan: d.kunjungan.cara_pembayaran, dibuat_oleh: d.oleh },
+            data: { fasyankes_id: d.fasyankesId, kunjungan_id: d.kunjungan.id, dpjp_id: d.dpjpId, nomor_resep: nomor, teks: d.teks, jenis_pembiayaan: d.kunjungan.cara_pembayaran, dibuat_oleh: d.oleh },
           });
-          const tagihanBaru = [];
-          for (const i of d.item) {
-            const baris = await tx.itemResep.create({
-              data: { fasyankes_id: d.fasyankesId, resep_id: resep.id, master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai, bentuk: i.bentuk, rute: i.rute, jumlah: i.jumlah, dibuat_oleh: d.oleh },
-            });
-            const obat = d.obat.find((o) => o.id === i.master_obat_id)!;
-            tagihanBaru.push({ jenis: 'obat' as const, tarifId: null, kode: `OBAT-${obat.id}`, nama: obat.nama_tampil, harga: obat.harga, orderPenunjangId: null, jumlah: i.jumlah, itemResepId: baris.id });
-          }
-          const tagihanId = await tambahItemTagihanDalam(tx, d.fasyankesId, d.kunjungan.id, d.oleh, tagihanBaru);
-          const t = await tx.tagihan.findUniqueOrThrow({ where: { id: tagihanId }, include: { item: { select: { jumlah: true, harga: true } } } });
-          return { resepId: resep.id, tagihan: { status_tagihan: t.status_tagihan, status_pembayaran: t.status_pembayaran, total: totalTagihan(t.item) } };
+          const t = await tx.tagihan.findFirst({ where: { kunjungan_id: d.kunjungan.id, fasyankes_id: d.fasyankesId }, include: { item: { select: { jumlah: true, harga: true } } } });
+          return { resepId: resep.id, tagihan: { status_tagihan: t?.status_tagihan ?? 'lengkap', status_pembayaran: t?.status_pembayaran ?? 'belum', total: t ? totalTagihan(t.item) : 0 } };
         });
       } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002' && percobaan < 5) continue;
@@ -261,15 +258,39 @@ export class RepositoriFarmasiPrisma {
     }
   }
 
-  /** Telaah dicatat bila resep masih diajukan atau ditelaah; status ditelaah hanya bila ketiganya terpenuhi. false bila status sudah berubah. */
-  async catatTelaah(fasyankesId: number, resepId: number, apotekerId: number, d: TelaahMasukan): Promise<boolean> {
+  /**
+   * Telaah dan item obat disimpan dalam satu transaksi bila resep masih diajukan atau ditelaah (status ditelaah hanya bila ketiganya terpenuhi).
+   * Bila daftar item berubah, item resep lama diganti dan item tagihan obat resep itu disinkronkan ulang (harga master obat); perubahan item
+   * ditolak bila tagihan kunjungan sudah ada pembayaran atau kunjungan ditutup.
+   */
+  async catatTelaah(fasyankesId: number, resepId: number, apotekerId: number, d: TelaahMasukan, item: readonly ItemBaruResep[], obat: readonly ObatMini[]): Promise<HasilTelaahRepo> {
     const lengkap = d.administratif && d.farmasetik && d.klinis;
     return prisma.$transaction(async (tx) => {
-      const ubah = await tx.resep.updateMany({ where: { id: resepId, fasyankes_id: fasyankesId, status: { in: ['diajukan', 'ditelaah'] } }, data: { status: lengkap ? 'ditelaah' : 'diajukan' } });
-      if (!ubah.count) return false;
+      const kunci = await tx.$queryRaw<{ id: number; kunjungan_id: number; status: string }[]>`SELECT id, kunjungan_id, status FROM resep WHERE id = ${resepId} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
+      const r = kunci[0];
+      if (!r || (r.status !== 'diajukan' && r.status !== 'ditelaah')) return 'status_berubah' as const;
+      const lama = await tx.itemResep.findMany({ where: { resep_id: resepId }, orderBy: { id: 'asc' } });
+      if (!samaItemResep(lama, item)) {
+        const k = await tx.kunjungan.findFirst({ where: { id: r.kunjungan_id, fasyankes_id: fasyankesId }, select: { tahap_layanan: true } });
+        if (!k || k.tahap_layanan === 'ditutup') return 'tagihan_terkunci' as const;
+        if (await tx.pembayaran.count({ where: { tagihan: { kunjungan_id: r.kunjungan_id, fasyankes_id: fasyankesId } } })) return 'tagihan_terkunci' as const;
+        const idLama = lama.map((x) => x.id);
+        await tx.itemTagihan.deleteMany({ where: { fasyankes_id: fasyankesId, item_resep_id: { in: idLama } } });
+        await tx.itemResep.deleteMany({ where: { resep_id: resepId } });
+        const baru = [];
+        for (const i of item) {
+          const baris = await tx.itemResep.create({
+            data: { fasyankes_id: fasyankesId, resep_id: resepId, master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai, bentuk: i.bentuk, rute: i.rute, jumlah: i.jumlah, dibuat_oleh: apotekerId },
+          });
+          const o = obat.find((x) => x.id === i.master_obat_id)!;
+          baru.push({ itemResepId: baris.id, master_obat_id: o.id, nama: o.nama_tampil, harga: o.harga, jumlah: i.jumlah });
+        }
+        await gantiItemObatResepDalam(tx, fasyankesId, r.kunjungan_id, apotekerId, [], baru);
+      }
+      await tx.resep.update({ where: { id: resepId }, data: { status: lengkap ? 'ditelaah' : 'diajukan' } });
       const isi = { apoteker_id: apotekerId, administratif: d.administratif, farmasetik: d.farmasetik, klinis: d.klinis, catatan: d.catatan?.trim() || null, waktu: new Date() };
       await tx.telaahResep.upsert({ where: { resep_id: resepId }, update: isi, create: { fasyankes_id: fasyankesId, resep_id: resepId, ...isi } });
-      return true;
+      return 'ok' as const;
     });
   }
 
@@ -278,7 +299,7 @@ export class RepositoriFarmasiPrisma {
     return prisma.$transaction(async (tx) => {
       const r = await tx.resep.findFirst({ where: { id: resepId, fasyankes_id: fasyankesId }, select: { kunjungan_id: true } });
       if (!r) return null;
-      const ubah = await tx.resep.updateMany({ where: { id: resepId, fasyankes_id: fasyankesId, status: 'ditelaah' }, data: { status: 'siap', waktu_siap: new Date() } });
+      const ubah = await tx.resep.updateMany({ where: { id: resepId, fasyankes_id: fasyankesId, status: 'ditelaah', item: { some: {} } }, data: { status: 'siap', waktu_siap: new Date() } });
       if (!ubah.count) return null;
       const belum = await tx.resep.count({ where: { fasyankes_id: fasyankesId, kunjungan_id: r.kunjungan_id, status: { in: ['diajukan', 'ditelaah'] } } });
       if (!belum) await tx.kunjungan.updateMany({ where: { id: r.kunjungan_id, fasyankes_id: fasyankesId, tahap_layanan: 'resep' }, data: { tahap_layanan: 'kasir' } });
@@ -294,13 +315,14 @@ export class RepositoriFarmasiPrisma {
     const where: Prisma.ResepWhereInput = { fasyankes_id: fasyankesId, ...(f.status ? { status: f.status as StatusResep } : {}), ...(f.dari || f.sampai ? { dibuat_pada: rentang } : {}) };
     const [total, baris] = await Promise.all([
       prisma.resep.count({ where }),
-      prisma.resep.findMany({ where, include: { _count: { select: { item: true } }, kunjungan: { include: { pasien: { select: { nama: true, nomor_rm: true } } } } }, orderBy: { id: 'desc' }, skip: (f.halaman - 1) * f.ukuran, take: f.ukuran }),
+      prisma.resep.findMany({ where, include: { _count: { select: { item: true } }, item: { include: { master: { select: { nama_tampil: true, satuan: true } } }, orderBy: { id: 'asc' } }, kunjungan: { include: { pasien: { select: { nama: true, nomor_rm: true } } } } }, orderBy: { id: 'desc' }, skip: (f.halaman - 1) * f.ukuran, take: f.ukuran }),
     ]);
     const nama = new Map((await prisma.pengguna.findMany({ where: { id: { in: [...new Set(baris.map((b) => b.dpjp_id))] } }, select: { id: true, nama: true } })).map((u) => [u.id, u.nama]));
     return {
       data: baris.map((r) => ({
         id: r.id, kunjungan_id: r.kunjungan_id, nomor_resep: r.nomor_resep, pasien_nama: r.kunjungan.pasien.nama, pasien_nomor_rm: r.kunjungan.pasien.nomor_rm, status: r.status,
         jumlah_item: r._count.item, dibuat_pada: r.dibuat_pada.toISOString(), dpjp_nama: nama.get(r.dpjp_id) ?? null,
+        teks: r.teks, item: r.item.map((i) => ({ nama: i.master.nama_tampil, jumlah: i.jumlah, satuan: i.master.satuan })),
       })),
       halaman: f.halaman, ukuran: f.ukuran, total,
     };

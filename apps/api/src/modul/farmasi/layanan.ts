@@ -53,17 +53,14 @@ export function buatLayananFarmasi({ repo, audit }: DependensiFarmasi) {
       return { ok: true, data: h.stok };
     },
 
-    /** Resep dari dokter: obat harus aktif di master klinik; biaya masuk tagihan saat diajukan (4.5, 7). */
+    /** Resep dari dokter berupa teks bebas (P3): tanpa item dan tanpa item tagihan; item obat dan biayanya diisi apoteker saat telaah. */
     async buatResep(p: Pelaku, kunjunganId: number, m: ResepMasukan, alamat?: string): Promise<Hasil<HasilBuatResepDto>> {
       const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
       if (!k) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
       if (k.tahap_layanan === 'ditutup') return gagal('konflik', G.kunjunganDitutup);
-      const item = m.item.map((i) => ({ master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai.trim(), bentuk: i.bentuk?.trim() || null, rute: i.rute?.trim() || null, jumlah: Number(i.jumlah) }));
-      const obat = await repo.obatAktifDari(p.fasyankes_id, item.map((i) => i.master_obat_id));
-      if (new Set(obat.map((o) => o.id)).size !== new Set(item.map((i) => i.master_obat_id)).size) return gagal('tidak_valid', G.obatTidakAda, 'item');
-      const { resepId, tagihan } = await repo.buatResep({ fasyankesId: p.fasyankes_id, kunjungan: k, dpjpId: p.id, oleh: p.id, item, obat });
+      const { resepId, tagihan } = await repo.buatResep({ fasyankesId: p.fasyankes_id, kunjungan: k, dpjpId: p.id, oleh: p.id, teks: m.teks.trim() });
       const resep = (await repo.resep(p.fasyankes_id, resepId))!;
-      await catat(p, 'input', 'resep', resepId, `Resep ${resep.nomor_resep} (${item.length} obat) untuk kunjungan ${kunjunganId}, tagihan obat dibuat`, alamat);
+      await catat(p, 'input', 'resep', resepId, `Resep ${resep.nomor_resep} (teks dokter) untuk kunjungan ${kunjunganId}`, alamat);
       return { ok: true, data: { resep, tagihan } };
     },
 
@@ -73,21 +70,29 @@ export function buatLayananFarmasi({ repo, audit }: DependensiFarmasi) {
       return { ok: true, data: await repo.resepKunjungan(p.fasyankes_id, kunjunganId) };
     },
 
+    /** Telaah dan item obat apoteker (obat aktif di master klinik) disimpan bersama; item tagihan obat resep itu ikut disinkronkan. */
     async telaah(p: Pelaku, resepId: number, m: TelaahMasukan, alamat?: string): Promise<Hasil<ResepDto>> {
       const r = await repo.resep(p.fasyankes_id, resepId);
       if (!r) return gagal('tidak_ditemukan', G.resepTidakAda);
       if (r.status === 'siap' || r.status === 'diserahkan') return gagal('konflik', G.statusTidakSah);
-      if (!(await repo.catatTelaah(p.fasyankes_id, resepId, p.id, m))) return gagal('konflik', G.statusTidakSah);
-      await catat(p, 'input', 'telaah_resep', resepId, `Telaah resep ${r.nomor_resep}: ${m.administratif && m.farmasetik && m.klinis ? 'terpenuhi' : 'belum terpenuhi'}`, alamat);
+      const item = (m.item ?? []).map((i) => ({ master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai.trim(), bentuk: i.bentuk?.trim() || null, rute: i.rute?.trim() || null, jumlah: Number(i.jumlah) }));
+      const ids = [...new Set(item.map((i) => i.master_obat_id))];
+      const obat = ids.length ? await repo.obatAktifDari(p.fasyankes_id, ids) : [];
+      if (obat.length !== ids.length) return gagal('tidak_valid', G.obatTidakAda, 'item');
+      const h = await repo.catatTelaah(p.fasyankes_id, resepId, p.id, m, item, obat);
+      if (h === 'status_berubah') return gagal('konflik', G.statusTidakSah);
+      if (h === 'tagihan_terkunci') return gagal('konflik', G.itemTerkunci, 'item');
+      await catat(p, 'input', 'telaah_resep', resepId, `Telaah resep ${r.nomor_resep}: ${m.administratif && m.farmasetik && m.klinis ? 'terpenuhi' : 'belum terpenuhi'}, ${item.length} item obat`, alamat);
       return { ok: true, data: (await repo.resep(p.fasyankes_id, resepId))! };
     },
 
-    /** Tandai siap (setelah telaah terpenuhi). Stok kurang tidak memblokir: kekurangannya dilaporkan agar apoteker menyiapkan sendiri (3.2 Peringatan stok kurang). */
+    /** Tandai siap (setelah telaah terpenuhi dan minimal satu item obat). Stok kurang tidak memblokir: kekurangannya dilaporkan agar apoteker menyiapkan sendiri (3.2 Peringatan stok kurang). */
     async siap(p: Pelaku, resepId: number, alamat?: string): Promise<Hasil<HasilSiapDto>> {
       const r = await repo.resep(p.fasyankes_id, resepId);
       if (!r) return gagal('tidak_ditemukan', G.resepTidakAda);
       if (r.status === 'diajukan') return gagal('konflik', G.telaahBelumLengkap);
       if (r.status !== 'ditelaah') return gagal('konflik', G.statusTidakSah);
+      if (!r.item.length) return gagal('konflik', G.itemWajib);
       const hasil = await repo.tandaiSiap(p.fasyankes_id, resepId);
       if (!hasil) return gagal('konflik', G.statusTidakSah);
       const baru = (await repo.resep(p.fasyankes_id, resepId))!;

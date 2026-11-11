@@ -65,7 +65,12 @@ export function TabRiwayat() {
               <SelTabel style={{ fontWeight: token.huruf.berat.tebal }}>{r.nomor_resep}</SelTabel>
               <SelTabel><div>{r.pasien_nama}</div><div style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{r.pasien_nomor_rm}</div></SelTabel>
               <SelTabel>{r.dpjp_nama ?? '-'}</SelTabel>
-              <SelTabel>{R.jumlahObat(r.jumlah_item)}</SelTabel>
+              <SelTabel>
+                <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{r.teks.trim() || '-'}</div>
+                <div style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>
+                  {r.item.length ? r.item.map((i) => `${i.nama} ${i.jumlah} ${i.satuan}`).join('; ') : FARMASI.resep.belumAdaItem}
+                </div>
+              </SelTabel>
               <SelTabel><Lencana warna={STATUS_RESEP.warna(r.status)}>{STATUS_RESEP.label(r.status)}</Lencana></SelTabel>
               <SelTabel>{formatWaktu(r.dibuat_pada)}</SelTabel>
               <SelTabel>{r.status === 'siap' && <HanyaDenganIzin fitur="farmasi" aksi="input"><Tombol type="button" varian="sekunder" onClick={() => setTerbuka(r)}>Serahkan obat</Tombol></HanyaDenganIzin>}</SelTabel>

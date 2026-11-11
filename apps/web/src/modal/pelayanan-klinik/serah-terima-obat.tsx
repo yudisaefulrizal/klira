@@ -14,6 +14,7 @@ import { Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi';
 import { KepalaPasien } from './kepala-pasien';
+import { TampilanResep } from './tampilan-resep';
 
 const B = KASIR.bayar;
 type Props = { kunjunganId: number; pasien: { nama: string; nomor_rm: string }; onTutup: () => void; onSelesai: () => void };
@@ -71,7 +72,7 @@ export function SerahTerimaObat({ kunjunganId, pasien, onTutup, onSelesai }: Pro
                 <Tumbuh tag="span"><strong>{r.nomor_resep}</strong></Tumbuh>
                 <Lencana warna={STATUS_RESEP.warna(r.status)}>{STATUS_RESEP.label(r.status)}</Lencana>
               </Sebaris>
-              {r.item.map((i) => <span key={i.id}>{i.nama}: {i.jumlah} {i.satuan}, {i.aturan_pakai}</span>)}
+              <TampilanResep resep={r} />
             </Bingkai>
           ))}
           {resepBelumSiap.length > 0 && <Peringatan nada="biru">{B.serahBelumSiap}</Peringatan>}
