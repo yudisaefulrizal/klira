@@ -10,6 +10,11 @@ const bilanganBulat = (maks: number) =>
   z.preprocess((v) => (v === '' || v === null ? undefined : v), z.coerce.number({ error: FARMASI.galat.angka }).int(FARMASI.galat.angka).min(0, FARMASI.galat.negatif).max(maks));
 
 export const NILAI_JENIS_MUTASI = ['terima', 'keluar', 'koreksi'] as const;
+/** Rute pemberian obat yang dipilih apoteker saat telaah (disimpan sebagai teks label; nilai lama di luar daftar tetap diterima). */
+export const RUTE_PEMBERIAN = [
+  'Oral', 'Sublingual', 'Bukal', 'Topikal', 'Transdermal', 'Mata', 'Telinga', 'Hidung', 'Inhalasi', 'Rektal', 'Vaginal',
+  'Intravena (IV)', 'Intramuskular (IM)', 'Subkutan (SC)', 'Intrakutan (IC)',
+] as const;
 /** Ambang stok menipis (satuan) dan kedaluwarsa dekat (hari) untuk penanda di tabel. */
 export const AMBANG_STOK_MENIPIS = 50;
 export const AMBANG_HARI_KEDALUWARSA = 90;
@@ -38,13 +43,15 @@ export const masterObatMasukan = z.object({
   kfa_kode: teksWajib(30),
   nama_tampil: teksWajib(200),
   satuan: teksWajib(50),
+  /** Rute pemberian bawaan obat ini; dipakai otomatis saat apoteker menelaah resep. */
+  rute: teksOpsional(50),
   harga: bilanganBulat(100_000_000),
   aktif: z.boolean().default(true),
 });
 export type MasterObatMasukan = z.infer<typeof masterObatMasukan>;
 /** Tanpa nilai bawaan: mengubah harga saja tidak boleh mengaktifkan kembali obat yang dinonaktifkan. */
 export const ubahMasterObatMasukan = z
-  .object({ nama_tampil: teksWajib(200), satuan: teksWajib(50), harga: bilanganBulat(100_000_000), aktif: z.boolean() })
+  .object({ nama_tampil: teksWajib(200), satuan: teksWajib(50), rute: teksOpsional(50), harga: bilanganBulat(100_000_000), aktif: z.boolean() })
   .partial()
   .refine((d) => Object.keys(d).length > 0, FARMASI.galat.tanpaPerubahan);
 export type UbahMasterObatMasukan = z.infer<typeof ubahMasterObatMasukan>;

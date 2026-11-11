@@ -1,4 +1,4 @@
-import { KASIR, FARMASI, daftarItemResepMasukan, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
+import { KASIR, FARMASI, RUTE_PEMBERIAN, daftarItemResepMasukan, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
 import type { ItemResepDto, MasterObatDto, ReferensiKfaDto, StokObatDto } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
@@ -10,10 +10,17 @@ const petakan = (isu: readonly Isu[]): Record<string, string> => {
 };
 
 // ---- Master obat ----
-export type KeadaanMasterObat = { kfa: ReferensiKfaDto | null; nama_tampil: string; satuan: string; harga: string; aktif: boolean };
+/** Opsi rute: kosong, daftar baku, dan nilai lama di luar daftar agar tidak hilang saat disunting. */
+export const opsiRute = (nilai: string) => [
+  { nilai: '', label: FARMASI.item.ruteKosong },
+  ...RUTE_PEMBERIAN.map((r) => ({ nilai: r, label: r })),
+  ...(nilai && !(RUTE_PEMBERIAN as readonly string[]).includes(nilai) ? [{ nilai, label: nilai }] : []),
+];
+
+export type KeadaanMasterObat = { kfa: ReferensiKfaDto | null; nama_tampil: string; satuan: string; rute: string; harga: string; aktif: boolean };
 
 export const awalMasterObat = (m?: MasterObatDto): KeadaanMasterObat => ({
-  kfa: null, nama_tampil: m?.nama_tampil ?? '', satuan: m?.satuan ?? '', harga: m ? String(m.harga) : '', aktif: m?.aktif ?? true,
+  kfa: null, nama_tampil: m?.nama_tampil ?? '', satuan: m?.satuan ?? '', rute: m?.rute ?? '', harga: m ? String(m.harga) : '', aktif: m?.aktif ?? true,
 });
 
 /** Memilih kode KFA mengisi nama tampil dan satuan awal bila masih kosong (boleh diubah klinik). */
@@ -24,20 +31,21 @@ export const pilihKfa = (k: KeadaanMasterObat, kfa: ReferensiKfaDto): KeadaanMas
 /** Galat untuk tambah (kode KFA wajib) atau ubah (tanpa kode KFA; hanya bidang yang berubah divalidasi). */
 export function galatMasterObat(k: KeadaanMasterObat, ubah: boolean): Record<string, string> {
   if (ubah) {
-    const h = ubahMasterObatMasukan.safeParse({ nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif });
+    const h = ubahMasterObatMasukan.safeParse({ nama_tampil: k.nama_tampil, satuan: k.satuan, rute: k.rute, harga: k.harga, aktif: k.aktif });
     return h.success ? {} : petakan(h.error.issues);
   }
-  const g = petakan(masterObatMasukan.safeParse({ kfa_kode: k.kfa?.kode ?? '', nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif }).error?.issues ?? []);
+  const g = petakan(masterObatMasukan.safeParse({ kfa_kode: k.kfa?.kode ?? '', nama_tampil: k.nama_tampil, satuan: k.satuan, rute: k.rute, harga: k.harga, aktif: k.aktif }).error?.issues ?? []);
   if (!k.kfa) g.kfa_kode = FARMASI.galat.kfaTidakAda;
   return g;
 }
-export const bentukTambahObat = (k: KeadaanMasterObat): Record<string, unknown> => ({ kfa_kode: k.kfa?.kode, nama_tampil: k.nama_tampil, satuan: k.satuan, harga: k.harga, aktif: k.aktif });
+export const bentukTambahObat = (k: KeadaanMasterObat): Record<string, unknown> => ({ kfa_kode: k.kfa?.kode, nama_tampil: k.nama_tampil, satuan: k.satuan, rute: k.rute, harga: k.harga, aktif: k.aktif });
 
 /** Hanya bidang yang berubah dikirim saat mengubah (PATCH). */
 export function perubahanMasterObat(awal: KeadaanMasterObat, k: KeadaanMasterObat): Record<string, unknown> {
   const h: Record<string, unknown> = {};
   if (k.nama_tampil !== awal.nama_tampil) h.nama_tampil = k.nama_tampil;
   if (k.satuan !== awal.satuan) h.satuan = k.satuan;
+  if (k.rute !== awal.rute) h.rute = k.rute;
   if (k.harga !== awal.harga) h.harga = k.harga;
   if (k.aktif !== awal.aktif) h.aktif = k.aktif;
   return h;

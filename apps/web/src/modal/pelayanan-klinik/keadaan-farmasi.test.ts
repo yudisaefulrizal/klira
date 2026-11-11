@@ -1,4 +1,6 @@
-import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
+import { FARMASI } from '@klira/shared';
+import type { MasterObatDto } from '@klira/shared';
+import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
 
 const kfa = { kode: '93000001', nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, satuan: 'tablet', status: 'aktif', lokal: false };
 
@@ -96,4 +98,20 @@ test('resep awal dan teks berisi spasi tidak diajukan', () => {
   expect(adaIsianResep(awalResep())).toBe(false);
   expect(adaIsianResep('  \n ')).toBe(false);
   expect(adaIsianResep('R/ Parasetamol')).toBe(true);
+});
+
+describe('rute pemberian', () => {
+  it('opsi rute: kosong, daftar baku, dan nilai lama di luar daftar tetap muncul', () => {
+    const o = opsiRute('');
+    expect(o[0]).toEqual({ nilai: '', label: FARMASI.item.ruteKosong });
+    expect(o.map((x) => x.nilai)).toContain('Oral');
+    expect(opsiRute('per sonde').at(-1)).toEqual({ nilai: 'per sonde', label: 'per sonde' });
+    expect(opsiRute('Oral')).toHaveLength(o.length);
+  });
+  it('master obat: rute ikut awal dan hanya dikirim bila berubah', () => {
+    const awal = awalMasterObat({ id: 1, kfa_kode: '93', kfa_nama: 'X', nama_tampil: 'X', satuan: 'tablet', harga: 1, aktif: true, rute: 'Oral', stok_total: 0, kedaluwarsa_terdekat: null, status_stok: 'habis' } as MasterObatDto);
+    expect(awal.rute).toBe('Oral');
+    expect(perubahanMasterObat(awal, awal)).toEqual({});
+    expect(perubahanMasterObat(awal, { ...awal, rute: 'Intravena (IV)' })).toEqual({ rute: 'Intravena (IV)' });
+  });
 });

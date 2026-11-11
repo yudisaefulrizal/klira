@@ -10,11 +10,12 @@ import { Bingkai } from '../../komponen/ui/kartu';
 import { KotakCentang } from '../../komponen/ui/kotak-centang';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
+import { Pilihan } from '../../komponen/ui/pilihan';
 import { Baris, Kolom } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { adaPerubahan } from '../../util/draf';
 import { useNilaiTertunda } from '../../util/tunda';
-import { awalMasterObat, bentukTambahObat, galatMasterObat, perubahanMasterObat, pilihKfa } from './keadaan-farmasi';
+import { awalMasterObat, bentukTambahObat, galatMasterObat, opsiRute, perubahanMasterObat, pilihKfa } from './keadaan-farmasi';
 import type { KeadaanMasterObat } from './keadaan-farmasi';
 
 type Props = { obat?: MasterObatDto; onTutup: () => void; onSelesai: () => void };
@@ -22,7 +23,7 @@ type Props = { obat?: MasterObatDto; onTutup: () => void; onSelesai: () => void 
 /** Jumlah saran KFA yang ditampilkan; sisanya dicapai dengan kata kunci yang lebih spesifik. */
 const BATAS_HASIL_KFA = 10;
 
-/** Modal Master obat (3.3, MODAL-1): pilih dari Referensi KFA (tanpa obat ketik bebas), atur nama tampil, satuan, harga, aktif. Ubah tidak mengganti kode KFA. */
+/** Modal Master obat (3.3, MODAL-1): pilih dari Referensi KFA (tanpa obat ketik bebas), atur nama tampil, satuan, rute pemberian, harga, aktif. Ubah tidak mengganti kode KFA. */
 export function MasterObat({ obat, onTutup, onSelesai }: Props) {
   const M = FARMASI.master;
   const awal = useMemo(() => awalMasterObat(obat), [obat]);
@@ -138,6 +139,7 @@ export function MasterObat({ obat, onTutup, onSelesai }: Props) {
           <Isian id="obat-satuan" label={M.bidang.satuan} value={k.satuan} onChange={(e) => setK({ ...k, satuan: e.target.value })} galat={tampil('satuan')} autoComplete="off" />
           <Isian id="obat-harga" label={M.bidang.harga} petunjuk={M.petunjukHarga} inputMode="numeric" value={k.harga} onChange={(e) => setK({ ...k, harga: e.target.value })} galat={tampil('harga')} autoComplete="off" />
         </Baris>
+        <Pilihan id="obat-rute" label={M.bidang.rute} petunjuk={M.bidang.rutePetunjuk} value={k.rute} opsi={opsiRute(k.rute)} onChange={(e) => setK({ ...k, rute: e.target.value })} galat={tampil('rute')} />
         <KotakCentang id="obat-aktif" label={M.bidang.aktif} checked={k.aktif} onChange={(e) => setK({ ...k, aktif: e.target.checked })} />
       </Kolom>
     </Modal1>

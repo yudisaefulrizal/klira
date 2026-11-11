@@ -191,9 +191,9 @@ Tiga komponen umum dibuat sekali dan dipakai berulang, tidak didaftar sebagai mo
 | Order lab | Daftar pasien, Pemeriksaan klinis | MODAL-1 | Pemeriksaan, prioritas, catatan |
 | Ambil spesimen | Daftar pasien | MODAL-1 | Spesimen, waktu, petugas |
 | Hasil lab | Daftar pasien | MODAL-BERTAHAP | Hasil > Interpretasi > Validasi |
-| Telaah dan siapkan resep | Daftar pasien | MODAL-1 | Teks resep dokter (baca saja), item obat dari master obat klinik (obat, jumlah bulat, aturan pakai, bentuk/rute opsional; tambah/ubah/hapus selama belum siap), telaah (administratif, farmasetik, klinis), tandai siap (minimal satu item dan ketiga telaah) |
+| Telaah dan siapkan resep | Daftar pasien | MODAL-1 | Teks resep dokter (baca saja), item obat dari master obat klinik (obat, jumlah bulat, aturan pakai, bentuk opsional, rute dari pilihan dan terisi otomatis dari master obat; tambah/ubah/hapus selama belum siap), telaah (administratif, farmasetik, klinis), tandai siap (minimal satu item dan ketiga telaah) |
 | Mutasi stok | Farmasi | MODAL-1 | Terima, keluar, koreksi: batch, kedaluwarsa, jumlah, alasan |
-| Master obat | Farmasi, Pengaturan | MODAL-1 | Pilih dari Referensi KFA, satuan, harga, aktif |
+| Master obat | Farmasi, Pengaturan | MODAL-1 | Pilih dari Referensi KFA, satuan, rute pemberian (pilihan, opsional), harga, aktif |
 | Perbaiki catatan; Tinjau permintaan perbaikan | Rekam medis | MODAL-1 | Bagian, isi baru, alasan; setujui atau tolak |
 
 #### Kasir dan klaim
@@ -297,7 +297,7 @@ Aturan umum:
 | Hasil penunjang | order_id, nilai, interpretasi, validator | Observation, DiagnosticReport |
 | Resep | kunjungan_id, DPJP, nomor resep, teks resep dokter (teks bebas, wajib), jenis pembiayaan, status (diajukan, ditelaah, siap, diserahkan di kasir); resep rawat inap dari catatan harian | MedicationRequest |
 | Referensi KFA (statis) | kode, tingkat (91 bahan, 92 template, 93 produk, 94 kemasan), nama, bentuk sediaan, rute, satuan UCUM, kekuatan, nomor izin edar, produsen, generik, status, produk pengganti, waktu pembaruan; baca-saja, dari API KFA | Medication (kode) |
-| Master obat klinik (dinamis) | id, kfa_id (wajib, satu kode KFA), nama tampil, satuan, harga (awal dapat dari harga JKN API KFA), aktif; tanpa obat ketik bebas | Medication |
+| Master obat klinik (dinamis) | id, kfa_id (wajib, satu kode KFA), nama tampil, satuan, rute pemberian bawaan (opsional, dari daftar pilihan), harga (awal dapat dari harga JKN API KFA), aktif; tanpa obat ketik bebas | Medication |
 | Item resep (diisi apoteker saat telaah, bukan dokter) | resep_id, master_obat_id (kode KFA 92/93), aturan pakai, bentuk, rute, jumlah (unit terpakai dari stok); racikan: bahan masing-masing berkode KFA, jumlah total unit dibulatkan ke atas; obat yang sama boleh lebih dari sekali | Medication (contained) |
 | Telaah resep | resep_id, apoteker/petugas, kelengkapan (administratif, farmasetik, klinis), catatan, waktu | - |
 | Stok obat (sederhana) | master_obat_id, batch, kedaluwarsa, jumlah; berkurang saat serah terima di kasir, bertambah saat penerimaan | - |

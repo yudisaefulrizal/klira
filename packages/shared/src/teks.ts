@@ -905,7 +905,7 @@ export const FARMASI = {
     catatan: 'Setiap obat tertaut satu kode KFA, tanpa obat ketik bebas. Telaah dan penyiapan resep dibuka dari Daftar pasien; penyerahan obat oleh farmasi mengurangi stok.',
     judulTambah: 'Tambah obat dari KFA', judulUbah: 'Ubah obat', cariKfa: 'Cari di Referensi KFA', cariKfaPetunjuk: 'Ketik minimal dua huruf nama atau bahan', kfaTidakAda: 'Tidak ada hasil di Referensi KFA.', kfaBatasHasil: 'Menampilkan hasil teratas. Tambahkan kata kunci agar lebih tepat.', kfaTidakAktif: 'Tidak aktif', kfaLokal: 'Tambahan klinik',
     pilihKfa: 'Pilih kode KFA', terpilih: 'Kode KFA terpilih',
-    bidang: { nama_tampil: 'Nama tampil', satuan: 'Satuan', harga: 'Harga per satuan (Rp)', aktif: 'Aktif' },
+    bidang: { nama_tampil: 'Nama tampil', satuan: 'Satuan', rute: 'Rute pemberian', rutePetunjuk: 'Terisi otomatis pada item obat saat telaah resep; apoteker masih bisa menggantinya.', harga: 'Harga per satuan (Rp)', aktif: 'Aktif' },
     petunjukHarga: 'Perubahan harga hanya berlaku untuk resep berikutnya. Tagihan yang sudah ada tidak berubah. Perubahan tercatat di log audit.',
   },
   status: { aman: 'Aman', menipis: 'Menipis', kedaluwarsa_dekat: 'Kedaluwarsa dekat', habis: 'Habis' },
@@ -932,7 +932,7 @@ export const FARMASI = {
   /** Editor item resep oleh apoteker saat telaah (obat dari master obat klinik). */
   item: {
     judul: 'Item obat', petunjuk: 'Pilih obat dari master obat klinik sesuai resep dokter. Racikan dicatat total unit yang terpakai, dibulatkan ke atas (mis. ½ tab x 10 bungkus = 5 tab).',
-    jumlah: 'Jumlah', jumlahSatuan: (satuan: string) => `Jumlah (${satuan})`, aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute',
+    jumlah: 'Jumlah', jumlahSatuan: (satuan: string) => `Jumlah (${satuan})`, aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute', ruteKosong: '— Tidak diisi —',
     tambah: 'Tambah obat', hapus: (n: number) => `Hapus obat baris ${n}`, stok: (n: number, satuan: string) => `Stok ${n} ${satuan}`, kosong: 'Belum ada item obat.',
     belumAdaMaster: 'Belum ada obat di master. Tambahkan di halaman Farmasi.', biaya: (rp: string) => `Perkiraan biaya obat ${rp}`,
   },

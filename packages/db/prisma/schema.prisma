@@ -1213,6 +1213,7 @@ model MasterObat {
   kfa_kode       String    @db.VarChar(30)
   kfa_nama       String    @db.VarChar(700)
   bentuk_sediaan String?   @db.VarChar(100)
+  rute           String?   @db.VarChar(50)
   nama_tampil    String    @db.VarChar(200)
   satuan         String    @db.VarChar(50)
   harga          Int

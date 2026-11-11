@@ -1,7 +1,9 @@
 .resep-baris-daftar { border: 1px solid var(--warna-garis); border-radius: 8px; }
 .resep-baris { padding: 12px; }
 .resep-baris + .resep-baris { border-top: 1px solid var(--warna-garis); }
-.resep-baris-utama { display: grid; grid-template-columns: minmax(0, 2fr) minmax(90px, .7fr) minmax(0, 1.5fr) 36px; gap: 12px; align-items: start; }
+/* Satu baris: obat, jumlah (stok di bawahnya), aturan pakai, bentuk, rute, hapus. */
+.resep-baris-utama { display: grid; grid-template-columns: minmax(0, 2fr) minmax(90px, .7fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.2fr) 36px; gap: 12px; align-items: start; }
+.resep-baris select { width: 100%; min-width: 0; box-sizing: border-box; }
 .resep-baris-utama > *, .resep-baris input { min-width: 0; }
 .resep-baris input { width: 100%; box-sizing: border-box; }
 .resep-hapus { margin-top: 23px; padding: 0 !important; min-width: 36px; color: var(--status-merah-teks) !important; }
@@ -10,14 +12,16 @@
 .resep-hasil li { padding: 10px; cursor: pointer; overflow-wrap: anywhere; }
 .resep-hasil li small { display: block; color: var(--warna-teks-redup); }
 .resep-hasil li:hover, .resep-hasil li.aktif { background: var(--warna-utama-latar); }
+/* Layar sedang: bentuk dan rute turun ke baris kedua. */
+@media (max-width: 960px) {
+  .resep-baris-utama { grid-template-columns: minmax(0, 2fr) minmax(90px, .7fr) minmax(0, 1.5fr) 36px; }
+  .resep-hapus { grid-column: 4; grid-row: 1; }
+}
 @media (max-width: 700px) {
   .resep-baris-utama { grid-template-columns: minmax(0, 1fr) 36px; }
   .resep-pencarian { grid-column: 1; }
   .resep-hapus { grid-column: 2; grid-row: 1; }
-  .resep-jumlah, .resep-baris-utama > div:last-of-type { grid-column: 1 / -1; }
+  .resep-baris-utama > :not(.resep-pencarian):not(.resep-hapus) { grid-column: 1 / -1; }
 }
-.resep-baris-tambahan { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: end; margin-top: 8px; }
-.resep-stok { padding-bottom: 10px; }
-@media (max-width: 700px) {
-  .resep-baris-tambahan { grid-template-columns: minmax(0, 1fr); }
-}
+.resep-jumlah { display: flex; flex-direction: column; gap: 4px; }
+.resep-stok { white-space: nowrap; }

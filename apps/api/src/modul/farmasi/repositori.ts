@@ -111,12 +111,12 @@ export class RepositoriFarmasiPrisma {
     return hasil;
   }
 
-  private keMasterDto(m: { id: number; kfa_kode: string; kfa_nama: string; bentuk_sediaan: string | null; nama_tampil: string; satuan: string; harga: number; aktif: boolean }, ringkas?: { total: number; terdekat: string | null }): MasterObatDto {
+  private keMasterDto(m: { id: number; kfa_kode: string; kfa_nama: string; bentuk_sediaan: string | null; rute: string | null; nama_tampil: string; satuan: string; harga: number; aktif: boolean }, ringkas?: { total: number; terdekat: string | null }): MasterObatDto {
     const total = ringkas?.total ?? 0;
     const terdekat = ringkas?.terdekat ?? null;
     return {
       id: m.id, kfa_kode: m.kfa_kode, kfa_nama: m.kfa_nama, nama_tampil: m.nama_tampil, satuan: m.satuan, harga: m.harga, aktif: m.aktif,
-      bentuk_sediaan: m.bentuk_sediaan,
+      bentuk_sediaan: m.bentuk_sediaan, rute: m.rute,
       stok_total: total, kedaluwarsa_terdekat: terdekat, status_stok: statusStokDari(total, terdekat),
     };
   }
@@ -145,7 +145,7 @@ export class RepositoriFarmasiPrisma {
   async buatMaster(fasyankesId: number, oleh: number, d: MasterObatMasukan, kfa: ReferensiKfaDto): Promise<MasterObatDto | 'duplikat'> {
     try {
       const m = await prisma.masterObat.create({
-        data: { fasyankes_id: fasyankesId, kfa_kode: kfa.kode, kfa_nama: kfa.nama, bentuk_sediaan: kfa.bentuk_sediaan, nama_tampil: d.nama_tampil, satuan: d.satuan, harga: d.harga, aktif: d.aktif, dibuat_oleh: oleh },
+        data: { fasyankes_id: fasyankesId, kfa_kode: kfa.kode, kfa_nama: kfa.nama, bentuk_sediaan: kfa.bentuk_sediaan, nama_tampil: d.nama_tampil, satuan: d.satuan, rute: d.rute || null, harga: d.harga, aktif: d.aktif, dibuat_oleh: oleh },
       });
       return this.keMasterDto(m);
     } catch (e) {
@@ -155,7 +155,7 @@ export class RepositoriFarmasiPrisma {
   }
 
   async ubahMaster(fasyankesId: number, id: number, d: UbahMasterObatMasukan): Promise<MasterObatDto | null> {
-    const ada = await prisma.masterObat.updateMany({ where: { id, fasyankes_id: fasyankesId }, data: { ...d, diubah_pada: new Date() } });
+    const ada = await prisma.masterObat.updateMany({ where: { id, fasyankes_id: fasyankesId }, data: { ...d, ...(d.rute !== undefined ? { rute: d.rute || null } : {}), diubah_pada: new Date() } });
     return ada.count ? this.master(fasyankesId, id) : null;
   }
 
