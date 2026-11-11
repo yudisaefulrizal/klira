@@ -54,7 +54,7 @@ export interface RepositoriKlinis {
   /** Hapus draf; tanpa `penggunaId` semua draf kunjungan itu (pemeriksaan selesai). Mengembalikan jumlah terhapus. */
   hapusDraf(fasyankesId: number, kunjunganId: number, penggunaId?: number, alur?: AlurDrafKlinis): Promise<number>;
   /** Id tarif jenis tindakan milik fasyankes dari daftar id (yang tidak sah tidak dikembalikan). */
-  tarifTindakanSah(fasyankesId: number, ids: readonly number[]): Promise<number[]>;
+  tarifTindakanSah(fasyankesId: number, ids: readonly number[]): Promise<{ id: number; kode_icd9cm: string | null }[]>;
   /** Daftar tindakan klinik aktif (tarif jenis tindakan) untuk pencarian; cari pada nama, kode, atau awalan kode ICD-9-CM. */
   tindakanKlinik(fasyankesId: number, cari: string, batas: number): Promise<TindakanKlinikDto[]>;
   /** Sinkronkan item tagihan tindakan dari pencatatan dengan daftar tindakan terbaru (lihat kasir/repositori). */
@@ -292,10 +292,9 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
     };
   }
 
-  async tarifTindakanSah(fasyankesId: number, ids: readonly number[]): Promise<number[]> {
+  async tarifTindakanSah(fasyankesId: number, ids: readonly number[]): Promise<{ id: number; kode_icd9cm: string | null }[]> {
     if (!ids.length) return [];
-    const t = await prisma.tarifLayanan.findMany({ where: { id: { in: [...ids] }, fasyankes_id: fasyankesId, jenis: 'tindakan' }, select: { id: true } });
-    return t.map((x) => x.id);
+    return prisma.tarifLayanan.findMany({ where: { id: { in: [...ids] }, fasyankes_id: fasyankesId, jenis: 'tindakan' }, select: { id: true, kode_icd9cm: true } });
   }
 
   async tindakanKlinik(fasyankesId: number, cari: string, batas: number): Promise<TindakanKlinikDto[]> {

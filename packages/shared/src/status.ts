@@ -7,6 +7,8 @@ function buat<K extends string>(peta: Record<K, InfoStatus>) {
   return {
     nilai,
     peta,
+    /** Opsi pilihan (nilai + label) untuk komponen Pilihan, berurutan sesuai peta. */
+    opsi: nilai.map((n) => ({ nilai: n, label: peta[n].label })),
     info: (status: K): InfoStatus => peta[status],
     label: (status: K): string => peta[status].label,
     warna: (status: K): WarnaStatus => peta[status].warna,

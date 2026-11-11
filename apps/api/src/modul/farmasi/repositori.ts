@@ -261,16 +261,17 @@ export class RepositoriFarmasiPrisma {
   /**
    * Telaah dan item obat disimpan dalam satu transaksi bila resep masih diajukan atau ditelaah (status ditelaah hanya bila ketiganya terpenuhi).
    * Bila daftar item berubah, item resep lama diganti dan item tagihan obat resep itu disinkronkan ulang (harga master obat); perubahan item
-   * ditolak bila tagihan kunjungan sudah ada pembayaran atau kunjungan ditutup.
+   * ditolak bila tagihan kunjungan sudah ada pembayaran atau kunjungan ditutup. item null (tidak dikirim) = item resep dan tagihan obat tidak disentuh.
    */
-  async catatTelaah(fasyankesId: number, resepId: number, apotekerId: number, d: TelaahMasukan, item: readonly ItemBaruResep[], obat: readonly ObatMini[]): Promise<HasilTelaahRepo> {
+  async catatTelaah(fasyankesId: number, resepId: number, apotekerId: number, d: TelaahMasukan, item: readonly ItemBaruResep[] | null, obat: readonly ObatMini[]): Promise<HasilTelaahRepo> {
     const lengkap = d.administratif && d.farmasetik && d.klinis;
     return prisma.$transaction(async (tx) => {
       const kunci = await tx.$queryRaw<{ id: number; kunjungan_id: number; status: string }[]>`SELECT id, kunjungan_id, status FROM resep WHERE id = ${resepId} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
       const r = kunci[0];
       if (!r || (r.status !== 'diajukan' && r.status !== 'ditelaah')) return 'status_berubah' as const;
-      const lama = await tx.itemResep.findMany({ where: { resep_id: resepId }, orderBy: { id: 'asc' } });
-      if (!samaItemResep(lama, item)) {
+      // item null = permintaan tanpa daftar item: hanya telaah yang dicatat.
+      const lama = item ? await tx.itemResep.findMany({ where: { resep_id: resepId }, orderBy: { id: 'asc' } }) : [];
+      if (item && !samaItemResep(lama, item)) {
         const k = await tx.kunjungan.findFirst({ where: { id: r.kunjungan_id, fasyankes_id: fasyankesId }, select: { tahap_layanan: true } });
         if (!k || k.tahap_layanan === 'ditutup') return 'tagihan_terkunci' as const;
         if (await tx.pembayaran.count({ where: { tagihan: { kunjungan_id: r.kunjungan_id, fasyankes_id: fasyankesId } } })) return 'tagihan_terkunci' as const;

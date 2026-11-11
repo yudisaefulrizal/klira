@@ -240,6 +240,10 @@ d('farmasi (master obat, stok, resep, telaah) terhadap klira_uji', () => {
     // simpan ulang tanpa perubahan item tidak mengganti baris
     const ulang = await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, item: item.slice(0, 2) });
     expect(ulang.badan.data.item.map((i: any) => i.id)).toEqual(lengkap.badan.data.item.map((i: any) => i.id));
+    // telaah tanpa `item` hanya mencatat telaah: item resep dan tagihan obat tetap
+    const tanpaItem = await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', telaahLengkap);
+    expect(tanpaItem.badan.data.item.map((i: any) => i.id)).toEqual(lengkap.badan.data.item.map((i: any) => i.id));
+    expect((await prisma.itemTagihan.findMany({ where: { fasyankes_id: fas, item_resep_id: { not: null } }, orderBy: { id: 'asc' } })).map((i) => i.item_resep_id)).toEqual(lengkap.badan.data.item.map((i: any) => i.id));
     expect((await panggil('POST', `/resep/${ids.resepA}/telaah`, 'lainApoteker', telaahLengkap)).status).toBe(404);
     const siap = await panggil('POST', `/resep/${ids.resepA}/siap`, 'apoteker');
     expect(siap.status).toBe(200);

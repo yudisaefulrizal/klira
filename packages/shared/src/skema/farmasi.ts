@@ -122,10 +122,10 @@ export type RiwayatObatDto = { data: RiwayatObatBarisDto[]; halaman: number; uku
 
 /**
  * Telaah resep (administratif, farmasetik, klinis) bersama item obat yang disiapkan apoteker; disimpan dalam satu transaksi.
- * Item boleh kosong saat telaah dicatat; resep hanya dapat ditandai siap bila ketiga telaah terpenuhi dan ada minimal satu item.
+ * Item boleh kosong saat telaah dicatat; bila `item` tidak dikirim, item resep yang ada tidak diubah. Resep hanya dapat ditandai siap bila ketiga telaah terpenuhi dan ada minimal satu item.
  */
 export const telaahMasukan = z
-  .object({ administratif: z.boolean(), farmasetik: z.boolean(), klinis: z.boolean(), catatan: teksOpsional(1000), item: daftarItemResepMasukan.default([]) })
+  .object({ administratif: z.boolean(), farmasetik: z.boolean(), klinis: z.boolean(), catatan: teksOpsional(1000), item: daftarItemResepMasukan.optional() })
   .superRefine((d, ctx) => {
     if (!(d.administratif && d.farmasetik && d.klinis) && !(d.catatan && d.catatan.trim())) ctx.addIssue({ code: 'custom', path: ['catatan'], message: FARMASI.galat.catatanTelaahWajib });
   });

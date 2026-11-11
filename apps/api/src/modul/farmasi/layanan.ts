@@ -75,14 +75,15 @@ export function buatLayananFarmasi({ repo, audit }: DependensiFarmasi) {
       const r = await repo.resep(p.fasyankes_id, resepId);
       if (!r) return gagal('tidak_ditemukan', G.resepTidakAda);
       if (r.status === 'siap' || r.status === 'diserahkan') return gagal('konflik', G.statusTidakSah);
-      const item = (m.item ?? []).map((i) => ({ master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai.trim(), bentuk: i.bentuk?.trim() || null, rute: i.rute?.trim() || null, jumlah: Number(i.jumlah) }));
-      const ids = [...new Set(item.map((i) => i.master_obat_id))];
+      // Tanpa `item` dalam permintaan: hanya telaah yang dicatat, item resep dan tagihan obat tidak disentuh.
+      const item = m.item ? m.item.map((i) => ({ master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai.trim(), bentuk: i.bentuk?.trim() || null, rute: i.rute?.trim() || null, jumlah: Number(i.jumlah) })) : null;
+      const ids = [...new Set((item ?? []).map((i) => i.master_obat_id))];
       const obat = ids.length ? await repo.obatAktifDari(p.fasyankes_id, ids) : [];
       if (obat.length !== ids.length) return gagal('tidak_valid', G.obatTidakAda, 'item');
       const h = await repo.catatTelaah(p.fasyankes_id, resepId, p.id, m, item, obat);
       if (h === 'status_berubah') return gagal('konflik', G.statusTidakSah);
       if (h === 'tagihan_terkunci') return gagal('konflik', G.itemTerkunci, 'item');
-      await catat(p, 'input', 'telaah_resep', resepId, `Telaah resep ${r.nomor_resep}: ${m.administratif && m.farmasetik && m.klinis ? 'terpenuhi' : 'belum terpenuhi'}, ${item.length} item obat`, alamat);
+      await catat(p, 'input', 'telaah_resep', resepId, `Telaah resep ${r.nomor_resep}: ${m.administratif && m.farmasetik && m.klinis ? 'terpenuhi' : 'belum terpenuhi'}, ${item ? `${item.length} item obat` : 'item obat tidak diubah'}`, alamat);
       return { ok: true, data: (await repo.resep(p.fasyankes_id, resepId))! };
     },
 

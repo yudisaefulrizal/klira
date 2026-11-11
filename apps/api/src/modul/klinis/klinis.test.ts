@@ -51,8 +51,8 @@ function buatDunia(tahapAwal: TahapLayanan = 'pemeriksaan') {
       return n;
     }),
     salinan: async (_f: number, id: number) => ({ sumber: { id, mulai: 'x' }, anamnesis: null, diagnosis: null, tindakan: null }),
-    // Tarif tindakan milik fasyankes 1: id 3 dan 4.
-    tarifTindakanSah: async (f: number, ids: number[]) => (f === 1 ? ids.filter((i) => i === 3 || i === 4) : []),
+    // Tarif tindakan milik fasyankes 1: id 3 dan 4, keduanya berkode ICD-9-CM 86.59.
+    tarifTindakanSah: async (f: number, ids: number[]) => (f === 1 ? ids.filter((i) => i === 3 || i === 4).map((id) => ({ id, kode_icd9cm: '86.59' })) : []),
     sinkronTagihanTindakan: jest.fn(async () => dunia.sinkron),
   } as unknown as RepositoriKlinis;
   const l = buatLayananKlinis({
@@ -140,6 +140,13 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
     dunia.sinkron = 'terkunci';
     const terkunci = await l.simpanBagian(saya, 10, 'tindakan', { item: [dasar] }, 'Koreksi');
     expect(terkunci).toMatchObject({ ok: true, data: { tersimpan: true, pesan_tagihan: expect.stringContaining('kasir') } });
+  });
+
+  it('tindakan bertarif ditolak bila kodenya berbeda dari kode ICD-9-CM tindakan klinik', async () => {
+    const { l, repo } = buatDunia();
+    const h = await l.simpanBagian(saya, 10, 'tindakan', { item: [{ kode: '89.52', nama: 'EKG', mulai: '2026-10-25T01:00:00Z', tarif_layanan_id: 3 }] }, undefined);
+    expect(h).toMatchObject({ ok: false, kode: 'tidak_valid', rincian: [{ jalur: 'isi.item' }] });
+    expect(repo.sinkronTagihanTindakan).not.toHaveBeenCalled();
   });
 
   it('tindakan tanpa tarif dan jumlah 1 menghasilkan isi (dan hash) yang sama seperti sebelum P5', async () => {

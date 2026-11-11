@@ -81,8 +81,10 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
           if (!(await repo.penggunaAda(p.fasyankes_id, id))) return gagal('tidak_valid', KLINIS.galat.pelaksanaTidakSah, 'isi.item');
         }
         const tarifIds = [...new Set(item.flatMap((x) => (x.tarif_layanan_id ? [x.tarif_layanan_id] : [])))];
-        const sah = new Set(await repo.tarifTindakanSah(p.fasyankes_id, tarifIds));
+        const sah = new Map((await repo.tarifTindakanSah(p.fasyankes_id, tarifIds)).map((t) => [t.id, t.kode_icd9cm]));
         if (tarifIds.some((id) => !sah.has(id))) return gagal('tidak_valid', KLINIS.galat.tarifTindakanTidakAda, 'isi.item');
+        // Kode tindakan bertarif harus sama dengan kode ICD-9-CM tindakan klinik itu (P5), agar kode klaim dan tagihan tidak menyimpang.
+        if (item.some((x) => x.tarif_layanan_id && sah.get(x.tarif_layanan_id) !== x.kode)) return gagal('tidak_valid', KLINIS.galat.kodeTarifTidakCocok, 'isi.item');
         isi = { item };
       }
       // Bagian narasi yang belum pernah diisi tidak menghasilkan catatan kosong.

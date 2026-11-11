@@ -102,7 +102,7 @@ export function AdmisiRawatInap({ onTutup, onSelesai }: Props) {
           {asal?.asal && <Peringatan nada="biru">{A.asalInfo(asal.asal.poli_nama)}</Peringatan>}
           {asal && !asal.asal && !asal.rawat_inap_id && <span style={kecil}>{A.tanpaAsal}</span>}
           {!asal?.asal && k.pasien_id !== null && (
-            <Pilihan id="adm-cara" label={KUNJUNGAN.caraBayar} opsi={KUNJUNGAN.caraBayarOpsi} value={k.cara_pembayaran} onChange={(e) => setK({ ...k, cara_pembayaran: e.target.value as KeadaanAdmisi['cara_pembayaran'] })} />
+            <Pilihan id="adm-cara" label={KUNJUNGAN.caraBayar} opsi={CARA_PEMBAYARAN.opsi} value={k.cara_pembayaran} onChange={(e) => setK({ ...k, cara_pembayaran: e.target.value as KeadaanAdmisi['cara_pembayaran'] })} />
           )}
           {k.pasien_id !== null && caraBayar === 'asuransi' && <KeteranganAsuransi pasienId={k.pasien_id} />}
         </Kolom>

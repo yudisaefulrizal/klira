@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GALAT, KUNJUNGAN, TOMBOL } from '@klira/shared';
+import { CARA_PEMBAYARAN, GALAT, KUNJUNGAN, TOMBOL } from '@klira/shared';
 import type { KunjunganDto, OpsiKunjunganDto, PasienBarisDto } from '@klira/shared';
 import { daftarkanKunjungan, opsiKunjungan } from '../../api-klien/kunjungan';
 import { daftarPasien } from '../../api-klien/pasien';
@@ -206,7 +206,7 @@ export function PendaftaranKunjungan({ pasien, onTutup, onSelesai }: Props) {
               opsi={[{ nilai: '', label: KUNJUNGAN.tanpaDokter }, ...dokter.map((d) => ({ nilai: String(d.id), label: d.nama }))]}
             />
           </Baris>
-          <Pilihan id="kunjungan-bayar" label={KUNJUNGAN.caraBayar} value={keadaan.cara_pembayaran} onChange={(e) => ubah({ cara_pembayaran: e.target.value as KeadaanKunjungan['cara_pembayaran'] })} opsi={KUNJUNGAN.caraBayarOpsi} />
+          <Pilihan id="kunjungan-bayar" label={KUNJUNGAN.caraBayar} value={keadaan.cara_pembayaran} onChange={(e) => ubah({ cara_pembayaran: e.target.value as KeadaanKunjungan['cara_pembayaran'] })} opsi={CARA_PEMBAYARAN.opsi} />
           {keadaan.cara_pembayaran === 'jkn' && (
             <>
               <Isian id="kunjungan-sep" label={KUNJUNGAN.sep} value={keadaan.nomor_sep} onChange={(e) => ubah({ nomor_sep: e.target.value })} galat={tampil('nomor_sep')} autoComplete="off" />

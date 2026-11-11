@@ -669,7 +669,6 @@ export const KUNJUNGAN = {
   dpjp: 'DPJP',
   tanpaDpjp: 'Belum ditentukan',
   caraBayar: 'Cara pembayaran',
-  caraBayarOpsi: [{ nilai: 'umum', label: 'Umum' }, { nilai: 'jkn', label: 'JKN' }, { nilai: 'asuransi', label: 'Asuransi lain' }],
   dokter: 'Dokter',
   tanpaDokter: 'Belum ditentukan',
   sep: 'Nomor SEP',
@@ -709,7 +708,7 @@ export const KLINIS = {
   tombol: { riwayat: 'Riwayat', salin: 'Salin dari kunjungan sebelumnya', favorit: 'Favorit dan templat', keluarga: 'Family folder', simpan: 'Simpan dan sahkan', menyimpan: 'Menyimpan...', skrining: 'Skrining', periksa: 'Periksa' },
   konteks: {
     alergi: 'Alergi', diagnosisAktif: 'Diagnosis aktif', tandaVital: 'Tanda vital', tidakAda: 'Belum tercatat', memuat: 'Memuat data pasien...',
-    gagal: 'Data kunjungan gagal dimuat.', umum: 'Umum', jkn: 'JKN', asuransi: 'Asuransi lain',
+    gagal: 'Data kunjungan gagal dimuat.',
   },
   anamnesis: {
     keluhanUtama: 'Keluhan utama', penyerta: 'Keluhan penyerta', riwayatPribadi: 'Riwayat penyakit pribadi', riwayatKeluarga: 'Riwayat penyakit keluarga',
@@ -775,6 +774,7 @@ export const KLINIS = {
     angka: 'Isi dengan angka.', rentang: (min: number, maks: number) => `Nilai harus antara ${min} dan ${maks}.`, tandaVitalKosong: 'Isi minimal satu tanda vital.',
     pemeriksaanKosong: 'Isi minimal satu bidang pemeriksaan.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10 atau E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
     tindakanGanda: 'Tindakan yang sama (kode dan tindakan klinik) tidak boleh dicatat dua kali.', jumlahTindakan: 'Jumlah tindakan 1 sampai 100.', tarifTindakanTidakAda: 'Tindakan klinik tidak ditemukan.',
+    kodeTarifTidakCocok: 'Kode ICD-9-CM tindakan tidak sesuai dengan tindakan klinik yang dipilih.',
     diagnosisKosong: 'Tambahkan minimal satu diagnosis.', diagnosisUtama: 'Pilih tepat satu diagnosis utama.', kodeGanda: 'Kode tidak boleh ganda.', selesaiSebelumMulai: 'Waktu selesai tidak boleh sebelum mulai.',
     tujuanRujuk: 'Tujuan rujukan wajib diisi.', pilihRencana: 'Pilih rencana tindak lanjut.', pencarianKosong: 'Isi kata pencarian.', tidakAdaPerubahan: 'Tidak ada perubahan.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganTertutup: 'Kunjungan sudah melewati tahap pemeriksaan. Perubahan dilakukan lewat perbaikan catatan di Rekam medis.',
