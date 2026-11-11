@@ -76,8 +76,8 @@
 | Pemusnahan | Modal | Pelindungan data | Sudah dibangun | ✔ |
 | Prosesor | Modal | Pelindungan data | Sudah dibangun | ✔ |
 | Beranda tugas | Halaman | - | Sudah dibangun | ✔ |
-| Pilih dokter saat pendaftaran (P1, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Pendaftaran kunjungan | Bisa dikerjakan | ☐ |
-| Pembayaran beberapa metode (P4, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Pembayaran dan serah terima obat | Bisa dikerjakan | ☐ |
-| Cara bayar asuransi lain dan data penjamin (P2, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Registrasi pasien baru | Bisa dikerjakan | ☐ |
-| Daftar tindakan klinik dan tagihan tindakan otomatis (P5, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Tagihan | Menunggu bagian lain | ☐ |
-| Resep teks bebas dan item oleh farmasi (P3, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Telaah dan siapkan resep | Menunggu bagian lain | ☐ |
+| Pilih dokter saat pendaftaran (P1, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Pendaftaran kunjungan | Bisa dikerjakan | ✔ |
+| Pembayaran beberapa metode (P4, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Pembayaran dan serah terima obat | Bisa dikerjakan | ✔ |
+| Cara bayar asuransi lain dan data penjamin (P2, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Registrasi pasien baru | Bisa dikerjakan | ✔ |
+| Daftar tindakan klinik dan tagihan tindakan otomatis (P5, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Tagihan | Menunggu bagian lain | ✔ |
+| Resep teks bebas dan item oleh farmasi (P3, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Telaah dan siapkan resep | Menunggu bagian lain | ✔ |
