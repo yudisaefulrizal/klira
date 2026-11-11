@@ -96,6 +96,8 @@ async function cariMaster(jenis, nama) {
 }
 async function masterAda(jenis, nama, badan) {
   const ada = await cariMaster(jenis, nama);
+  // Tarif tindakan lama (sebelum P5) belum berkode ICD-9-CM: lengkapi agar bisa dipakai pencatatan tindakan.
+  if (ada && jenis === 'tarif' && badan.jenis === 'tindakan' && !ada.kode_icd9cm) await wajib(`lengkapi ICD-9-CM tarif ${nama}`, 'admin', 'PATCH', `/master/tarif/${ada.id}`, badan);
   if (ada) return ada.id;
   const d = await wajib(`${jenis}: ${nama}`, 'admin', 'POST', `/master/${jenis}`, badan);
   return d?.id;
@@ -113,13 +115,17 @@ async function siapkanMaster(id) {
   const ruang = await masterAda('ruang', 'Ruang Observasi', { nama: 'Ruang Observasi', induk_id: poli.umum });
   for (const b of ['Bed 1', 'Bed 2', 'Bed 3']) await masterAda('bed', b, { nama: b, induk_id: ruang });
 
+  // [kode, nama, jenis, harga umum, harga JKN, kode ICD-9-CM (tindakan)]. Tindakan klinik boleh tanpa harga (kasir melengkapi per kunjungan).
   const tarif = [
     ['KONS-UMUM', 'Konsultasi dokter umum', 'konsultasi', 50_000, 0],
     ['KONS-GIGI', 'Konsultasi dokter gigi', 'konsultasi', 75_000, 0],
     ['KONS-KIA', 'Pemeriksaan kehamilan (ANC)', 'konsultasi', 60_000, 0],
-    ['TIN-LUKA', 'Perawatan luka sederhana', 'tindakan', 60_000, null],
-    ['TIN-CABUT', 'Pencabutan gigi', 'tindakan', 150_000, null],
-    ['TIN-NEBU', 'Nebulisasi', 'tindakan', 75_000, null],
+    ['TIN-JAHIT-KECIL', 'Jahit luka ≤ 5 cm', 'tindakan', 75_000, null, '86.59'],
+    ['TIN-JAHIT-BESAR', 'Jahit luka > 5 cm', 'tindakan', 150_000, null, '86.59'],
+    ['TIN-KUKU', 'Ekstraksi kuku', 'tindakan', 200_000, null, '86.23'],
+    ['TIN-NEBU', 'Nebulisasi', 'tindakan', null, null, '93.94'],
+    ['TIN-LUKA', 'Perawatan luka sederhana', 'tindakan', 60_000, null, '93.57'],
+    ['TIN-CABUT', 'Pencabutan gigi', 'tindakan', 150_000, null, '23.09'],
     ['KMR-OBS', 'Kamar observasi per hari', 'kamar', 250_000, null],
     ['LAB-GDS', 'Gula darah sewaktu', 'lab', 25_000, null],
     ['LAB-HB', 'Hemoglobin', 'lab', 30_000, null],
@@ -127,7 +133,7 @@ async function siapkanMaster(id) {
     ['LAB-AU', 'Asam urat', 'lab', 35_000, null],
   ];
   const idTarif = {};
-  for (const [kode, nama, jenis, harga_umum, harga_jkn] of tarif) idTarif[kode] = await masterAda('tarif', kode, { kode, nama, jenis, harga_umum, harga_jkn });
+  for (const [kode, nama, jenis, harga_umum, harga_jkn, kode_icd9cm] of tarif) idTarif[kode] = await masterAda('tarif', kode, { kode, nama, jenis, harga_umum, harga_jkn, ...(kode_icd9cm ? { kode_icd9cm } : {}) });
 
   // Jadwal: Senin-Sabtu (dan Minggu, agar demo bisa kapan saja).
   const jadwalAda = (await api('admin', 'GET', '/master/jadwal?ukuran=100')).data?.total ?? 0;
@@ -281,9 +287,11 @@ async function siapkanPasien() {
 
 // ---------------------------------------------------------------- alur kunjungan
 const KASUS = [
-  { keluhan: 'Demam dan batuk pilek 3 hari', ttv: { sistolik: 120, diastolik: 80, nadi: 92, suhu: 38.2, respirasi: 20, spo2: 98, berat_badan: 60, tinggi_badan: 158 },
-    periksa: { keadaan_umum: 'Tampak sakit ringan', kepala_leher: 'Faring hiperemis', thorax: 'Vesikuler, tidak ada ronki', abdomen: 'Supel' },
+  { keluhan: 'Demam dan batuk pilek 3 hari, sesak ringan', ttv: { sistolik: 120, diastolik: 80, nadi: 92, suhu: 38.2, respirasi: 22, spo2: 96, berat_badan: 60, tinggi_badan: 158 },
+    periksa: { keadaan_umum: 'Tampak sakit ringan', kepala_leher: 'Faring hiperemis', thorax: 'Vesikuler, wheezing minimal', abdomen: 'Supel' },
     dx: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }],
+    // Tindakan klinik tanpa harga acuan: kasir melengkapi harga sebelum pembayaran.
+    tindakan: [['TIN-NEBU', '93.94', 'Nebulisasi', 1]],
     resep: [['Parasetamol 500 mg', '3 x 1 tablet sesudah makan bila demam', 10], ['Ambroksol 30 mg', '3 x 1 tablet', 10], ['Setirizin 10 mg', '1 x 1 tablet malam', 5]] },
   { keluhan: 'Kontrol tekanan darah tinggi, pusing tengkuk', ttv: { sistolik: 160, diastolik: 100, nadi: 84, suhu: 36.6, respirasi: 18, spo2: 97, berat_badan: 78, tinggi_badan: 168 },
     periksa: { keadaan_umum: 'Baik, kompos mentis', thorax: 'Jantung reguler, murmur (-)', ekstremitas: 'Edema (-)' },
@@ -297,16 +305,17 @@ const KASUS = [
     periksa: { keadaan_umum: 'Baik', ekstremitas: 'Sensibilitas kaki baik' },
     dx: [{ kode: 'E11.9', nama: 'Type 2 diabetes mellitus without complications', peran: 'utama' }], lab: ['GDS'],
     resep: [['Metformin 500 mg', '2 x 1 tablet sesudah makan', 60]] },
-  { keluhan: 'Nyeri sendi lutut kanan', ttv: { sistolik: 125, diastolik: 80, nadi: 78, suhu: 36.5, respirasi: 16, spo2: 98, berat_badan: 70, tinggi_badan: 163 },
-    periksa: { keadaan_umum: 'Baik', ekstremitas: 'Lutut kanan nyeri gerak, bengkak minimal' },
-    dx: [{ kode: 'M25.56', nama: 'Pain in joint, lower leg', peran: 'utama' }],
+  { keluhan: 'Luka robek telapak tangan kanan terkena pisau dapur', ttv: { sistolik: 125, diastolik: 80, nadi: 84, suhu: 36.5, respirasi: 16, spo2: 98, berat_badan: 70, tinggi_badan: 163 },
+    periksa: { keadaan_umum: 'Baik', ekstremitas: 'Vulnus laceratum palmar dekstra panjang 3 cm, perdarahan aktif minimal' },
+    dx: [{ kode: 'S61.9', nama: 'Open wound of wrist and hand part, part unspecified', peran: 'utama' }],
+    tindakan: [['TIN-JAHIT-KECIL', '86.59', 'Jahit luka ≤ 5 cm', 1], ['TIN-LUKA', '93.57', 'Perawatan luka sederhana', 1]],
     resep: [['Ibuprofen 400 mg', '3 x 1 tablet sesudah makan', 10]] },
 ];
 
 /** Skenario per pasien: sampai tahap mana kunjungannya dibawa. */
 const TARGET = ['ditutup', 'ditutup', 'ditutup', 'kasir', 'resep', 'lab', 'pemeriksaan', 'skrining', 'antre', 'antre'];
 
-async function jalankanKunjungan(pasien, poli, idObat, idLab) {
+async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
   console.log('\n[6] Kunjungan rawat jalan hari ini dengan berbagai tahap');
   const sudah = (await api('daftar', 'GET', `/pasien?tanggal=${hariIni}&ukuran=100`)).data?.data?.filter((p) => p.kunjungan) ?? [];
   if (sudah.length) { console.log(`  • ${sudah.length} kunjungan hari ini sudah ada, dilewati`); return; }
@@ -339,6 +348,11 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab) {
     await wajib('diagnosis ICD-10 (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/diagnosis`, { isi: { item: kasus.dx } });
     await wajib('assessment (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/assessment`, { isi: { isi: `${kasus.dx[0].nama}. Kondisi umum stabil.` } });
     await wajib('plan (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/plan`, { isi: { isi: 'Terapi simtomatik, edukasi, kontrol bila keluhan menetap.' } });
+    if (kasus.tindakan) {
+      // Tindakan dari daftar tindakan klinik: item tagihan tindakan dibuat otomatis (harga sesuai cara bayar).
+      const item = kasus.tindakan.map(([kodeTarif, kode, nama, jumlah]) => ({ kode, nama, tarif_layanan_id: idTarif[kodeTarif] ?? null, jumlah, mulai: new Date(Date.now() - 10 * 60_000).toISOString() }));
+      await wajib('tindakan dari daftar tindakan klinik (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/tindakan`, { isi: { item } });
+    }
     if (target === 'pemeriksaan') continue;
     const labKode = kasus.lab ?? (target === 'lab' ? ['GDS', 'HB'] : null);
     if (labKode) {
@@ -368,7 +382,11 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab) {
     // Kasir menambah biaya konsultasi dari master tarif (harga JKN untuk pasien JKN).
     const kas = (await api('kasir', 'GET', `/kunjungan/${kid}/kasir`)).data;
     const kons = kas?.tarif?.find((t) => t.kode === 'KONS-UMUM');
-    const g = kons && await wajib('tambah konsultasi dari tarif (kasir)', 'kasir', 'POST', `/kunjungan/${kid}/tagihan/item`, { tarif_id: kons.id, jumlah: 1 });
+    let g = kons && await wajib('tambah konsultasi dari tarif (kasir)', 'kasir', 'POST', `/kunjungan/${kid}/tagihan/item`, { tarif_id: kons.id, jumlah: 1 });
+    // Tindakan tanpa harga acuan (mis. nebulisasi) dilengkapi kasir agar tagihan lengkap.
+    for (const it of (g ?? kas)?.tagihan?.item?.filter((x) => x.harga === null) ?? []) {
+      g = await wajib(`lengkapi harga ${it.nama} (kasir)`, 'kasir', 'POST', `/kunjungan/${kid}/tagihan/item/${it.id}/harga`, { harga: 50_000 }) ?? g;
+    }
     const total = (g ?? kas)?.tagihan?.total ?? 0;
     // Pasien ketiga dibayar dua metode (QRIS separuh, sisanya tunai dibulatkan: kembalian hanya dari tunai).
     const barisBayarDemo = (dua, t) => {
@@ -427,7 +445,7 @@ await siapkanWebsite();
 const idObat = await siapkanFarmasi();
 const idLab = await siapkanLab(idTarif);
 const pasien = await siapkanPasien();
-await jalankanKunjungan(pasien, poli, idObat, idLab);
+await jalankanKunjungan(pasien, poli, idObat, idLab, idTarif);
 await ujiIzin();
 const kesiapan = (await api('admin', 'GET', '/master/kesiapan')).data?.item ?? [];
 console.log('\nKesiapan pengaturan awal:', kesiapan.map((k) => `${k.kunci}=${k.jumlah}${k.ok ? '' : '(!)'}`).join(', '));

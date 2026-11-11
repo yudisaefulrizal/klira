@@ -1,5 +1,5 @@
 import {
-  batasAjukanUlang, batasPengajuan, berkasKurang, KLAIM, kodeKlaimBeda, sisaHariBatas, STATUS_KLAIM, statusAwalKlaim, statusKlaimEfektif, TRANSISI_KLAIM,
+  batasAjukanUlang, batasPengajuan, berkasKurang, KLAIM, kodeKlaimBeda, sisaHariBatas, STATUS_KLAIM, statusAwalKlaim, statusKlaimEfektif, TRANSISI_KLAIM, unikPerKode,
 } from '@klira/shared';
 import type {
   BagianKlinis, BerkasKlaim, FilterKlaim, HalamanKlaimDto, KandidatKlaimDto, KlaimDto, KodeKlaim, PenggunaSaya, PengkodeanIsi, SiapkanKlaimMasukan, UbahBerkasKlaimMasukan, UbahStatusKlaimMasukan,
@@ -39,7 +39,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, sekarang = () => new D
     const final = await rm.pengkodean(fas, kunjunganId);
     if (final) return { diagnosis: final.isi.diagnosis.map((d) => ({ kode: d.kode, nama: d.nama })), tindakan: final.isi.tindakan.map((t) => ({ kode: t.kode, nama: t.nama })), final: true };
     const [d, t] = await Promise.all([baca.bacaBagian(fas, kunjunganId, 'diagnosis') as Promise<DiagnosisDokter | null>, baca.bacaBagian(fas, kunjunganId, 'tindakan') as Promise<TindakanDokter | null>]);
-    return { diagnosis: (d?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama })), tindakan: (t?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama })), final: false };
+    return { diagnosis: (d?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama })), tindakan: unikPerKode((t?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama }))), final: false };
   }
 
   async function keDto(fas: number, k: KlaimBaris, kunj: KunjunganKlaim | undefined, resume: Set<number>, riwayat: Awaited<ReturnType<typeof repo.riwayat>>, nama: Map<number, string>): Promise<KlaimDto> {

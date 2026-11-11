@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { POLA_ICD9CM } from '../klinis';
 import { MASTER } from '../teks';
 import { profilProfesiMasukan, statusOperasional } from './entitas';
 import { idPositif, tanggal, teksOpsional, teksWajib } from './umum';
@@ -44,13 +45,40 @@ export const jadwalMasukan = jadwalDasar
   .refine((j) => j.jam_selesai > j.jam_mulai, { path: ['jam_selesai'], message: MASTER.galat.jamSelesai })
   .refine((j) => !j.berlaku_sampai || j.berlaku_sampai >= j.berlaku_dari, { path: ['berlaku_sampai'], message: MASTER.galat.berlakuSampai });
 
-export const tarifMasukan = z.object({
-  kode: teksWajib(50),
-  nama: teksWajib(200),
-  jenis: jenisTarif,
-  harga_umum: harga,
-  harga_jkn: harga.nullish(),
-});
+/** Awalan kode tarif tindakan yang dibuat otomatis bila kode dikosongkan (TND-001, TND-002, ... per fasyankes). */
+export const AWALAN_KODE_TINDAKAN = 'TND-';
+/** Kode tindakan berikutnya dari kode yang sudah ada: nomor terbesar berpola TND-nnn ditambah satu (minimal tiga digit). */
+export function kodeTindakanBerikut(kodeAda: readonly string[]): string {
+  const pola = new RegExp(`^${AWALAN_KODE_TINDAKAN}(\\d+)$`);
+  const maks = kodeAda.reduce((m, k) => Math.max(m, Number(pola.exec(k)?.[1] ?? 0)), 0);
+  return `${AWALAN_KODE_TINDAKAN}${String(maks + 1).padStart(3, '0')}`;
+}
+
+/**
+ * Tarif layanan. Jenis tindakan: kode ICD-9-CM wajib (keberadaan di kamus diperiksa server), harga umum boleh kosong,
+ * kode tarif boleh kosong (dibuat otomatis). Jenis lain: kode dan harga umum wajib, kode ICD-9-CM diabaikan.
+ */
+export const tarifMasukan = z
+  .object({
+    kode: teksOpsional(50),
+    nama: teksWajib(200),
+    jenis: jenisTarif,
+    harga_umum: harga.nullish(),
+    harga_jkn: harga.nullish(),
+    kode_icd9cm: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? null : v), z.string().trim().regex(POLA_ICD9CM, MASTER.galat.icd9Format).nullish()),
+  })
+  .superRefine((d, ctx) => {
+    if (d.jenis === 'tindakan') {
+      if (!d.kode_icd9cm) ctx.addIssue({ code: 'custom', path: ['kode_icd9cm'], message: MASTER.galat.icd9Wajib });
+      return;
+    }
+    if (!d.kode) ctx.addIssue({ code: 'custom', path: ['kode'], message: MASTER.galat.kodeWajib });
+    if (d.harga_umum === null || d.harga_umum === undefined) ctx.addIssue({ code: 'custom', path: ['harga_umum'], message: MASTER.galat.hargaWajib });
+  })
+  .transform((d) => ({
+    kode: d.kode || null, nama: d.nama, jenis: d.jenis, harga_umum: d.harga_umum ?? null, harga_jkn: d.harga_jkn ?? null,
+    kode_icd9cm: d.jenis === 'tindakan' ? (d.kode_icd9cm ?? null) : null,
+  }));
 
 export const SKEMA_MASTER = {
   poli: poliMasukan, ruang: ruangMasukan, bed: bedMasukan, praktisi: praktisiMasukan, jadwal: jadwalMasukan, tarif: tarifMasukan,
@@ -76,7 +104,9 @@ export const sumberOpsiMaster = z.enum(SUMBER_OPSI_MASTER);
 export type SumberOpsiMaster = (typeof SUMBER_OPSI_MASTER)[number];
 export type OpsiMasterDto = { nilai: string; label: string };
 
-export type TipeBidang = 'teks' | 'angka' | 'tanggal' | 'waktu' | 'pilihan' | 'rujukan';
+export type TipeBidang = 'teks' | 'angka' | 'tanggal' | 'waktu' | 'pilihan' | 'rujukan' | 'icd9cm';
+/** Syarat bergantung bidang lain: nilai bidang `kunci` sama dengan `nilai`. */
+export type SyaratBidang = { kunci: string; nilai: string };
 /** Definisi bidang untuk bentuk generik MODAL-1: satu definisi per jenis master, bukan modal terpisah (3.3). */
 export type BidangMaster = {
   kunci: string;
@@ -93,6 +123,12 @@ export type BidangMaster = {
   numerik?: boolean;
   /** Penjelasan singkat di bawah kolom untuk istilah teknis. */
   petunjuk?: string;
+  /** Hanya tampil (dan dikirim) bila syarat terpenuhi, mis. kode ICD-9-CM hanya untuk tarif tindakan. */
+  tampilBila?: SyaratBidang;
+  /** Wajib kecuali syarat terpenuhi, mis. harga umum tidak wajib untuk tarif tindakan. */
+  wajibKecuali?: SyaratBidang;
+  /** Petunjuk pengganti saat syarat `wajibKecuali` terpenuhi. */
+  petunjukKecuali?: string;
 };
 export type KolomMaster = { kunci: string; label: string };
 export type DefinisiMaster = { bidang: readonly BidangMaster[]; kolom: readonly KolomMaster[]; punyaStatus: boolean };
@@ -101,6 +137,7 @@ const opsiDari = (peta: Record<string | number, string>): OpsiMasterDto[] => Obj
 const B = MASTER.bidang;
 const K = MASTER.kolom;
 const P = MASTER.petunjuk;
+const SYARAT_TINDAKAN: SyaratBidang = { kunci: 'jenis', nilai: 'tindakan' };
 const bidangLokasi = (induk: BidangMaster[]): BidangMaster[] => [
   { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 },
   ...induk,
@@ -151,13 +188,14 @@ export const DEFINISI_MASTER: Record<JenisMaster, DefinisiMaster> = {
   },
   tarif: {
     bidang: [
-      { kunci: 'kode', label: B.kode, tipe: 'teks', wajib: true, maks: 50 },
-      { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 },
       { kunci: 'jenis', label: B.jenis, tipe: 'pilihan', wajib: true, opsi: opsiDari(MASTER.jenisTarif), nilaiAwal: 'konsultasi' },
-      { kunci: 'harga_umum', label: B.harga_umum, tipe: 'angka', wajib: true, petunjuk: P.perubahanHarga },
+      { kunci: 'kode', label: B.kode, tipe: 'teks', wajib: true, maks: 50, wajibKecuali: SYARAT_TINDAKAN, petunjukKecuali: P.kodeTarif },
+      { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 },
+      { kunci: 'kode_icd9cm', label: B.kode_icd9cm, tipe: 'icd9cm', wajib: true, tampilBila: SYARAT_TINDAKAN, petunjuk: P.kode_icd9cm },
+      { kunci: 'harga_umum', label: B.harga_umum, tipe: 'angka', wajib: true, petunjuk: P.perubahanHarga, wajibKecuali: SYARAT_TINDAKAN, petunjukKecuali: P.hargaTindakan },
       { kunci: 'harga_jkn', label: B.harga_jkn, tipe: 'angka', petunjuk: P.perubahanHarga },
     ],
-    kolom: [{ kunci: 'kode', label: K.kode }, { kunci: 'nama', label: K.nama }, { kunci: 'jenis', label: K.jenis }, { kunci: 'harga_umum', label: K.hargaUmum }, { kunci: 'harga_jkn', label: K.hargaJkn }],
+    kolom: [{ kunci: 'kode', label: K.kode }, { kunci: 'nama', label: K.nama }, { kunci: 'jenis', label: K.jenis }, { kunci: 'kode_icd9cm', label: K.icd9cm }, { kunci: 'harga_umum', label: K.hargaUmum }, { kunci: 'harga_jkn', label: K.hargaJkn }],
     punyaStatus: true,
   },
   wilayah: {

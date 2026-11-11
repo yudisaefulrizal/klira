@@ -74,7 +74,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const [galat, setGalat] = useState<string | null>(null);
   const [memproses, setMemproses] = useState(false);
   const [selesaiDipilih, setSelesaiDipilih] = useState(true);
-  const [hasil, setHasil] = useState<{ jumlah: number; kunjungan: KunjunganDto } | null>(null);
+  const [hasil, setHasil] = useState<{ jumlah: number; kunjungan: KunjunganDto; pesanTagihan?: string | null } | null>(null);
   const [panel, setPanel] = useState<PanelTerbuka>(null);
   const [favorit, setFavorit] = useState<FavoritDto[]>([]);
   const adaTersimpan = useRef(false);
@@ -224,12 +224,14 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     let labBerjalan = false;
     let resepBerjalan = false;
     let disimpan = 0;
+    let pesanTagihan: string | null = null;
     let bagianBerjalan: BagianKlinis | null = null;
     try {
       for (const r of rencana) {
         bagianBerjalan = r.bagian;
         const h = await simpanBagian(kunjunganId, r.bagian, isiBagian(r.bagian, keadaan), disahkan[r.bagian] ? keadaan.alasan : undefined);
         if (h.tersimpan) disimpan += 1;
+        if (h.pesan_tagihan) pesanTagihan = h.pesan_tagihan;
         adaTersimpan.current = adaTersimpan.current || h.tersimpan;
       }
       bagianBerjalan = null;
@@ -257,7 +259,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         adaTersimpan.current = true;
       }
       hapus();
-      setHasil({ jumlah: disimpan, kunjungan });
+      setHasil({ jumlah: disimpan, kunjungan, pesanTagihan });
     } catch (e) {
       const pesan = e instanceof GalatApi ? e.message : GALAT.umum;
       setGalat(resepBerjalan ? `Penyimpanan pemeriksaan belum lengkap pada bagian resep. ${pesan}` : labBerjalan ? `Penyimpanan pemeriksaan belum lengkap pada bagian lab. ${pesan}` : bagianBerjalan ? `${KLINIS.gagalSebagian(labelBagian[bagianBerjalan])} ${pesan}` : pesan);
@@ -339,6 +341,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
                       <span style={{ color: token.warna.teksRedup }}>{KLINIS.hasil.tahap}</span>
                       <Lencana warna={TAHAP_LAYANAN.warna(hasil.kunjungan.tahap_layanan)}>{TAHAP_LAYANAN.label(hasil.kunjungan.tahap_layanan)}</Lencana>
                     </Sebaris>
+                    {hasil.pesanTagihan && <Peringatan nada="kuning">{hasil.pesanTagihan}</Peringatan>}
                   </Kolom>
                 ),
                 aksi: <Tombol type="button" onClick={onSelesai}>{KLINIS.hasil.tutup}</Tombol>,

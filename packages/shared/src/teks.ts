@@ -446,6 +446,11 @@ export const MASTER = {
     indukJenis: 'Induk tidak sesuai dengan jenis lokasi.',
     penggunaSudahPunyaProfil: 'Pengguna ini sudah punya profil profesi; ubah profil yang ada.',
     kodeKembar: 'Kode sudah dipakai tarif lain.',
+    kodeWajib: 'Kode wajib diisi (kosongkan hanya untuk tindakan agar dibuat otomatis).',
+    hargaWajib: 'Harga umum wajib diisi untuk jenis selain tindakan.',
+    icd9Wajib: 'Pilih kode ICD-9-CM untuk tindakan.',
+    icd9Format: 'Kode ICD-9-CM tidak sah (contoh 86.59).',
+    icd9TidakAda: 'Kode ICD-9-CM tidak ada di kamus.',
     jenisTakDikenal: 'Jenis master tidak dikenal.',
     wilayahBacaSaja: 'Wilayah hanya baca.',
   },
@@ -454,7 +459,7 @@ export const MASTER = {
     pengguna_id: 'Pengguna', profesi: 'Profesi', nomor_sip: 'Nomor SIP', masa_berlaku_sip: 'Masa berlaku SIP', ihs_practitioner_id: 'IHS Practitioner ID',
     praktisi_id: 'Praktisi', lokasi_id: 'Poli', hari: 'Hari', jam_mulai: 'Jam mulai', jam_selesai: 'Jam selesai', kuota: 'Kuota',
     berlaku_dari: 'Berlaku dari', berlaku_sampai: 'Berlaku sampai',
-    kode: 'Kode', jenis: 'Jenis', harga_umum: 'Harga umum (Rp)', harga_jkn: 'Harga JKN (Rp, opsional)',
+    kode: 'Kode', jenis: 'Jenis', harga_umum: 'Harga umum (Rp)', harga_jkn: 'Harga JKN (Rp, opsional)', kode_icd9cm: 'Kode ICD-9-CM',
   },
   /** Penjelasan singkat di bawah kolom isian master yang memakai istilah teknis. */
   petunjuk: {
@@ -463,10 +468,14 @@ export const MASTER = {
     ihs_location_id: 'Kode lokasi ini di SATUSEHAT (Kemenkes) untuk keperluan integrasi. Boleh dikosongkan bila belum terdaftar.',
     ihs_practitioner_id: 'Kode tenaga kesehatan ini di SATUSEHAT (Kemenkes) untuk keperluan integrasi. Boleh dikosongkan bila belum ada.',
     nomor_sip: 'Nomor Surat Izin Praktik (SIP) tenaga kesehatan. Boleh dikosongkan.',
+    kodeTarif: 'Untuk tindakan boleh dikosongkan: kode dibuat otomatis (TND-001, TND-002, ...).',
+    hargaTindakan: 'Tindakan boleh tanpa harga acuan; kasir mengisi harganya per kunjungan. Perubahan harga hanya berlaku untuk layanan berikutnya.',
+    kode_icd9cm: 'Cari kode tindakan dari kamus ICD-9-CM. Satu kode boleh dipakai beberapa tindakan klinik (mis. jahit luka kecil dan besar).',
+    icd9Terpilih: (kode: string) => `Terpilih: ${kode}`, icd9Ganti: 'Ganti kode', icd9Cari: 'Cari ICD-9-CM', icd9Petunjuk: 'Ketik kode atau nama tindakan',
   },
   kolom: {
     induk: 'Induk', indukPoli: 'Poli', indukRuang: 'Ruang', sip: 'Nomor SIP', berlaku: 'Berlaku SIP', praktisi: 'Praktisi', poli: 'Poli', hari: 'Hari', jam: 'Jam', kuota: 'Kuota', periode: 'Periode',
-    kode: 'Kode', jenis: 'Jenis', hargaUmum: 'Harga umum', hargaJkn: 'Harga JKN', nama: 'Nama', profesi: 'Profesi', tingkat: 'Tingkat', indukKode: 'Kode induk', ihs: 'IHS ID', asal: 'Asal',
+    kode: 'Kode', jenis: 'Jenis', hargaUmum: 'Harga umum', hargaJkn: 'Harga JKN', icd9cm: 'ICD-9-CM', nama: 'Nama', profesi: 'Profesi', tingkat: 'Tingkat', indukKode: 'Kode induk', ihs: 'IHS ID', asal: 'Asal',
   },
 } as const;
 
@@ -725,6 +734,8 @@ export const KLINIS = {
   tindakan: {
     cari: 'Cari tindakan (ICD-9 CM)', petunjukCari: 'Ketik kode atau nama tindakan', kunjunganIni: 'Tindakan kunjungan ini', kosong: 'Belum ada tindakan. Lewati bila tidak ada tindakan.',
     kode: 'Kode ICD-9 CM', nama: 'Nama tindakan', performer: 'Pelaksana', mulai: 'Mulai', selesai: 'Selesai', hapus: 'Hapus', saya: 'Saya',
+    jumlah: 'Jumlah', daftarKlinik: 'Daftar tindakan klinik', kamus: 'Kamus ICD-9-CM', tanpaHarga: 'Tanpa harga acuan', tindakanKlinik: 'Tindakan klinik',
+    tagihanTerkunci: 'Tindakan tersimpan, tetapi tagihan tidak diubah karena sudah ada pembayaran atau kunjungan sudah ditutup. Minta kasir menyesuaikan tagihan secara manual.',
   },
   tindakLanjut: {
     jenis: 'Rencana', jenisOpsi: [{ nilai: 'pulang', label: 'Pulang' }, { nilai: 'rujuk', label: 'Rujuk keluar' }, { nilai: 'rawat_inap', label: 'Rawat inap' }],
@@ -763,6 +774,7 @@ export const KLINIS = {
   galat: {
     angka: 'Isi dengan angka.', rentang: (min: number, maks: number) => `Nilai harus antara ${min} dan ${maks}.`, tandaVitalKosong: 'Isi minimal satu tanda vital.',
     pemeriksaanKosong: 'Isi minimal satu bidang pemeriksaan.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10 atau E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
+    tindakanGanda: 'Tindakan yang sama (kode dan tindakan klinik) tidak boleh dicatat dua kali.', jumlahTindakan: 'Jumlah tindakan 1 sampai 100.', tarifTindakanTidakAda: 'Tindakan klinik tidak ditemukan.',
     diagnosisKosong: 'Tambahkan minimal satu diagnosis.', diagnosisUtama: 'Pilih tepat satu diagnosis utama.', kodeGanda: 'Kode tidak boleh ganda.', selesaiSebelumMulai: 'Waktu selesai tidak boleh sebelum mulai.',
     tujuanRujuk: 'Tujuan rujukan wajib diisi.', pilihRencana: 'Pilih rencana tindak lanjut.', pencarianKosong: 'Isi kata pencarian.', tidakAdaPerubahan: 'Tidak ada perubahan.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganTertutup: 'Kunjungan sudah melewati tahap pemeriksaan. Perubahan dilakukan lewat perbaikan catatan di Rekam medis.',
@@ -935,14 +947,20 @@ export const KASIR = {
   /** Melengkapi harga item tagihan yang belum berharga, langsung dari dialog pembayaran dan tutup kunjungan. */
   lengkapi: {
     judul: 'Item belum punya harga',
-    petunjuk: 'Isi harga agar tagihan lengkap, bisa dibayar, dan kunjungan bisa ditutup. Harga yang sudah terisi tidak bisa diubah dari sini. Agar item berikutnya otomatis berharga, isi harga di master pemeriksaan atau atur di Tarif layanan.',
+    petunjuk: 'Isi harga agar tagihan lengkap, bisa dibayar, dan kunjungan bisa ditutup. Harga yang sudah terisi diubah lewat Ubah harga di rincian tagihan. Agar item berikutnya otomatis berharga, isi harga di master pemeriksaan atau atur di Tarif layanan.',
     harga: (nama: string) => `Harga ${nama} (Rp)`, simpan: 'Simpan harga', menyimpan: 'Menyimpan...', tersimpan: 'Harga tersimpan.', tautanTarif: 'Buka Tarif layanan',
   },
   /** Menambah item tagihan dari master tarif (konsultasi, visite, tindakan, kamar) dan menghapus item tambahan. */
   tambah: {
     judul: 'Tambah item dari tarif', petunjuk: 'Untuk konsultasi, visite dokter, tindakan, atau kamar. Harga mengikuti master tarif (harga JKN untuk pasien JKN).',
     tarif: 'Tarif layanan', pilih: 'Pilih tarif', jumlah: 'Jumlah', simpan: 'Tambah', menyimpan: 'Menambah...', hapus: 'Hapus', menghapus: 'Menghapus...', tanpaTarif: 'Belum ada tarif aktif. Tambahkan di Daftar pasien > Tarif.',
-    manual: 'Tambahan kasir',
+    manual: 'Tambahan kasir', tanpaHarga: 'tanpa harga (isi setelah ditambah)', dariTindakan: 'Dari pencatatan tindakan',
+  },
+  /** Mengubah harga item tagihan per kunjungan (bukan obat) sebelum ada pembayaran; alasan wajib dan tercatat di audit. */
+  ubahHarga: {
+    aksi: 'Ubah harga', judul: 'Ubah harga item', item: 'Item', hargaSekarang: 'Harga sekarang', hargaAcuan: 'Harga acuan', hargaBaru: 'Harga baru (Rp)', alasan: 'Alasan perubahan',
+    alasanPetunjuk: 'Wajib. Tercatat di audit bersama harga lama dan baru.', simpan: 'Simpan harga', menyimpan: 'Menyimpan...', batal: 'Batal', diubah: 'Harga diubah',
+    petunjuk: 'Harga hanya berubah untuk kunjungan ini; master tarif tidak berubah.',
   },
   jkn: {
     ditanggung: 'Ditanggung JKN', petunjukBayar: 'Pasien JKN: biaya ditanggung BPJS dan diklaim setelah kunjungan ditutup. Catat pembayaran hanya untuk biaya di luar tanggungan (mis. naik kelas).',
@@ -977,6 +995,7 @@ export const KASIR = {
   galat: {
     pilihTarif: 'Pilih tarif layanan.', tarifTidakAda: 'Tarif tidak ditemukan atau tidak aktif.', itemBukanManual: 'Hanya item tambahan kasir yang bisa dihapus.', hapusMelebihiBayar: 'Item tidak bisa dihapus: total tagihan akan lebih kecil dari yang sudah dibayar.',
     angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', jumlahMinimal: 'Jumlah minimal 1.', metode: 'Pilih metode bayar.', metodeGanda: 'Metode bayar tidak boleh dipilih dua kali.', barisMinimal: 'Isi minimal satu metode bayar.', barisMaksimal: 'Maksimal tiga metode bayar.', nonTunaiLebih: 'Jumlah transfer dan QRIS melebihi sisa tagihan; kelebihan hanya boleh dari tunai.', alasanWajib: 'Alasan wajib diisi.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
+    hargaSama: 'Harga baru sama dengan harga sekarang.', ubahHargaObat: 'Harga obat mengikuti master obat dan tidak dapat diubah di sini.', ubahHargaKosong: 'Item belum punya harga; gunakan Lengkapi harga.', ubahHargaSudahBayar: 'Harga tidak dapat diubah setelah ada pembayaran.',
     itemTidakAda: 'Item tagihan tidak ditemukan.', hargaSudahAda: 'Harga item ini sudah terisi dan tidak dapat diubah dari sini.', tagihanTerkunci: 'Tagihan kunjungan yang sudah ditutup tidak dapat diubah.',
     kunjunganTidakAda: 'Kunjungan tidak ditemukan.', tahapSalah: 'Kunjungan belum di tahap kasir atau sudah ditutup.', tagihanBelumLengkap: 'Tagihan belum lengkap: ada item tanpa harga.', tagihanKosong: 'Belum ada tagihan pada kunjungan ini.', sudahLunas: 'Tagihan sudah lunas.',
     jumlahLebih: 'Jumlah melebihi sisa tagihan.', tanpaShift: 'Buka shift kasir terlebih dahulu.', shiftSudahAda: 'Anda sudah memiliki shift terbuka.', shiftTidakAda: 'Tidak ada shift terbuka.', resepBelumSiap: 'Ada resep yang belum siap di farmasi.', tidakAdaResep: 'Tidak ada resep yang perlu diserahkan.',

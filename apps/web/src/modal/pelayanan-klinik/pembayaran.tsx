@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR } from '@klira/shared';
-import type { KasirKunjunganDto, MetodeBayar } from '@klira/shared';
+import type { ItemTagihanDto, KasirKunjunganDto, MetodeBayar } from '@klira/shared';
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan } from '../../api-klien/kasir';
 import { GalatApi } from '../../api-klien/klien';
 import { token } from '../../gaya/token';
@@ -14,12 +14,13 @@ import { Pilihan } from '../../komponen/ui/pilihan';
 import { DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { BarisTabel, SelTabel, Tabel } from '../../komponen/ui/tabel';
 import { formatWaktu } from '../../util/penyaring-tab';
-import { awalBayar, bentukBayar, galatBayar, hapusBaris, ringkasBayar, tambahBaris, ubahBaris } from './keadaan-kasir';
+import { awalBayar, bentukBayar, galatBayar, hapusBaris, hargaDiubah, ringkasBayar, tambahBaris, ubahBaris, ubahHargaTersedia } from './keadaan-kasir';
 import type { KeadaanBayar } from './keadaan-kasir';
 import { KepalaPasien } from './kepala-pasien';
 import { rupiah } from './keadaan-order-lab';
 import { LengkapiHarga } from './lengkapi-harga';
 import { TambahItemTarif } from './tambah-item-tarif';
+import { UbahHarga } from './ubah-harga';
 import { Tombol } from '../../komponen/ui/tombol';
 
 type Props = { kunjunganId: number; onTutup: () => void; onSelesai: () => void };
@@ -37,6 +38,7 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   const [dicoba, setDicoba] = useState(false);
   const [memproses, setMemproses] = useState(false);
   const [berubah, setBerubah] = useState(false);
+  const [itemUbah, setItemUbah] = useState<ItemTagihanDto | null>(null);
 
   const muat = useCallback(async (sesuaikan = false) => {
     const h = await kasirKunjungan(kunjunganId);
@@ -106,12 +108,20 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
                   <SelTabel>
                     {i.nama}
                     {i.manual && <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}> · {KASIR.tambah.manual}</span>}
+                    {i.tindakan_sumber && <span style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}> · {KASIR.tambah.dariTindakan}</span>}
+                    {hargaDiubah(i) && <span style={{ display: 'block', color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{KASIR.ubahHarga.diubah}: {i.alasan_ubah_harga}</span>}
+                    {g && ubahHargaTersedia(i, g) && (
+                      <> · <Tombol type="button" varian="teks" disabled={memproses} aria-label={`${KASIR.ubahHarga.aksi} ${i.nama}`} onClick={() => setItemUbah(i)}>{KASIR.ubahHarga.aksi}</Tombol></>
+                    )}
                     {i.manual && g?.kunjungan.tahap_layanan !== 'ditutup' && (
                       <> · <Tombol type="button" varian="teks" disabled={memproses} aria-label={`${KASIR.tambah.hapus} ${i.nama}`} onClick={() => void jalankan(async () => terapkan(await hapusItemTagihan(kunjunganId, i.id)))}>{KASIR.tambah.hapus}</Tombol></>
                     )}
                   </SelTabel>
                   <SelTabel>{i.jumlah}</SelTabel>
-                  <SelTabel>{i.harga === null ? '-' : rupiah(i.harga)}</SelTabel>
+                  <SelTabel>
+                    {hargaDiubah(i) && <><s style={{ color: token.warna.teksRedup }} aria-label={`${KASIR.ubahHarga.hargaAcuan} ${rupiah(i.harga_acuan ?? 0)}`}>{rupiah(i.harga_acuan ?? 0)}</s>{' '}</>}
+                    {i.harga === null ? '-' : rupiah(i.harga)}
+                  </SelTabel>
                   <SelTabel style={{ textAlign: 'right' }}>{i.harga === null ? '-' : rupiah(i.harga * i.jumlah)}</SelTabel>
                 </BarisTabel>
               ))}
@@ -165,18 +175,21 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   ];
 
   return (
-    <ModalBertahap
-      judul={B.judul}
-      langkah={langkah}
-      indeks={indeks}
-      onIndeks={setIndeks}
-      konteks={g ? <KepalaPasien nama={g.kunjungan.pasien_nama} nomorRm={g.kunjungan.pasien_nomor_rm} /> : undefined}
-      catatan={info ? <Peringatan nada="biru">{info}</Peringatan> : undefined}
-      galat={galat}
-      onTutup={() => { if (!memproses) (berubah ? onSelesai : onTutup)(); }}
-      labelKirim={perluBayar ? (memproses ? B.mencatat : B.catat) : B.selesai}
-      kirimNonaktif={memproses || (perluBayar && (!g?.shift_terbuka || t?.status_tagihan !== 'lengkap')) || !t}
-      onKirim={perluBayar ? catat : (berubah ? onSelesai : onTutup)}
-    />
+    <>
+      <ModalBertahap
+        judul={B.judul}
+        langkah={langkah}
+        indeks={indeks}
+        onIndeks={setIndeks}
+        konteks={g ? <KepalaPasien nama={g.kunjungan.pasien_nama} nomorRm={g.kunjungan.pasien_nomor_rm} /> : undefined}
+        catatan={info ? <Peringatan nada="biru">{info}</Peringatan> : undefined}
+        galat={galat}
+        onTutup={() => { if (!memproses) (berubah ? onSelesai : onTutup)(); }}
+        labelKirim={perluBayar ? (memproses ? B.mencatat : B.catat) : B.selesai}
+        kirimNonaktif={memproses || (perluBayar && (!g?.shift_terbuka || t?.status_tagihan !== 'lengkap')) || !t}
+        onKirim={perluBayar ? catat : (berubah ? onSelesai : onTutup)}
+      />
+      {itemUbah && <UbahHarga kunjunganId={kunjunganId} item={itemUbah} onTutup={() => setItemUbah(null)} onUbah={(h) => { setItemUbah(null); terapkan(h); }} />}
+    </>
   );
 }

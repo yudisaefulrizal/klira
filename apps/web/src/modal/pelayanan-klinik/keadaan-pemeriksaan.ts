@@ -2,7 +2,7 @@ import { awalResep, barisResepKosong } from './keadaan-farmasi';
 import type { BarisResep } from './keadaan-farmasi';
 import { awalOrderLab } from './keadaan-order-lab';
 import type { KeadaanOrderLab } from './keadaan-order-lab';
-import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL } from '@klira/shared';
+import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL, kunciTindakan } from '@klira/shared';
 import type {
   BagianNarasi, BagianKlinis, BidangPemeriksaan, JenisTindakLanjut, KlinisKunjunganDto, KunciTandaVital, SalinanKunjunganDto, TandaVitalIsi, TemplatDto, PeranDiagnosis, StatusPengesahan,
 } from '@klira/shared';
@@ -14,7 +14,12 @@ import type { BagianRingkasan } from '../../komponen/ui/susunan';
 export type ModePemeriksaan = 'skrining' | 'periksa';
 
 export type ItemDiagnosis = { kode: string; nama: string; peran: PeranDiagnosis; snomed: string };
-export type ItemTindakan = { kode: string; nama: string; mulai: string; selesai: string; performer_id?: number | null };
+/** `tarif_layanan_id` = tindakan klinik terpilih (kosong bila dari kamus); `jumlah` teks isian (kosong/tiada = 1). */
+export type ItemTindakan = { kode: string; nama: string; mulai: string; selesai: string; performer_id?: number | null; tarif_layanan_id?: number | null; jumlah?: string };
+/** Atribut tarif dan jumlah tindakan dari isi server/salinan; jumlah 1 dan tanpa tarif tidak ditulis agar keadaan awal tetap sama. */
+const tarifJumlah = (t: { tarif_layanan_id?: number | null; jumlah?: number | null }): Pick<ItemTindakan, 'tarif_layanan_id' | 'jumlah'> => ({
+  ...(t.tarif_layanan_id ? { tarif_layanan_id: t.tarif_layanan_id } : {}), ...(t.jumlah && t.jumlah !== 1 ? { jumlah: String(t.jumlah) } : {}),
+});
 export type KeadaanPemeriksaan = {
   anamnesis: { keluhan_utama: string; penyerta: string };
   /** Riwayat kesehatan pribadi. */
@@ -172,7 +177,7 @@ export function keadaanDariServer(b: BagianServer): KeadaanPemeriksaan {
   const pm = b.pemeriksaan.isi;
   if (pm) for (const f of PEMERIKSAAN_BIDANG) k.pemeriksaan[f] = teks(pm[f]);
   k.diagnosis = (b.diagnosis.isi?.item ?? []).map((d) => ({ kode: d.kode, nama: d.nama, peran: d.peran, snomed: teks(d.snomed) }));
-  k.tindakan = (b.tindakan.isi?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama, performer_id: t.performer_id, mulai: keInputLokal(t.mulai), selesai: keInputLokal(t.selesai) }));
+  k.tindakan = (b.tindakan.isi?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama, performer_id: t.performer_id, mulai: keInputLokal(t.mulai), selesai: keInputLokal(t.selesai), ...tarifJumlah(t) }));
   const tl = b.tindak_lanjut.isi;
   if (tl) k.tindak_lanjut = { jenis: tl.jenis, tujuan: teks(tl.tujuan), spri: teks(tl.spri), catatan: teks(tl.catatan) };
   return k;
@@ -186,7 +191,12 @@ export function isiBagian(bagian: BagianKlinis, k: KeadaanPemeriksaan): unknown 
     case 'tanda_vital': return { ...k.tanda_vital };
     case 'pemeriksaan': return { ...k.pemeriksaan };
     case 'diagnosis': return { item: k.diagnosis.map((d) => ({ kode: d.kode, nama: d.nama, peran: d.peran, snomed: d.snomed })) };
-    case 'tindakan': return { item: k.tindakan.map((t) => ({ kode: t.kode, nama: t.nama, performer_id: t.performer_id, mulai: dariInputLokal(t.mulai), selesai: dariInputLokal(t.selesai) })) };
+    case 'tindakan': return {
+      item: k.tindakan.map((t) => ({
+        kode: t.kode, nama: t.nama, tarif_layanan_id: t.tarif_layanan_id ?? null, jumlah: t.jumlah?.trim() ? t.jumlah.trim() : null,
+        performer_id: t.performer_id, mulai: dariInputLokal(t.mulai), selesai: dariInputLokal(t.selesai),
+      })),
+    };
     case 'tindak_lanjut': return { ...k.tindak_lanjut };
   }
 }
@@ -293,12 +303,21 @@ export function hapusDiagnosis(daftar: readonly ItemDiagnosis[], kode: string): 
   return sisa.length && !sisa.some((x) => x.peran === 'utama') ? jadikanUtama(sisa, sisa[0].kode) : sisa;
 }
 
-export function tambahTindakan(daftar: readonly ItemTindakan[], t: { kode: string; nama: string }, sekarang: Date): ItemTindakan[] {
+/**
+ * Tambah tindakan dari daftar tindakan klinik (dengan `tarif_layanan_id`) atau kamus ICD-9-CM. Yang tidak boleh ganda adalah pasangan
+ * kode dan tindakan klinik: dua tindakan klinik berbeda berkode sama boleh, kode kamus yang sama tidak ditambah dua kali.
+ */
+export function tambahTindakan(daftar: readonly ItemTindakan[], t: { kode: string; nama: string; tarif_layanan_id?: number | null }, sekarang: Date): ItemTindakan[] {
   const kode = t.kode.trim();
-  if (!kode || daftar.some((x) => x.kode === kode)) return [...daftar];
-  return [...daftar, { kode, nama: t.nama.trim(), mulai: keInputLokal(sekarang.toISOString()), selesai: '' }];
+  const baru: ItemTindakan = { kode, nama: t.nama.trim(), mulai: keInputLokal(sekarang.toISOString()), selesai: '', ...(t.tarif_layanan_id ? { tarif_layanan_id: t.tarif_layanan_id } : {}) };
+  if (!kode || daftar.some((x) => kunciTindakan(x) === kunciTindakan(baru))) return [...daftar];
+  return [...daftar, baru];
 }
-export const hapusTindakan = (daftar: readonly ItemTindakan[], kode: string): ItemTindakan[] => daftar.filter((x) => x.kode !== kode);
+/** Kunci baris tindakan di formulir (kode dan tindakan klinik). */
+export const kunciItemTindakan = (t: ItemTindakan): string => kunciTindakan(t);
+export const hapusTindakan = (daftar: readonly ItemTindakan[], kunci: string): ItemTindakan[] => daftar.filter((x) => kunciTindakan(x) !== kunci);
+export const ubahTindakan = (daftar: readonly ItemTindakan[], kunci: string, p: Partial<ItemTindakan>): ItemTindakan[] =>
+  daftar.map((x) => (kunciTindakan(x) === kunci ? { ...x, ...p } : x));
 
 // --- Salin dari kunjungan sebelumnya, templat ---
 
@@ -322,7 +341,7 @@ export function salinKeKeadaan(k: KeadaanPemeriksaan, s: SalinanKunjunganDto, pi
   }
   if (pilih.includes('tindakan') && s.tindakan) {
     const mulai = keInputLokal(sekarang.toISOString());
-    hasil.tindakan = s.tindakan.item.map((t) => ({ kode: t.kode, nama: t.nama, mulai, selesai: '' }));
+    hasil.tindakan = s.tindakan.item.map((t) => ({ kode: t.kode, nama: t.nama, mulai, selesai: '', ...tarifJumlah(t) }));
     jumlah += 1;
   }
   return { keadaan: hasil, jumlah };
@@ -373,7 +392,7 @@ export function ringkasanIsi(k: KeadaanPemeriksaan): BagianRingkasan[] {
     { judul: 'A — Assessment', baris: [narasi('assessment'), ...k.diagnosis.map((d) => ({ label: d.kode, nilai: `${d.nama} (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})` }))] },
     { judul: 'P — Plan', baris: [{ label: 'Tindak lanjut', nilai: jenis }, ...(k.tindak_lanjut.jenis === 'rujuk' ? [{ label: KLINIS.tindakLanjut.tujuan, nilai: text(k.tindak_lanjut.tujuan) }] : []), narasi('plan'), ...(k.tindak_lanjut.jenis === 'rawat_inap' ? [{ label: KLINIS.tindakLanjut.spri, nilai: text(k.tindak_lanjut.spri) }] : []), { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) }] },
     { judul: 'I — Implementation', baris: [narasi('implementasi'), ...k.tindakan.flatMap((t) => [
-      { label: t.kode, nilai: t.nama },
+      { label: t.kode, nilai: t.jumlah && t.jumlah.trim() !== '1' ? `${t.nama} (${KLINIS.tindakan.jumlah} ${t.jumlah.trim()})` : t.nama },
       { label: KLINIS.tindakan.mulai, nilai: text(t.mulai.replace('T', ' ')) },
       { label: KLINIS.tindakan.selesai, nilai: text(t.selesai.replace('T', ' ')) },
     ])] },

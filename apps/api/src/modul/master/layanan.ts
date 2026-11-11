@@ -1,6 +1,7 @@
-import { GALAT, MASTER, ringkasPerubahanHarga } from '@klira/shared';
+import { GALAT, MASTER, kodeTindakanBerikut, ringkasPerubahanHarga } from '@klira/shared';
 import type { BarisMaster, FilterMaster, Halaman, JenisMaster, JenisMasterUbah, OpsiMasterDto, PenggunaSaya, SumberOpsiMaster } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
+import { entriIcd } from '../klinis/terminologi-icd';
 import type { MasukanMaster, RepositoriMaster } from './repositori';
 
 export type DependensiMaster = { repo: RepositoriMaster; audit: PenampungAudit };
@@ -39,8 +40,19 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
       if (!(await repo.penggunaAda(f, d.pengguna_id as number)) || !(await repo.punyaProfil(f, d.pengguna_id as number))) return tidakValid('pengguna_id', MASTER.galat.bukanMilikKlinik);
       if (!(await repo.lokasiAda(f, d.lokasi_id as number, 'poli'))) return tidakValid('lokasi_id', MASTER.galat.bukanMilikKlinik);
     }
-    if (jenis === 'tarif' && (await repo.tarifKodeAda(f, d.kode as string, id))) return { ok: false, kode: 'konflik', pesan: MASTER.galat.kodeKembar };
+    if (jenis === 'tarif') {
+      if (d.jenis === 'tindakan' && !entriIcd('icd9cm', String(d.kode_icd9cm ?? ''))) return tidakValid('kode_icd9cm', MASTER.galat.icd9TidakAda);
+      if (await repo.tarifKodeAda(f, d.kode as string, id)) return { ok: false, kode: 'konflik', pesan: MASTER.galat.kodeKembar };
+    }
     return null;
+  }
+
+  /** Tarif tindakan tanpa kode: saat tambah dibuat TND-nnn berikutnya, saat ubah kode lama dipertahankan. */
+  async function lengkapiKodeTarif<T>(f: number, jenis: JenisMasterUbah, data: T, lama?: BarisMaster): Promise<T> {
+    if (jenis !== 'tarif') return data;
+    const d = data as MasukanMaster['tarif'];
+    if (d.kode) return data;
+    return { ...d, kode: lama ? String(lama.kode) : kodeTindakanBerikut(await repo.kodeTarifTindakan(f)) } as T;
   }
 
   return {
@@ -60,6 +72,7 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
         if (!(await repo.penggunaAda(f, d.pengguna_id))) return tidakValid('pengguna_id', MASTER.galat.bukanMilikKlinik);
         if (await repo.punyaProfil(f, d.pengguna_id)) return { ok: false, kode: 'konflik', pesan: MASTER.galat.penggunaSudahPunyaProfil };
       } else {
+        data = await lengkapiKodeTarif(f, jenis, data);
         const salah = await periksaRujukan(f, jenis, data as Record<string, unknown>);
         if (salah) return salah;
       }
@@ -68,7 +81,7 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
         const ringkasan = ringkasanSip(null, data as MasukanMaster['praktisi']);
         if (ringkasan) await repo.tambahRiwayatProfil(f, 'sip', baris.pengguna_id as number, ringkasan, p.id);
       }
-      await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'input', entitas: ENTITAS[jenis], entitas_id: baris.id, keterangan: `Tambah master ${jenis}${jenis === 'tarif' ? `: ${ringkasPerubahanHarga([['harga umum', null, baris.harga_umum as number], ['harga JKN', null, (baris.harga_jkn as number | null) ?? null]]) ?? ''}` : ''}`, alamat });
+      await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'input', entitas: ENTITAS[jenis], entitas_id: baris.id, keterangan: `Tambah master ${jenis}${jenis === 'tarif' ? ` ${baris.kode}${baris.kode_icd9cm ? ` (ICD-9-CM ${baris.kode_icd9cm})` : ''}: ${ringkasPerubahanHarga([['harga umum', null, (baris.harga_umum as number | null) ?? null], ['harga JKN', null, (baris.harga_jkn as number | null) ?? null]]) ?? ''}` : ''}`, alamat });
       return { ok: true, data: baris };
     },
 
@@ -76,6 +89,7 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
       const f = p.fasyankes_id;
       const lama = await repo.ambil(f, jenis, id);
       if (!lama) return tidakDitemukan;
+      data = await lengkapiKodeTarif(f, jenis, data, lama);
       const salah = await periksaRujukan(f, jenis, data as Record<string, unknown>, id);
       if (salah) return salah;
       const baris = await repo.ubah(f, jenis, id, data);
@@ -83,7 +97,7 @@ export function buatLayananMaster({ repo, audit }: DependensiMaster) {
         const ringkasan = ringkasanSip(lama, data as { profesi?: string; nomor_sip?: string | null; masa_berlaku_sip?: Date | null });
         if (ringkasan) await repo.tambahRiwayatProfil(f, 'sip', lama.pengguna_id as number, ringkasan, p.id);
       }
-      const harga = jenis === 'tarif' ? ringkasPerubahanHarga([['harga umum', lama.harga_umum as number, baris.harga_umum as number], ['harga JKN', (lama.harga_jkn as number | null) ?? null, (baris.harga_jkn as number | null) ?? null]]) : null;
+      const harga = jenis === 'tarif' ? ringkasPerubahanHarga([['harga umum', (lama.harga_umum as number | null) ?? null, (baris.harga_umum as number | null) ?? null], ['harga JKN', (lama.harga_jkn as number | null) ?? null, (baris.harga_jkn as number | null) ?? null]]) : null;
       await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Ubah master ${jenis}${harga ? `: ${harga}` : ''}`, alamat });
       return { ok: true, data: baris };
     },

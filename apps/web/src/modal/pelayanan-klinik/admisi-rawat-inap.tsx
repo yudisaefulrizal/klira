@@ -17,7 +17,7 @@ import { Tombol } from '../../komponen/ui/tombol';
 import { adaPerubahan } from '../../util/draf';
 import { awalAdmisi, bentukAdmisi, galatAdmisi, isiSpriAsal, langkahBermasalahAdmisi } from './keadaan-rawat-inap';
 import type { KeadaanAdmisi } from './keadaan-rawat-inap';
-import { rupiah } from './keadaan-order-lab';
+import { rupiahAtau } from './keadaan-order-lab';
 import { KeteranganAsuransi } from './keterangan-asuransi';
 
 type Props = { onTutup: () => void; onSelesai: () => void };
@@ -115,7 +115,7 @@ export function AdmisiRawatInap({ onTutup, onSelesai }: Props) {
           <Pilihan id="adm-bed" label={A.bed} opsi={[{ nilai: '', label: A.bedMenunggu }, ...(opsi?.bed_kosong ?? []).map((b) => ({ nilai: String(b.id), label: `${b.ruang_nama ? `${b.ruang_nama} · ` : ''}${b.nama}` }))]} value={k.bed_id} onChange={set('bed_id')} galat={tampil('bed_id')} />
           <Pilihan id="adm-kelas" label={A.kelas} opsi={OPSI_KELAS} value={k.kelas} onChange={set('kelas')} galat={tampil('kelas')} />
           <Pilihan id="adm-indikator" label={A.indikator} opsi={OPSI_INDIKATOR} value={k.indikator} onChange={set('indikator')} galat={tampil('indikator')} />
-          <Pilihan id="adm-tarif" label={A.tarif} opsi={[{ nilai: '', label: A.tarifTanpa }, ...(opsi?.tarif_kamar ?? []).map((t) => ({ nilai: String(t.id), label: `${t.nama} (${rupiah(t.harga_umum)})` }))]} value={k.tarif_id} onChange={set('tarif_id')} galat={tampil('tarif_id')} />
+          <Pilihan id="adm-tarif" label={A.tarif} opsi={[{ nilai: '', label: A.tarifTanpa }, ...(opsi?.tarif_kamar ?? []).map((t) => ({ nilai: String(t.id), label: `${t.nama} (${rupiahAtau(t.harga_umum)})` }))]} value={k.tarif_id} onChange={set('tarif_id')} galat={tampil('tarif_id')} />
         </Kolom>
       ),
     },

@@ -545,8 +545,11 @@ model TarifLayanan {
   kode         String     @db.VarChar(50)
   nama         String     @db.VarChar(200)
   jenis        JenisTarif
-  harga_umum   Int
+  /// Wajib untuk jenis selain tindakan; tindakan boleh tanpa harga acuan (kasir melengkapi per kunjungan).
+  harga_umum   Int?
   harga_jkn    Int?
+  /// Kode ICD-9-CM tindakan klinik (wajib untuk jenis tindakan, tidak unik: beberapa tarif boleh berkode sama).
+  kode_icd9cm  String?    @db.VarChar(20)
   aktif        Boolean    @default(true)
   dibuat_oleh  Int?
   dibuat_pada  DateTime   @default(now()) @db.DateTime(3)
@@ -839,18 +842,21 @@ model Diagnosis {
 }
 
 model Tindakan {
-  id           Int       @id @default(autoincrement())
-  fasyankes_id Int
-  kunjungan_id Int
-  versi        Int
-  kode_icd9cm  String    @db.VarChar(20)
-  nama         String    @db.VarChar(500)
-  performer_id Int?
-  mulai        DateTime  @db.DateTime(3)
-  selesai      DateTime? @db.DateTime(3)
-  urutan       Int
-  dibuat_oleh  Int?
-  dibuat_pada  DateTime  @default(now()) @db.DateTime(3)
+  id               Int       @id @default(autoincrement())
+  fasyankes_id     Int
+  kunjungan_id     Int
+  versi            Int
+  kode_icd9cm      String    @db.VarChar(20)
+  nama             String    @db.VarChar(500)
+  /// Tindakan klinik (tarif jenis tindakan) yang dipilih dokter; kosong bila dipilih dari kamus ICD-9-CM.
+  tarif_layanan_id Int?
+  jumlah           Int       @default(1)
+  performer_id     Int?
+  mulai            DateTime  @db.DateTime(3)
+  selesai          DateTime? @db.DateTime(3)
+  urutan           Int
+  dibuat_oleh      Int?
+  dibuat_pada      DateTime  @default(now()) @db.DateTime(3)
 
   kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
 
@@ -1132,6 +1138,11 @@ model ItemTagihan {
   item_resep_id      Int?       @unique
   /// Ditambahkan kasir dari master tarif (konsultasi, visite, tindakan, kamar); hanya item ini yang boleh dihapus sebelum tutup.
   manual             Boolean    @default(false)
+  /// Berasal dari pencatatan tindakan dokter; disinkronkan ulang setiap bagian tindakan disimpan (sebelum ada pembayaran).
+  tindakan_sumber    Boolean    @default(false)
+  /// Harga awal saat item dibuat; harga dapat diubah kasir per kunjungan dengan alasan.
+  harga_acuan        Int?
+  alasan_ubah_harga  String?    @db.VarChar(300)
   dibuat_oleh        Int?
   dibuat_pada        DateTime   @default(now()) @db.DateTime(3)
 

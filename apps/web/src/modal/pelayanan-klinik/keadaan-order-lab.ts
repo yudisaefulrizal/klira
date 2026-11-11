@@ -40,3 +40,5 @@ export function perkiraanBiaya(master: readonly MasterPemeriksaanDto[], terpilih
 
 /** Rupiah untuk tampilan (tanpa pecahan). */
 export const rupiah = (n: number): string => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+/** Rupiah untuk harga yang boleh kosong (mis. tarif tindakan tanpa harga acuan). */
+export const rupiahAtau = (n: number | null | undefined, kosong = '-'): string => (n === null || n === undefined ? kosong : rupiah(n));

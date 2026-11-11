@@ -56,19 +56,30 @@ export const diagnosisIsi = z
 export type DiagnosisItem = z.infer<typeof diagnosisItem>;
 export type DiagnosisIsi = z.infer<typeof diagnosisIsi>;
 
-// Tindakan ICD-9 CM
+// Tindakan ICD-9 CM; `tarif_layanan_id` = tindakan klinik (tarif jenis tindakan) yang dipilih, kosong bila dari kamus.
+export const MAKS_JUMLAH_TINDAKAN = 100;
 export const tindakanItem = z
   .object({
     kode: z.string().trim().regex(POLA_ICD9CM, KLINIS.galat.kodeIcd9),
     nama: teksWajib(500),
+    /** Tanpa tarif dan jumlah 1 tidak ikut dalam isi (undefined) agar hash pengesahan catatan lama tetap sama. */
+    tarif_layanan_id: z.preprocess((v) => (v === null ? undefined : v), idPositif.optional()),
+    jumlah: z.preprocess(
+      (v) => (v === null || v === '' ? undefined : typeof v === 'string' ? Number(v) : v),
+      z.number(KLINIS.galat.jumlahTindakan).int(KLINIS.galat.jumlahTindakan).min(1, KLINIS.galat.jumlahTindakan).max(MAKS_JUMLAH_TINDAKAN, KLINIS.galat.jumlahTindakan).optional(),
+    ).transform((n) => (n === 1 ? undefined : n)).optional(),
     performer_id: idPositif.nullish(),
     mulai: tanggal.transform((d) => d.toISOString()),
     selesai: z.preprocess(kosongJadiNull, tanggal.transform((d) => d.toISOString()).nullable()),
   })
   .refine((t) => !t.selesai || t.selesai >= t.mulai, { path: ['selesai'], message: KLINIS.galat.selesaiSebelumMulai });
+/** Kunci keunikan tindakan dalam satu kunjungan: pasangan kode dan tindakan klinik (dua tarif berbeda berkode sama boleh). */
+export const kunciTindakan = (t: { kode: string; tarif_layanan_id?: number | null }): string => `${t.kode}|${t.tarif_layanan_id ?? ''}`;
+/** Kode tindakan unik (urutan pertama dipertahankan) untuk pengkodean dan klaim: dua tindakan klinik berkode sama dikodekan sekali. */
+export const unikPerKode = <T extends { kode: string }>(daftar: readonly T[]): T[] => daftar.filter((x, i) => daftar.findIndex((y) => y.kode === x.kode) === i);
 export const tindakanIsi = z.object({ item: z.array(tindakanItem).max(30) }).superRefine((d, ctx) => {
-  const kode = d.item.map((i) => i.kode);
-  if (new Set(kode).size !== kode.length) ctx.addIssue({ code: 'custom', path: ['item'], message: KLINIS.galat.kodeGanda });
+  const kunci = d.item.map(kunciTindakan);
+  if (new Set(kunci).size !== kunci.length) ctx.addIssue({ code: 'custom', path: ['item'], message: KLINIS.galat.tindakanGanda });
 });
 export type TindakanItem = z.infer<typeof tindakanItem>;
 export type TindakanIsi = z.infer<typeof tindakanIsi>;
@@ -214,3 +225,8 @@ export const kamusTerminologiMasukan = z.object({
 });
 export type KamusTerminologiMasukan = z.infer<typeof kamusTerminologiMasukan>;
 export type HalamanKamusTerminologiDto = { data: KodeTerminologiDto[]; total: number; halaman: number; ukuran: number };
+
+/** Tindakan klinik (tarif aktif jenis tindakan) untuk pencarian tindakan di pemeriksaan klinis; harga sesuai cara bayar kunjungan bila diketahui. */
+export type TindakanKlinikDto = { id: number; kode: string; nama: string; kode_icd9cm: string | null; harga_umum: number | null; harga_jkn: number | null };
+/** Hasil sinkronisasi item tagihan tindakan setelah bagian tindakan disimpan; `terkunci` = tagihan tidak diubah (sudah ada pembayaran atau kunjungan ditutup). */
+export type SinkronTagihanTindakan = 'disinkron' | 'terkunci' | 'tidak_perlu';

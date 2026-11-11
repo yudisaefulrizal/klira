@@ -180,7 +180,7 @@ Tiga komponen umum dibuat sekali dan dipakai berulang, tidak didaftar sebagai mo
 |---|---|---|---|
 | Registrasi pasien baru | Daftar pasien | MODAL-BERTAHAP | Cari duplikat > Identitas > Data sosial > Alamat dan jalur identitas khusus > Wali/keluarga > Penjamin (nomor kartu JKN, nama asuransi, nomor polis) > General consent > Ringkasan |
 | Pendaftaran kunjungan | Daftar pasien | MODAL-1 | Layanan, poli dan dokter (terfilter poli), cara pembayaran (Umum, JKN, Asuransi lain), keluhan singkat |
-| Pemeriksaan klinis | Daftar pasien | MODAL-BERTAHAP | Anamnesis > Tanda vital > Pemeriksaan > Diagnosis > Tindakan > Resep > Order penunjang > Rencana tindak lanjut > Ringkasan |
+| Pemeriksaan klinis | Daftar pasien | MODAL-BERTAHAP | Anamnesis > Tanda vital > Pemeriksaan > Diagnosis > Tindakan (daftar tindakan klinik lalu kamus ICD-9-CM, jumlah per tindakan) > Resep > Order penunjang > Rencana tindak lanjut > Ringkasan |
 | Riwayat, Salin dari kunjungan sebelumnya, Favorit dan templat, Family folder | Pemeriksaan klinis, Daftar pasien | PANEL | Info pendamping tanpa menutup langkah aktif |
 | Persetujuan tindakan | Pemeriksaan klinis, Rekam medis | MODAL-BERTAHAP | Tindakan > Penjelasan > Persetujuan > Ringkasan |
 | Resume medis dan surat rujukan | Pemeriksaan klinis, Rekam medis | MODAL-BERTAHAP | Ringkasan > Tindak lanjut/rujukan > Surat lain > Ringkasan |
@@ -199,7 +199,7 @@ Tiga komponen umum dibuat sekali dan dipakai berulang, tidak didaftar sebagai mo
 #### Kasir dan klaim
 | Modal | Dibuka dari | Jenis | Langkah |
 |---|---|---|---|
-| Pembayaran dan serah terima obat | Daftar pasien | MODAL-BERTAHAP | Tagihan > Pembayaran (1 sampai 3 metode masing-masing dengan jumlah, kembalian hanya dari tunai, kwitansi) > Serah terima obat (bila ada resep; stok berkurang) |
+| Pembayaran dan serah terima obat | Daftar pasien | MODAL-BERTAHAP | Tagihan (lengkapi harga item tanpa harga; ubah harga per kunjungan dengan alasan untuk item bukan obat sebelum ada pembayaran, harga acuan tampil dicoret; tambah item dari tarif) > Pembayaran (1 sampai 3 metode masing-masing dengan jumlah, kembalian hanya dari tunai, kwitansi) > Serah terima obat (bila ada resep; stok berkurang) |
 | Tutup kunjungan | Daftar pasien | MODAL-1 | Periksa pembayaran dan order lab ditagih; belum bayar: peringatan dengan alasan |
 | Buka dan tutup shift kasir | Kasir dan klaim | MODAL-1 | Kas awal, kas akhir, selisih dan alasan |
 | Penyiapan klaim | Kasir dan klaim | MODAL-BERTAHAP | Kunjungan dan SEP > Diagnosis dan tindakan > Berkas klaim > Ringkasan |
@@ -276,7 +276,7 @@ Aturan umum:
 | Anamnesis | kunjungan_id, keluhan utama, penyerta, riwayat pribadi/keluarga, alergi | Condition, AllergyIntolerance |
 | Observasi | kunjungan_id, kode LOINC, nilai, satuan UCUM, waktu | Observation |
 | Diagnosis | kunjungan_id, kode ICD-10, padanan SNOMED, peran (CC/utama), urutan | Condition |
-| Tindakan | kunjungan_id, kode ICD-9 CM, performer, mulai, selesai | Procedure |
+| Tindakan | kunjungan_id, kode ICD-9 CM, tindakan klinik (tarif_layanan_id, opsional: kosong bila dari kamus ICD-9-CM), jumlah (1-100, bawaan 1), performer, mulai, selesai; yang tidak boleh ganda adalah pasangan kode dan tindakan klinik | Procedure |
 | Tindak lanjut | kunjungan_id, jenis (rujuk/rawat inap/pulang), tujuan, SPRI | ServiceRequest |
 | Pemulangan | kunjungan_id, disposisi (home/aadvice/other-hcf/exp-lt48h/exp-gt48h/oth), kondisi pulang | Encounter, Condition |
 | Resume medis | kunjungan_id, bagian-bagian, penandatangan; untuk klaim rawat inap memuat ringkasan minimal | Composition |
@@ -314,8 +314,8 @@ Aturan umum:
 | Entitas | Field kunci | Padanan |
 |---|---|---|
 | Klaim | kunjungan_id, nomor SEP, penjamin, kode diagnosis dan tindakan, status (menunggu SEP/siap diajukan/diajukan/dikembalikan/diajukan ulang/ditolak/dibayar/lewat batas waktu), alasan ditolak atau lewat batas, tanggal pelayanan selesai, batas pengajuan (6 bulan), FPK, rekapitulasi, kuitansi, surat tanggung jawab mutlak, berita acara pengembalian | Claim, ClaimResponse |
-| Tagihan | kunjungan_id, item (layanan, lab, obat dari resep, kamar), harga, invoice; status tagihan (lengkap/belum) terpisah dari status pembayaran (belum/sebagian/lunas); rawat jalan yang berlanjut ke rawat inap digabung ke tagihan rawat inap | ChargeItem, Invoice, Account |
-| Tarif layanan (master) | kode, nama, jenis (konsultasi, tindakan, lab, kamar), harga umum, harga JKN bila ada, aktif | - |
+| Tagihan | kunjungan_id, item (layanan, tindakan, lab, obat dari resep, kamar), harga, harga acuan (harga awal item), alasan ubah harga, penanda item dari pencatatan tindakan, invoice; status tagihan (lengkap/belum) terpisah dari status pembayaran (belum/sebagian/lunas); rawat jalan yang berlanjut ke rawat inap digabung ke tagihan rawat inap | ChargeItem, Invoice, Account |
+| Tarif layanan (master) | kode (tindakan: dibuat otomatis TND-001, TND-002, ... per fasyankes bila kosong), nama, jenis (konsultasi, tindakan, lab, kamar), kode ICD-9-CM (wajib untuk tindakan, harus ada di kamus, tidak unik), harga umum (wajib kecuali tindakan; tindakan boleh tanpa harga acuan), harga JKN bila ada, aktif. Tarif jenis tindakan = daftar tindakan klinik | - |
 | Shift kasir | kasir_id, buka, tutup, kas awal, kas akhir, selisih, alasan selisih; rekap harian dihitung dari pembayaran | - |
 | Pembayaran | tagihan_id, metode, jumlah, waktu, kasir, alasan bila kunjungan ditutup belum lunas (peringatan, tercatat di audit) | PaymentReconciliation |
 
@@ -409,6 +409,7 @@ Aturan alur yang ditetapkan lewat simulasi logika:
 - **Kasir adalah stasiun terakhir.** Pembayaran dan serah terima obat terjadi di kasir pada akhir pelayanan, tetapi tetap dua proses terpisah di alur dan data (satu modal bertahap boleh memuat keduanya). Farmasi hanya menelaah resep dan menyiapkan obat; pengeluaran obat dicatat saat serah terima di kasir.
 - **Tutup kunjungan** adalah satu peristiwa yang memeriksa pembayaran tercatat (belum bayar: peringatan dan alasan) dan semua order lab tercatat dan ditagih. Tidak menunggu hasil lab. Bila belum terpenuhi, kembali ke kasir.
 - **Hasil lab susulan** setelah catatan disahkan dicatat sebagai addendum (versi catatan dan pengesahan baru) lalu dikirim ulang. Hasil sebelum disahkan dilihat dokter di pemeriksaan. Biaya lab masuk tagihan saat order.
+- **Tagihan tindakan otomatis:** pencarian tindakan di pemeriksaan klinis menampilkan daftar tindakan klinik (tarif tindakan) di atas kamus ICD-9-CM. Setiap simpan bagian tindakan menyinkronkan item tagihan tindakan yang berasal dari pencatatan (item tambahan kasir tidak tersentuh): harga JKN untuk pasien JKN bila ada, selain itu harga umum (asuransi lain = umum), kosong bila tanpa tarif atau tanpa harga sehingga kasir melengkapi. Harga yang sudah diubah atau dilengkapi kasir pada item yang sama dipertahankan. Bila sudah ada pembayaran atau kunjungan ditutup, tindakan tetap tersimpan tetapi tagihan tidak berubah dan pengguna diberi pesan agar kasir menyesuaikan manual. Kasir (izin kasir.input) dapat mengubah harga item bukan obat sebelum ada pembayaran dengan alasan wajib; harga lama, baru, dan alasan tercatat di audit.
 - **Rawat jalan ke rawat inap:** kunjungan rawat jalan ditutup saat admisi, tagihannya digabung ke rawat inap, dan data rawat jalan dikirim; pasien juga bisa langsung rawat inap. Rawat inap dapat memesan lab dan obat harian.
 - **SATUSEHAT:** kirim otomatis saat kunjungan ditutup, bukan tiap kali menyimpan. Kirim ulang bila ada addendum, perbaikan catatan (2x24 jam oleh pembuat, sesudahnya persetujuan), atau kode ICD berubah; galat kirim ditangani admin IT.
 - **Arsip tidak menunggu klaim.** Arsip rekam medis mengikuti pengkodean; klaim berjalan di jalur pihak ketiga.

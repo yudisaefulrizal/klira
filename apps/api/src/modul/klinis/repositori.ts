@@ -4,8 +4,10 @@ import { prisma, Prisma } from '@klira/db';
 import { PEMERIKSAAN_BIDANG, TANDA_VITAL, umurTahun } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, AnamnesisIsi, BagianKlinis, BagianTemplat, DiagnosisIsi, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KodeTerminologiDto, KonteksKlinisDto, KunjunganDto,
-  HalamanKamusTerminologiDto, KamusTerminologiMasukan, PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi, TindakLanjutIsi,
+  HalamanKamusTerminologiDto, KamusTerminologiMasukan, PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SinkronTagihanTindakan, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi,
+  TindakanKlinikDto, TindakLanjutIsi,
 } from '@klira/shared';
+import { sinkronItemTindakanDalam } from '../kasir/repositori';
 import { ambilKunjungan, keDto } from '../kunjungan/repositori';
 import { tulisPengesahanDalam } from '../rekam-medis/repositori';
 import type { TulisPengesahan } from '../rekam-medis/repositori';
@@ -51,6 +53,12 @@ export interface RepositoriKlinis {
   simpanDraf(d: { fasyankesId: number; penggunaId: number; alur: AlurDrafKlinis; kunjunganId: number; pasienId: number; langkah: number; isi: Record<string, unknown>; sekarang: Date }): Promise<DrafTersimpan>;
   /** Hapus draf; tanpa `penggunaId` semua draf kunjungan itu (pemeriksaan selesai). Mengembalikan jumlah terhapus. */
   hapusDraf(fasyankesId: number, kunjunganId: number, penggunaId?: number, alur?: AlurDrafKlinis): Promise<number>;
+  /** Id tarif jenis tindakan milik fasyankes dari daftar id (yang tidak sah tidak dikembalikan). */
+  tarifTindakanSah(fasyankesId: number, ids: readonly number[]): Promise<number[]>;
+  /** Daftar tindakan klinik aktif (tarif jenis tindakan) untuk pencarian; cari pada nama, kode, atau awalan kode ICD-9-CM. */
+  tindakanKlinik(fasyankesId: number, cari: string, batas: number): Promise<TindakanKlinikDto[]>;
+  /** Sinkronkan item tagihan tindakan dari pencatatan dengan daftar tindakan terbaru (lihat kasir/repositori). */
+  sinkronTagihanTindakan(fasyankesId: number, kunjunganId: number, oleh: number, item: TindakanIsi['item']): Promise<SinkronTagihanTindakan>;
 }
 
 export type DrafTersimpan = { langkah: number; isi: Record<string, unknown>; diperbarui_pada: Date };
@@ -104,7 +112,11 @@ async function bacaVersiLepas(c: Klien, bagian: BagianKlinis, fasyankesId: numbe
     case 'tindakan': {
       const baris = await c.tindakan.findMany({ where, orderBy: { urutan: 'asc' } });
       return {
-        item: baris.map((t) => ({ kode: t.kode_icd9cm, nama: t.nama, performer_id: t.performer_id, mulai: t.mulai.toISOString(), selesai: t.selesai?.toISOString() ?? null })),
+        // Tanpa tarif dan jumlah 1 dibiarkan undefined (tidak masuk hash) agar pengesahan catatan sebelum P5 tetap sah.
+        item: baris.map((t) => ({
+          kode: t.kode_icd9cm, nama: t.nama, tarif_layanan_id: t.tarif_layanan_id ?? undefined, jumlah: t.jumlah === 1 ? undefined : t.jumlah,
+          performer_id: t.performer_id, mulai: t.mulai.toISOString(), selesai: t.selesai?.toISOString() ?? null,
+        })),
       } satisfies TindakanIsi;
     }
     case 'tindak_lanjut': {
@@ -157,7 +169,10 @@ async function tulisIsi(tx: Prisma.TransactionClient, bagian: BagianKlinis, isi:
     case 'tindakan': {
       const t = isi as TindakanIsi;
       await tx.tindakan.createMany({
-        data: t.item.map((x, urutan) => ({ ...dasar, kode_icd9cm: x.kode, nama: x.nama, performer_id: x.performer_id ?? null, mulai: new Date(x.mulai), selesai: x.selesai ? new Date(x.selesai) : null, urutan })),
+        data: t.item.map((x, urutan) => ({
+          ...dasar, kode_icd9cm: x.kode, nama: x.nama, tarif_layanan_id: x.tarif_layanan_id ?? null, jumlah: x.jumlah ?? 1,
+          performer_id: x.performer_id ?? null, mulai: new Date(x.mulai), selesai: x.selesai ? new Date(x.selesai) : null, urutan,
+        })),
       });
       return;
     }
@@ -275,6 +290,25 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
       sumber: { id: k.id, mulai: k.mulai.toISOString() },
       anamnesis, diagnosis: diagnosis?.item.length ? diagnosis : null, tindakan: tindakan?.item.length ? tindakan : null,
     };
+  }
+
+  async tarifTindakanSah(fasyankesId: number, ids: readonly number[]): Promise<number[]> {
+    if (!ids.length) return [];
+    const t = await prisma.tarifLayanan.findMany({ where: { id: { in: [...ids] }, fasyankes_id: fasyankesId, jenis: 'tindakan' }, select: { id: true } });
+    return t.map((x) => x.id);
+  }
+
+  async tindakanKlinik(fasyankesId: number, cari: string, batas: number): Promise<TindakanKlinikDto[]> {
+    const q = cari.trim();
+    const t = await prisma.tarifLayanan.findMany({
+      where: { fasyankes_id: fasyankesId, jenis: 'tindakan', aktif: true, ...(q ? { OR: [{ nama: { contains: q } }, { kode: { contains: q } }, { kode_icd9cm: { startsWith: q } }] } : {}) },
+      orderBy: [{ nama: 'asc' }, { id: 'asc' }], take: batas,
+    });
+    return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, kode_icd9cm: x.kode_icd9cm, harga_umum: x.harga_umum, harga_jkn: x.harga_jkn }));
+  }
+
+  sinkronTagihanTindakan(fasyankesId: number, kunjunganId: number, oleh: number, item: TindakanIsi['item']): Promise<SinkronTagihanTindakan> {
+    return prisma.$transaction((tx) => sinkronItemTindakanDalam(tx, fasyankesId, kunjunganId, oleh, item));
   }
 
   /** Referensi ICD dari JSON primer; sistem lain tetap memakai master terminologi. */

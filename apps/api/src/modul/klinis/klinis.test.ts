@@ -13,7 +13,7 @@ function buatDunia(tahapAwal: TahapLayanan = 'pemeriksaan') {
   const versiCatatan: unknown[] = [];
   const draf = new Map<string, { langkah: number; isi: Record<string, unknown>; diperbarui_pada: Date }>();
   const catatan: { aksi: string; entitas: string }[] = [];
-  const dunia = { tahap: tahapAwal, bentrok: false, waktu: new Date('2026-10-25T01:00:00Z'), ubahTahap: [] as TahapLayanan[] };
+  const dunia = { tahap: tahapAwal, bentrok: false, waktu: new Date('2026-10-25T01:00:00Z'), ubahTahap: [] as TahapLayanan[], sinkron: 'disinkron' as 'disinkron' | 'terkunci' | 'tidak_perlu' };
   const kunjunganDto = (id: number) => ({ id, pasien_id: id === 99 ? 2 : 1, tahap_layanan: dunia.tahap }) as unknown as KunjunganDto;
 
   const repoPengesahan: RepositoriPengesahan = {
@@ -51,6 +51,9 @@ function buatDunia(tahapAwal: TahapLayanan = 'pemeriksaan') {
       return n;
     }),
     salinan: async (_f: number, id: number) => ({ sumber: { id, mulai: 'x' }, anamnesis: null, diagnosis: null, tindakan: null }),
+    // Tarif tindakan milik fasyankes 1: id 3 dan 4.
+    tarifTindakanSah: async (f: number, ids: number[]) => (f === 1 ? ids.filter((i) => i === 3 || i === 4) : []),
+    sinkronTagihanTindakan: jest.fn(async () => dunia.sinkron),
   } as unknown as RepositoriKlinis;
   const l = buatLayananKlinis({
     repo, pengesahan, sekarang: () => dunia.waktu, audit: { catat: async (e) => void catatan.push(e) },
@@ -121,6 +124,29 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
     expect(await l.simpanBagian(saya, 10, 'tindakan', { item: [{ ...item, performer_id: 55 }] }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
     const ok = await l.simpanBagian(saya, 10, 'tindakan', { item: [item] }, undefined);
     expect(ok).toMatchObject({ ok: true, data: { bagian: { isi: { item: [{ performer_id: 7 }] } } } });
+  });
+
+  it('tindakan klinik: tarif harus milik fasyankes; pasangan kode dan tarif tidak boleh ganda; sinkron tagihan', async () => {
+    const { l, repo, dunia, catatan } = buatDunia();
+    const dasar = { kode: '86.59', nama: 'Jahit luka', mulai: '2026-10-25T01:00:00Z' };
+    expect(await l.simpanBagian(saya, 10, 'tindakan', { item: [{ ...dasar, tarif_layanan_id: 9 }] }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
+    expect(await l.simpanBagian(saya, 10, 'tindakan', { item: [{ ...dasar, tarif_layanan_id: 3 }, { ...dasar, tarif_layanan_id: 3 }] }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
+    const ok = await l.simpanBagian(saya, 10, 'tindakan', { item: [{ ...dasar, tarif_layanan_id: 3, jumlah: 2 }, { ...dasar, tarif_layanan_id: 4 }, dasar] }, undefined);
+    expect(ok).toMatchObject({ ok: true, data: { tersimpan: true, pesan_tagihan: null } });
+    expect(repo.sinkronTagihanTindakan).toHaveBeenCalledWith(1, 10, 7, [
+      expect.objectContaining({ tarif_layanan_id: 3, jumlah: 2 }), expect.objectContaining({ tarif_layanan_id: 4 }), expect.not.objectContaining({ tarif_layanan_id: expect.anything() }),
+    ]);
+    expect(catatan.some((c) => c.entitas === 'tagihan')).toBe(true);
+    dunia.sinkron = 'terkunci';
+    const terkunci = await l.simpanBagian(saya, 10, 'tindakan', { item: [dasar] }, 'Koreksi');
+    expect(terkunci).toMatchObject({ ok: true, data: { tersimpan: true, pesan_tagihan: expect.stringContaining('kasir') } });
+  });
+
+  it('tindakan tanpa tarif dan jumlah 1 menghasilkan isi (dan hash) yang sama seperti sebelum P5', async () => {
+    const { l, pengesahanTersimpan } = buatDunia();
+    const item = { kode: '89.52', nama: 'EKG', mulai: '2026-10-25T01:00:00Z', jumlah: 1, tarif_layanan_id: null };
+    await l.simpanBagian(saya, 10, 'tindakan', { item: [item] }, undefined);
+    expect(pengesahanTersimpan.get('tindakan:10')?.hash).toBe(hashIsi({ item: [{ kode: '89.52', nama: 'EKG', performer_id: 7, mulai: '2026-10-25T01:00:00.000Z', selesai: null }] }));
   });
 
   it('penulisan serempak yang bentrok menjadi konflik', async () => {

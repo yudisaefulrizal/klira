@@ -3,6 +3,7 @@ import { BAGIAN_NARASI, BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINI
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, DrafKlinisDto, DrafMasukan, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto,
   KamusTerminologiMasukan, KonteksKlinisDto, KunjunganDto, PenggunaSaya, RiwayatKunjunganDto, SalinanKunjunganDto, TahapLayanan, TemplatDto, TemplatMasukan, TindakanIsi,
+  TindakanKlinikDto,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import { gagal } from '../hasil';
@@ -28,7 +29,8 @@ export const TAHAP_BOLEH_CATAT: readonly TahapLayanan[] = ['menunggu_skrining', 
 /** Bagian yang wajib tersimpan sebelum pemeriksaan diselesaikan. */
 export const BAGIAN_WAJIB_SELESAI: readonly BagianKlinis[] = ['anamnesis', 'diagnosis', 'tindak_lanjut'];
 
-export type HasilSimpan = { bagian: BagianKlinisDto; kunjungan: KunjunganDto; tersimpan: boolean };
+/** `pesan_tagihan` berisi pesan untuk pengguna bila tindakan tersimpan tetapi tagihan tidak bisa disinkronkan (kasir menyesuaikan manual). */
+export type HasilSimpan = { bagian: BagianKlinisDto; kunjungan: KunjunganDto; tersimpan: boolean; pesan_tagihan?: string | null };
 
 const ADA_ISI = (bagian: BagianKlinis, isi: unknown): boolean =>
   bagian === 'diagnosis' || bagian === 'tindakan' ? ((isi as { item: unknown[] } | null)?.item.length ?? 0) > 0 : isi !== null;
@@ -78,6 +80,9 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
         for (const id of new Set(item.map((x) => x.performer_id))) {
           if (!(await repo.penggunaAda(p.fasyankes_id, id))) return gagal('tidak_valid', KLINIS.galat.pelaksanaTidakSah, 'isi.item');
         }
+        const tarifIds = [...new Set(item.flatMap((x) => (x.tarif_layanan_id ? [x.tarif_layanan_id] : [])))];
+        const sah = new Set(await repo.tarifTindakanSah(p.fasyankes_id, tarifIds));
+        if (tarifIds.some((id) => !sah.has(id))) return gagal('tidak_valid', KLINIS.galat.tarifTindakanTidakAda, 'isi.item');
         isi = { item };
       }
       // Bagian narasi yang belum pernah diisi tidak menghasilkan catatan kosong.
@@ -106,10 +111,19 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
         fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: perbaikan ? 'perbaikan' : 'input', entitas: bagian, entitas_id: kunjunganId,
         keterangan: `${perbaikan ? 'Perbaikan' : 'Simpan'} dan sahkan ${bagian} versi ${r.versi}`, alamat,
       });
+      // Tindakan dokter menjadi item tagihan (P5); bila tagihan terkunci, tindakan tetap tersimpan dan pengguna diberi pesan untuk kasir.
+      let pesanTagihan: string | null = null;
+      if (bagian === 'tindakan') {
+        const s = await repo.sinkronTagihanTindakan(p.fasyankes_id, kunjunganId, p.id, (isi as TindakanIsi).item);
+        if (s === 'terkunci') pesanTagihan = KLINIS.tindakan.tagihanTerkunci;
+        else if (s === 'disinkron') {
+          await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'tagihan', entitas_id: kunjunganId, keterangan: `Item tagihan tindakan disinkronkan dari pencatatan tindakan versi ${r.versi}`, alamat });
+        }
+      }
       // Mulai mengisi catatan di tahap skrining berarti pemeriksaan dimulai: maju satu tahap (gagal diam bila sudah berpindah).
       if (k.tahap_layanan === 'menunggu_skrining') await kunjungan.ubahTahap(p, kunjunganId, 'pemeriksaan', alamat);
       const baru = (await repo.kunjunganDto(p.fasyankes_id, kunjunganId)) as KunjunganDto;
-      return { ok: true, data: { bagian: await bagianDto(p.fasyankes_id, kunjunganId, bagian), kunjungan: baru, tersimpan: true } };
+      return { ok: true, data: { bagian: await bagianDto(p.fasyankes_id, kunjunganId, bagian), kunjungan: baru, tersimpan: true, pesan_tagihan: pesanTagihan } };
     },
 
     /** Selesaikan pemeriksaan: anamnesis, diagnosis, dan tindak lanjut harus sudah disahkan; maju ke resep atau kasir. */
@@ -185,6 +199,9 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
     cariTerminologi(q: CariTerminologiMasukan): Promise<KodeTerminologiDto[]> {
       return repo.cariTerminologi(q.sistem, q.q, q.batas);
     },
+
+    /** Daftar tindakan klinik (tarif tindakan aktif) untuk pencarian tindakan; tanpa data pasien. */
+    tindakanKlinik: (p: Pelaku, cari: string, batas: number): Promise<TindakanKlinikDto[]> => repo.tindakanKlinik(p.fasyankes_id, cari, batas),
 
     daftarFavorit: (p: Pelaku, jenis?: JenisFavorit): Promise<FavoritDto[]> => repo.daftarFavorit(p.fasyankes_id, p.id, jenis),
     async tambahFavorit(p: Pelaku, d: { jenis: JenisFavorit; kode: string; nama: string }): Promise<Hasil<FavoritDto>> {

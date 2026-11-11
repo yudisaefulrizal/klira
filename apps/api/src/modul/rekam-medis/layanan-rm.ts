@@ -1,4 +1,4 @@
-import { REKAM_MEDIS, SKEMA_BAGIAN } from '@klira/shared';
+import { REKAM_MEDIS, SKEMA_BAGIAN, unikPerKode } from '@klira/shared';
 import type {
   BagianKlinis, FilterBerkas, FilterPerbaikan, HalamanBerkasDto, HalamanPerbaikanDto, HasilPerbaikanDto, KeputusanPerbaikanMasukan, PengkodeanDto, PengkodeanIsi, PenggunaSaya, PerbaikanMasukan,
   PermintaanPerbaikanDto,
@@ -95,7 +95,7 @@ export function buatLayananRm({ repo, pengesahanRepo, pengesahan, klinis, baca, 
         ok: true,
         data: {
           kunjungan_id: kunjunganId, pasien_nama: k.pasien_nama, pasien_nomor_rm: k.pasien_nomor_rm, tahap_layanan: k.tahap_layanan,
-          dokter: { diagnosis: (diag?.item ?? []).map((d) => ({ kode: d.kode, nama: d.nama, peran: d.peran })), tindakan: (tind?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama })) },
+          dokter: { diagnosis: (diag?.item ?? []).map((d) => ({ kode: d.kode, nama: d.nama, peran: d.peran })), tindakan: unikPerKode((tind?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama }))) },
           final: final?.isi ?? null, versi: terakhir?.versi ?? null, pengode_nama: final?.pengode_nama ?? null, diperbarui_pada: final?.diperbarui_pada.toISOString() ?? null,
           diarsipkan_pada: k.diarsipkan_pada?.toISOString() ?? null, retensi_sampai: k.retensi_sampai?.toISOString().slice(0, 10) ?? null,
         },

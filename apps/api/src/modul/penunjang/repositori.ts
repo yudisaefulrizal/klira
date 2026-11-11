@@ -63,7 +63,7 @@ export interface RepositoriPenunjang {
 }
 
 const iso = (d: Date): string => d.toISOString();
-const tarifDto = (t: { id: number; kode: string; nama: string; harga_umum: number; harga_jkn: number | null }): TarifLabDto => ({ id: t.id, kode: t.kode, nama: t.nama, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn });
+const tarifDto = (t: { id: number; kode: string; nama: string; harga_umum: number | null; harga_jkn: number | null }): TarifLabDto => ({ id: t.id, kode: t.kode, nama: t.nama, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn });
 
 type BarisMasterDb = Prisma.MasterPemeriksaanGetPayload<object>;
 async function petakanMaster(fasyankesId: number, baris: BarisMasterDb[]): Promise<MasterBaris[]> {

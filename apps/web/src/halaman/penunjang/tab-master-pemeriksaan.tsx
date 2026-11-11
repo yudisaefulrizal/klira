@@ -13,7 +13,7 @@ import { BarisTabel, SelTabel, Tabel } from '../../komponen/ui/tabel';
 import { Tombol } from '../../komponen/ui/tombol';
 import { token } from '../../gaya/token';
 import { MasterPemeriksaan } from '../../modal/pelayanan-klinik/master-pemeriksaan';
-import { rupiah } from '../../modal/pelayanan-klinik/keadaan-order-lab';
+import { rupiahAtau } from '../../modal/pelayanan-klinik/keadaan-order-lab';
 
 const M = PENUNJANG.master;
 const KOLOM = [
@@ -82,7 +82,7 @@ export function TabMasterPemeriksaan() {
               <SelTabel>{m.kode_loinc ?? '-'}</SelTabel>
               <SelTabel>{m.satuan ?? '-'}</SelTabel>
               <SelTabel>{teksRujukan(m)}</SelTabel>
-              <SelTabel>{m.tarif ? rupiah(m.tarif.harga_umum) : M.tanpaTarif}</SelTabel>
+              <SelTabel>{m.tarif ? rupiahAtau(m.tarif.harga_umum) : M.tanpaTarif}</SelTabel>
               <SelTabel><Lencana warna={m.aktif ? 'hijau' : 'abu'}>{m.aktif ? M.aktif : M.nonaktif}</Lencana></SelTabel>
               <SelTabel style={{ textAlign: 'right' }}>
                 {boleh('penunjang', 'perbaikan') && (

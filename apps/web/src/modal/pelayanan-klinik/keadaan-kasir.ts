@@ -1,5 +1,5 @@
-import { bayarMasukan, bukaShiftMasukan, KASIR, MAKS_BARIS_BAYAR, NILAI_METODE_BAYAR, rincianBayar, tambahItemTarifMasukan, tutupShiftMasukan } from '@klira/shared';
-import type { KasirKunjunganDto, MetodeBayar } from '@klira/shared';
+import { bayarMasukan, bolehUbahHarga, bukaShiftMasukan, KASIR, MAKS_BARIS_BAYAR, NILAI_METODE_BAYAR, rincianBayar, tambahItemTarifMasukan, tutupShiftMasukan, ubahHargaMasukan } from '@klira/shared';
+import type { ItemTagihanDto, KasirKunjunganDto, MetodeBayar } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
 const petakan = (isu: readonly Isu[]): Record<string, string> => {
@@ -49,6 +49,20 @@ export function galatTambahItem(tarifId: string, jumlah: string): string | null 
   const h = tambahItemTarifMasukan.safeParse({ tarif_id: tarifId ? Number(tarifId) : undefined, jumlah });
   return h.success ? null : h.error.issues[0]?.message ?? KASIR.galat.pilihTarif;
 }
+
+// ---- Ubah harga per kunjungan ----
+/** Galat per bidang isian ubah harga (harga, alasan); harga sama dengan sekarang juga ditolak. */
+export function galatUbahHarga(harga: string, alasan: string, hargaSekarang: number | null): Record<string, string> {
+  const h = ubahHargaMasukan.safeParse({ harga: harga.trim(), alasan });
+  const galat = h.success ? {} : petakan(h.error.issues);
+  if (!galat.harga && h.success && h.data.harga === hargaSekarang) galat.harga = KASIR.galat.hargaSama;
+  return galat;
+}
+/** Aksi ubah harga tersedia: item bukan obat dan berharga, belum ada pembayaran, kunjungan belum ditutup. */
+export const ubahHargaTersedia = (i: ItemTagihanDto, g: KasirKunjunganDto): boolean =>
+  bolehUbahHarga(i) && g.tagihan.pembayaran.length === 0 && g.kunjungan.tahap_layanan !== 'ditutup';
+/** Item yang harganya diubah kasir: harga acuan (dicoret) berbeda dari harga sekarang. */
+export const hargaDiubah = (i: ItemTagihanDto): boolean => !!i.alasan_ubah_harga && i.harga_acuan !== null && i.harga_acuan !== undefined && i.harga_acuan !== i.harga;
 
 // ---- Syarat tutup ----
 /** Daftar syarat tutup kunjungan dari gambaran kasir; `lunas` bukan penghalang (butuh alasan), sisanya wajib. */

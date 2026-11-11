@@ -10,7 +10,10 @@ export type HasilBayarRepo =
   | { ok: true; pembayaran: PembayaranDto[]; tagihan: TagihanKasir; diterima: number; diterapkan: number; kembalian: number }
   | { ok: false; sebab: 'tahap_salah' | 'tagihan_kosong' | 'tagihan_belum_lengkap' | 'sudah_lunas' | 'tanpa_shift' | 'non_tunai_lebih' };
 export type HasilLengkapiHargaRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'sudah_berharga' | 'terkunci' };
-export type HasilTambahItemRepo = { ok: true; nama: string; harga: number; jumlah: number } | { ok: false; sebab: 'tarif_tidak_ada' | 'terkunci' };
+export type HasilTambahItemRepo = { ok: true; nama: string; harga: number | null; jumlah: number } | { ok: false; sebab: 'tarif_tidak_ada' | 'terkunci' };
+export type HasilUbahHargaRepo =
+  | { ok: true; nama: string; lama: number; baru: number }
+  | { ok: false; sebab: 'tidak_ada' | 'obat' | 'tanpa_harga' | 'sama' | 'terkunci' | 'sudah_bayar' };
 export type HasilHapusItemRepo = { ok: true; nama: string } | { ok: false; sebab: 'tidak_ada' | 'bukan_manual' | 'terkunci' | 'melebihi_bayar' };
 export type HasilTutupRepo = { ok: true } | { ok: false; sebab: 'tahap_salah' | 'tagihan_belum_lengkap' | 'resep_belum' | 'belum_lunas_alasan' | 'bentrok' };
 
@@ -154,11 +157,34 @@ export class RepositoriKasirPrisma {
     });
   }
 
+  // ---- Ubah harga per kunjungan ----
+  /**
+   * Kasir mengubah harga item yang sudah berharga (bukan obat) sebelum ada pembayaran dan sebelum kunjungan ditutup; harga acuan
+   * (harga awal) dipertahankan untuk ditampilkan dicoret, alasan disimpan. Kunci baris tagihan agar tidak bersaing dengan pembayaran.
+   */
+  async ubahHarga(fasyankesId: number, kunjunganId: number, itemId: number, harga: number, alasan: string): Promise<HasilUbahHargaRepo> {
+    return prisma.$transaction(async (tx) => {
+      const kunci = await tx.$queryRaw<{ id: number }[]>`SELECT id FROM tagihan WHERE kunjungan_id = ${kunjunganId} AND fasyankes_id = ${fasyankesId} FOR UPDATE`;
+      if (!kunci.length) return { ok: false, sebab: 'tidak_ada' } as const;
+      const item = await tx.itemTagihan.findFirst({ where: { id: itemId, tagihan_id: kunci[0].id } });
+      if (!item) return { ok: false, sebab: 'tidak_ada' } as const;
+      const k = await tx.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, select: { tahap_layanan: true } });
+      if (!k || k.tahap_layanan === 'ditutup') return { ok: false, sebab: 'terkunci' } as const;
+      if (await tx.pembayaran.count({ where: { tagihan_id: kunci[0].id } })) return { ok: false, sebab: 'sudah_bayar' } as const;
+      if (item.jenis === 'obat') return { ok: false, sebab: 'obat' } as const;
+      if (item.harga === null) return { ok: false, sebab: 'tanpa_harga' } as const;
+      if (item.harga === harga) return { ok: false, sebab: 'sama' } as const;
+      await tx.itemTagihan.update({ where: { id: item.id }, data: { harga, harga_acuan: item.harga_acuan ?? item.harga, alasan_ubah_harga: alasan } });
+      await this.hitungUlang(tx, kunci[0].id);
+      return { ok: true, nama: item.nama, lama: item.harga, baru: harga } as const;
+    });
+  }
+
   // ---- Item tambahan dari tarif ----
   /** Tarif aktif yang boleh ditambahkan kasir (obat dikecualikan: obat lewat resep agar stok tercatat), harga sesuai cara pembayaran. */
   async tarifAktif(fasyankesId: number, caraPembayaran: CaraPembayaran): Promise<TarifKasirDto[]> {
     const t = await prisma.tarifLayanan.findMany({ where: { fasyankes_id: fasyankesId, aktif: true, jenis: { not: 'obat' } }, orderBy: [{ jenis: 'asc' }, { nama: 'asc' }] });
-    return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, jenis: x.jenis as TarifKasirDto['jenis'], harga: hargaTarif(x, caraPembayaran) ?? x.harga_umum }));
+    return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, jenis: x.jenis as TarifKasirDto['jenis'], harga: hargaTarif(x, caraPembayaran) }));
   }
 
   /** Status pembayaran dihitung ulang setelah item berubah (lunas bisa kembali menjadi sebagian). */
@@ -179,10 +205,10 @@ export class RepositoriKasirPrisma {
       if (!k || k.tahap_layanan === 'ditutup') return { ok: false, sebab: 'terkunci' } as const;
       const tarif = await tx.tarifLayanan.findFirst({ where: { id: tarifId, fasyankes_id: fasyankesId, aktif: true, jenis: { not: 'obat' } } });
       if (!tarif) return { ok: false, sebab: 'tarif_tidak_ada' } as const;
-      const harga = hargaTarif(tarif, k.cara_pembayaran) ?? tarif.harga_umum;
+      const harga = hargaTarif(tarif, k.cara_pembayaran); // tindakan tanpa harga acuan: null, dilengkapi kasir
       const tagihan = await tx.tagihan.upsert({ where: { kunjungan_id: kunjunganId }, update: {}, create: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, dibuat_oleh: oleh } });
       await tx.itemTagihan.create({
-        data: { fasyankes_id: fasyankesId, tagihan_id: tagihan.id, jenis: tarif.jenis, tarif_layanan_id: tarif.id, kode: tarif.kode, nama: tarif.nama, jumlah, harga, manual: true, dibuat_oleh: oleh },
+        data: { fasyankes_id: fasyankesId, tagihan_id: tagihan.id, jenis: tarif.jenis, tarif_layanan_id: tarif.id, kode: tarif.kode, nama: tarif.nama, jumlah, harga, harga_acuan: harga, manual: true, dibuat_oleh: oleh },
       });
       await this.hitungUlang(tx, tagihan.id);
       return { ok: true, nama: tarif.nama, harga, jumlah } as const;

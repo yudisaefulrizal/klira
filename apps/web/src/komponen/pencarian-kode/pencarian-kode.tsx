@@ -11,6 +11,16 @@ import { Tombol } from '../ui/tombol';
 import { Bingkai } from '../ui/kartu';
 import { KamusKode } from './kamus-kode';
 
+/** Hasil sumber tambahan yang tampil di atas hasil terminologi (mis. daftar tindakan klinik). */
+export type HasilTambahan = { kunci: string; kode: string; nama: string; keterangan?: string };
+export type SumberTambahan = {
+  judul: string;
+  /** Judul hasil terminologi di bawahnya. */
+  judulKamus: string;
+  cari: (q: string) => Promise<HasilTambahan[]>;
+  onPilih: (h: HasilTambahan) => void;
+};
+
 type Props = {
   id: string;
   label: string;
@@ -23,14 +33,18 @@ type Props = {
   /** Teks pada tombol tambah manual dan label kolom manual. */
   teksManual?: { kode: string; nama: string };
   kamus?: { judul: string; sistem: SistemTerminologi };
+  /** Sumber kedua yang tampil di atas hasil terminologi. */
+  tambahan?: SumberTambahan;
 };
 
 /** Pencarian kode terminologi (ICD-10, ICD-9 CM) dengan saran otomatis; dipakai langkah Diagnosis dan Tindakan. */
-export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = false, teksManual, kamus }: Props) {
+export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = false, teksManual, kamus, tambahan }: Props) {
   const [q, setQ] = useState('');
   const [kamusTerbuka, setKamusTerbuka] = useState(false);
   const tertunda = useNilaiTertunda(q.trim(), 250);
   const [hasil, setHasil] = useState<KodeTerminologiDto[] | null>(null);
+  const [hasilTambahan, setHasilTambahan] = useState<HasilTambahan[]>([]);
+  const cariTambahan = tambahan?.cari;
   const [kataHasil, setKataHasil] = useState<string | null>(null);
   const hasilTampil = kataHasil === q.trim() ? hasil : null;
   const [memuat, setMemuat] = useState(false);
@@ -46,10 +60,11 @@ export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = fal
     }
     let batal = false;
     setMemuat(true);
-    cari(tertunda)
-      .then((h) => {
+    Promise.all([cari(tertunda), cariTambahan ? cariTambahan(tertunda) : Promise.resolve([])])
+      .then(([h, t]) => {
         if (batal) return;
         setHasil(h);
+        setHasilTambahan(t);
         setKataHasil(tertunda);
         setGalat(null);
       })
@@ -58,15 +73,20 @@ export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = fal
     return () => {
       batal = true;
     };
-  }, [tertunda, cari]);
+  }, [tertunda, cari, cariTambahan]);
 
-  const pilih = (k: { kode: string; nama: string }) => {
-    onPilih(k);
+  const bersihkan = () => {
     setQ('');
     setHasil(null);
+    setHasilTambahan([]);
     setKodeManual('');
     setNamaManual('');
   };
+  const pilih = (k: { kode: string; nama: string }) => {
+    onPilih(k);
+    bersihkan();
+  };
+  const tambahanTampil = hasilTampil ? hasilTambahan : [];
 
   return (
     <Kolom jarak="sm">
@@ -83,6 +103,22 @@ export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = fal
         onPilih={(kode) => { pilih(kode); setKamusTerbuka(false); }} />}
       {galat && <Peringatan>{galat}</Peringatan>}
       {memuat && <span style={{ color: token.warna.teksRedup }}>{NAVIGASI.memuat}</span>}
+      {tambahan && tambahanTampil.length > 0 && (
+        <Kolom jarak="xs">
+          <strong>{tambahan.judul}</strong>
+          <Bingkai tag="ul" arah="kolom" jarak="tanpa" padding="tanpa" aria-label={tambahan.judul}>
+            {tambahanTampil.map((h) => (
+              <Kolom tag="li" jarak="tanpa" garis="atas" halus key={h.kunci}>
+                <Tombol type="button" varian="langkah" penuh onClick={() => { tambahan.onPilih(h); bersihkan(); }}>
+                  <strong style={{ minWidth: token.ukuran.kolomKode }}>{h.kode}</strong>
+                  <span style={{ flexGrow: 1 }}>{h.nama}{h.keterangan && <small style={{ display: 'block', color: token.warna.teksRedup }}>{h.keterangan}</small>}</span>
+                </Tombol>
+              </Kolom>
+            ))}
+          </Bingkai>
+        </Kolom>
+      )}
+      {tambahan && hasilTampil && hasilTampil.length > 0 && <strong>{tambahan.judulKamus}</strong>}
       {hasilTampil && hasilTampil.length > 0 && (
         <Bingkai tag="ul" arah="kolom" jarak="tanpa" padding="tanpa" aria-label={KLINIS.diagnosis.hasil}>
           {hasilTampil.map((h) => (
@@ -96,8 +132,8 @@ export function PencarianKode({ id, label, petunjuk, cari, onPilih, manual = fal
           ))}
         </Bingkai>
       )}
-      {hasilTampil && hasilTampil.length === 0 && !memuat && <Peringatan nada="kuning">{KLINIS.diagnosis.tidakAda}</Peringatan>}
-      {manual && hasilTampil && hasilTampil.length === 0 && !memuat && teksManual && (
+      {hasilTampil && hasilTampil.length === 0 && tambahanTampil.length === 0 && !memuat && <Peringatan nada="kuning">{KLINIS.diagnosis.tidakAda}</Peringatan>}
+      {manual && hasilTampil && hasilTampil.length === 0 && tambahanTampil.length === 0 && !memuat && teksManual && (
         <Baris>
           <Isian id={`${id}-kode`} label={teksManual.kode} value={kodeManual} onChange={(e) => setKodeManual(e.target.value)} autoComplete="off" />
           <Isian id={`${id}-nama`} label={teksManual.nama} value={namaManual} onChange={(e) => setNamaManual(e.target.value)} autoComplete="off" />

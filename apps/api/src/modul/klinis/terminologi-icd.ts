@@ -35,3 +35,7 @@ export function cariIcd(sistem: SistemIcd, kata: string, batas: number): KodeTer
   }
   return [...kode, ...namaAwal, ...namaMemuat].slice(0, batas);
 }
+
+const indeksKode = { icd10: new Map(referensi.icd10.map((k) => [k.kode, k])), icd9cm: new Map(referensi.icd9cm.map((k) => [k.kode, k])) };
+/** Entri kamus untuk kode persis (null bila tidak ada); dipakai validasi kode tindakan klinik. */
+export const entriIcd = (sistem: SistemIcd, kode: string): KodeTerminologiDto | null => indeksKode[sistem].get(kode.trim().toUpperCase()) ?? null;

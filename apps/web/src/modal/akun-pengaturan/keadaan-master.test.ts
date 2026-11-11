@@ -1,5 +1,5 @@
 import { DEFINISI_MASTER, JENIS_MASTER_UBAH, MASTER } from '@klira/shared';
-import { awalMaster, bentukMasukan, bidangTampil, galatMaster, masterBerubah, opsiDenganNilaiSaatIni } from './keadaan-master';
+import { awalMaster, bentukMasukan, bidangAktif, bidangTampil, galatMaster, masterBerubah, opsiDenganNilaiSaatIni, petunjukSaatIni, wajibSaatIni } from './keadaan-master';
 
 describe('bentuk generik master', () => {
   it('setiap jenis punya bidang dan awal yang sesuai definisi (praktisi menyembunyikan pengguna saat ubah)', () => {
@@ -11,7 +11,24 @@ describe('bentuk generik master', () => {
 
   it('awal ubah memakai baris, null menjadi kosong', () => {
     const awal = awalMaster('tarif', { id: 1, aktif: true, kode: 'K', nama: 'N', jenis: 'lab', harga_umum: 1000, harga_jkn: null });
-    expect(awal).toEqual({ kode: 'K', nama: 'N', jenis: 'lab', harga_umum: '1000', harga_jkn: '' });
+    expect(awal).toEqual({ kode: 'K', nama: 'N', jenis: 'lab', harga_umum: '1000', harga_jkn: '', kode_icd9cm: '' });
+  });
+
+  it('tarif tindakan: kode ICD-9-CM tampil dan wajib, kode tarif dan harga umum tidak wajib', () => {
+    const lab = { ...awalMaster('tarif'), jenis: 'lab' };
+    const tindakan = { ...awalMaster('tarif'), jenis: 'tindakan', nama: 'Jahit luka' };
+    expect(bidangAktif('tarif', false, lab).map((b) => b.kunci)).not.toContain('kode_icd9cm');
+    expect(bidangAktif('tarif', false, tindakan).map((b) => b.kunci)).toContain('kode_icd9cm');
+    const harga = DEFINISI_MASTER.tarif.bidang.find((b) => b.kunci === 'harga_umum')!;
+    expect(wajibSaatIni(harga, lab)).toBe(true);
+    expect(wajibSaatIni(harga, tindakan)).toBe(false);
+    expect(petunjukSaatIni(harga, tindakan)).toBe(MASTER.petunjuk.hargaTindakan);
+    expect(galatMaster('tarif', tindakan, false)).toEqual({ kode_icd9cm: MASTER.galat.icd9Wajib });
+    expect(galatMaster('tarif', { ...tindakan, kode_icd9cm: '86.59' }, false)).toEqual({});
+    expect(bentukMasukan('tarif', { ...tindakan, kode_icd9cm: '86.59' }, false)).toEqual({ jenis: 'tindakan', nama: 'Jahit luka', kode_icd9cm: '86.59' });
+    // Kode ICD-9-CM tidak dikirim untuk jenis lain walau sempat diisi.
+    expect(bentukMasukan('tarif', { ...lab, kode: 'L', nama: 'Lab', harga_umum: '1', kode_icd9cm: '86.59' }, false)).toEqual({ jenis: 'lab', kode: 'L', nama: 'Lab', harga_umum: 1 });
+    expect(galatMaster('tarif', { ...lab, nama: 'Lab' }, false)).toMatchObject({ kode: MASTER.galat.wajib, harga_umum: MASTER.galat.wajib });
   });
 
   it('bentuk masukan mengubah tipe: angka, id, hari; kosong opsional tidak dikirim', () => {

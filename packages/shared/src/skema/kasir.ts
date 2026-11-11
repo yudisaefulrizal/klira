@@ -59,8 +59,17 @@ export const lengkapiHargaMasukan = z.object({ harga: bulat(100_000_000) });
 /** Kasir menambah item tagihan dari master tarif (konsultasi, visite, tindakan, kamar, lab); harga mengikuti tarif dan cara pembayaran. */
 export const tambahItemTarifMasukan = z.object({ tarif_id: z.number({ error: KASIR.galat.pilihTarif }).int().positive(KASIR.galat.pilihTarif), jumlah: bulat(1000, 1) });
 export type TambahItemTarifMasukan = z.input<typeof tambahItemTarifMasukan>;
-/** Tarif yang bisa ditambahkan kasir; harga sudah disesuaikan dengan cara pembayaran kunjungan. */
-export type TarifKasirDto = { id: number; kode: string; nama: string; jenis: 'konsultasi' | 'tindakan' | 'lab' | 'kamar'; harga: number };
+/** Tarif yang bisa ditambahkan kasir; harga sudah disesuaikan dengan cara pembayaran kunjungan (null: tindakan tanpa harga acuan, dilengkapi kasir). */
+export type TarifKasirDto = { id: number; kode: string; nama: string; jenis: 'konsultasi' | 'tindakan' | 'lab' | 'kamar'; harga: number | null };
+
+/** Ubah harga item tagihan per kunjungan (bukan obat) sebelum ada pembayaran; alasan wajib dan tercatat di audit. */
+export const ubahHargaMasukan = z.object({
+  harga: bulat(100_000_000),
+  alasan: z.string({ error: KASIR.galat.alasanWajib }).trim().min(1, KASIR.galat.alasanWajib).max(300),
+});
+export type UbahHargaMasukan = z.input<typeof ubahHargaMasukan>;
+/** Item yang boleh diubah harganya: bukan obat dan sudah berharga (item tanpa harga memakai Lengkapi harga). */
+export const bolehUbahHarga = (i: { jenis: string; harga: number | null }): boolean => i.jenis !== 'obat' && i.harga !== null;
 export type LengkapiHargaMasukan = z.input<typeof lengkapiHargaMasukan>;
 
 export const bukaShiftMasukan = z.object({ kas_awal: bulat(1_000_000_000) });

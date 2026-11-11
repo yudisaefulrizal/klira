@@ -1,9 +1,9 @@
 import type { BagianKlinis, KlinisKunjunganDto, SalinanKunjunganDto } from '@klira/shared';
-import { BAGIAN_KLINIS } from '@klira/shared';
+import { BAGIAN_KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import {
   langkahDraf, bagianLangkah, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
   hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan,
-  pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
+  pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan, kunciItemTindakan, ubahTindakan,
 } from './keadaan-pemeriksaan';
 
 const bagianKosongServer = (): KlinisKunjunganDto['bagian'] =>
@@ -133,7 +133,20 @@ describe('diagnosis dan tindakan', () => {
     const t = tambahTindakan([], { kode: '89.52', nama: 'EKG' }, new Date(2026, 9, 25, 9, 5));
     expect(t).toEqual([{ kode: '89.52', nama: 'EKG', mulai: '2026-10-25T09:05', selesai: '' }]);
     expect(tambahTindakan(t, { kode: '89.52', nama: 'EKG' }, new Date())).toHaveLength(1);
-    expect(hapusTindakan(t, '89.52')).toEqual([]);
+    expect(hapusTindakan(t, '89.52|')).toEqual([]);
+  });
+  it('tindakan klinik: dua tarif berkode sama boleh, pasangan kode dan tarif yang sama tidak; jumlah dan tarif dikirim', () => {
+    const w = new Date(2026, 9, 25, 9, 5);
+    let t = tambahTindakan([], { kode: '86.59', nama: 'Jahit luka <= 5 cm', tarif_layanan_id: 1 }, w);
+    t = tambahTindakan(t, { kode: '86.59', nama: 'Jahit luka > 5 cm', tarif_layanan_id: 2 }, w);
+    t = tambahTindakan(t, { kode: '86.59', nama: 'ganda', tarif_layanan_id: 2 }, w);
+    t = tambahTindakan(t, { kode: '86.59', nama: 'Dari kamus' }, w);
+    expect(t.map(kunciItemTindakan)).toEqual(['86.59|1', '86.59|2', '86.59|']);
+    t = ubahTindakan(t, '86.59|2', { jumlah: '3' });
+    const isi = isiBagian('tindakan', { ...awalKeadaan(), tindakan: t }) as { item: { tarif_layanan_id: number | null; jumlah: string | null }[] };
+    expect(isi.item.map((x) => [x.tarif_layanan_id, x.jumlah])).toEqual([[1, null], [2, '3'], [null, null]]);
+    expect(SKEMA_BAGIAN.tindakan.safeParse(isi).success).toBe(true);
+    expect(hapusTindakan(t, '86.59|1').map(kunciItemTindakan)).toEqual(['86.59|2', '86.59|']);
   });
 });
 

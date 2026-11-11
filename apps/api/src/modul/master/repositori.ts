@@ -1,7 +1,7 @@
 import { dataWilayah } from '../wilayah/data';
 import { prisma } from '@klira/db';
 import type { Prisma } from '@klira/db';
-import { SKEMA_MASTER } from '@klira/shared';
+import { AWALAN_KODE_TINDAKAN, SKEMA_MASTER } from '@klira/shared';
 import type { BarisMaster, FilterMaster, JenisMaster, JenisMasterUbah, OpsiMasterDto, SumberOpsiMaster, z } from '@klira/shared';
 
 export type MasukanMaster = { [J in JenisMasterUbah]: z.infer<(typeof SKEMA_MASTER)[J]> };
@@ -19,6 +19,8 @@ export interface RepositoriMaster {
   penggunaAda(fasyankesId: number, id: number): Promise<boolean>;
   punyaProfil(fasyankesId: number, penggunaId: number): Promise<boolean>;
   tarifKodeAda(fasyankesId: number, kode: string, kecualiId?: number): Promise<boolean>;
+  /** Kode tarif berawalan TND- milik fasyankes (untuk membuat kode tindakan otomatis berikutnya). */
+  kodeTarifTindakan(fasyankesId: number): Promise<string[]>;
   tambahRiwayatProfil(fasyankesId: number, jenis: 'sip', penggunaId: number, ringkasan: string, oleh: number): Promise<void>;
 }
 
@@ -39,9 +41,11 @@ const barisJadwal = (j: BarisJadwal): BarisMaster => ({
   id: j.id, aktif: j.aktif, pengguna_id: j.pengguna_id, pengguna_nama: j.pengguna.nama, lokasi_id: j.lokasi_id, lokasi_nama: j.lokasi.nama,
   hari: j.hari, jam_mulai: j.jam_mulai, jam_selesai: j.jam_selesai, kuota: j.kuota, berlaku_dari: tgl(j.berlaku_dari), berlaku_sampai: tgl(j.berlaku_sampai),
 });
-const barisTarif = (t: { id: number; kode: string; nama: string; jenis: string; harga_umum: number; harga_jkn: number | null; aktif: boolean }): BarisMaster => ({
-  id: t.id, aktif: t.aktif, kode: t.kode, nama: t.nama, jenis: t.jenis, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn,
+const barisTarif = (t: { id: number; kode: string; nama: string; jenis: string; harga_umum: number | null; harga_jkn: number | null; kode_icd9cm: string | null; aktif: boolean }): BarisMaster => ({
+  id: t.id, aktif: t.aktif, kode: t.kode, nama: t.nama, jenis: t.jenis, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn, kode_icd9cm: t.kode_icd9cm,
 });
+/** Data tarif dari masukan; kode sudah dipastikan terisi oleh layanan (dibuat otomatis untuk tindakan). */
+const dataTarif = (d: MasukanMaster['tarif']) => ({ kode: d.kode ?? '', nama: d.nama, jenis: d.jenis, harga_umum: d.harga_umum, harga_jkn: d.harga_jkn, kode_icd9cm: d.kode_icd9cm });
 
 const sertaLokasi = { induk: { select: { nama: true } } } as const;
 const sertaPraktisi = { pengguna: { select: { nama: true } } } as const;
@@ -89,7 +93,7 @@ export class RepositoriMasterPrisma implements RepositoriMaster {
     if (jenis === 'tarif') {
       const where: Prisma.TarifLayananWhereInput = {
         fasyankes_id: fasyankesId, ...(aktif === undefined ? {} : { aktif }),
-        ...(cari ? { OR: [{ kode: { contains: cari } }, { nama: { contains: cari } }] } : {}),
+        ...(cari ? { OR: [{ kode: { contains: cari } }, { nama: { contains: cari } }, { kode_icd9cm: { startsWith: cari } }] } : {}),
       };
       const [total, data] = await Promise.all([
         prisma.tarifLayanan.count({ where }),
@@ -151,7 +155,7 @@ export class RepositoriMasterPrisma implements RepositoriMaster {
       return barisJadwal(j);
     }
     const d = data as MasukanMaster['tarif'];
-    return barisTarif(await prisma.tarifLayanan.create({ data: { ...dasar, kode: d.kode, nama: d.nama, jenis: d.jenis, harga_umum: d.harga_umum, harga_jkn: d.harga_jkn ?? null } }));
+    return barisTarif(await prisma.tarifLayanan.create({ data: { ...dasar, ...dataTarif(d) } }));
   }
 
   async ubah(fasyankesId: number, jenis: JenisMasterUbah, id: number, data: Partial<MasukanMaster[JenisMasterUbah]>): Promise<BarisMaster> {
@@ -176,7 +180,7 @@ export class RepositoriMasterPrisma implements RepositoriMaster {
       });
     } else {
       const d = data as MasukanMaster['tarif'];
-      await prisma.tarifLayanan.updateMany({ where: { id, fasyankes_id: fasyankesId }, data: { kode: d.kode, nama: d.nama, jenis: d.jenis, harga_umum: d.harga_umum, harga_jkn: d.harga_jkn ?? null } });
+      await prisma.tarifLayanan.updateMany({ where: { id, fasyankes_id: fasyankesId }, data: dataTarif(d) });
     }
     return (await this.ambil(fasyankesId, jenis, id)) as BarisMaster;
   }
@@ -226,6 +230,11 @@ export class RepositoriMasterPrisma implements RepositoriMaster {
 
   async tarifKodeAda(fasyankesId: number, kode: string, kecualiId?: number): Promise<boolean> {
     return (await prisma.tarifLayanan.count({ where: { fasyankes_id: fasyankesId, kode, ...(kecualiId ? { id: { not: kecualiId } } : {}) } })) > 0;
+  }
+
+  async kodeTarifTindakan(fasyankesId: number): Promise<string[]> {
+    const t = await prisma.tarifLayanan.findMany({ where: { fasyankes_id: fasyankesId, kode: { startsWith: AWALAN_KODE_TINDAKAN } }, select: { kode: true } });
+    return t.map((x) => x.kode);
   }
 
   async tambahRiwayatProfil(fasyankesId: number, jenis: 'sip', penggunaId: number, ringkasan: string, oleh: number): Promise<void> {

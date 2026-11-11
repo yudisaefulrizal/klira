@@ -1,4 +1,4 @@
-import { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, profilKlinikMasukan, teksSelMaster } from './index';
+import { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, kodeTindakanBerikut, profilKlinikMasukan, teksSelMaster } from './index';
 
 describe('skema master', () => {
   it('poli: nama wajib, status bawaan operasional', () => {
@@ -25,10 +25,26 @@ describe('skema master', () => {
   });
   it('tarif: jenis dan harga', () => {
     const t = { kode: 'K', nama: 'N', jenis: 'kamar', harga_umum: 100 };
-    expect(SKEMA_MASTER.tarif.parse(t).harga_jkn).toBeUndefined();
+    expect(SKEMA_MASTER.tarif.parse(t)).toMatchObject({ harga_jkn: null, kode_icd9cm: null });
     expect(SKEMA_MASTER.tarif.safeParse({ ...t, jenis: 'obat' }).success).toBe(true);
     expect(SKEMA_MASTER.tarif.safeParse({ ...t, jenis: 'lainnya' }).success).toBe(false);
     expect(SKEMA_MASTER.tarif.safeParse({ ...t, harga_umum: 1.5 }).success).toBe(false);
+    // Jenis selain tindakan: kode dan harga umum wajib, kode ICD-9-CM diabaikan.
+    expect(SKEMA_MASTER.tarif.safeParse({ ...t, harga_umum: undefined }).error?.issues[0]).toMatchObject({ path: ['harga_umum'], message: MASTER.galat.hargaWajib });
+    expect(SKEMA_MASTER.tarif.safeParse({ ...t, kode: '' }).error?.issues[0]).toMatchObject({ path: ['kode'] });
+    expect(SKEMA_MASTER.tarif.parse({ ...t, kode_icd9cm: '86.59' }).kode_icd9cm).toBeNull();
+  });
+  it('tarif tindakan: ICD-9-CM wajib dan berpola, harga dan kode boleh kosong', () => {
+    const t = { nama: 'Jahit luka', jenis: 'tindakan' };
+    expect(SKEMA_MASTER.tarif.safeParse(t).error?.issues[0]).toMatchObject({ path: ['kode_icd9cm'], message: MASTER.galat.icd9Wajib });
+    expect(SKEMA_MASTER.tarif.safeParse({ ...t, kode_icd9cm: 'abc' }).success).toBe(false);
+    expect(SKEMA_MASTER.tarif.parse({ ...t, kode_icd9cm: ' 86.59 ', kode: '' })).toEqual({ kode: null, nama: 'Jahit luka', jenis: 'tindakan', harga_umum: null, harga_jkn: null, kode_icd9cm: '86.59' });
+    expect(SKEMA_MASTER.tarif.parse({ ...t, kode_icd9cm: '86.59', harga_umum: 75000 }).harga_umum).toBe(75000);
+  });
+  it('kode tindakan otomatis TND-nnn per fasyankes', () => {
+    expect(kodeTindakanBerikut([])).toBe('TND-001');
+    expect(kodeTindakanBerikut(['TND-001', 'TND-009', 'TND-X', 'KONS-01'])).toBe('TND-010');
+    expect(kodeTindakanBerikut(['TND-999'])).toBe('TND-1000');
   });
   it('filter master: bawaan dan nilai kosong', () => {
     expect(filterMaster.parse({ cari: '', status: '' })).toMatchObject({ status: 'semua', halaman: 1, ukuran: 20 });

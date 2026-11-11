@@ -1,5 +1,7 @@
 import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi';
-import { awalBayar, awalShift, bentukBayar, bisaTutup, daftarSyarat, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, hapusBaris, ringkasBayar, selisihShift, tambahBaris, ubahBaris } from './keadaan-kasir';
+import { KASIR } from '@klira/shared';
+import type { KasirKunjunganDto } from '@klira/shared';
+import { awalBayar, awalShift, bentukBayar, bisaTutup, daftarSyarat, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, galatUbahHarga, hapusBaris, hargaDiubah, ringkasBayar, selisihShift, tambahBaris, ubahBaris, ubahHargaTersedia } from './keadaan-kasir';
 
 const gambaran = (syarat: Partial<{ tahap_kasir: boolean; tagihan_lengkap: boolean; resep_diserahkan: boolean; lunas: boolean; ditanggung_jkn: boolean }> = {}) =>
   ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ditanggung_jkn: false, ...syarat } }) as never;
@@ -84,5 +86,29 @@ describe('shift', () => {
     expect(galatTutupShift({ kas: '149500', alasan: 'uang kembalian' }, 150_000)).toEqual({});
     expect(selisihShift({ kas: '149500', alasan: '' }, 150_000)).toBe(-500);
     expect(selisihShift(awalShift(), 150_000)).toBeNull();
+  });
+});
+
+describe('ubah harga item per kunjungan', () => {
+  const item = { id: 1, jenis: 'tindakan' as const, kode: 'TND-001', nama: 'Jahit luka', jumlah: 1, harga: 75_000, order_penunjang_id: null };
+  const gambaran = (o: { bayar?: boolean; tahap?: string } = {}) => ({
+    kunjungan: { tahap_layanan: o.tahap ?? 'kasir' }, tagihan: { pembayaran: o.bayar ? [{ id: 1 }] : [] },
+  }) as unknown as KasirKunjunganDto;
+  it('harga bilangan bulat dan alasan wajib; harga sama ditolak', () => {
+    expect(galatUbahHarga('60000', 'Diskon', 75_000)).toEqual({});
+    expect(galatUbahHarga('60000', '  ', 75_000).alasan).toBe(KASIR.galat.alasanWajib);
+    expect(galatUbahHarga('abc', 'Diskon', 75_000).harga).toBe(KASIR.galat.angka);
+    expect(galatUbahHarga('75000', 'Diskon', 75_000).harga).toBe(KASIR.galat.hargaSama);
+  });
+  it('tersedia untuk item berharga bukan obat, sebelum pembayaran dan sebelum ditutup', () => {
+    expect(ubahHargaTersedia(item, gambaran())).toBe(true);
+    expect(ubahHargaTersedia({ ...item, jenis: 'obat' }, gambaran())).toBe(false);
+    expect(ubahHargaTersedia({ ...item, harga: null }, gambaran())).toBe(false);
+    expect(ubahHargaTersedia(item, gambaran({ bayar: true }))).toBe(false);
+    expect(ubahHargaTersedia(item, gambaran({ tahap: 'ditutup' }))).toBe(false);
+  });
+  it('item diubah ditandai bila beralasan dan harga acuan berbeda', () => {
+    expect(hargaDiubah({ ...item, harga: 60_000, harga_acuan: 75_000, alasan_ubah_harga: 'Diskon' })).toBe(true);
+    expect(hargaDiubah({ ...item, harga_acuan: 75_000, alasan_ubah_harga: null })).toBe(false);
   });
 });

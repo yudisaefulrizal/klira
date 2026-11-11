@@ -91,11 +91,26 @@ export function buatLayananKasir({ repo, farmasi, audit }: { repo: RepositoriKas
       return { ok: true, data: (await gambaran(p, kunjunganId))! };
     },
 
+    /** Ubah harga item per kunjungan (izin kasir.input): bukan obat, sudah berharga, sebelum ada pembayaran; alasan wajib dan diaudit. */
+    async ubahHarga(p: Pelaku, kunjunganId: number, itemId: number, m: { harga: number; alasan: string }, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
+      if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
+      const alasan = m.alasan.trim();
+      if (!alasan) return gagal('tidak_valid', G.alasanWajib, 'alasan');
+      const h = await repo.ubahHarga(p.fasyankes_id, kunjunganId, itemId, m.harga, alasan);
+      if (!h.ok) {
+        if (h.sebab === 'tidak_ada') return gagal('tidak_ditemukan', G.itemTidakAda);
+        if (h.sebab === 'sama') return gagal('tidak_valid', G.hargaSama, 'harga');
+        return gagal('konflik', { obat: G.ubahHargaObat, tanpa_harga: G.ubahHargaKosong, terkunci: G.tagihanTerkunci, sudah_bayar: G.ubahHargaSudahBayar }[h.sebab]);
+      }
+      await catat(p, 'perbaikan', 'item_tagihan', itemId, `Harga item "${h.nama}" diubah dari ${rp(h.lama)} menjadi ${rp(h.baru)} (kunjungan ${kunjunganId}). Alasan: ${alasan}`, alamat);
+      return { ok: true, data: (await gambaran(p, kunjunganId))! };
+    },
+
     async tambahItem(p: Pelaku, kunjunganId: number, m: { tarif_id: number; jumlah: number }, alamat?: string): Promise<Hasil<KasirKunjunganDto>> {
       if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
       const h = await repo.tambahItem(p.fasyankes_id, p.id, kunjunganId, m.tarif_id, m.jumlah);
       if (!h.ok) return h.sebab === 'terkunci' ? gagal('konflik', G.tagihanTerkunci) : gagal('tidak_valid', G.tarifTidakAda, 'tarif_id');
-      await catat(p, 'input', 'item_tagihan', kunjunganId, `Item tagihan ditambah kasir: ${h.nama} x${h.jumlah} @ ${rp(h.harga)}`, alamat);
+      await catat(p, 'input', 'item_tagihan', kunjunganId, `Item tagihan ditambah kasir: ${h.nama} x${h.jumlah} @ ${h.harga === null ? 'tanpa harga' : rp(h.harga)}`, alamat);
       return { ok: true, data: (await gambaran(p, kunjunganId))! };
     },
 

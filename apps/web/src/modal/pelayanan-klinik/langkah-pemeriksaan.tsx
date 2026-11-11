@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react';
 import { LABEL_NARASI, KLINIS, PEMERIKSAAN_BIDANG, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL } from '@klira/shared';
 import type { BagianNarasi, BagianKlinis, BagianKlinisDto, FavoritDto } from '@klira/shared';
-import { cariTerminologi } from '../../api-klien/klinis';
+import { cariTerminologi, cariTindakanKlinik } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan';
 import { PencarianKode } from '../../komponen/pencarian-kode/pencarian-kode';
+import type { HasilTambahan } from '../../komponen/pencarian-kode/pencarian-kode';
 import { AreaTeks } from '../../komponen/ui/area-teks';
 import { Isian } from '../../komponen/ui/isian';
 import { KotakCentang } from '../../komponen/ui/kotak-centang';
@@ -12,7 +13,8 @@ import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
-import { hapusDiagnosis, hapusTindakan, jadikanUtama, ringkasanIsi, tambahDiagnosis, tambahTindakan } from './keadaan-pemeriksaan';
+import { hapusDiagnosis, hapusTindakan, jadikanUtama, kunciItemTindakan, ringkasanIsi, tambahDiagnosis, tambahTindakan, ubahTindakan } from './keadaan-pemeriksaan';
+import { rupiahAtau } from './keadaan-order-lab';
 import type { KeadaanPemeriksaan, KonfigLangkah, RencanaSimpan } from './keadaan-pemeriksaan';
 import { Bingkai } from '../../komponen/ui/kartu';
 
@@ -120,15 +122,24 @@ export function LangkahDiagnosis({ k, ubah, galat, server, favorit }: DasarLangk
   );
 }
 
+/** Daftar tindakan klinik sebagai hasil tambahan pencarian: kunci `tarif:<id>|<kode ICD-9-CM>`. Tanpa kode ICD-9-CM tidak dapat dicatat. */
+const cariTindakanKlinikTambahan = async (q: string): Promise<HasilTambahan[]> =>
+  (await cariTindakanKlinik(q)).flatMap((x) => (x.kode_icd9cm ? [{
+    kunci: `${x.id}|${x.kode_icd9cm}`, kode: x.kode_icd9cm, nama: x.nama,
+    keterangan: `${KLINIS.tindakan.tindakanKlinik} ${x.kode} · ${rupiahAtau(x.harga_umum, KLINIS.tindakan.tanpaHarga)}${x.harga_jkn !== null ? ` · JKN ${rupiahAtau(x.harga_jkn)}` : ''}`,
+  }] : []));
+const tarifDariKunci = (kunci: string): number => Number(kunci.split('|')[0]);
+
 export function LangkahTindakan({ k, ubah, galat, server, favorit }: DasarLangkah & { favorit: readonly FavoritDto[] }) {
   const t = KLINIS.tindakan;
-  const tambah = (x: { kode: string; nama: string }) => ubah({ tindakan: tambahTindakan(k.tindakan, x, new Date()) });
-  const ubahItem = (kode: string, p: Partial<(typeof k.tindakan)[number]>) => ubah({ tindakan: k.tindakan.map((x) => (x.kode === kode ? { ...x, ...p } : x)) });
+  const tambah = (x: { kode: string; nama: string; tarif_layanan_id?: number | null }) => ubah({ tindakan: tambahTindakan(k.tindakan, x, new Date()) });
+  const ubahItem = (kunci: string, p: Partial<(typeof k.tindakan)[number]>) => ubah({ tindakan: ubahTindakan(k.tindakan, kunci, p) });
   return (
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      <PencarianKode kamus={{ judul: 'Kamus ICD-9-CM', sistem: 'icd9cm' }} id="tindakan-cari" label={t.cari} petunjuk={t.petunjukCari} cari={cariIcd9} onPilih={tambah} manual teksManual={{ kode: t.kode, nama: t.nama }} />
+      <PencarianKode kamus={{ judul: t.kamus, sistem: 'icd9cm' }} id="tindakan-cari" label={t.cari} petunjuk={t.petunjukCari} cari={cariIcd9} onPilih={tambah} manual teksManual={{ kode: t.kode, nama: t.nama }}
+        tambahan={{ judul: t.daftarKlinik, judulKamus: t.kamus, cari: cariTindakanKlinikTambahan, onPilih: (h) => tambah({ kode: h.kode, nama: h.nama, tarif_layanan_id: tarifDariKunci(h.kunci) }) }} />
       {favorit.length > 0 && (
         <Sebaris bungkus>
           <span style={{ color: token.warna.teksRedup }}>{KLINIS.diagnosis.favoritSaya}</span>
@@ -140,20 +151,26 @@ export function LangkahTindakan({ k, ubah, galat, server, favorit }: DasarLangka
       <Kolom jarak="sm">
         <strong>{t.kunjunganIni}</strong>
         {k.tindakan.length === 0 && <p style={teksRedup}>{t.kosong}</p>}
-        {k.tindakan.map((x) => (
-          <Bingkai arah="kolom" key={x.kode}>
-            <Sebaris jarak="md">
-              <strong style={{ minWidth: token.ukuran.kolomKode }}>{x.kode}</strong>
-              <Tumbuh>{x.nama}</Tumbuh>
-              <span style={{ color: token.warna.teksRedup }}>{t.performer}: {t.saya}</span>
-              <Tombol type="button" varian="teks" onClick={() => ubah({ tindakan: hapusTindakan(k.tindakan, x.kode) })}>{t.hapus}</Tombol>
-            </Sebaris>
-            <Baris>
-              <Isian id={`tindakan-mulai-${x.kode}`} label={t.mulai} type="datetime-local" value={x.mulai} onChange={(e) => ubahItem(x.kode, { mulai: e.target.value })} />
-              <Isian id={`tindakan-selesai-${x.kode}`} label={t.selesai} type="datetime-local" value={x.selesai} onChange={(e) => ubahItem(x.kode, { selesai: e.target.value })} />
-            </Baris>
-          </Bingkai>
-        ))}
+        {k.tindakan.map((x) => {
+          const kunci = kunciItemTindakan(x);
+          const idBaris = kunci.replace(/[^\w-]/g, '-');
+          return (
+            <Bingkai arah="kolom" key={kunci}>
+              <Sebaris jarak="md">
+                <strong style={{ minWidth: token.ukuran.kolomKode }}>{x.kode}</strong>
+                <Tumbuh>{x.nama}</Tumbuh>
+                {x.tarif_layanan_id ? <Lencana warna="biru">{t.tindakanKlinik}</Lencana> : null}
+                <span style={{ color: token.warna.teksRedup }}>{t.performer}: {t.saya}</span>
+                <Tombol type="button" varian="teks" onClick={() => ubah({ tindakan: hapusTindakan(k.tindakan, kunci) })}>{t.hapus}</Tombol>
+              </Sebaris>
+              <Baris>
+                <Isian id={`tindakan-jumlah-${idBaris}`} label={t.jumlah} inputMode="numeric" value={x.jumlah ?? '1'} onChange={(e) => ubahItem(kunci, { jumlah: e.target.value })} autoComplete="off" />
+                <Isian id={`tindakan-mulai-${idBaris}`} label={t.mulai} type="datetime-local" value={x.mulai} onChange={(e) => ubahItem(kunci, { mulai: e.target.value })} />
+                <Isian id={`tindakan-selesai-${idBaris}`} label={t.selesai} type="datetime-local" value={x.selesai} onChange={(e) => ubahItem(kunci, { selesai: e.target.value })} />
+              </Baris>
+            </Bingkai>
+          );
+        })}
       </Kolom>
     </Kolom>
   );

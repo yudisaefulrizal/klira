@@ -11,7 +11,7 @@ import { Pilihan } from '../../komponen/ui/pilihan';
 import { Sebaris, Tumbuh } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import { galatTambahItem } from './keadaan-kasir';
-import { rupiah } from './keadaan-order-lab';
+import { rupiahAtau } from './keadaan-order-lab';
 
 const T = KASIR.tambah;
 type Props = { kunjunganId: number; gambaran: KasirKunjunganDto; onUbah: (g: KasirKunjunganDto) => void };
@@ -23,7 +23,7 @@ export function TambahItemTarif({ kunjunganId, gambaran, onUbah }: Props) {
   const [galat, setGalat] = useState<string | null>(null);
   const [proses, setProses] = useState(false);
   if (gambaran.kunjungan.tahap_layanan === 'ditutup') return null;
-  const opsi = [{ nilai: '', label: T.pilih }, ...gambaran.tarif.map((t) => ({ nilai: String(t.id), label: `${t.nama} · ${rupiah(t.harga)}` }))];
+  const opsi = [{ nilai: '', label: T.pilih }, ...gambaran.tarif.map((t) => ({ nilai: String(t.id), label: `${t.nama} · ${rupiahAtau(t.harga, T.tanpaHarga)}` }))];
 
   async function tambah() {
     const g = galatTambahItem(tarifId, jumlah);

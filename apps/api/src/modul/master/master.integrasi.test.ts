@@ -182,7 +182,14 @@ d('master data dan profil klinik terhadap klira_uji', () => {
     const t = await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'KON-01', nama: 'Konsultasi dokter umum', jenis: 'konsultasi', harga_umum: 50000 });
     expect(t.status).toBe(201);
     expect(t.badan.data).toMatchObject({ harga_umum: 50000, harga_jkn: null, aktif: true });
-    expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'KON-01', nama: 'Dobel', jenis: 'tindakan', harga_umum: 1 })).status).toBe(409);
+    expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'KON-01', nama: 'Dobel', jenis: 'tindakan', harga_umum: 1, kode_icd9cm: '86.59' })).status).toBe(409);
+    // Tindakan: ICD-9-CM wajib dan harus ada di kamus; tanpa kode tarif dibuat TND-nnn; harga boleh kosong; satu kode ICD untuk beberapa tarif.
+    expect((await panggil('POST', '/master/tarif', 'pimpinan', { nama: 'Tanpa ICD', jenis: 'tindakan' })).status).toBe(400);
+    expect((await panggil('POST', '/master/tarif', 'pimpinan', { nama: 'ICD palsu', jenis: 'tindakan', kode_icd9cm: '99.999' })).status).toBe(400);
+    const j1 = await panggil('POST', '/master/tarif', 'pimpinan', { nama: 'Jahit luka kecil', jenis: 'tindakan', kode_icd9cm: '86.59', harga_umum: 75000 });
+    const j2 = await panggil('POST', '/master/tarif', 'pimpinan', { nama: 'Jahit luka besar', jenis: 'tindakan', kode_icd9cm: '86.59' });
+    expect(j1.badan.data).toMatchObject({ kode: 'TND-001', kode_icd9cm: '86.59', harga_umum: 75000 });
+    expect(j2.badan.data).toMatchObject({ kode: 'TND-002', kode_icd9cm: '86.59', harga_umum: null });
     expect((await panggil('POST', '/master/tarif', 'lain', { kode: 'KON-01', nama: 'Klinik lain', jenis: 'lab', harga_umum: 1, harga_jkn: 2 })).status).toBe(201);
     expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'X', nama: 'Negatif', jenis: 'lab', harga_umum: -1 })).status).toBe(400);
     expect((await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'X', nama: 'Jenis salah', jenis: 'lainnya', harga_umum: 1 })).status).toBe(400);

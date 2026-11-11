@@ -94,7 +94,7 @@ export const filterRekapLab = z.object({
 });
 export type FilterRekapLab = z.infer<typeof filterRekapLab>;
 
-export type TarifLabDto = { id: number; kode: string; nama: string; harga_umum: number; harga_jkn: number | null };
+export type TarifLabDto = { id: number; kode: string; nama: string; harga_umum: number | null; harga_jkn: number | null };
 export type MasterPemeriksaanDto = {
   id: number; kode: string; nama: string; kode_loinc: string | null; jenis_spesimen: string | null; satuan: string | null;
   rujukan_min: number | null; rujukan_maks: number | null; rujukan_teks: string | null; aktif: boolean; tarif: TarifLabDto | null;

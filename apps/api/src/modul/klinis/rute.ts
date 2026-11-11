@@ -17,6 +17,7 @@ import type { LayananKlinis } from './layanan';
 const idSumber = z.object({ id: z.coerce.number().int().positive(), sumber_id: z.coerce.number().int().positive() });
 const idAnak = z.object({ id: z.coerce.number().int().positive(), anak_id: z.coerce.number().int().positive() });
 const queryRiwayat = z.object({ kecuali: z.coerce.number().int().positive().optional() });
+const queryTindakanKlinik = z.object({ cari: z.string().trim().max(100).default(''), batas: z.coerce.number().int().min(1).max(50).default(20) });
 
 /**
  * Rute klinis (3.3, 4.2): catatan per bagian (izin `klinis`; lihat boleh juga lewat `rekam-medis`), riwayat, salinan, terminologi, favorit,
@@ -97,16 +98,25 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
     kirimHasil(res, await layanan.riwayat(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req)));
   }));
 
-  rute.get('/terminologi/kamus', masuk, lihatKlinis, bungkus(async (req, res) => {
+  // Kamus terminologi adalah referensi tanpa data pasien: juga dibuka pengelola master (form tarif tindakan memilih kode ICD-9-CM).
+  const lihatTerminologi = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['master', 'input'], ['master', 'perbaikan']);
+  rute.get('/terminologi/kamus', masuk, lihatTerminologi, bungkus(async (req, res) => {
     const q = kamusTerminologiMasukan.safeParse(req.query);
     if (!q.success) return galatValidasi(res, q.error);
     res.json({ data: await layanan.kamusTerminologi(q.data) });
   }));
 
-  rute.get('/terminologi', masuk, lihatKlinis, bungkus(async (req, res) => {
+  rute.get('/terminologi', masuk, lihatTerminologi, bungkus(async (req, res) => {
     const q = cariTerminologiMasukan.safeParse(req.query);
     if (!q.success) return galatValidasi(res, q.error);
     res.json({ data: await layanan.cariTerminologi(q.data) });
+  }));
+
+  // Daftar tindakan klinik (tarif tindakan aktif) untuk langkah Tindakan pemeriksaan klinis.
+  rute.get('/tindakan-klinik', masuk, lihatKlinis, bungkus(async (req, res) => {
+    const q = queryTindakanKlinik.safeParse(req.query);
+    if (!q.success) return galatValidasi(res, q.error);
+    res.json({ data: await layanan.tindakanKlinik(pengguna(res), q.data.cari, q.data.batas) });
   }));
 
   // Favorit dan templat milik pengguna sendiri.

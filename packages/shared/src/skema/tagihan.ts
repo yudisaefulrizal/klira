@@ -6,6 +6,11 @@ export type ItemTagihanDto = {
   item_resep_id?: number | null;
   /** Ditambahkan kasir dari tarif; hanya item ini yang bisa dihapus. */
   manual?: boolean;
+  /** Berasal dari pencatatan tindakan dokter (disinkronkan otomatis sebelum ada pembayaran). */
+  tindakan_sumber?: boolean;
+  /** Harga awal item; bila harga diubah kasir, harga acuan ditampilkan dicoret bersama alasannya. */
+  harga_acuan?: number | null;
+  alasan_ubah_harga?: string | null;
 };
 export type TagihanDto = {
   id: number | null;

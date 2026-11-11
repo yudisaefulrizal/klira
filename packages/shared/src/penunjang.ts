@@ -47,8 +47,8 @@ export function teksRujukan(m: { rujukan_teks: string | null; rujukan_min: numbe
   return null;
 }
 
-/** Harga item tagihan: harga JKN untuk kunjungan JKN bila ada, selain itu harga umum; null bila tarif tidak ada. */
-export function hargaTarif(tarif: { harga_umum: number; harga_jkn: number | null } | null, caraPembayaran: CaraPembayaran): number | null {
+/** Harga item tagihan: harga JKN untuk kunjungan JKN bila ada, selain itu harga umum (asuransi lain = umum); null bila tarif tidak ada atau tanpa harga. */
+export function hargaTarif(tarif: { harga_umum: number | null; harga_jkn: number | null } | null, caraPembayaran: CaraPembayaran): number | null {
   if (!tarif) return null;
   return caraPembayaran === 'jkn' && tarif.harga_jkn !== null ? tarif.harga_jkn : tarif.harga_umum;
 }

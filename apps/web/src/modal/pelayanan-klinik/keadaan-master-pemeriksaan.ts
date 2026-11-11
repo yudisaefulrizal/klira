@@ -9,7 +9,7 @@ export type KeadaanMasterPemeriksaan = {
 export const awalMasterPemeriksaan = (m?: MasterPemeriksaanDto): KeadaanMasterPemeriksaan => ({
   kode: m?.kode ?? '', nama: m?.nama ?? '', kode_loinc: m?.kode_loinc ?? '', jenis_spesimen: m?.jenis_spesimen ?? '', satuan: m?.satuan ?? '',
   rujukan_min: m?.rujukan_min != null ? String(m.rujukan_min) : '', rujukan_maks: m?.rujukan_maks != null ? String(m.rujukan_maks) : '', rujukan_teks: m?.rujukan_teks ?? '',
-  harga_umum: m?.tarif ? String(m.tarif.harga_umum) : '', harga_jkn: m?.tarif?.harga_jkn != null ? String(m.tarif.harga_jkn) : '', aktif: m?.aktif ?? true,
+  harga_umum: m?.tarif?.harga_umum != null ? String(m.tarif.harga_umum) : '', harga_jkn: m?.tarif?.harga_jkn != null ? String(m.tarif.harga_jkn) : '', aktif: m?.aktif ?? true,
 });
 
 /** Isian menjadi bentuk kiriman (kosong dibiarkan; skema bersama menormalkan menjadi null). */

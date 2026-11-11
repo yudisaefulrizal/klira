@@ -58,7 +58,7 @@ export type PapanDto = { bed: BedDto[]; menunggu: MenungguRuanganDto[]; ringkasa
 
 export type OpsiRawatInapDto = {
   bed_kosong: { id: number; nama: string; ruang_nama: string | null }[];
-  tarif_kamar: { id: number; kode: string; nama: string; harga_umum: number; harga_jkn: number | null }[];
+  tarif_kamar: { id: number; kode: string; nama: string; harga_umum: number | null; harga_jkn: number | null }[];
   dpjp: { id: number; nama: string; profesi: string }[];
 };
 export type AsalAdmisiDto = {

@@ -1,11 +1,12 @@
 import type { HalamanKamusTerminologiDto, SistemTerminologi as SistemKamus } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, BagianKlinis, BagianKlinisDto, BagianTemplat, DrafKlinisDto, FavoritDto, FolderKeluargaDto, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto, KonteksKlinisDto,
-  KunjunganDto, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TemplatDto, TemplatMasukan,
+  KunjunganDto, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TemplatDto, TemplatMasukan, TindakanKlinikDto,
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
-export type HasilSimpanBagian = { bagian: BagianKlinisDto; kunjungan: KunjunganDto; tersimpan: boolean };
+/** `pesan_tagihan`: tindakan tersimpan tetapi tagihan tidak disinkronkan (sudah ada pembayaran atau kunjungan ditutup). */
+export type HasilSimpanBagian = { bagian: BagianKlinisDto; kunjungan: KunjunganDto; tersimpan: boolean; pesan_tagihan?: string | null };
 
 export const ambilKlinis = (kunjunganId: number) => panggilApi<KlinisKunjunganDto>('GET', `/kunjungan/${kunjunganId}/klinis`);
 export const ambilKonteksKlinis = (kunjunganId: number) => panggilApi<KonteksKlinisDto>('GET', `/kunjungan/${kunjunganId}/konteks-klinis`);
@@ -20,6 +21,10 @@ export const salinanKunjungan = (kunjunganId: number, sumberId: number) => pangg
 
 export const cariTerminologi = (sistem: SistemTerminologi, q: string, batas = 10) =>
   panggilApi<KodeTerminologiDto[]>('GET', `/terminologi?${new URLSearchParams({ sistem, q, batas: String(batas) }).toString()}`);
+
+/** Daftar tindakan klinik (tarif tindakan aktif) untuk langkah Tindakan. */
+export const cariTindakanKlinik = (cari: string, batas = 20) =>
+  panggilApi<TindakanKlinikDto[]>('GET', `/tindakan-klinik?${new URLSearchParams({ cari, batas: String(batas) }).toString()}`);
 
 export const daftarFavorit = (jenis?: JenisFavorit) => panggilApi<FavoritDto[]>('GET', `/favorit${jenis ? `?jenis=${jenis}` : ''}`);
 export const tambahFavorit = (m: { jenis: JenisFavorit; kode: string; nama: string }) => panggilApi<FavoritDto>('POST', '/favorit', m);

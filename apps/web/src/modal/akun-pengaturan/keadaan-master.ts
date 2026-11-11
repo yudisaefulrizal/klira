@@ -10,6 +10,19 @@ export type NilaiMaster = Record<string, string>;
 export const bidangTampil = (jenis: JenisMasterUbah, ubah: boolean): BidangMaster[] =>
   DEFINISI_MASTER[jenis].bidang.filter((b) => !(ubah && b.hanyaTambah));
 
+const syaratTerpenuhi = (s: { kunci: string; nilai: string } | undefined, nilai: NilaiMaster): boolean => !!s && (nilai[s.kunci] ?? '') === s.nilai;
+
+/** Bidang yang tampil untuk isian saat ini: bidang bersyarat (`tampilBila`, mis. kode ICD-9-CM tarif tindakan) hanya bila syaratnya terpenuhi. */
+export const bidangAktif = (jenis: JenisMasterUbah, ubah: boolean, nilai: NilaiMaster): BidangMaster[] =>
+  bidangTampil(jenis, ubah).filter((b) => !b.tampilBila || syaratTerpenuhi(b.tampilBila, nilai));
+
+/** Wajib untuk isian saat ini (`wajibKecuali`: mis. kode dan harga umum tidak wajib untuk tarif tindakan). */
+export const wajibSaatIni = (b: BidangMaster, nilai: NilaiMaster): boolean => !!b.wajib && !syaratTerpenuhi(b.wajibKecuali, nilai);
+
+/** Petunjuk bidang untuk isian saat ini (petunjuk pengganti saat pengecualian wajib berlaku). */
+export const petunjukSaatIni = (b: BidangMaster, nilai: NilaiMaster): string | undefined =>
+  (b.petunjukKecuali && syaratTerpenuhi(b.wajibKecuali, nilai) ? b.petunjukKecuali : b.petunjuk);
+
 /** Isian awal: baris yang diubah, atau nilai awal bidang (kosong bila tidak ada). */
 export function awalMaster(jenis: JenisMasterUbah, baris?: BarisMaster): NilaiMaster {
   const nilai: NilaiMaster = {};
@@ -25,10 +38,10 @@ const kosong = (t: string) => t.trim() === '';
 /** Ubah isian teks menjadi masukan skema bersama (angka, id, tanggal; kosong menjadi tidak ada). */
 export function bentukMasukan(jenis: JenisMasterUbah, nilai: NilaiMaster, ubah: boolean): Record<string, unknown> {
   const hasil: Record<string, unknown> = {};
-  for (const b of bidangTampil(jenis, ubah)) {
+  for (const b of bidangAktif(jenis, ubah, nilai)) {
     const t = (nilai[b.kunci] ?? '').trim();
-    if (b.tipe === 'teks') {
-      if (b.wajib || t !== '') hasil[b.kunci] = t;
+    if (b.tipe === 'teks' || b.tipe === 'icd9cm') {
+      if (wajibSaatIni(b, nilai) || t !== '') hasil[b.kunci] = t;
     } else if (!kosong(t)) {
       hasil[b.kunci] = b.tipe === 'angka' || b.tipe === 'rujukan' || b.numerik ? Number(t) : t;
     }
@@ -40,8 +53,11 @@ export function bentukMasukan(jenis: JenisMasterUbah, nilai: NilaiMaster, ubah: 
 export function galatMaster(jenis: JenisMasterUbah, nilai: NilaiMaster, ubah: boolean): GalatBidang {
   const skema = ubah ? SKEMA_MASTER_UBAH[jenis] : SKEMA_MASTER[jenis];
   const galat = galatSkema(skema, bentukMasukan(jenis, nilai, ubah));
-  for (const b of bidangTampil(jenis, ubah)) {
-    if (b.wajib && kosong(nilai[b.kunci] ?? '')) galat[b.kunci] = jenis === 'bed' && b.kunci === 'induk_id' ? MASTER.galat.indukBed : MASTER.galat.wajib;
+  for (const k of Object.keys(galat)) if (!bidangAktif(jenis, ubah, nilai).some((b) => b.kunci === k) && k !== '_') delete galat[k];
+  for (const b of bidangAktif(jenis, ubah, nilai)) {
+    if (wajibSaatIni(b, nilai) && kosong(nilai[b.kunci] ?? '')) {
+      galat[b.kunci] = jenis === 'bed' && b.kunci === 'induk_id' ? MASTER.galat.indukBed : b.tipe === 'icd9cm' ? MASTER.galat.icd9Wajib : MASTER.galat.wajib;
+    }
   }
   return galat;
 }
