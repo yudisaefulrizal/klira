@@ -633,6 +633,7 @@ model Kunjungan {
   antrean         Antrean?
   narasi_klinis   NarasiKlinis[]
   anamnesis       Anamnesis[]
+  keperawatan     Keperawatan[]
   observasi       Observasi[]
   diagnosis       Diagnosis[]
   tindakan        Tindakan[]
@@ -791,7 +792,6 @@ model Anamnesis {
   penyerta         String?  @db.Text
   riwayat_pribadi  String?  @db.Text
   riwayat_keluarga String?  @db.Text
-  alergi           String?  @db.Text
   dibuat_oleh      Int?
   dibuat_pada      DateTime @default(now()) @db.DateTime(3)
 
@@ -799,6 +799,51 @@ model Anamnesis {
 
   @@unique([kunjungan_id, versi])
   @@map("anamnesis")
+}
+
+enum JenisNyeri {
+  tidak
+  akut
+  kronis
+}
+
+enum SkriningVisual {
+  hijau
+  kuning
+  merah
+}
+
+/// Skrining keperawatan rawat jalan (P6), berversi seperti anamnesis; disahkan per bagian (entitas `keperawatan`, entitas_id = id kunjungan).
+model Keperawatan {
+  id                   Int             @id @default(autoincrement())
+  fasyankes_id         Int
+  kunjungan_id         Int
+  versi                Int
+  kajian_keperawatan   String?         @db.Text
+  telah_diobati        String?         @db.Text
+  alergi               String?         @db.VarChar(500)
+  obat_dikonsumsi      String?         @db.Text
+  diagnosa_keperawatan String?         @db.VarChar(500)
+  rencana_asuhan       String?         @db.Text
+  nyeri_jenis          JenisNyeri      @default(tidak)
+  nyeri_skala          Int?            @db.TinyInt
+  nyeri_lokasi         String?         @db.VarChar(200)
+  nyeri_durasi         String?         @db.VarChar(200)
+  nyeri_frekuensi      String?         @db.VarChar(200)
+  nyeri_hilang_bila    String?         @db.VarChar(200)
+  jatuh_tidak_seimbang Boolean         @default(false)
+  jatuh_menopang       Boolean         @default(false)
+  gizi_bb_turun        Boolean         @default(false)
+  gizi_asupan_kurang   Boolean         @default(false)
+  skrining_visual      SkriningVisual?
+  dibuat_oleh          Int?
+  dibuat_pada          DateTime        @default(now()) @db.DateTime(3)
+
+  kunjungan Kunjungan @relation(fields: [kunjungan_id], references: [id])
+
+  @@unique([kunjungan_id, versi])
+  @@index([fasyankes_id])
+  @@map("keperawatan")
 }
 
 model Observasi {

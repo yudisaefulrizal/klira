@@ -1,3 +1,4 @@
+import { DEFAULT_KEPERAWATAN } from '@klira/shared';
 import type { BagianKlinis, KunjunganDto, TahapLayanan } from '@klira/shared';
 import { hashIsi } from '../rekam-medis/pengesahan';
 import { buatLayananPengesahan } from '../rekam-medis/layanan';
@@ -69,7 +70,7 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
     const { l, catatan, pengesahanTersimpan } = buatDunia();
     const h = await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
     expect(h).toMatchObject({ ok: true, data: { tersimpan: true, bagian: { verifikasi: 'sah', pengesahan: { versi: 1, jenis_akun: 'Dokter/DPJP' } } } });
-    expect(pengesahanTersimpan.get('anamnesis:10')?.hash).toBe(hashIsi({ keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null, alergi: null }));
+    expect(pengesahanTersimpan.get('anamnesis:10')?.hash).toBe(hashIsi({ keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null }));
     expect(catatan).toEqual([expect.objectContaining({ aksi: 'input', entitas: 'anamnesis', entitas_id: 10 })]);
   });
 
@@ -102,9 +103,24 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
   it('deteksi perubahan: isi di basis data diubah di luar alur terlihat sebagai berubah', async () => {
     const { l, isi } = buatDunia();
     await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
-    isi.set('anamnesis:10', { keluhan_utama: 'Diubah langsung', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null, alergi: null });
+    isi.set('anamnesis:10', { keluhan_utama: 'Diubah langsung', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null });
     const h = await l.ambil(saya, 10);
     expect(h).toMatchObject({ ok: true, data: { bagian: { anamnesis: { verifikasi: 'berubah' }, diagnosis: { verifikasi: 'belum_disahkan', isi: null } } } });
+  });
+
+  it('keperawatan (P6): isi kanonik dinormalkan (nyeri lain null saat tidak nyeri), berversi dengan alasan', async () => {
+    const { l, isi, pengesahanTersimpan, versiCatatan } = buatDunia('menunggu_skrining');
+    expect(await l.simpanBagian(saya, 10, 'keperawatan', { nyeri_jenis: 'akut' }, undefined)).toMatchObject({ ok: false, rincian: [{ jalur: 'isi.nyeri_skala' }] });
+    const h = await l.simpanBagian(saya, 10, 'keperawatan', { ...DEFAULT_KEPERAWATAN, nyeri_lokasi: 'sisa' }, undefined);
+    expect(h).toMatchObject({ ok: true, data: { tersimpan: true, kunjungan: { tahap_layanan: 'pemeriksaan' }, bagian: { verifikasi: 'sah', pengesahan: { versi: 1 } } } });
+    const tersimpan = isi.get('keperawatan:10') as Record<string, unknown>;
+    expect(tersimpan).toMatchObject({ alergi: 'tidak ada', nyeri_jenis: 'tidak', nyeri_lokasi: null, gizi_bb_turun: false, diagnosa_keperawatan: null });
+    expect(pengesahanTersimpan.get('keperawatan:10')?.hash).toBe(hashIsi(tersimpan));
+    expect(await l.simpanBagian(saya, 10, 'keperawatan', { ...DEFAULT_KEPERAWATAN }, undefined)).toMatchObject({ ok: true, data: { tersimpan: false } });
+    const ubah = { ...DEFAULT_KEPERAWATAN, nyeri_jenis: 'akut', nyeri_skala: 7 };
+    expect(await l.simpanBagian(saya, 10, 'keperawatan', ubah, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
+    expect(await l.simpanBagian(saya, 10, 'keperawatan', ubah, 'Nyeri terlewat')).toMatchObject({ ok: true, data: { bagian: { pengesahan: { versi: 2 }, isi: { nyeri_skala: 7 } } } });
+    expect(versiCatatan).toEqual([expect.objectContaining({ versi: 1, alasan: 'Nyeri terlewat' })]);
   });
 
   it('tahap skrining maju ke pemeriksaan saat catatan pertama disimpan; kasir dan ditutup menolak catatan', async () => {

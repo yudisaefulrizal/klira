@@ -32,7 +32,7 @@ const teksRedup = { margin: 0, color: token.warna.teksRedup } as const;
 const cariIcd10 = (q: string) => cariTerminologi('icd10', q);
 const cariIcd9 = (q: string) => cariTerminologi('icd9cm', q);
 
-function GalatBagian({ galat }: { galat?: string | null }) {
+export function GalatBagian({ galat }: { galat?: string | null }) {
   return galat ? <Peringatan>{galat}</Peringatan> : null;
 }
 
@@ -48,8 +48,6 @@ export function LangkahAnamnesis({ k, ubah, galat, server }: DasarLangkah) {
         <AreaTeks id="anamnesis-pribadi" label={a.riwayatPribadi} value={k.riwayat.riwayat_pribadi} onChange={(e) => ubah({ riwayat: { ...k.riwayat, riwayat_pribadi: e.target.value } })} />
         <AreaTeks id="anamnesis-keluarga" label={a.riwayatKeluarga} value={k.riwayat.riwayat_keluarga} onChange={(e) => ubah({ riwayat: { ...k.riwayat, riwayat_keluarga: e.target.value } })} />
       </Baris>
-      <Isian id="anamnesis-alergi" label={a.alergi} value={k.riwayat.alergi} onChange={(e) => ubah({ riwayat: { ...k.riwayat, alergi: e.target.value } })} autoComplete="off" />
-      <p style={{ ...teksRedup, fontSize: token.huruf.ukuran.kecil }}>{a.alergiKet}</p>
     </Kolom>
   );
 }

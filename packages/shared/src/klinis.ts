@@ -1,7 +1,7 @@
 /** Konstanta modul klinis (4.2, 4.8): bagian catatan, tanda vital dengan kode LOINC dan satuan UCUM, bidang pemeriksaan. */
 
 /** Bagian pemeriksaan klinis; tiap bagian disahkan sendiri (satu pengesahan per bagian, entitas_id = id kunjungan). */
-export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'] as const;
+export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'] as const;
 export type BagianKlinis = (typeof BAGIAN_KLINIS)[number];
 
 export type DefinisiTandaVital = { kunci: string; loinc: string; satuan: string; min: number; max: number };
@@ -18,6 +18,14 @@ export const TANDA_VITAL = [
   { kunci: 'tinggi_badan', loinc: '8302-2', satuan: 'cm', min: 20, max: 250 },
 ] as const satisfies readonly DefinisiTandaVital[];
 export type KunciTandaVital = (typeof TANDA_VITAL)[number]['kunci'];
+
+/** Skrining nyeri keperawatan (P6): `tidak` menyembunyikan isian nyeri lain. */
+export const JENIS_NYERI = ['tidak', 'akut', 'kronis'] as const;
+export type JenisNyeri = (typeof JENIS_NYERI)[number];
+export const SKALA_NYERI_MAKS = 10;
+/** Skrining visual (warna triase sederhana); arti warna mengikuti ketentuan klinik. */
+export const SKRINING_VISUAL = ['hijau', 'kuning', 'merah'] as const;
+export type SkriningVisual = (typeof SKRINING_VISUAL)[number];
 
 export const PEMERIKSAAN_BIDANG = ['keadaan_umum', 'kepala_leher', 'thorax', 'abdomen', 'ekstremitas', 'catatan'] as const;
 export type BidangPemeriksaan = (typeof PEMERIKSAAN_BIDANG)[number];

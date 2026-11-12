@@ -1,10 +1,10 @@
 import { cariIcd, kamusIcd, sistemIcd } from './terminologi-icd';
 import { mulaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma, Prisma } from '@klira/db';
-import { PEMERIKSAAN_BIDANG, TANDA_VITAL, umurTahun } from '@klira/shared';
+import { alergiTercatat, PEMERIKSAAN_BIDANG, TANDA_VITAL, umurTahun } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, AnamnesisIsi, BagianKlinis, BagianTemplat, DiagnosisIsi, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KodeTerminologiDto, KonteksKlinisDto, KunjunganDto,
-  HalamanKamusTerminologiDto, KamusTerminologiMasukan, PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SinkronTagihanTindakan, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi,
+  HalamanKamusTerminologiDto, KamusTerminologiMasukan, KeperawatanIsi, PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SinkronTagihanTindakan, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi,
   TindakanKlinikDto, TindakLanjutIsi,
 } from '@klira/shared';
 import { sinkronItemTindakanDalam } from '../kasir/repositori';
@@ -89,7 +89,17 @@ async function bacaVersiLepas(c: Klien, bagian: BagianKlinis, fasyankesId: numbe
     }
     case 'anamnesis': {
       const a = await c.anamnesis.findFirst({ where });
-      return a ? { keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, alergi: a.alergi } satisfies AnamnesisIsi : null;
+      return a ? { keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga } satisfies AnamnesisIsi : null;
+    }
+    case 'keperawatan': {
+      const p = await c.keperawatan.findFirst({ where });
+      return p ? ({
+        kajian_keperawatan: p.kajian_keperawatan, telah_diobati: p.telah_diobati, alergi: p.alergi, obat_dikonsumsi: p.obat_dikonsumsi,
+        diagnosa_keperawatan: p.diagnosa_keperawatan, rencana_asuhan: p.rencana_asuhan,
+        nyeri_jenis: p.nyeri_jenis, nyeri_skala: p.nyeri_skala, nyeri_lokasi: p.nyeri_lokasi, nyeri_durasi: p.nyeri_durasi, nyeri_frekuensi: p.nyeri_frekuensi, nyeri_hilang_bila: p.nyeri_hilang_bila,
+        jatuh_tidak_seimbang: p.jatuh_tidak_seimbang, jatuh_menopang: p.jatuh_menopang, gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
+        skrining_visual: p.skrining_visual,
+      } satisfies KeperawatanIsi) : null;
     }
     case 'tanda_vital': {
       const baris = await c.observasi.findMany({ where: { ...where, kelompok: 'tanda_vital' } });
@@ -144,7 +154,11 @@ async function tulisIsi(tx: Prisma.TransactionClient, bagian: BagianKlinis, isi:
     }
     case 'anamnesis': {
       const a = isi as AnamnesisIsi;
-      await tx.anamnesis.create({ data: { ...dasar, keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, alergi: a.alergi } });
+      await tx.anamnesis.create({ data: { ...dasar, keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga } });
+      return;
+    }
+    case 'keperawatan': {
+      await tx.keperawatan.create({ data: { ...dasar, ...(isi as KeperawatanIsi) } });
       return;
     }
     case 'tanda_vital': {
@@ -230,13 +244,14 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
       include: { pasien: true, peserta: { where: { tipe: 'ATND' }, orderBy: { id: 'asc' }, take: 1 } },
     });
     if (!k) return null;
-    const [poli, dpjp, anamnesisTerbaru, diagnosisTerbaru, observasiTerbaru] = await Promise.all([
+    const [poli, dpjp, keperawatanTerbaru, diagnosisTerbaru, observasiTerbaru, kunjunganSebelumnya] = await Promise.all([
       k.lokasi_id ? prisma.lokasi.findFirst({ where: { id: k.lokasi_id, fasyankes_id: fasyankesId }, select: { nama: true } }) : null,
       k.peserta[0] ? prisma.pengguna.findFirst({ where: { id: k.peserta[0].pengguna_id, fasyankes_id: fasyankesId }, select: { nama: true } }) : null,
-      // Alergi adalah data pasien: ambil catatan terbaru yang terisi, jangan tertimpa kunjungan baru yang tidak mengisinya.
-      prisma.anamnesis.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan: { pasien_id: k.pasien_id }, alergi: { not: null }, NOT: { alergi: '' } }, orderBy: { id: 'desc' }, select: { alergi: true } }),
+      // Alergi adalah data pasien (dikaji perawat, P6): ambil skrining keperawatan terbaru yang terisi, jangan tertimpa kunjungan baru yang tidak mengisinya.
+      prisma.keperawatan.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan: { pasien_id: k.pasien_id }, alergi: { not: null }, NOT: { alergi: '' } }, orderBy: { id: 'desc' }, select: { alergi: true } }),
       prisma.diagnosis.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan: { pasien_id: k.pasien_id } }, orderBy: { id: 'desc' }, select: { kunjungan_id: true, versi: true } }),
       prisma.observasi.findFirst({ where: { fasyankes_id: fasyankesId, kelompok: 'tanda_vital', kunjungan: { pasien_id: k.pasien_id } }, orderBy: { id: 'desc' }, select: { kunjungan_id: true, versi: true } }),
+      prisma.kunjungan.count({ where: { fasyankes_id: fasyankesId, pasien_id: k.pasien_id, id: { lt: k.id } } }),
     ]);
     const diagnosis = diagnosisTerbaru ? await bacaVersi(prisma, 'diagnosis', fasyankesId, diagnosisTerbaru.kunjungan_id, diagnosisTerbaru.versi) : null;
     const tandaVital = observasiTerbaru ? await bacaVersi(prisma, 'tanda_vital', fasyankesId, observasiTerbaru.kunjungan_id, observasiTerbaru.versi) : null;
@@ -244,8 +259,10 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
       pasien: { id: k.pasien.id, nama: k.pasien.nama, nomor_rm: k.pasien.nomor_rm, jenis_kelamin: k.pasien.jenis_kelamin, umur_tahun: umurTahun(k.pasien.tanggal_lahir.toISOString().slice(0, 10)) },
       kunjungan: {
         id: k.id, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, poli_nama: poli?.nama ?? null, dpjp_nama: dpjp?.nama ?? null, keluhan_singkat: k.keluhan_singkat,
+        pasien_baru: kunjunganSebelumnya === 0,
       },
-      alergi: anamnesisTerbaru?.alergi ?? null,
+      // Default "tidak ada" berarti tanpa alergi.
+      alergi: alergiTercatat(keperawatanTerbaru?.alergi),
       diagnosis_aktif: (diagnosis?.item ?? []).map((d) => ({ kode: d.kode, nama: d.nama })),
       tanda_vital_terakhir: tandaVital,
     };

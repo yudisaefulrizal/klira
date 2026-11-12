@@ -19,27 +19,27 @@ describe('langkah dari konfigurasi', () => {
     expect(LANGKAH_PEMERIKSAAN.map((l) => l.id)).toEqual(['subjective', 'objective', 'assessment', 'plan', 'implementasi', 'evaluasi', 'ringkasan']);
     expect(LANGKAH_PEMERIKSAAN.filter((l) => !l.aktif)).toEqual([]);
   });
-  it('skrining hanya tanda vital dan ringkasan; bagian yang disimpan hanya dari langkah aktif', () => {
-    expect(daftarLangkah('skrining').map((l) => l.id)).toEqual(['tanda_vital', 'ringkasan']);
-    expect(bagianDiModal('skrining')).toEqual(['tanda_vital']);
-    expect(bagianDiModal('periksa')).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'assessment', 'diagnosis', 'plan', 'tindak_lanjut', 'implementasi', 'tindakan', 'evaluasi']);
+  it('skrining: satu langkah keperawatan (tanda vital + keperawatan) dan ringkasan; bagian yang disimpan hanya dari langkah aktif', () => {
+    expect(daftarLangkah('skrining').map((l) => l.id)).toEqual(['keperawatan', 'ringkasan']);
+    expect(bagianDiModal('skrining')).toEqual(['tanda_vital', 'keperawatan']);
+    expect(bagianDiModal('periksa')).toEqual(['keperawatan', 'anamnesis', 'tanda_vital', 'pemeriksaan', 'assessment', 'diagnosis', 'plan', 'tindak_lanjut', 'implementasi', 'tindakan', 'evaluasi']);
   });
 });
 
 describe('keadaan dari server dan isi kirim', () => {
   it('bolak-balik: keadaan dari catatan tersimpan tidak dianggap berubah', () => {
-    const server = sahkan(sahkan(sahkan(sahkan(bagianKosongServer(), 'anamnesis', { keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null, alergi: 'Penisilin' }),
+    const server = sahkan(sahkan(sahkan(sahkan(bagianKosongServer(), 'anamnesis', { keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null }),
       'tanda_vital', { sistolik: 150, diastolik: 95, nadi: null, suhu: 36.7, respirasi: null, spo2: null, berat_badan: null, tinggi_badan: null }),
       'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama', snomed: null }] }),
       'tindakan', { item: [{ kode: '89.52', nama: 'EKG', performer_id: 1, mulai: '2026-10-25T01:30:00.000Z', selesai: null }] });
     const k = keadaanDariServer(server);
     expect(k.anamnesis.keluhan_utama).toBe('Batuk');
-    expect(k.riwayat.alergi).toBe('Penisilin');
     expect(k.tanda_vital.suhu).toBe('36.7');
     expect(k.tanda_vital.nadi).toBe('');
     for (const b of BAGIAN_KLINIS) expect(adaPerubahanBagian(b, k, keadaanDariServer(server))).toBe(false);
     expect(isiBagian('tanda_vital', k)).toMatchObject({ sistolik: '150', nadi: '' });
-    expect(isiBagian('anamnesis', k)).toMatchObject({ keluhan_utama: 'Batuk', alergi: 'Penisilin' });
+    expect(isiBagian('anamnesis', k)).toMatchObject({ keluhan_utama: 'Batuk' });
+    expect(isiBagian('anamnesis', k)).not.toHaveProperty('alergi');
     expect(disahkanDari(server)).toMatchObject({ anamnesis: true, pemeriksaan: false, diagnosis: true });
   });
 
@@ -86,14 +86,14 @@ describe('perubahan, validasi, dan rencana simpan', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'Batuk';
     k.tanda_vital.nadi = '82';
-    const tak = { assessment: false, plan: false, implementasi: false, evaluasi: false, anamnesis: false, tanda_vital: false, pemeriksaan: false, diagnosis: false, tindakan: false, tindak_lanjut: false };
+    const tak = { assessment: false, plan: false, implementasi: false, evaluasi: false, anamnesis: false, tanda_vital: false, keperawatan: false, pemeriksaan: false, diagnosis: false, tindakan: false, tindak_lanjut: false };
     const r = rencanaSimpan('periksa', k, server, tak);
     expect(r.map((x) => x.bagian)).toEqual(['anamnesis', 'tanda_vital']);
     expect(perluAlasan(r, tak)).toBe(false);
     expect(perluAlasan(r, { ...tak, tanda_vital: true })).toBe(true);
     expect(syaratSelesaiTerpenuhi(tak, r)).toBe(false);
     expect(syaratSelesaiTerpenuhi({ ...tak, diagnosis: true, tindak_lanjut: true }, r)).toBe(true);
-    // skrining hanya menyimpan tanda vital
+    // skrining hanya menyimpan tanda vital dan keperawatan
     expect(rencanaSimpan('skrining', k, server, tak).map((x) => x.bagian)).toEqual(['tanda_vital']);
   });
 
@@ -153,7 +153,7 @@ describe('diagnosis dan tindakan', () => {
 describe('penyalinan dari kunjungan sebelumnya', () => {
   const salinan: SalinanKunjunganDto = {
     sumber: { id: 3, mulai: '2026-10-01T00:00:00Z' },
-    anamnesis: { keluhan_utama: 'Batuk lama', penyerta: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null, alergi: 'Debu' },
+    anamnesis: { keluhan_utama: 'Batuk lama', penyerta: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null },
     diagnosis: { item: [{ kode: 'J06.9', nama: 'ISPA', peran: 'utama', snomed: null }] },
     tindakan: null,
   };
@@ -167,7 +167,7 @@ describe('penyalinan dari kunjungan sebelumnya', () => {
     const { keadaan, jumlah } = salinKeKeadaan(k, salinan, ['anamnesis', 'diagnosis', 'tindakan'], new Date(2026, 9, 25, 9, 0));
     expect(jumlah).toBe(2);
     expect(keadaan.anamnesis.keluhan_utama).toBe('Batuk lama');
-    expect(keadaan.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '', alergi: 'Debu' });
+    expect(keadaan.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '' });
     expect(keadaan.diagnosis).toEqual([{ kode: 'J06.9', nama: 'ISPA', peran: 'utama', snomed: '' }]);
     expect(keadaan.tindakan).toHaveLength(1);
     expect(keadaan.pemeriksaan.abdomen).toBe('Supel');
@@ -181,14 +181,15 @@ describe('templat', () => {
   it('templat anamnesis dan pemeriksaan hanya mengganti bidang terisi; isi templat dari keadaan', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'lama';
-    k.riwayat.alergi = 'Debu';
-    const t = pakaiTemplat(k, { bagian: 'anamnesis', isi: { keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam', alergi: null } });
+    k.riwayat.riwayat_pribadi = 'Asma';
+    // templat lama yang masih memuat alergi diabaikan (alergi pindah ke keperawatan)
+    const t = pakaiTemplat(k, { bagian: 'anamnesis', isi: { keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam', alergi: 'Debu' } });
     expect(t.anamnesis).toEqual({ keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam' });
-    expect(t.riwayat.alergi).toBe('Debu');
+    expect(t.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '' });
     const p = pakaiTemplat(k, { bagian: 'pemeriksaan', isi: { keadaan_umum: 'Baik' } });
     expect(p.pemeriksaan.keadaan_umum).toBe('Baik');
     expect(p.pemeriksaan.abdomen).toBe('');
-    expect(isiTemplatDari('anamnesis', k)).toMatchObject({ keluhan_utama: 'lama', penyerta: null, alergi: 'Debu' });
+    expect(isiTemplatDari('anamnesis', k)).toEqual({ keluhan_utama: 'lama', penyerta: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null });
   });
 });
 
@@ -198,7 +199,10 @@ describe('pemulihan draf server', () => {
     dasar.anamnesis.keluhan_utama = 'dari server';
     const draf = awalKeadaan();
     draf.anamnesis.keluhan_utama = 'dari draf';
-    draf.riwayat.alergi = 'Debu';
+    draf.riwayat.riwayat_pribadi = 'Asma';
+    draf.keperawatan.alergi = 'Debu';
+    draf.keperawatan.nyeri_jenis = 'akut';
+    draf.keperawatan.jatuh_menopang = true;
     draf.pemeriksaan.catatan = 'Paru bersih';
     draf.tanda_vital.suhu = '37,2';
     draf.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
@@ -235,13 +239,14 @@ describe('isi ringkasan', () => {
     expect(ringkasanIsi(k)[3].baris).not.toEqual(expect.arrayContaining([expect.objectContaining({ nilai: 'SPRI-123' })]));
   });
 
-  it('memuat keluhan, alergi, diagnosis beserta peran, tindakan, dan rencana', () => {
+  it('memuat keluhan, diagnosis beserta peran, tindakan, dan rencana', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'Batuk';
     k.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
     k.tindak_lanjut = { jenis: 'rujuk', tujuan: 'RS Umum', spri: '', catatan: '' };
     const r = ringkasanIsi(k);
-    expect(r[0].baris).toEqual(expect.arrayContaining([{ label: 'Keluhan utama', nilai: 'Batuk' }, { label: 'Alergi', nilai: '-' }]));
+    expect(r[0].baris).toEqual(expect.arrayContaining([{ label: 'Keluhan utama', nilai: 'Batuk' }]));
+    expect(r[0].baris.map((b) => b.label)).not.toContain('Alergi');
     expect(r[2].baris).toEqual(expect.arrayContaining([{ label: 'I10', nilai: 'Hipertensi (Utama)' }]));
     expect(r[3].baris).toEqual(expect.arrayContaining([{ label: 'Tindak lanjut', nilai: 'Rujuk keluar' }, { label: 'Tujuan rujukan', nilai: 'RS Umum' }]));
   });

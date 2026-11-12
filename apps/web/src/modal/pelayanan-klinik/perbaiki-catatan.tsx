@@ -16,6 +16,7 @@ import type { KeadaanPemeriksaan } from './keadaan-pemeriksaan';
 import { galatAlasanPerbaikan } from './keadaan-rm';
 import { LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahPemeriksaan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut } from './langkah-pemeriksaan';
 import { KepalaPasien } from './kepala-pasien';
+import { BagianKeperawatan } from './langkah-keperawatan';
 
 type Props = { kunjunganId: number; pasien: { id: number; nama: string; nomor_rm: string }; onTutup: () => void; onSelesai: () => void };
 const P = REKAM_MEDIS.perbaikan;
@@ -106,6 +107,7 @@ export function PerbaikiCatatan({ kunjunganId, pasien, onTutup, onSelesai }: Pro
           {opsi.length === 1 && <Peringatan nada="biru">{P.belumDisahkan}</Peringatan>}
           {bagian === 'anamnesis' && <LangkahAnamnesis {...dasar} />}
           {bagian === 'tanda_vital' && <LangkahTandaVital {...dasar} />}
+          {bagian === 'keperawatan' && <BagianKeperawatan {...dasar} />}
           {bagian === 'pemeriksaan' && <LangkahPemeriksaan {...dasar} />}
           {bagian === 'diagnosis' && <LangkahDiagnosis {...dasar} favorit={[]} />}
           {bagian === 'tindakan' && <LangkahTindakan {...dasar} favorit={[]} />}

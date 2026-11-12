@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
 import type { AddressInfo } from 'net';
 import { PrismaClient } from '@prisma/client';
+import { DEFAULT_KEPERAWATAN } from '@klira/shared';
 
 const urlUji = process.env.DATABASE_URL_UJI;
 const d = urlUji ? describe : describe.skip;
@@ -95,7 +96,7 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
     await prisma.peringatanIzin.deleteMany({ where });
-    for (const m of [prisma.narasiKlinis, prisma.anamnesis, prisma.observasi, prisma.diagnosis, prisma.tindakan, prisma.tindakLanjut, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.favoritDokter, prisma.templatCatatan, prisma.keluargaPasien, prisma.draf] as any[]) {
+    for (const m of [prisma.narasiKlinis, prisma.anamnesis, prisma.keperawatan, prisma.observasi, prisma.diagnosis, prisma.tindakan, prisma.tindakLanjut, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.favoritDokter, prisma.templatCatatan, prisma.keluargaPasien, prisma.draf] as any[]) {
       await m.deleteMany({ where });
     }
     await prisma.kodeTerminologi.deleteMany({ where: { kode: { startsWith: awalan } } });
@@ -156,14 +157,14 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
   });
 
   it('anamnesis, perbaikan berversi: alasan wajib, versi catatan, hanya pembuat dalam 2x24 jam', async () => {
-    expect((await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 3 hari', alergi: 'Penisilin' } })).status).toBe(200);
-    const sama = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 3 hari', alergi: 'Penisilin' } });
+    expect((await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 3 hari' } })).status).toBe(200);
+    const sama = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 3 hari' } });
     expect(sama.badan.data.tersimpan).toBe(false);
-    const tanpaAlasan = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 4 hari', alergi: 'Penisilin' } });
+    const tanpaAlasan = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 4 hari' } });
     expect(tanpaAlasan.status).toBe(400);
     const lain = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter2', { isi: { keluhan_utama: 'Batuk 4 hari' }, alasan: 'Koreksi' });
     expect(lain.status).toBe(409);
-    const ok = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 4 hari', alergi: 'Penisilin' }, alasan: 'Durasi salah' });
+    const ok = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 4 hari' }, alasan: 'Durasi salah' });
     expect(ok.status).toBe(200);
     expect(ok.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { keluhan_utama: 'Batuk 4 hari' } });
     const versi = await prisma.versiCatatan.findMany({ where: { entitas: 'anamnesis', entitas_id: kunjA1 } });
@@ -195,11 +196,40 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect(semua.bagian.diagnosis.isi.item.map((i: any) => i.kode)).toEqual(['I10', 'E11.9']);
   });
 
+  it('skrining keperawatan: tersimpan berversi, nyeri bersyarat, alergi default "tidak ada" berarti tanpa alergi', async () => {
+    const konteksAlergi = async () => (await panggil('GET', `/kunjungan/${kunjA1}/konteks-klinis`, 'dokter')).badan.data.alergi;
+    expect(await konteksAlergi()).toBeNull();
+    const nyeriTanpaSkala = await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: { nyeri_jenis: 'akut' } });
+    expect(nyeriTanpaSkala.status).toBe(400);
+    expect(nyeriTanpaSkala.badan.galat.rincian[0].jalur).toBe('isi.nyeri_skala');
+    const awal = { ...DEFAULT_KEPERAWATAN, alergi: ' Tidak Ada ', nyeri_lokasi: 'disembunyikan' };
+    const r = await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: awal });
+    expect(r.status).toBe(200);
+    expect(r.badan.data.bagian).toMatchObject({
+      verifikasi: 'sah', pengesahan: { versi: 1 },
+      isi: { kajian_keperawatan: 'keadaan umum baik', alergi: 'Tidak Ada', nyeri_jenis: 'tidak', nyeri_lokasi: null, jatuh_menopang: false, skrining_visual: null },
+    });
+    expect(await konteksAlergi()).toBeNull();
+    const ubah = { ...DEFAULT_KEPERAWATAN, alergi: 'Penisilin', nyeri_jenis: 'kronis', nyeri_skala: '6', nyeri_lokasi: 'Lutut', jatuh_menopang: true, skrining_visual: 'kuning' };
+    expect((await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: ubah })).status).toBe(400); // perbaikan tanpa alasan
+    const v2 = await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: ubah, alasan: 'Alergi terlewat' });
+    expect(v2.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { alergi: 'Penisilin', nyeri_skala: 6, nyeri_lokasi: 'Lutut', jatuh_menopang: true, skrining_visual: 'kuning' } });
+    expect(await prisma.keperawatan.count({ where: { kunjungan_id: kunjA1 } })).toBe(2);
+    expect((await prisma.versiCatatan.findFirstOrThrow({ where: { entitas: 'keperawatan', entitas_id: kunjA1 } })).alasan).toBe('Alergi terlewat');
+    const semua = (await panggil('GET', `/kunjungan/${kunjA1}/klinis`, 'dokter')).badan.data;
+    expect(semua.bagian.keperawatan).toMatchObject({ verifikasi: 'sah', isi: { nyeri_jenis: 'kronis' } });
+    // isi diubah langsung di basis data terdeteksi lewat hash
+    await prisma.keperawatan.updateMany({ where: { kunjungan_id: kunjA1, versi: 2 }, data: { nyeri_skala: 2 } });
+    expect((await panggil('GET', `/pengesahan/keperawatan/${kunjA1}`, 'dokter')).badan.data.status).toBe('berubah');
+    await prisma.keperawatan.updateMany({ where: { kunjungan_id: kunjA1, versi: 2 }, data: { nyeri_skala: 6 } });
+    expect((await panggil('GET', `/pengesahan/keperawatan/${kunjA1}`, 'dokter')).badan.data.status).toBe('sah');
+  });
+
   it('konteks klinis: alergi, diagnosis aktif, dan tanda vital terakhir', async () => {
     const r = await panggil('GET', `/kunjungan/${kunjA1}/konteks-klinis`, 'dokter');
     expect(r.status).toBe(200);
     expect(r.badan.data).toMatchObject({
-      pasien: { id: pasienA, nama: 'Budi Santoso', umur_tahun: expect.any(Number) }, kunjungan: { id: kunjA1, tahap_layanan: 'pemeriksaan' }, alergi: 'Penisilin',
+      pasien: { id: pasienA, nama: 'Budi Santoso', umur_tahun: expect.any(Number) }, kunjungan: { id: kunjA1, tahap_layanan: 'pemeriksaan', pasien_baru: true }, alergi: 'Penisilin',
       diagnosis_aktif: [{ kode: 'I10' }, { kode: 'E11.9' }], tanda_vital_terakhir: { sistolik: 150, suhu: 36.7 },
     });
   });

@@ -114,7 +114,7 @@ export function TelaahResep({ kunjunganId, pasien, onTutup, onSelesai }: Props) 
       {konteks ? <>
         <span>{konteks.pasien.umur_tahun} tahun · {konteks.pasien.jenis_kelamin === 'perempuan' ? 'Perempuan' : 'Laki-laki'} · Berat badan: {konteks.tanda_vital_terakhir?.berat_badan != null ? `${konteks.tanda_vital_terakhir.berat_badan} kg` : 'Belum tercatat'}</span>
         <span>Diagnosis: {konteks.diagnosis_aktif.map((d) => `${d.kode} — ${d.nama}`).join('; ') || 'Belum tercatat'}</span>
-        <Peringatan nada="biru">Alergi: {konteks.alergi?.trim() || 'Alergi belum dikaji'}</Peringatan>
+        <Peringatan nada="biru">Alergi: {konteks.alergi?.trim() || 'Tidak ada alergi tercatat'}</Peringatan>
       </> : <Peringatan nada="biru">{galatKonteks ? 'Ringkasan klinis gagal dimuat. Periksa informasi pasien sebelum menyelesaikan telaah.' : 'Memuat informasi pasien…'}</Peringatan>}
     </Bingkai>
     {kekurangan.length > 0 && <Peringatan><strong>{T.stokKurangJudul}</strong>{kekurangan.map((x, n) => <div key={n}>{T.stokKurang(x.nama, x.butuh, x.tersedia)}</div>)}</Peringatan>}

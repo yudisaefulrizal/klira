@@ -24,13 +24,14 @@ import { useDrafOtomatis } from '../../util/draf-otomatis';
 import { batasi } from '../../util/langkah';
 import { KonteksKlinis } from './konteks-klinis';
 import {
-  awalKeadaan, bagianLangkah, langkahDraf, bagianDiModal, daftarLangkah, disahkanDari, isiBagian, keadaanDariServer, LABEL_BAGIAN, pakaiTemplat, perluAlasan, pulihkanKeadaan, rencanaSimpan, salinKeKeadaan, statusRingkasan,
+  adaPerubahanBagian, awalKeadaan, bagianLangkah, langkahDraf, bagianDiModal, daftarLangkah, disahkanDari, isiBagian, keadaanAwalForm, keadaanDariServer, LABEL_BAGIAN, mulaiUbahKeperawatan, pakaiTemplat, perluAlasan, pulihkanKeadaan, rencanaSimpan, salinKeKeadaan, statusRingkasan,
   syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan,
 } from './keadaan-pemeriksaan';
 import type { BagianSalinan, KeadaanPemeriksaan, ModePemeriksaan } from './keadaan-pemeriksaan';
 import {
   LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahMenyusul, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
 } from './langkah-pemeriksaan';
+import { BagianKeperawatan, InfoKunjunganSkrining, RingkasanSkriningDokter } from './langkah-keperawatan';
 import { LangkahPenunjang } from './langkah-penunjang';
 import { LangkahResep } from './langkah-resep';
 import { RingkasanOrderKunjungan } from './ringkasan-order-kunjungan';
@@ -56,7 +57,8 @@ type Props = {
 const labelBagian = LABEL_BAGIAN;
 
 /**
- * Modal Pemeriksaan klinis: S > O > A > P > I > E > Ringkasan. Daftar langkah dari konfigurasi (keadaan-pemeriksaan). Perawat memakai mode skrining (tanda vital saja).
+ * Modal Pemeriksaan klinis: S > O > A > P > I > E > Ringkasan. Daftar langkah dari konfigurasi (keadaan-pemeriksaan). Perawat memakai mode skrining
+ * (tanda vital dan keperawatan, P6); dokter melihat ringkasan skrining di atas langkah S.
  * Simpan = pengesahan catatan per bagian yang berubah. Draf otomatis disimpan di SERVER (data kesehatan tidak boleh di penyimpanan lokal
  * komputer bersama), kedaluwarsa di server, dan dihapus saat selesai.
  */
@@ -81,11 +83,14 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const sedangMengirim = useRef(false);
 
   const server = useMemo(() => (klinis ? keadaanDariServer(klinis.bagian) : awalKeadaan()), [klinis]);
+  /** Awal form: isi tersimpan ditambah default keadaan baik untuk bagian yang belum pernah disimpan (dasar draf dan perlindungan tutup). */
+  const awalForm = useMemo(() => (klinis ? keadaanAwalForm(mode, klinis.bagian) : awalKeadaan()), [klinis, mode]);
+  const [ubahKeperawatan, setUbahKeperawatan] = useState(false);
   const disahkan = useMemo(() => (klinis ? disahkanDari(klinis.bagian) : ({} as Record<BagianKlinis, boolean>)), [klinis]);
 
   const [formSiap, setFormSiap] = useState(false);
   const { pulihan, siap: drafSiap, hapus } = useDrafOtomatis<KeadaanPemeriksaan>({
-    adaptor, nilai: keadaan, awal: server, langkah: indeks, aktif: formSiap && !hasil,
+    adaptor, nilai: keadaan, awal: awalForm, langkah: indeks, aktif: formSiap && !hasil,
   });
 
   // Muat catatan tersimpan, ringkasan pasien, dan favorit; sisa draf lokal lama dibuang (draf kini di server).
@@ -109,7 +114,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   // Setelah catatan dan draf server sama-sama terbaca: draf yang ada menimpa isian server, sekali saja.
   useEffect(() => {
     if (!klinis || !drafSiap || formSiap) return;
-    const dasar = keadaanDariServer(klinis.bagian);
+    const dasar = keadaanAwalForm(mode, klinis.bagian);
     if (pulihan) {
       const n = batasi(langkahDraf(mode, pulihan.langkah, pulihan.nilai), konfig.length);
       setKeadaan(pulihkanKeadaan(dasar, pulihan.nilai));
@@ -144,7 +149,20 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (!klinis || !formSiap) return galatMuat ? <Peringatan>{galatMuat}</Peringatan> : <span style={{ color: token.warna.teksRedup }}>{KLINIS.konteks.memuat}</span>;
     if (!l.aktif) return <LangkahMenyusul langkah={l} onLewati={berikut} />;
     switch (l.id) {
-      case 'subjective': return <LangkahAnamnesis {...dasar('anamnesis')} />;
+      case 'subjective': {
+        const keperawatanBerubah = adaPerubahanBagian('keperawatan', keadaan, server);
+        return <Kolom>
+          <RingkasanSkriningDokter {...dasar('keperawatan')} tersimpan={server} terbuka={ubahKeperawatan || keperawatanBerubah} berubah={keperawatanBerubah}
+            onBuka={() => { setKeadaan(mulaiUbahKeperawatan); setUbahKeperawatan(true); }}
+            onTutupUbah={() => { setKeadaan((k) => ({ ...k, keperawatan: server.keperawatan })); setUbahKeperawatan(false); }} />
+          <LangkahAnamnesis {...dasar('anamnesis')} />
+        </Kolom>;
+      }
+      case 'keperawatan': return <Kolom>
+        <InfoKunjunganSkrining konteks={konteks} />
+        <LangkahTandaVital {...dasar('tanda_vital')} />
+        <BagianKeperawatan {...dasar('keperawatan')} />
+      </Kolom>;
       case 'objective': return <Kolom>
         <LangkahTandaVital {...dasar('tanda_vital')} />
         <LangkahPemeriksaan {...dasar('pemeriksaan')} />
@@ -313,7 +331,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         }
         galat={galat}
         onTutup={hasil ? onSelesai : tutup}
-        lindungiTutup={formSiap && adaPerubahan(server, keadaan)}
+        lindungiTutup={formSiap && adaPerubahan(awalForm, keadaan)}
         onLanjut={(dari) => {
           const bagian = bagianLangkah(konfig[dari]);
           const g = rencana.find((r) => bagian.includes(r.bagian) && r.galat)?.galat;

@@ -7,6 +7,7 @@ export * from './teks';
 export * from './klaim';
 export * from './pdp';
 export * from './klinis';
+export * from './default-klinis';
 export * from './penunjang';
 
 export * from './whatsapp';

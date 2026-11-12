@@ -1,6 +1,10 @@
 // Mengisi data DEMO (fiktif) lewat API Klira yang sedang berjalan, memakai akun sesuai peran agar izin ikut teruji.
 // Bukan untuk produksi. Pemakaian: node skrip/data-demo.mjs   (server harus sudah jalan, mis. npm run dev)
 // Variabel opsional: KLIRA_URL, KLIRA_ADMIN_USER, KLIRA_ADMIN_SANDI, KLIRA_SANDI_DEMO.
+import { createRequire } from 'node:module';
+// Default keadaan baik skrining keperawatan dari packages/shared (satu sumber; butuh `npm run build -w packages/shared`).
+const { DEFAULT_KEPERAWATAN } = createRequire(import.meta.url)('../packages/shared/dist/index.js');
+
 const BASE = (process.env.KLIRA_URL ?? 'http://127.0.0.1:8074') + '/api';
 const ADMIN = { username: process.env.KLIRA_ADMIN_USER ?? 'pimpinan', kata_sandi: process.env.KLIRA_ADMIN_SANDI ?? 'admin123' };
 /** Kata sandi semua akun demo setelah ganti kredensial pertama. */
@@ -343,8 +347,18 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
     const antreanId = k.antrean?.id;
     if (antreanId) { await api('perawat', 'POST', `/antrean/${antreanId}/panggil`); await api('perawat', 'POST', `/antrean/${antreanId}/mulai`); }
     // Skrining perawat
-    await wajib('anamnesis (perawat)', 'perawat', 'PUT', `/kunjungan/${kid}/klinis/anamnesis`, { isi: { keluhan_utama: kasus.keluhan, alergi: i === 1 ? 'Penisilin' : 'Tidak ada', riwayat_pribadi: null, riwayat_keluarga: null, penyerta: null } });
     await wajib('tanda vital (perawat)', 'perawat', 'PUT', `/kunjungan/${kid}/klinis/tanda_vital`, { isi: kasus.ttv });
+    // Skrining keperawatan (P6): default keadaan baik, alergi dan sebagian temuan diubah agar penanda terlihat.
+    await wajib('skrining keperawatan (perawat)', 'perawat', 'PUT', `/kunjungan/${kid}/klinis/keperawatan`, {
+      isi: {
+        ...DEFAULT_KEPERAWATAN,
+        ...(i === 1 ? { alergi: 'Penisilin' } : {}),
+        ...(i % 3 === 2 ? { nyeri_jenis: 'akut', nyeri_skala: 4, nyeri_lokasi: 'Kepala', nyeri_durasi: '2 hari', nyeri_frekuensi: 'Hilang timbul', nyeri_hilang_bila: 'Istirahat' } : {}),
+        ...(i === 4 ? { jatuh_tidak_seimbang: true } : {}),
+        skrining_visual: 'hijau',
+      },
+    });
+    await wajib('anamnesis (perawat)', 'perawat', 'PUT', `/kunjungan/${kid}/klinis/anamnesis`, { isi: { keluhan_utama: kasus.keluhan, riwayat_pribadi: null, riwayat_keluarga: null, penyerta: null } });
     if (target === 'skrining') continue;
     // Pemeriksaan dokter
     await wajib('pemeriksaan fisik (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/pemeriksaan`, { isi: kasus.periksa });

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { GALAT, KLINIS } from '../teks';
 import type { CaraPembayaran, JenisKunjungan, StatusPengesahan, TahapLayanan } from '../status';
 import {
-  BAGIAN_KLINIS, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_TINDAK_LANJUT, PEMERIKSAAN_BIDANG, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL,
+  BAGIAN_KLINIS, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, PEMERIKSAAN_BIDANG, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL,
 } from '../klinis';
 import type { BagianKlinis, BagianTemplat, JenisFavorit, JenisTindakLanjut, KunciTandaVital, PeranDiagnosis, SistemTerminologi, BidangPemeriksaan } from '../klinis';
 import { idPositif, tanggal, teksWajib } from './umum';
@@ -19,7 +19,6 @@ const anamnesisDasar = {
   penyerta: teksNull(1000),
   riwayat_pribadi: teksNull(1000),
   riwayat_keluarga: teksNull(1000),
-  alergi: teksNull(500),
 };
 export const anamnesisIsi = z.object({ keluhan_utama: teksWajib(1000), ...anamnesisDasar });
 export type AnamnesisIsi = z.infer<typeof anamnesisIsi>;
@@ -33,6 +32,39 @@ const angkaTandaVital = (t: (typeof TANDA_VITAL)[number]) =>
 const bentukTandaVital = Object.fromEntries(TANDA_VITAL.map((t) => [t.kunci, angkaTandaVital(t)])) as Record<KunciTandaVital, ReturnType<typeof angkaTandaVital>>;
 export const tandaVitalIsi = z.object(bentukTandaVital).refine((d) => Object.values(d).some((v) => v !== null), { message: KLINIS.galat.tandaVitalKosong });
 export type TandaVitalIsi = Record<KunciTandaVital, number | null>;
+
+// Skrining keperawatan (P6): teks opsional, nyeri bersyarat, risiko jatuh dan gizi ya/tidak (hasil dihitung, tidak disimpan).
+const yaTidak = z.preprocess((v) => (v === null || v === undefined || v === '' ? false : v), z.boolean());
+const skalaNyeri = z.preprocess(
+  (v) => (typeof v === 'string' ? (v.trim() === '' ? null : Number(v)) : kosongJadiNull(v)),
+  z.number(KLINIS.galat.angka).int(KLINIS.galat.skalaNyeri).min(0, KLINIS.galat.skalaNyeri).max(SKALA_NYERI_MAKS, KLINIS.galat.skalaNyeri).nullable(),
+);
+export const keperawatanIsi = z
+  .object({
+    kajian_keperawatan: teksNull(1000),
+    telah_diobati: teksNull(1000),
+    alergi: teksNull(500),
+    obat_dikonsumsi: teksNull(1000),
+    diagnosa_keperawatan: teksNull(500),
+    rencana_asuhan: teksNull(1000),
+    nyeri_jenis: z.preprocess((v) => (v === null || v === undefined || v === '' ? 'tidak' : v), z.enum(JENIS_NYERI)),
+    nyeri_skala: skalaNyeri,
+    nyeri_lokasi: teksNull(200),
+    nyeri_durasi: teksNull(200),
+    nyeri_frekuensi: teksNull(200),
+    nyeri_hilang_bila: teksNull(200),
+    jatuh_tidak_seimbang: yaTidak,
+    jatuh_menopang: yaTidak,
+    gizi_bb_turun: yaTidak,
+    gizi_asupan_kurang: yaTidak,
+    skrining_visual: z.preprocess(kosongJadiNull, z.enum(SKRINING_VISUAL).nullable()),
+  })
+  .superRefine((d, ctx) => {
+    if (d.nyeri_jenis !== 'tidak' && d.nyeri_skala === null) ctx.addIssue({ code: 'custom', path: ['nyeri_skala'], message: KLINIS.galat.skalaNyeriWajib });
+  })
+  // Tidak nyeri: isian nyeri lain disembunyikan di form dan disimpan null.
+  .transform((d) => (d.nyeri_jenis === 'tidak' ? { ...d, nyeri_skala: null, nyeri_lokasi: null, nyeri_durasi: null, nyeri_frekuensi: null, nyeri_hilang_bila: null } : d));
+export type KeperawatanIsi = z.infer<typeof keperawatanIsi>;
 
 // Pemeriksaan fisik: teks per bidang, minimal satu terisi.
 const bentukPemeriksaan = Object.fromEntries(PEMERIKSAAN_BIDANG.map((b) => [b, teksNull(1000)])) as Record<BidangPemeriksaan, ReturnType<typeof teksNull>>;
@@ -104,11 +136,11 @@ export type NarasiKlinisIsi = z.infer<typeof narasiKlinisIsi>;
 /** Skema isi per bagian; `alasan` wajib saat memperbaiki bagian yang sudah disahkan. */
 export const SKEMA_BAGIAN = {
   assessment: narasiKlinisIsi, plan: narasiKlinisIsi, implementasi: narasiKlinisIsi, evaluasi: narasiKlinisIsi,
-  anamnesis: anamnesisIsi, tanda_vital: tandaVitalIsi, pemeriksaan: pemeriksaanIsi, diagnosis: diagnosisIsi, tindakan: tindakanIsi, tindak_lanjut: tindakLanjutIsi,
+  anamnesis: anamnesisIsi, tanda_vital: tandaVitalIsi, keperawatan: keperawatanIsi, pemeriksaan: pemeriksaanIsi, diagnosis: diagnosisIsi, tindakan: tindakanIsi, tindak_lanjut: tindakLanjutIsi,
 } as const satisfies Record<BagianKlinis, z.ZodType>;
 export type IsiBagian = {
   assessment: NarasiKlinisIsi; plan: NarasiKlinisIsi; implementasi: NarasiKlinisIsi; evaluasi: NarasiKlinisIsi;
-  anamnesis: AnamnesisIsi; tanda_vital: TandaVitalIsi; pemeriksaan: PemeriksaanIsi; diagnosis: DiagnosisIsi; tindakan: TindakanIsi; tindak_lanjut: TindakLanjutIsi;
+  anamnesis: AnamnesisIsi; tanda_vital: TandaVitalIsi; keperawatan: KeperawatanIsi; pemeriksaan: PemeriksaanIsi; diagnosis: DiagnosisIsi; tindakan: TindakanIsi; tindak_lanjut: TindakLanjutIsi;
 };
 
 export const simpanBagianMasukan = z.object({ isi: z.unknown(), alasan: z.string().trim().max(500).optional() });
@@ -154,7 +186,10 @@ export type KonteksKlinisDto = {
   kunjungan: {
     id: number; jenis: JenisKunjungan; tahap_layanan: TahapLayanan; cara_pembayaran: CaraPembayaran;
     poli_nama: string | null; dpjp_nama: string | null; keluhan_singkat: string | null;
+    /** Pasien belum punya kunjungan sebelumnya di fasyankes ini (jenis kunjungan baru/lama, P6). */
+    pasien_baru: boolean;
   };
+  /** Alergi dari skrining keperawatan terbaru pasien; null bila belum dikaji atau "tidak ada". */
   alergi: string | null;
   diagnosis_aktif: { kode: string; nama: string }[];
   tanda_vital_terakhir: TandaVitalIsi | null;

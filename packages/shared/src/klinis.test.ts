@@ -6,7 +6,9 @@ import {
 describe('skema catatan klinis', () => {
   it('anamnesis: keluhan wajib dan bidang kosong dinormalkan menjadi null', () => {
     expect(anamnesisIsi.safeParse({ keluhan_utama: '  ' }).success).toBe(false);
-    expect(anamnesisIsi.parse({ keluhan_utama: ' Batuk ', alergi: ' ' })).toEqual({ keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null, alergi: null });
+    expect(anamnesisIsi.parse({ keluhan_utama: ' Batuk ', penyerta: ' ' })).toEqual({ keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null });
+    // alergi pindah ke skrining keperawatan (P6)
+    expect(anamnesisIsi.parse({ keluhan_utama: 'Batuk', alergi: 'Penisilin' })).not.toHaveProperty('alergi');
   });
 
   it('tanda vital: angka (juga teks berkoma) dalam rentang, minimal satu nilai', () => {
@@ -49,7 +51,7 @@ describe('skema catatan klinis', () => {
   });
 
   it('semua bagian punya skema', () => {
-    expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'].sort());
+    expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'].sort());
   });
 });
 
