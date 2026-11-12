@@ -62,7 +62,7 @@ Tagihan:
 
 ## Rekam medis mengikuti formulir klinik (P6–P8)
 
-Sumber: permintaan klien setelah presentasi agar isian rekam medis rawat jalan mengikuti formulir yang sudah dipakai klinik ([Rekam Medis-yang-berjalan.pdf](Rekam%20Medis-yang-berjalan.pdf)). Mockup layar dan cetak: https://claude.ai/artifact/FBTdU4TxSbN9pcSJdXepUv. Kelompok langkah SOAPIE (rencana-soapie.md) **tetap**; isian baru dimasukkan ke kelompok yang sesuai.
+Sumber: permintaan klien setelah presentasi agar isian rekam medis rawat jalan mengikuti formulir yang sudah dipakai klinik ([Rekam Medis-yang-berjalan.pdf](Rekam%20Medis-yang-berjalan.pdf)). Mockup layar dan cetak: https://claude.ai/artifact/FBTdU4TxSbN9pcSJdXepUv. **SOAPIE tidak dipakai lagi** (disimpan di cabang lain): langkah pemeriksaan dokter, detail, dan ringkasan mengikuti format internal klinik; rencana-soapie.md tidak berlaku lagi untuk cabang ini.
 
 Aturan umum **default keadaan baik**: setiap isian pemeriksaan yang punya keadaan normal sudah terisi teks keadaan baik yang cocok dengan variabelnya ("tidak ada", "tidak anemis", "vesikuler", "hangat", "normal", ...), sehingga tenaga kesehatan hanya mengubah yang tidak normal. Teks default disimpan sebagai konstanta di `packages/shared` (satu sumber untuk form, uji, dan data demo). Default hanya mengisi form yang belum pernah disimpan (tidak ada versi tersimpan dan tidak ada draf); isi tersimpan dan draf tidak ditimpa. Isian yang nilainya berbeda dari default ditandai (latar kuning, `status.kuning`) dan dihitung ("n isian diubah"); setiap kelompok punya tombol **Semua normal** (mengembalikan kelompok itu ke default) dan ada tombol **Kembalikan semua ke normal**. Isian boleh dikosongkan (tersimpan null).
 
@@ -84,11 +84,13 @@ Data:
   - `skrining_visual` enum `hijau | kuning | merah`, opsional (arti warna dikonfirmasi klinik; label saja).
 - Jenis kunjungan (baru/lama dari ada tidaknya kunjungan sebelumnya) dan jenis rawat ditampilkan baca saja, tidak disimpan.
 - **Alergi pindah** dari anamnesis ke keperawatan: kolom `alergi` dihapus dari `Anamnesis` (migrasi), skema, form S, salin, templat, demo. Konteks klinis (`alergi` di kepala pasien) membaca alergi keperawatan terbaru pasien; nilai yang sama dengan default "tidak ada" (abaikan huruf besar/kecil dan spasi) dianggap tidak ada alergi.
-- Dokter melihat ringkasan keperawatan dan tanda vital (baca saja) di atas langkah S, dan boleh mengubah bagian keperawatan bila punya izin klinis (perubahan lewat jalur pengesahan yang sama).
+- Dokter melihat ringkasan keperawatan dan tanda vital (baca saja) di atas langkah Anamnesa, dan boleh mengubah bagian keperawatan bila punya izin klinis (perubahan lewat jalur pengesahan yang sama).
 
 ## P7. Isian dokter mengikuti formulir
 
-**S — Subjective (anamnesis)**: urutan dan label mengikuti formulir.
+**Langkah dokter** (menggantikan S/O/A/P/I/E): 1 Anamnesa → 2 Pemeriksaan fisik → 3 Pemeriksaan penunjang (order lab dan hasil penunjang yang sudah ada) → 4 Kesimpulan (diagnosis ICD-10 + diagnosa banding + KIE) → 5 Terapi (tindakan, obat yang diberikan di poli, resep = obat dibawa pulang) → 6 Tindak lanjut (pulang/rujuk/rawat inap) → Ringkasan. Bagian narasi SOAPIE `assessment`, `plan`, `implementasi`, `evaluasi` **dihapus** dari `BAGIAN_KLINIS`, `SKEMA_BAGIAN`, enum `BagianNarasi`, form, ringkasan, detail, riwayat, perbaikan catatan, demo, dan uji (data lama boleh dihapus lewat migrasi; aplikasi belum produksi). Draf lama dengan format langkah SOAPIE dibuang (naikkan `versi_draf`). Detail kunjungan (sebelumnya "detail SOAPIE") menampilkan blok sesuai urutan formulir.
+
+**Anamnesa**: urutan dan label mengikuti formulir.
 - `keluhan_utama` (wajib, label "Alasan kedatangan / keluhan utama").
 - `penyerta` berlabel "Keluhan tambahan".
 - `riwayat_sekarang` baru (maks 1000, label "Riwayat perjalanan penyakit sekarang").
@@ -97,7 +99,7 @@ Data:
 - `kajian_sosial` baru (maks 1000).
 - Kolom baru ikut Prisma + migrasi, skema, salin dari kunjungan sebelumnya, templat anamnesis.
 
-**O — Objective (pemeriksaan fisik terstruktur)**: `PEMERIKSAAN_BIDANG` lama (`keadaan_umum, kepala_leher, thorax, abdomen, ekstremitas, catatan`) diganti daftar bidang di bawah, tetap disimpan per baris di `Observasi` (kelompok `pemeriksaan`, `bidang` = kunci). Definisi di shared berisi kunci, label, kelompok, dan default. Semua bidang teks opsional maks 300.
+**Pemeriksaan fisik (terstruktur)**: `PEMERIKSAAN_BIDANG` lama (`keadaan_umum, kepala_leher, thorax, abdomen, ekstremitas, catatan`) diganti daftar bidang di bawah, tetap disimpan per baris di `Observasi` (kelompok `pemeriksaan`, `bidang` = kunci). Definisi di shared berisi kunci, label, kelompok, dan default. Semua bidang teks opsional maks 300.
 
 | Kelompok | Bidang (kunci: default) |
 |---|---|
@@ -114,18 +116,18 @@ Data:
 - Aturan "minimal satu bidang terisi" tetap.
 - Templat pemeriksaan mengikuti kunci baru (templat lama dengan kunci lama diabaikan saat dipakai).
 - Data demo diperbarui.
-- Ringkasan, detail SOAPIE, dan riwayat menampilkan per kelompok; bidang yang sama dengan default boleh diringkas menjadi satu kalimat per kelompok.
+- Ringkasan, detail kunjungan, dan riwayat menampilkan per kelompok; bidang yang sama dengan default boleh diringkas menjadi satu kalimat per kelompok.
 
-**A — Assessment**:
+**Kesimpulan**:
 - Diagnosis ICD-10 tetap: utama = "Diagnosa medis", penyerta = "Diagnosa tambahan".
 - Tambah narasi baru **Diagnosa banding** (`diagnosis_banding`, teks bebas maks 1000, boleh berisi kode). Ia tidak ikut pengkodean, klaim, statistik, maupun diagnosis aktif.
 
-**P — Plan**: tambah narasi baru **Komunikasi, informasi, dan edukasi** (`kie`, maks 2000).
+**Kesimpulan** juga memuat narasi baru **Komunikasi, informasi, dan edukasi** (`kie`, maks 2000).
 
-**I — Implementation**: tambah narasi baru **Obat yang diberikan di poli** (`obat_poli`, maks 1000). Isian ini teks catatan saja, tidak mengurangi stok dan tidak membuat tagihan.
+**Terapi** memuat narasi baru **Obat yang diberikan di poli** (`obat_poli`, maks 1000). Isian ini teks catatan saja, tidak mengurangi stok dan tidak membuat tagihan.
 
 Narasi baru (`diagnosis_banding`, `kie`, `obat_poli`):
-- Memakai `NarasiKlinis`: enum `BagianNarasi` dan `BAGIAN_NARASI`/`LABEL_NARASI` bertambah, migrasi enum.
+- Memakai `NarasiKlinis`: enum `BagianNarasi` menjadi `diagnosis_banding | kie | obat_poli` (nilai SOAPIE lama dihapus), `BAGIAN_NARASI`/`LABEL_NARASI` mengikuti, migrasi enum.
 - Masuk `BAGIAN_KLINIS` dan `SKEMA_BAGIAN`, ikut pengesahan.
 - Tidak menjadi syarat penyelesaian pemeriksaan.
 
@@ -133,7 +135,7 @@ Narasi baru (`diagnosis_banding`, `kie`, `obat_poli`):
 
 ## P8. Cetak rekam medis rawat jalan
 
-- Tombol **Cetak rekam medis** di detail kunjungan rawat jalan (detail SOAPIE / riwayat) bagi pemilik izin lihat rekam medis atau klinis. Pembukaan tercatat di audit (`lihat`/`cetak`) seperti pembukaan rekam medis lain.
+- Tombol **Cetak rekam medis** di detail kunjungan rawat jalan (detail kunjungan / riwayat) bagi pemilik izin lihat rekam medis atau klinis. Pembukaan tercatat di audit (`lihat`/`cetak`) seperti pembukaan rekam medis lain.
 - Satu endpoint baca `GET /kunjungan/:id/rekam-medis-cetak` mengembalikan seluruh data satu kunjungan (identitas, pendaftaran, keperawatan, tanda vital, anamnesis, pemeriksaan, hasil penunjang, diagnosis, narasi, tindakan, resep beserta item farmasi, tindak lanjut, surat rujukan bila ada, pengesahan per bagian) dalam satu DTO. Isolasi fasyankes berlaku.
 - Halaman cetak A4 (komponen React + `@media print`, `window.print()`), tata letak dan urutan blok mengikuti formulir:
   - Kepala: tanggal/nomor pendaftaran, tanggal/nomor pelayanan, poli, dokter.
