@@ -1,4 +1,0 @@
-1. penambahan memilih dokter saat daftar
-2. penambahan cara pembayaran dari umun, jkn dan ada tambahan asuransi lain.
-3. pada bagian plan resep dokter saya ingin ubah agar dokter itu menulis dalam text area aja, baru rincian item yang mengurangi stok itu dikelola bagian varmasi, kenapa? karena saya menemukan kendala merek obat, terus penyajian obat yang dibuat puyer dll. jadi untuk item obat yang mengurangi stok itu ditulis oleh bagian parmasi saat telaah resep
-4. terkait pembayaran juga kadang ada saja pasien yang bayar dengan dua metode pembayaran.

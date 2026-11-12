@@ -16,7 +16,7 @@ Fondasi, Daftar pasien, registrasi, kunjungan, pemeriksaan klinis, penunjang, pe
 
 ## Pembaruan hasil presentasi 10 November 2026
 
-Rencana: `dokumen/renca-update-hasil-persentasi/rencana-perubahan.md`. Kelima butir dibangun (tahap A), diperiksa independen (tahap B), temuan diperbaiki (tahap C), dan dicentang:
+Kelima butir dibangun (tahap A), diperiksa independen (tahap B), temuan diperbaiki (tahap C), dan dicentang:
 
 - P1 Pilih dokter saat pendaftaran (dokter terfilter poli, server menolak dokter tanpa jadwal di poli itu).
 - P4 Satu tagihan dibayar 1–3 metode dalam satu transaksi; kembalian hanya dari tunai.
@@ -35,7 +35,7 @@ Catatan:
 
 ## Rekam medis mengikuti formulir klinik (12 November 2026)
 
-Rencana: bagian P6–P8 di `dokumen/renca-update-hasil-persentasi/rencana-perubahan.md`. Dikerjakan langsung (tanpa sub agent), dicek terarah pada berkas yang diubah (typecheck, lint, uji berkas terkait) dan diuji ujung ke ujung lewat pengisian ulang data demo setelah basis data dev di-reset.
+Dikerjakan langsung (tanpa sub agent), dicek terarah pada berkas yang diubah (typecheck, lint, uji berkas terkait) dan diuji ujung ke ujung lewat pengisian ulang data demo setelah basis data dev di-reset.
 - P6 Skrining keperawatan: bagian `keperawatan` (kajian, riwayat pengobatan, alergi, obat, skrining nyeri, risiko jatuh, gizi, visual) dengan default keadaan baik; alergi pindah dari anamnesis.
 - P7 Isian dokter mengikuti formulir: langkah Anamnesa → Pemeriksaan fisik (35 bidang per organ, default keadaan baik, penanda "diubah", Semua normal, odontogram) → Pemeriksaan penunjang → Kesimpulan (diagnosa medis/tambahan/banding, KIE) → Terapi (tindakan, obat di poli, resep) → Tindak lanjut. SOAPIE dihapus bersih dari kode, teks, migrasi, data demo, dan dokumen.
 - P8 Cetak rekam medis: endpoint `GET /api/kunjungan/:id/rekam-medis-cetak` (dicatat audit) dan lembar A4 sesuai formulir dengan pengesahan elektronik per blok; tombol "Cetak rekam medis" di detail kunjungan (riwayat dan resume).
