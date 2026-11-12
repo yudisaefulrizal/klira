@@ -5,3 +5,8 @@ dist
 
 # Cadangan database (berisi data pasien)
 backup/
+
+# Berkas pribadi/rujukan di dokumen yang tidak ikut repo
+dokumen/khanza-dan-perbandingan.pdf
+dokumen/renca-update-hasil-persentasi/
+dokumen/ss-keperawatan-pdf.png
