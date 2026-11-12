@@ -1,11 +1,11 @@
 import { cariIcd, kamusIcd, sistemIcd } from './terminologi-icd';
 import { mulaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma, Prisma } from '@klira/db';
-import { alergiTercatat, PEMERIKSAAN_BIDANG, TANDA_VITAL, umurTahun } from '@klira/shared';
+import { alergiTercatat, PEMERIKSAAN_BIDANG, samarNomor, TANDA_VITAL, umurTahun } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, AnamnesisIsi, BagianKlinis, BagianTemplat, DiagnosisIsi, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KodeTerminologiDto, KonteksKlinisDto, KunjunganDto,
   HalamanKamusTerminologiDto, KamusTerminologiMasukan, KeperawatanIsi, PemeriksaanIsi, RiwayatKunjunganDto, SalinanKunjunganDto, SinkronTagihanTindakan, SistemTerminologi, TandaVitalIsi, TemplatDto, TindakanIsi,
-  TindakanKlinikDto, TindakLanjutIsi,
+  RekamMedisCetakDto, TindakanKlinikDto, TindakLanjutIsi,
 } from '@klira/shared';
 import { sinkronItemTindakanDalam } from '../kasir/repositori';
 import { ambilKunjungan, keDto } from '../kunjungan/repositori';
@@ -27,6 +27,9 @@ export interface RepositoriKlinis {
   kunjungan(fasyankesId: number, id: number): Promise<KunjunganRingkas | null>;
   kunjunganDto(fasyankesId: number, id: number): Promise<KunjunganDto | null>;
   penggunaAda(fasyankesId: number, id: number): Promise<boolean>;
+  /** Data pendukung cetak rekam medis rawat jalan (P8) selain catatan klinis; null bila kunjungan bukan milik fasyankes. */
+  dataCetak(fasyankesId: number, kunjunganId: number): Promise<Omit<RekamMedisCetakDto, 'klinis' | 'dicetak_oleh' | 'dicetak_pada'> | null>;
+  namaPengguna(id: number): Promise<string>;
   /** Isi versi terbaru suatu bagian; bagian tunggal null bila belum ada, bagian daftar `{ item: [] }`. */
   bacaBagian<K extends BagianKlinis>(fasyankesId: number, kunjunganId: number, bagian: K): Promise<IsiBagian[K] | null>;
   /** Isi dan pengesahan ditulis atomik (INSERT saja). */
@@ -218,6 +221,44 @@ export class RepositoriKlinisPrisma implements RepositoriKlinis {
   async kunjunganDto(fasyankesId: number, id: number): Promise<KunjunganDto | null> {
     if (!(await prisma.kunjungan.count({ where: { id, fasyankes_id: fasyankesId } }))) return null;
     return keDto(await ambilKunjungan(prisma, id));
+  }
+
+  async dataCetak(fasyankesId: number, kunjunganId: number): Promise<Omit<RekamMedisCetakDto, 'klinis' | 'dicetak_oleh' | 'dicetak_pada'> | null> {
+    const [k, konteks] = await Promise.all([
+      prisma.kunjungan.findFirst({ where: { id: kunjunganId, fasyankes_id: fasyankesId }, include: { pasien: true, antrean: true } }),
+      this.konteks(fasyankesId, kunjunganId),
+    ]);
+    if (!k || !konteks) return null;
+    const dto = keDto(await ambilKunjungan(prisma, kunjunganId));
+    const [folder, resep, order, surat, setuju] = await Promise.all([
+      prisma.keluargaPasien.findFirst({ where: { fasyankes_id: fasyankesId, anggota_pasien_id: k.pasien_id }, orderBy: { id: 'asc' }, include: { pasien: { select: { nama: true, nomor_rm: true } } } }),
+      prisma.resep.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId }, orderBy: { id: 'asc' }, include: { item: { orderBy: { id: 'asc' }, include: { master: { select: { nama_tampil: true, satuan: true } } } } } }),
+      prisma.orderPenunjang.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId }, orderBy: { id: 'asc' }, include: { hasil: true } }),
+      prisma.surat.findFirst({ where: { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, jenis: 'rujukan' }, orderBy: { id: 'desc' } }),
+      prisma.persetujuan.findFirst({ where: { fasyankes_id: fasyankesId, pasien_id: k.pasien_id, jenis: 'general', status: 'diberikan' }, orderBy: { waktu: 'desc' }, select: { waktu: true } }),
+    ]);
+    const idValidator = [...new Set(order.flatMap((o) => (o.hasil?.validator_id ? [o.hasil.validator_id] : [])))];
+    const validator = new Map((await prisma.pengguna.findMany({ where: { id: { in: idValidator } }, select: { id: true, nama: true } })).map((x) => [x.id, x.nama]));
+    const p = k.pasien;
+    return {
+      kepala: { mulai: k.mulai.toISOString(), nomor_antrean: dto.antrean?.kode ?? null, poli: konteks.kunjungan.poli_nama, dokter: konteks.kunjungan.dpjp_nama },
+      pasien: {
+        nomor_rm: p.nomor_rm, nama: p.nama, nik: samarNomor(p.nik), tanggal_lahir: p.tanggal_lahir.toISOString().slice(0, 10), jenis_kelamin: p.jenis_kelamin === 'laki_laki' ? 'laki_laki' : 'perempuan',
+        agama: p.agama, status_kawin: p.status_kawin, kepala_keluarga: folder?.pasien.nama ?? null, folder: folder?.pasien.nomor_rm ?? null, hubungan: folder?.hubungan ?? null,
+        nomor_jkn: samarNomor(p.jkn_nomor_kartu),
+      },
+      resep: resep.map((r) => ({ nomor: r.nomor_resep, teks: r.teks, item: r.item.map((i) => ({ nama: i.master.nama_tampil, jumlah: i.jumlah, satuan: i.master.satuan, aturan_pakai: i.aturan_pakai })) })),
+      penunjang: order.map((o) => ({
+        nama: o.nama, nilai: o.hasil?.nilai ?? null, satuan: o.hasil?.satuan ?? null, interpretasi: o.hasil?.interpretasi ?? null,
+        validator: o.hasil?.validator_id ? validator.get(o.hasil.validator_id) ?? null : null, waktu: (o.hasil?.divalidasi_pada ?? o.hasil?.dientri_pada)?.toISOString() ?? null,
+      })),
+      rujukan: surat ? { nomor: surat.nomor_surat, tanggal: surat.dibuat_pada.toISOString(), tujuan: surat.tujuan } : null,
+      persetujuan_umum: setuju?.waktu.toISOString() ?? null,
+    };
+  }
+
+  async namaPengguna(id: number): Promise<string> {
+    return (await prisma.pengguna.findUnique({ where: { id }, select: { nama: true } }))?.nama ?? '-';
   }
 
   async penggunaAda(fasyankesId: number, id: number): Promise<boolean> {

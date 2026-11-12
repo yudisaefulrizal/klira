@@ -43,6 +43,12 @@ export function buatRuteKlinis(layananAkses: LayananAkses, layananIzin: LayananI
     kirimHasil(res, await layanan.ambil(pengguna(res), id.data.id, alamatDari(req)));
   }));
 
+  rute.get('/kunjungan/:id/rekam-medis-cetak', masuk, lihatKlinis, bungkus(async (req, res) => {
+    const id = idParam.safeParse(req.params);
+    if (!id.success) return tidakAda(res);
+    kirimHasil(res, await layanan.cetak(pengguna(res), id.data.id, alamatDari(req)));
+  }));
+
   rute.put('/kunjungan/:id/klinis/:bagian', masuk, tulisKlinis, bungkus(async (req, res) => {
     const p = bagianParam.safeParse(req.params);
     if (!p.success) return tidakAda(res);

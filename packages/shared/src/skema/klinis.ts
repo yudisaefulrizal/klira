@@ -282,3 +282,26 @@ export type HalamanKamusTerminologiDto = { data: KodeTerminologiDto[]; total: nu
 export type TindakanKlinikDto = { id: number; kode: string; nama: string; kode_icd9cm: string | null; harga_umum: number | null; harga_jkn: number | null };
 /** Hasil sinkronisasi item tagihan tindakan setelah bagian tindakan disimpan; `terkunci` = tagihan tidak diubah (sudah ada pembayaran atau kunjungan ditutup). */
 export type SinkronTagihanTindakan = 'disinkron' | 'terkunci' | 'tidak_perlu';
+
+/** Samarkan nomor identitas untuk cetak: 4 digit awal dan akhir terlihat. */
+export const samarNomor = (v: string | null | undefined): string | null => {
+  const s = (v ?? '').trim();
+  return !s ? null : s.length <= 8 ? s : `${s.slice(0, 4)}${'•'.repeat(s.length - 8)}${s.slice(-4)}`;
+};
+
+/** Seluruh isi rekam medis rawat jalan satu kunjungan untuk dicetak (P8), urut blok formulir klinik. */
+export type RekamMedisCetakDto = {
+  klinis: KlinisKunjunganDto;
+  kepala: { mulai: string; nomor_antrean: string | null; poli: string | null; dokter: string | null };
+  pasien: {
+    nomor_rm: string; nama: string; nik: string | null; tanggal_lahir: string; jenis_kelamin: 'laki_laki' | 'perempuan'; agama: string | null; status_kawin: string | null;
+    kepala_keluarga: string | null; folder: string | null; hubungan: string | null; nomor_jkn: string | null;
+  };
+  resep: { nomor: string; teks: string; item: { nama: string; jumlah: number; satuan: string; aturan_pakai: string }[] }[];
+  penunjang: { nama: string; nilai: string | null; satuan: string | null; interpretasi: string | null; validator: string | null; waktu: string | null }[];
+  rujukan: { nomor: string; tanggal: string; tujuan: string | null } | null;
+  /** Waktu persetujuan umum pasien terbaru, bila ada. */
+  persetujuan_umum: string | null;
+  dicetak_oleh: string;
+  dicetak_pada: string;
+};

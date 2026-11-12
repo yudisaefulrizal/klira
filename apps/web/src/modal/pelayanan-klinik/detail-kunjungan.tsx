@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { Tombol } from '../../komponen/ui/tombol';
+import { CetakRekamMedis } from './cetak-rekam-medis';
 import { BAGIAN_KLINIS, KLINIS } from '@klira/shared';
 import type { KlinisKunjunganDto } from '@klira/shared';
 import { ambilKlinis } from '../../api-klien/klinis';
@@ -15,6 +17,7 @@ import { RingkasanOrderKunjungan } from './ringkasan-order-kunjungan';
 export function DetailKunjungan({ kunjunganId }: { kunjunganId: number }) {
   const [data, setData] = useState<KlinisKunjunganDto | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
+  const [cetak, setCetak] = useState(false);
   useEffect(() => {
     let batal = false;
     setData(null);
@@ -26,6 +29,8 @@ export function DetailKunjungan({ kunjunganId }: { kunjunganId: number }) {
   if (galat) return <Peringatan>{galat}</Peringatan>;
   if (!data) return <span>{KLINIS.detail.memuat}</span>;
   return <Kolom>
+    <div><Tombol type="button" varian="sekunder" onClick={() => setCetak(true)}>{KLINIS.cetak.tombol}</Tombol></div>
+    {cetak && <CetakRekamMedis kunjunganId={kunjunganId} onTutup={() => setCetak(false)} />}
     <DaftarRingkasan bagian={ringkasanIsi(keadaanDariServer(data.bagian))} />
     <RingkasanOrderKunjungan kunjunganId={kunjunganId} />
     <HasilPenunjangKunjungan kunjunganId={kunjunganId} />

@@ -55,6 +55,12 @@ function buatDunia(tahapAwal: TahapLayanan = 'pemeriksaan') {
     // Tarif tindakan milik fasyankes 1: id 3 dan 4, keduanya berkode ICD-9-CM 86.59.
     tarifTindakanSah: async (f: number, ids: number[]) => (f === 1 ? ids.filter((i) => i === 3 || i === 4).map((id) => ({ id, kode_icd9cm: '86.59' })) : []),
     sinkronTagihanTindakan: jest.fn(async () => dunia.sinkron),
+    dataCetak: async (f: number, id: number) => (f === 1 && id === 10 ? {
+      kepala: { mulai: '2026-11-12T01:00:00.000Z', nomor_antrean: 'UMU-001', poli: 'Umum', dokter: 'Dr. A' },
+      pasien: { nomor_rm: '00-01', nama: 'Siti', nik: null, tanggal_lahir: '1992-03-04', jenis_kelamin: 'perempuan', agama: null, status_kawin: null, kepala_keluarga: null, folder: null, hubungan: null, nomor_jkn: null },
+      resep: [], penunjang: [], rujukan: null, persetujuan_umum: null,
+    } : null),
+    namaPengguna: async () => 'Petugas RM',
   } as unknown as RepositoriKlinis;
   const l = buatLayananKlinis({
     repo, pengesahan, sekarang: () => dunia.waktu, audit: { catat: async (e) => void catatan.push(e) },
@@ -275,5 +281,21 @@ describe('narasi formulir (diagnosa banding, KIE, obat di poli)', () => {
     isi.set('anamnesis:10', { keluhan_utama: 'Diubah di luar alur' });
     expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
     expect(dunia.tahap).toBe('pemeriksaan');
+  });
+});
+
+describe('cetak rekam medis rawat jalan (P8)', () => {
+  it('menggabungkan catatan klinis dan data pendukung, mencatat audit pencetakan', async () => {
+    const { l, catatan } = buatDunia();
+    const h = await l.cetak(saya, 10);
+    expect(h.ok && h.data.klinis.kunjungan.id).toBe(10);
+    expect(h.ok && Object.keys(h.data.klinis.bagian)).toEqual(expect.arrayContaining(['keperawatan', 'pemeriksaan', 'kie']));
+    expect(h.ok && h.data.dicetak_oleh).toBe('Petugas RM');
+    expect(catatan).toEqual(expect.arrayContaining([expect.objectContaining({ aksi: 'lihat', entitas: 'catatan_klinis', entitas_id: 10, keterangan: expect.stringMatching(/Mencetak/) })]));
+  });
+  it('kunjungan fasyankes lain tidak ditemukan dan tidak diaudit', async () => {
+    const { l, catatan } = buatDunia();
+    expect(await l.cetak({ id: 7, fasyankes_id: 2 }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+    expect(catatan).toEqual([]);
   });
 });

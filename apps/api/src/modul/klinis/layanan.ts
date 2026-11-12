@@ -1,7 +1,7 @@
 import { kabarkanLayarPanggilan } from '../layar-panggilan/kanal';
 import { BAGIAN_NARASI, BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import type {
-  AlurDrafKlinis, AnggotaKeluargaDto, DrafKlinisDto, DrafMasukan, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto,
+  AlurDrafKlinis, AnggotaKeluargaDto, DrafKlinisDto, DrafMasukan, BagianKlinis, BagianKlinisDto, BagianTemplat, CariTerminologiMasukan, FavoritDto, FolderKeluargaDto, IsiBagian, JenisFavorit, KlinisKunjunganDto, RekamMedisCetakDto, KodeTerminologiDto,
   KamusTerminologiMasukan, KonteksKlinisDto, KunjunganDto, PenggunaSaya, RiwayatKunjunganDto, SalinanKunjunganDto, TahapLayanan, TemplatDto, TemplatMasukan, TindakanIsi,
   TindakanKlinikDto,
 } from '@klira/shared';
@@ -61,6 +61,22 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
       const daftar = await Promise.all(BAGIAN_KLINIS.map((b) => bagianDto(p.fasyankes_id, kunjunganId, b)));
       await catatLihat(p, 'catatan_klinis', kunjunganId, 'Membuka catatan klinis kunjungan', alamat);
       return { ok: true, data: { kunjungan: k, bagian: Object.fromEntries(daftar.map((d) => [d.bagian, d])) as KlinisKunjunganDto['bagian'] } };
+    },
+
+    /** Rekam medis rawat jalan satu kunjungan untuk dicetak (P8): catatan klinis dan data pendukung; dicatat `lihat` sebagai pencetakan. */
+    async cetak(p: Pelaku, kunjunganId: number, alamat?: string): Promise<Hasil<RekamMedisCetakDto>> {
+      const data = await repo.dataCetak(p.fasyankes_id, kunjunganId);
+      const k = data && (await repo.kunjunganDto(p.fasyankes_id, kunjunganId));
+      if (!data || !k) return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+      const daftar = await Promise.all(BAGIAN_KLINIS.map((b) => bagianDto(p.fasyankes_id, kunjunganId, b)));
+      await catatLihat(p, 'catatan_klinis', kunjunganId, 'Mencetak rekam medis rawat jalan kunjungan', alamat);
+      return {
+        ok: true,
+        data: {
+          ...data, klinis: { kunjungan: k, bagian: Object.fromEntries(daftar.map((d) => [d.bagian, d])) as KlinisKunjunganDto['bagian'] },
+          dicetak_oleh: await repo.namaPengguna(p.id), dicetak_pada: sekarang().toISOString(),
+        },
+      };
     },
 
     /** Simpan satu bagian = pengesahan (7): isi berversi, hash isi, jenis akun pengesah; perbaikan butuh alasan. Tanpa perubahan tidak menulis apa pun. */

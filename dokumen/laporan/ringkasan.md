@@ -32,3 +32,11 @@ Catatan:
 - `dokumen/panduan-klira.pdf` dan skrip `output/pembayaran-farmasi/periksa.cjs` belum mengikuti perubahan.
 - Rekam medis, resume, dan cetak dokumen RM belum menampilkan resep (sebelumnya juga tidak).
 - Pilihan default agent tercatat di `dokumen/laporan/pertanyaan.md`.
+
+## Rekam medis mengikuti formulir klinik (12 November 2026)
+
+Rencana: bagian P6–P8 di `dokumen/renca-update-hasil-persentasi/rencana-perubahan.md`. Dikerjakan langsung (tanpa sub agent), dicek terarah pada berkas yang diubah (typecheck, lint, uji berkas terkait) dan diuji ujung ke ujung lewat pengisian ulang data demo setelah basis data dev di-reset.
+- P6 Skrining keperawatan: bagian `keperawatan` (kajian, riwayat pengobatan, alergi, obat, skrining nyeri, risiko jatuh, gizi, visual) dengan default keadaan baik; alergi pindah dari anamnesis.
+- P7 Isian dokter mengikuti formulir: langkah Anamnesa → Pemeriksaan fisik (35 bidang per organ, default keadaan baik, penanda "diubah", Semua normal, odontogram) → Pemeriksaan penunjang → Kesimpulan (diagnosa medis/tambahan/banding, KIE) → Terapi (tindakan, obat di poli, resep) → Tindak lanjut. SOAPIE dihapus bersih dari kode, teks, migrasi, data demo, dan dokumen.
+- P8 Cetak rekam medis: endpoint `GET /api/kunjungan/:id/rekam-medis-cetak` (dicatat audit) dan lembar A4 sesuai formulir dengan pengesahan elektronik per blok; tombol "Cetak rekam medis" di detail kunjungan (riwayat dan resume).
+- Uji yang gagal sejak sebelum pekerjaan ini (tidak disentuh): `keadaan-lab.test.ts` (tarif master pemeriksaan) dan `penyaring-pasien.test.ts`; lint `pengguna` tak terpakai di `daftar-pasien.tsx`. Uji integrasi API dilewati oleh `skrip/dengan-env.mjs` (DATABASE_URL_UJI dihapus).

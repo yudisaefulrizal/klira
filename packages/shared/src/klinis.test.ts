@@ -1,4 +1,5 @@
 import {
+  samarNomor,
   anamnesisIsi, cariTerminologiMasukan, diagnosisIsi, favoritMasukan, keluargaMasukan, pemeriksaanIsi, SKEMA_BAGIAN, STATUS_PENGESAHAN, tandaVitalIsi, templatMasukan, tindakanIsi, tindakLanjutIsi,
   ubahKeluargaMasukan,
 } from './index';
@@ -97,4 +98,11 @@ describe('skema pendamping', () => {
     expect(STATUS_PENGESAHAN.label('berubah')).toBe('Berubah setelah disahkan');
     expect(STATUS_PENGESAHAN.warna('sah')).toBe('hijau');
   });
+});
+
+test('samarNomor: 4 digit awal dan akhir terlihat, nomor pendek apa adanya, kosong null', () => {
+  expect(samarNomor('3204123456780007')).toBe('3204••••••••0007');
+  expect(samarNomor('12345678')).toBe('12345678');
+  expect(samarNomor('  ')).toBeNull();
+  expect(samarNomor(null)).toBeNull();
 });

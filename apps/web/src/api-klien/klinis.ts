@@ -1,7 +1,7 @@
 import type { HalamanKamusTerminologiDto, SistemTerminologi as SistemKamus } from '@klira/shared';
 import type {
   AlurDrafKlinis, AnggotaKeluargaDto, BagianKlinis, BagianKlinisDto, BagianTemplat, DrafKlinisDto, FavoritDto, FolderKeluargaDto, JenisFavorit, KlinisKunjunganDto, KodeTerminologiDto, KonteksKlinisDto,
-  KunjunganDto, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TemplatDto, TemplatMasukan, TindakanKlinikDto,
+  KunjunganDto, RekamMedisCetakDto, RiwayatKunjunganDto, SalinanKunjunganDto, SistemTerminologi, TemplatDto, TemplatMasukan, TindakanKlinikDto,
 } from '@klira/shared';
 import { panggilApi } from './klien';
 
@@ -9,6 +9,8 @@ import { panggilApi } from './klien';
 export type HasilSimpanBagian = { bagian: BagianKlinisDto; kunjungan: KunjunganDto; tersimpan: boolean; pesan_tagihan?: string | null };
 
 export const ambilKlinis = (kunjunganId: number) => panggilApi<KlinisKunjunganDto>('GET', `/kunjungan/${kunjunganId}/klinis`);
+/** Rekam medis rawat jalan satu kunjungan untuk dicetak (tercatat di audit). */
+export const ambilRekamMedisCetak = (kunjunganId: number) => panggilApi<RekamMedisCetakDto>('GET', `/kunjungan/${kunjunganId}/rekam-medis-cetak`);
 export const ambilKonteksKlinis = (kunjunganId: number) => panggilApi<KonteksKlinisDto>('GET', `/kunjungan/${kunjunganId}/konteks-klinis`);
 /** Simpan satu bagian = pengesahan; `alasan` wajib bila bagian itu sudah disahkan. */
 export const simpanBagian = (kunjunganId: number, bagian: BagianKlinis, isi: unknown, alasan?: string) =>

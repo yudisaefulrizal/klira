@@ -748,6 +748,17 @@ export const KLINIS = {
   kesimpulan: {
     diagnosaMedis: 'Diagnosa medis', diagnosaTambahan: 'Diagnosa tambahan', bandingKet: 'Teks bebas, boleh berisi kode. Tidak ikut pengkodean dan klaim.',
   },
+  /** Cetak rekam medis rawat jalan (P8), mengikuti formulir klinik. */
+  cetak: {
+    judul: 'Cetak rekam medis', judulLembar: 'REKAM MEDIS RAWAT JALAN', cetak: 'Cetak', tutup: 'Tutup', memuat: 'Menyiapkan rekam medis…', gagal: 'Rekam medis gagal dimuat.',
+    tombol: 'Cetak rekam medis', tglDaftar: 'Tgl. & no. pendaftaran', noPelayanan: 'No. pelayanan', poli: 'Poli', dokter: 'Dokter',
+    noRm: 'No. RM', nama: 'Nama pasien', kepalaKeluarga: 'Kepala keluarga · folder', nik: 'No. KTP', lahirKelamin: 'Tgl. lahir · jns. kelamin', agamaNikah: 'Agama · status nikah',
+    hubungan: 'Hubungan', caraBayar: 'Cara bayar · No. BPJS', jenisKunjungan: 'Jenis rawat', rawatJalan: 'Rawat jalan', belumAdaHasil: 'Belum ada hasil',
+    suratRujukan: 'Tgl. & no. surat rujukan', alasanRujuk: 'Alasan dirujuk', persetujuanUmum: 'Persetujuan umum', disahkan: 'Disahkan elektronik',
+    blok: { administratif: 'Data administratif', keperawatan: 'Keperawatan', anamnesa: 'Anamnesa', fisik: 'Pemeriksaan fisik', penunjang: 'Pemeriksaan penunjang', kesimpulan: 'Kesimpulan', terapi: 'Terapi', rujukan: 'Data rujukan' },
+    peran: { pasien: 'Pasien', perawat: 'Perawat', dokter: 'Dokter', lab: 'Lab/Rontgen' },
+    dicetak: (oleh: string, waktu: string) => `Dicetak dari Klira oleh ${oleh}, ${waktu}`, tandaTebal: 'Isian bercetak tebal: tidak normal',
+  },
   /** Detail rekam medis satu kunjungan (riwayat, resume). */
   detail: { judul: 'Rekam medis kunjungan', lihat: 'Lihat rekam medis', tutup: 'Tutup rekam medis', memuat: 'Memuat rekam medis…', gagal: 'Rekam medis kunjungan gagal dimuat.' },
   penunjang: { pesanLab: 'Pesan pemeriksaan laboratorium' },

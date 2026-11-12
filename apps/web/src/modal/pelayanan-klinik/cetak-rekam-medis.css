@@ -1,0 +1,30 @@
+/* Cetak rekam medis rawat jalan (P8): pratinjau layar dan halaman A4 saat dicetak. */
+.crm-lapis { position: fixed; inset: 0; z-index: 1000; overflow: auto; background: var(--warna-latar); padding: 16px; }
+.crm-alat { display: flex; align-items: center; gap: 8px; max-width: 210mm; margin: 0 auto 12px; }
+.crm-tumbuh { flex: 1; }
+.crm-memuat { max-width: 210mm; margin: 0 auto; color: var(--warna-teks-redup); }
+.crm-lembar { box-sizing: border-box; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm 12mm 10mm; background: #fff; color: #17302e;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 10.5px; line-height: 1.35; box-shadow: var(--bayangan-modal); display: flex; flex-direction: column; gap: 0; }
+.crm-kepala { border-bottom: 2px solid #0b6b64; padding-bottom: 6px; margin-bottom: 8px; }
+.crm-kepala h1 { margin: 0 0 4px; font-size: 16px; letter-spacing: .02em; }
+.crm-blok { display: grid; grid-template-columns: minmax(0, 1fr) 30mm; border: 1px solid #b9c6c3; border-top: 0; break-inside: avoid; }
+.crm-kepala + .crm-blok { border-top: 1px solid #b9c6c3; }
+.crm-pita { grid-column: 1 / -1; margin: 0; padding: 3px 8px; background: #0b6b64; color: #fff; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.crm-isi { min-width: 0; padding: 4px 8px; }
+.crm-kisi { display: grid; gap: 4px 10px; }
+.crm-sel { display: flex; flex-direction: column; min-width: 0; }
+.crm-label { font-size: 9px; font-weight: 500; color: #4b605e; }
+.crm-nilai { white-space: pre-line; overflow-wrap: anywhere; }
+.crm-tebal { font-weight: 600; color: #7a4a00; }
+.crm-sah { display: flex; flex-direction: column; gap: 2px; padding: 4px 6px; border-left: 1px solid #b9c6c3; background: #f4f8f7; font-size: 9px; color: #3f5755; }
+.crm-sah strong { font-size: 9.5px; color: #17302e; }
+.crm-kaki { margin-top: auto; padding-top: 6px; display: flex; justify-content: space-between; gap: 12px; font-size: 9px; color: #4b605e; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  body > *:not(.crm-lapis) { display: none !important; }
+  .crm-lapis { position: static; padding: 0; background: #fff; overflow: visible; }
+  .crm-alat, .crm-memuat { display: none; }
+  .crm-lembar { box-shadow: none; margin: 0; }
+  .crm-pita, .crm-sah { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
