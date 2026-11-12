@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 const urlUji = process.env.DATABASE_URL_UJI;
 const d = urlUji ? describe : describe.skip;
 
-d('rekam medis (perbaikan, pengkodean, arsip, berkas) terhadap klira_uji', () => {
+d('rekam medis (perbaikan, berkas) terhadap klira_uji', () => {
   const prisma = new PrismaClient({ datasourceUrl: urlUji });
   const kode = `UJI-RM-${Date.now()}`;
   let server: any;
@@ -85,7 +85,7 @@ d('rekam medis (perbaikan, pengkodean, arsip, berkas) terhadap klira_uji', () =>
     const where = { fasyankes_id: { in: [fas, fasLain] } };
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
-    for (const m of [prisma.permintaanPerbaikan, prisma.pengkodean, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.diagnosis, prisma.draf, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
+    for (const m of [prisma.permintaanPerbaikan, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.diagnosis, prisma.draf, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
     await prisma.antrean.deleteMany({ where });
     await prisma.kunjungan.deleteMany({ where });
     await prisma.pasien.deleteMany({ where });
@@ -181,68 +181,23 @@ d('rekam medis (perbaikan, pengkodean, arsip, berkas) terhadap klira_uji', () =>
     expect((await panggil('POST', `/rekam-medis/perbaikan/${q.badan.data.permintaan.id}/keputusan`, 'perekam2', { keputusan: 'setujui' })).status).toBe(200);
   });
 
-  it('pengkodean: setelah kunjungan ditutup, tepat satu diagnosis utama, kode sah dan unik; arsip dan retensi 25 tahun mengikuti; ubah butuh catatan dan membentuk versi', async () => {
-    const belumTutup = await kunjunganBaru('pemeriksaan');
-    const simpan = (kunj: number, badan: unknown, siapa = 'perekam') => panggil('PUT', `/kunjungan/${kunj}/pengkodean`, siapa, badan);
-    const dasar = { diagnosis: [{ kode: 'i10', nama: 'Hipertensi esensial', peran: 'utama' }, { kode: 'E78.0', nama: 'Hiperkolesterolemia', peran: 'penyerta' }], tindakan: [{ kode: '89.52', nama: 'Elektrokardiogram' }] };
-    expect((await simpan(belumTutup, dasar)).status).toBe(409);
-    const tutup = new Date('2026-02-28T03:00:00.000Z');
-    const k = await kunjunganSahTutup(tutup);
-    expect((await simpan(k, dasar, 'dokter')).status).toBe(403);
-    expect((await simpan(k, dasar, 'lainPerekam')).status).toBe(404);
-    expect((await simpan(k, { ...dasar, diagnosis: [] })).status).toBe(400);
-    expect((await simpan(k, { ...dasar, diagnosis: [{ ...dasar.diagnosis[0], peran: 'penyerta' }] })).status).toBe(400);
-    expect((await simpan(k, { ...dasar, diagnosis: [dasar.diagnosis[0], { ...dasar.diagnosis[1], peran: 'utama' }] })).status).toBe(400);
-    expect((await simpan(k, { ...dasar, diagnosis: [dasar.diagnosis[0], { ...dasar.diagnosis[1], kode: 'I10' }] })).status).toBe(400);
-    expect((await simpan(k, { ...dasar, diagnosis: [{ ...dasar.diagnosis[0], kode: 'XYZ' }] })).status).toBe(400);
-    expect((await simpan(k, { ...dasar, tindakan: [{ kode: '8952', nama: 'x' }] })).status).toBe(400);
-    const awal = await panggil('GET', `/kunjungan/${k}/pengkodean`, 'perekam');
-    expect(awal.badan.data).toMatchObject({ final: null, versi: null, diarsipkan_pada: null });
-    expect(awal.badan.data.dokter.diagnosis[0]).toMatchObject({ kode: 'I10', peran: 'utama' });
-    const h = await simpan(k, dasar);
-    expect(h.status).toBe(200);
-    expect(h.badan.data).toMatchObject({ versi: 1, pengode_nama: 'Nama perekam' });
-    expect(h.badan.data.final.diagnosis[0].kode).toBe('I10'); // dinormalkan huruf besar
-    expect(h.badan.data.diarsipkan_pada).not.toBeNull();
-    expect(h.badan.data.retensi_sampai).toBe('2051-02-28');
-    const arsipAwal = (await prisma.kunjungan.findUnique({ where: { id: k } }))!.diarsipkan_pada!;
-    expect((await simpan(k, dasar)).badan.data.versi).toBe(1); // isi sama: tanpa versi baru
-    const ubah = { ...dasar, diagnosis: [dasar.diagnosis[0]] };
-    expect((await simpan(k, ubah)).status).toBe(400); // memperbaiki butuh catatan sebagai alasan
-    const v2 = await simpan(k, { ...ubah, catatan: 'kode penyerta dihapus' });
-    expect(v2.status).toBe(200);
-    expect(v2.badan.data.versi).toBe(2);
-    expect((await prisma.kunjungan.findUnique({ where: { id: k } }))!.diarsipkan_pada).toEqual(arsipAwal); // arsip tidak berubah
-    expect(await prisma.versiCatatan.count({ where: { entitas: 'pengkodean', entitas_id: k } })).toBe(1);
-    expect((await panggil('GET', `/kunjungan/${k}/pengkodean`, 'lainPerekam')).status).toBe(404);
-    // 29 Februari: retensi tidak lebih dari 25 tahun
-    const kabisat = await kunjunganSahTutup(new Date('2028-02-29T03:00:00.000Z'));
-    expect((await simpan(kabisat, dasar)).badan.data.retensi_sampai).toBe('2053-02-28');
-  });
-
-  it('daftar berkas: kunjungan ditutup dengan status kode, diagnosis, arsip, dan perbaikan menunggu; filter dan klinik sendiri', async () => {
+  it('daftar berkas: kunjungan ditutup dengan diagnosis dokter, arsip, dan perbaikan menunggu; cari dan klinik sendiri', async () => {
     expect((await panggil('GET', '/rekam-medis/berkas', 'kasir')).status).toBe(403);
     const semua = await panggil('GET', '/rekam-medis/berkas', 'perekam');
     expect(semua.status).toBe(200);
-    expect(semua.badan.data.total).toBeGreaterThanOrEqual(5);
-    const sudah = await panggil('GET', '/rekam-medis/berkas?kode=sudah', 'perekam');
-    expect(sudah.badan.data.data.every((b: any) => b.status_kode === 'sudah' && b.diarsipkan_pada && b.retensi_sampai)).toBe(true);
-    expect(sudah.badan.data.data[0].diagnosis_final).toMatch(/^I10 /);
-    const belum = await panggil('GET', '/rekam-medis/berkas?kode=belum', 'dokter');
-    expect(belum.status).toBe(200);
-    expect(belum.badan.data.data.every((b: any) => b.status_kode === 'belum' && b.diarsipkan_pada === null)).toBe(true);
-    expect(belum.badan.data.data[0].diagnosis_dokter).toBeTruthy();
-    const nama = belum.badan.data.data[0].pasien_nama as string;
+    expect(semua.badan.data.total).toBeGreaterThanOrEqual(1);
+    const dokter = await panggil('GET', '/rekam-medis/berkas', 'dokter');
+    expect(dokter.status).toBe(200);
+    expect(dokter.badan.data.data[0].diagnosis_dokter).toBeTruthy();
+    const nama = dokter.badan.data.data[0].pasien_nama as string;
     const cari = await panggil('GET', `/rekam-medis/berkas?cari=${encodeURIComponent(nama)}`, 'perekam');
     expect(cari.badan.data.data.map((b: any) => b.pasien_nama)).toEqual([nama]);
-    expect((await panggil('GET', '/rekam-medis/berkas?kode=salah', 'perekam')).status).toBe(400);
     expect((await panggil('GET', '/rekam-medis/berkas?dari=2020-01-01&sampai=2020-01-02', 'perekam')).badan.data.total).toBe(0);
     expect((await panggil('GET', '/rekam-medis/berkas', 'lainPerekam')).badan.data.total).toBe(0);
   });
 
-  it('audit mencatat permintaan, keputusan, dan pengkodean', async () => {
-    const audit = await prisma.logAudit.findMany({ where: { fasyankes_id: fas, entitas: { in: ['permintaan_perbaikan', 'pengkodean'] } } });
-    expect(new Set(audit.map((a) => a.entitas))).toEqual(new Set(['permintaan_perbaikan', 'pengkodean']));
-    expect(audit.some((a) => a.entitas === 'pengkodean' && a.aksi === 'perbaikan')).toBe(true);
+  it('audit mencatat permintaan dan keputusan perbaikan', async () => {
+    const audit = await prisma.logAudit.findMany({ where: { fasyankes_id: fas, entitas: 'permintaan_perbaikan' } });
+    expect(audit.length).toBeGreaterThan(0);
   });
 });

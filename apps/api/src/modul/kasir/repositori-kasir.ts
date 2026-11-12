@@ -1,6 +1,6 @@
 import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
-import { hargaTarif, rincianBayar } from '@klira/shared';
+import { hargaTarif, rincianBayar, tanggalRetensi } from '@klira/shared';
 import type { BarisBayar, CaraPembayaran, MetodeBayar, PembayaranDto, RekapHarianDto, ShiftDto, TagihanDto, TarifKasirDto } from '@klira/shared';
 import { totalTagihan, keItemDto, statusTagihanDari } from './repositori';
 
@@ -250,7 +250,8 @@ export class RepositoriKasirPrisma {
       const lunas = (t?.pembayaran.reduce((s, p) => s + p.jumlah, 0) ?? 0) >= total;
       if (!lunas && k.cara_pembayaran === 'jkn' && !(alasan && alasan.trim())) alasan = alasanJkn;
       if (!lunas && !(alasan && alasan.trim())) return { ok: false, sebab: 'belum_lunas_alasan' } as const;
-      const ubah = await tx.kunjungan.updateMany({ where: { id: kunjunganId, fasyankes_id: fasyankesId, tahap_layanan: 'kasir' }, data: { tahap_layanan: 'ditutup', status: 'finished', selesai: new Date(), waktu_tutup: new Date() } });
+      const tutup = new Date();
+      const ubah = await tx.kunjungan.updateMany({ where: { id: kunjunganId, fasyankes_id: fasyankesId, tahap_layanan: 'kasir' }, data: { tahap_layanan: 'ditutup', status: 'finished', selesai: tutup, waktu_tutup: tutup, diarsipkan_pada: tutup, retensi_sampai: tanggalRetensi(tutup) } });
       if (!ubah.count) return { ok: false, sebab: 'bentrok' } as const;
       await selesaiAntreanDalam(tx, fasyankesId, kunjunganId, new Date());
       if (t && !lunas) await tx.tagihan.update({ where: { id: t.id }, data: { alasan_tutup_belum_lunas: alasan!.trim() } });

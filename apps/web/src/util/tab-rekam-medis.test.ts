@@ -4,7 +4,7 @@ const ids = (izin: { fitur: string; aksi: 'lihat'; cakupan: 'unit' }[]) => tabRe
 
 describe('tab Rekam medis menurut izin', () => {
   it('rekam medis lihat membuka semua tab; klinis lihat hanya berkas dan resume; tanpa izin tidak ada', () => {
-    expect(ids([{ fitur: 'rekam-medis', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['berkas', 'pengkodean', 'perbaikan', 'resume', 'pembukaan', 'penyampaian']);
+    expect(ids([{ fitur: 'rekam-medis', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['berkas', 'perbaikan', 'resume', 'pembukaan', 'penyampaian']);
     expect(ids([{ fitur: 'klinis', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['berkas', 'resume']);
     expect(ids([{ fitur: 'kasir', aksi: 'lihat', cakupan: 'unit' }])).toEqual([]);
   });

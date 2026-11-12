@@ -75,7 +75,7 @@ d('klaim JKN/BPJS terhadap klira_uji', () => {
     const where = { fasyankes_id: { in: [fas, fasLain] } };
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
-    for (const m of [prisma.riwayatKlaim, prisma.klaim, prisma.resumeMedis, prisma.pengkodean, prisma.pengesahanCatatan, prisma.narasiKlinis, prisma.diagnosis, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
+    for (const m of [prisma.riwayatKlaim, prisma.klaim, prisma.resumeMedis, prisma.pengesahanCatatan, prisma.narasiKlinis, prisma.diagnosis, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
     await prisma.kunjungan.deleteMany({ where });
     await prisma.pasien.deleteMany({ where });
     await prisma.penugasanJenis.deleteMany({ where });
@@ -211,7 +211,8 @@ d('klaim JKN/BPJS terhadap klira_uji', () => {
     const b = await panggil('PUT', `/klaim/${a.badan.data.id}/berkas`, 'petugas', { nomor_sep: 'S9', berkas: semua });
     expect(b.badan.data.status).toBe('siap_diajukan');
     expect(b.badan.data.kode_beda).toBe(false);
-    await prisma.pengkodean.create({ data: { fasyankes_id: fas, kunjungan_id: k, pengode_id: id.petugas, isi: { diagnosis: [{ kode: 'E11.9', nama: 'DM', peran: 'utama' }], tindakan: [] } } });
+    await prisma.diagnosis.create({ data: { fasyankes_id: fas, kunjungan_id: k, versi: 2, kode_icd10: 'E11.9', nama: 'DM', peran: 'utama', urutan: 1 } });
+    await prisma.pengesahanCatatan.create({ data: { fasyankes_id: fas, entitas: 'diagnosis', entitas_id: k, versi: 2, pengguna_id: id.petugas, hash: 'b'.repeat(64) } });
     expect((await panggil('GET', `/klaim/${a.badan.data.id}`, 'petugas')).badan.data.kode_beda).toBe(true);
     expect((await panggil('GET', `/klaim/${a.badan.data.id}`, 'lainPetugas')).status).toBe(404);
     expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'klaim', aksi: 'lihat' } })).toBeGreaterThan(0);

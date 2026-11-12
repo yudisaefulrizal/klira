@@ -3,7 +3,6 @@ import type { IzinAwal } from '@klira/shared';
 
 export const TAB_REKAM_MEDIS = [
   { id: 'berkas', label: 'Berkas pasien', izin: ['rekam-medis', 'lihat'], atau: ['klinis', 'lihat'] },
-  { id: 'pengkodean', label: 'Pengkodean dan laporan', izin: ['rekam-medis', 'lihat'] },
   { id: 'perbaikan', label: 'Antrean perbaikan', izin: ['rekam-medis', 'lihat'] },
   { id: 'resume', label: 'Resume dan surat', izin: ['rekam-medis', 'lihat'], atau: ['klinis', 'lihat'] },
   { id: 'pembukaan', label: 'Permintaan pembukaan', izin: ['rekam-medis', 'lihat'] },

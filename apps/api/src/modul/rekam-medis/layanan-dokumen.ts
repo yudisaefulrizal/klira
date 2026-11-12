@@ -18,7 +18,7 @@ type TindakanDokter = { item?: { kode: string; nama: string }[] };
 const G = REKAM_MEDIS.galat;
 
 export type DependensiDokumen = {
-  repo: RepositoriDokumenPrisma; repoRm: Pick<RepositoriRmPrisma, 'kunjungan' | 'pengkodean'>; pengesahan: LayananPengesahan; baca: BacaKlinis; audit: PenampungAudit;
+  repo: RepositoriDokumenPrisma; repoRm: Pick<RepositoriRmPrisma, 'kunjungan'>; pengesahan: LayananPengesahan; baca: BacaKlinis; audit: PenampungAudit;
 };
 
 /**
@@ -33,15 +33,14 @@ export function buatLayananDokumen({ repo, repoRm, pengesahan, baca, audit }: De
   async function dokumen(p: Pelaku, kunjunganId: number): Promise<Hasil<DokumenKunjunganDto>> {
     const k = await repoRm.kunjungan(p.fasyankes_id, kunjunganId);
     if (!k) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-    const [r, kead, diag, tind, final, surat] = await Promise.all([
+    const [r, kead, diag, tind, surat] = await Promise.all([
       repo.resume(p.fasyankes_id, kunjunganId),
       pengesahan.keadaan(p.fasyankes_id, 'resume_medis', kunjunganId),
       baca.bacaBagian(p.fasyankes_id, kunjunganId, 'diagnosis') as Promise<DiagnosisDokter | null>,
       baca.bacaBagian(p.fasyankes_id, kunjunganId, 'tindakan') as Promise<TindakanDokter | null>,
-      repoRm.pengkodean(p.fasyankes_id, kunjunganId),
       repo.daftarSurat(p.fasyankes_id, kunjunganId),
     ]);
-    const utama = final?.isi.diagnosis.find((d) => d.peran === 'utama') ?? diag?.item?.find((d) => d.peran === 'utama');
+    const utama = diag?.item?.find((d) => d.peran === 'utama');
     return {
       ok: true,
       data: {

@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { BAGIAN_KLINIS, POLA_ICD10, POLA_ICD9CM } from '../klinis';
+import { BAGIAN_KLINIS } from '../klinis';
 import type { BagianKlinis } from '../klinis';
 import { REKAM_MEDIS } from '../teks';
-import type { StatusKode, StatusPerbaikan } from '../status';
+import type { StatusPerbaikan } from '../status';
 import { teksOpsional, teksWajib } from './umum';
 
 const kosongJadiTiada = (v: unknown) => (v === '' || v === null ? undefined : v);
@@ -45,30 +45,8 @@ export type PermintaanPerbaikanDto = {
 export type HalamanPerbaikanDto = { data: PermintaanPerbaikanDto[]; halaman: number; ukuran: number; total: number; menunggu: number };
 export type HasilPerbaikanDto = { jenis: 'diterapkan' | 'diajukan'; permintaan: PermintaanPerbaikanDto | null };
 
-const kodeDiagnosis = z.object({
-  kode: z.string().trim().toUpperCase().regex(POLA_ICD10, REKAM_MEDIS.galat.kodeIcd10),
-  nama: teksWajib(255),
-  peran: z.enum(['utama', 'penyerta']),
-});
-const kodeTindakan = z.object({ kode: z.string().trim().regex(POLA_ICD9CM, REKAM_MEDIS.galat.kodeIcd9), nama: teksWajib(255) });
-
-/** Pengkodean final (Perekam Medis memverifikasi kode dokter): tepat satu diagnosis utama, kode unik; tindakan boleh kosong. */
-export const pengkodeanMasukan = z
-  .object({ diagnosis: z.array(kodeDiagnosis).min(1, REKAM_MEDIS.galat.diagnosisWajib).max(30), tindakan: z.array(kodeTindakan).max(30), catatan: teksOpsional(500) })
-  .superRefine((d, ctx) => {
-    if (d.diagnosis.filter((x) => x.peran === 'utama').length !== 1) ctx.addIssue({ code: 'custom', path: ['diagnosis'], message: REKAM_MEDIS.galat.satuUtama });
-    const lihat = new Set<string>();
-    d.diagnosis.forEach((x, n) => {
-      if (lihat.has(x.kode)) ctx.addIssue({ code: 'custom', path: ['diagnosis', n, 'kode'], message: REKAM_MEDIS.galat.kodeGanda });
-      lihat.add(x.kode);
-    });
-  });
-export type PengkodeanMasukan = z.input<typeof pengkodeanMasukan>;
-export type PengkodeanIsi = z.output<typeof pengkodeanMasukan>;
-
 export const filterBerkas = z.object({
   cari: z.string().trim().optional(),
-  kode: z.preprocess(kosongJadiTiada, z.enum(['belum', 'sudah']).optional()),
   dari: tglIso,
   sampai: tglIso,
   halaman: z.coerce.number().int().min(1).default(1),
@@ -77,21 +55,7 @@ export const filterBerkas = z.object({
 export type FilterBerkas = z.infer<typeof filterBerkas>;
 
 export type BerkasBarisDto = {
-  kunjungan_id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; waktu_tutup: string | null; jenis: 'AMB' | 'IMP'; status_kode: StatusKode;
-  diagnosis_dokter: string | null; diagnosis_final: string | null; diarsipkan_pada: string | null; retensi_sampai: string | null; perbaikan_menunggu: number;
+  kunjungan_id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; waktu_tutup: string | null; jenis: 'AMB' | 'IMP';
+  diagnosis_dokter: string | null; diarsipkan_pada: string | null; retensi_sampai: string | null; perbaikan_menunggu: number;
 };
 export type HalamanBerkasDto = { data: BerkasBarisDto[]; halaman: number; ukuran: number; total: number };
-export type PengkodeanDto = {
-  kunjungan_id: number;
-  pasien_nama: string;
-  pasien_nomor_rm: string;
-  tahap_layanan: string;
-  /** Diagnosis dan tindakan yang dicatat dokter (acuan verifikasi). */
-  dokter: { diagnosis: { kode: string; nama: string; peran: 'utama' | 'penyerta' }[]; tindakan: { kode: string; nama: string }[] };
-  final: PengkodeanIsi | null;
-  versi: number | null;
-  pengode_nama: string | null;
-  diperbarui_pada: string | null;
-  diarsipkan_pada: string | null;
-  retensi_sampai: string | null;
-};

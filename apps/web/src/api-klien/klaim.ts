@@ -9,7 +9,7 @@ export function queryKlaim(f: { status?: string; cari?: string; halaman?: number
 }
 export const daftarKlaim = (f: { status?: string; cari?: string; halaman?: number; ukuran?: number }) => panggilApi<HalamanKlaimDto>('GET', `/klaim?${queryKlaim(f)}`);
 export const kandidatKlaim = () => panggilApi<KandidatKlaimDto[]>('GET', '/klaim/kandidat');
-export const kodeKlaimKunjungan = (kunjunganId: number) => panggilApi<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[]; final: boolean }>('GET', `/klaim/kode/${kunjunganId}`);
+export const kodeKlaimKunjungan = (kunjunganId: number) => panggilApi<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[] }>('GET', `/klaim/kode/${kunjunganId}`);
 export const ambilKlaim = (id: number) => panggilApi<KlaimDto>('GET', `/klaim/${id}`);
 export const siapkanKlaim = (m: SiapkanKlaimForm) => panggilApi<KlaimDto>('POST', '/klaim', m);
 export const ubahBerkasKlaim = (id: number, m: UbahBerkasKlaimForm) => panggilApi<KlaimDto>('PUT', `/klaim/${id}/berkas`, m);

@@ -86,11 +86,6 @@ export const STATUS_PERBAIKAN = buat({
   ditolak: { label: 'Ditolak', warna: 'merah' },
 });
 
-export const STATUS_KODE = buat({
-  belum: { label: 'Belum dikodekan', warna: 'kuning' },
-  sudah: { label: 'Dikodekan', warna: 'hijau' },
-});
-
 export const METODE_BAYAR = buat({
   tunai: { label: 'Tunai', warna: 'hijau' },
   transfer: { label: 'Transfer', warna: 'biru' },
@@ -123,7 +118,6 @@ export type StatusStok = keyof typeof STATUS_STOK.peta;
 export type JenisMutasi = keyof typeof JENIS_MUTASI.peta;
 export type MetodeBayar = keyof typeof METODE_BAYAR.peta;
 export type StatusPerbaikan = keyof typeof STATUS_PERBAIKAN.peta;
-export type StatusKode = keyof typeof STATUS_KODE.peta;
 export type StatusAntrean = keyof typeof STATUS_ANTREAN.peta;
 
 export const STATUS_AKUN = buat({

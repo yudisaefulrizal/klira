@@ -521,7 +521,7 @@ export const DAFTAR_PASIEN = {
   filterTahap: 'Filter tahap layanan',
   semua: 'Semua',
   tahapPanjang: { menunggu_skrining: 'Menunggu skrining', pemeriksaan: 'Menunggu pemeriksaan', resep: 'Resep menunggu', kasir: 'Menunggu pembayaran', ditutup: 'Selesai', batal: 'Batal' } as Record<string, string>,
-  kolom: { antrean: 'Antrean', pasien: 'Pasien', nomorRm: 'Nomor RM', poliDpjp: 'Poli / DPJP', pembayaran: 'Pembayaran', tahap: 'Tahap', menunggu: 'Menunggu', tindakan: 'Tindakan' },
+  kolom: { antrean: 'Antrean', pasien: 'Pasien', nomorRm: 'Nomor RM', poliDpjp: 'Poli / DPJP', pembayaran: 'Pembayaran', menunggu: 'Menunggu', tindakan: 'Tindakan' },
   tanpaKunjungan: 'Tidak ada kunjungan berjalan',
   tanpaAntrean: '-',
   kosong: 'Tidak ada pasien yang cocok. Cari dengan nama, nomor RM, NIK, atau nomor JKN.',
@@ -1051,13 +1051,13 @@ export const KASIR = {
 export const REKAM_MEDIS = {
   judul: 'Rekam medis',
   tabLabel: 'Tab Rekam medis',
-  tab: { berkas: 'Berkas pasien', pengkodean: 'Pengkodean dan laporan', perbaikan: 'Antrean perbaikan' },
+  tab: { berkas: 'Berkas pasien', perbaikan: 'Antrean perbaikan' },
   memuat: 'Memuat...',
   berkas: {
-    cari: 'Cari nama, nomor RM, atau NIK', kolom: { pasien: 'Pasien', ditutup: 'Ditutup', diagnosis: 'Diagnosis', kode: 'Pengkodean', arsip: 'Arsip', tindakan: 'Tindakan' }, kosong: 'Tidak ada kunjungan pada penyaring ini.', gagalMuat: 'Berkas gagal dimuat.',
-    filterKode: 'Pengkodean', semuaKode: 'Semua', dari: 'Ditutup dari', sampai: 'Ditutup sampai', terapkan: 'Terapkan', aturUlang: 'Atur ulang', riwayat: 'Riwayat', perbaiki: 'Perbaiki catatan', kodekan: 'Pengkodean ICD',
+    cari: 'Cari nama, nomor RM, atau NIK', kolom: { pasien: 'Pasien', ditutup: 'Ditutup', diagnosis: 'Diagnosis', perbaikan: 'Perbaikan', arsip: 'Arsip', tindakan: 'Tindakan' }, kosong: 'Tidak ada kunjungan pada penyaring ini.', gagalMuat: 'Berkas gagal dimuat.',
+    dari: 'Ditutup dari', sampai: 'Ditutup sampai', terapkan: 'Terapkan', aturUlang: 'Atur ulang', riwayat: 'Riwayat', perbaiki: 'Perbaiki catatan',
     diarsipkan: (retensi: string) => `Diarsipkan, retensi sampai ${retensi}`, belumArsip: 'Belum diarsipkan', rawat: { AMB: 'Rawat jalan', IMP: 'Rawat inap' } as Record<string, string>, perbaikanMenunggu: (n: number) => `${n} perbaikan menunggu`,
-    catatan: 'Arsip mengikuti pengkodean: kunjungan yang sudah ditutup dan dikodekan diarsipkan dan disimpan 25 tahun.',
+    catatan: 'Kunjungan yang sudah ditutup langsung diarsipkan dan disimpan 25 tahun.',
   },
   perbaikan: {
     judul: 'Perbaiki catatan', bagian: 'Bagian catatan', pilihBagian: 'Pilih bagian...', alasan: 'Alasan perbaikan', alasanPetunjuk: 'Alasan wajib dan tersimpan bersama versi lama.', ajukan: 'Simpan perbaikan', mengajukan: 'Menyimpan...',
@@ -1071,18 +1071,12 @@ export const REKAM_MEDIS = {
     disetujui: 'Perbaikan disetujui dan diterapkan sebagai versi baru.', ditolak: 'Permintaan ditolak.', filterStatus: 'Status', semua: 'Semua status', menunggu: (n: number) => `${n} menunggu`, sudahDiputuskan: 'Permintaan ini sudah diputuskan.',
     gagal: 'Keputusan gagal dicatat.', penyetujuBeda: 'Penyetuju harus orang lain, bukan pemohon.',
   },
-  kode: {
-    judul: 'Pengkodean ICD', dokter: 'Dicatat dokter', final: 'Kode final', diagnosis: 'Diagnosis (ICD-10)', tindakan: 'Tindakan (ICD-9 CM)', kode: 'Kode', nama: 'Nama', peran: 'Peran', utama: 'Utama', penyerta: 'Penyerta', tambahDiagnosis: 'Tambah diagnosis',
-    tambahTindakan: 'Tambah tindakan', buang: 'Buang', salinDokter: 'Salin dari dokter', catatan: 'Catatan pengodean', simpan: 'Simpan kode final', menyimpan: 'Menyimpan...', tersimpan: 'Kode final tersimpan.',
-    arsipInfo: (retensi: string) => `Kunjungan diarsipkan, retensi sampai ${retensi}.`, belumDitutup: 'Kunjungan belum ditutup; pengkodean dilakukan sesudah tutup kunjungan.', versi: (n: number) => `Versi ${n}`, oleh: (nama: string) => `Dikodekan oleh ${nama}`,
-    cariKode: 'Cari kode', gagalMuat: 'Data pengkodean gagal dimuat.', gagal: 'Kode final gagal disimpan.', kosongTindakan: 'Tanpa tindakan.',
-  },
   dok: {
     tab: { resume: 'Resume dan surat', pembukaan: 'Permintaan pembukaan', penyampaian: 'Penyampaian' },
     memuat: 'Memuat...', gagalMuat: 'Data gagal dimuat.', tombolResume: 'Resume dan surat', tombolLaporan: 'Buat laporan', pasienCari: 'Cari pasien (nama atau nomor RM)', pasienPilih: 'Pilih pasien...', pasienKosong: 'Pasien tidak ditemukan.', pasienLabel: 'Pasien',
     resume: {
       judul: 'Resume medis dan surat', langkah: { resume: 'Resume', pulang: 'Kondisi pulang', surat: 'Surat', ringkasan: 'Ringkasan' }, ringkasan: 'Ringkasan perjalanan penyakit', diagnosis: 'Diagnosis akhir', terapi: 'Terapi', kondisi: 'Kondisi saat pulang', anjuran: 'Anjuran',
-      alasan: 'Alasan perubahan', alasanPetunjuk: 'Resume sudah disahkan; alasan wajib dan versi lama tetap tersimpan.', saran: 'Isian awal diambil dari catatan dokter dan pengkodean; periksa dan ubah bila perlu.', belumDitutup: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
+      alasan: 'Alasan perubahan', alasanPetunjuk: 'Resume sudah disahkan; alasan wajib dan versi lama tetap tersimpan.', saran: 'Isian awal diambil dari catatan dokter; periksa dan ubah bila perlu.', belumDitutup: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
       versi: (n: number) => `Versi ${n}`, sah: 'Isi sah (hash cocok)', berubah: 'Isi berubah setelah disahkan', suratSudah: 'Surat yang sudah dibuat', suratBaru: 'Surat baru (kosongkan isi bila tidak membuat surat)', suratJenis: 'Jenis surat', suratTujuan: 'Tujuan', suratIsi: 'Isi surat',
       suratTanpa: 'Belum ada surat.', simpan: 'Simpan', menyimpan: 'Menyimpan...', tersimpan: 'Tersimpan.', gagal: 'Resume gagal disimpan.', ringkasanTanpa: 'Tanpa surat baru', jenisSurat: { rujukan: 'Surat rujukan', keterangan_sakit: 'Surat keterangan sakit', lainnya: 'Surat lainnya' } as Record<string, string>, tutup: 'Tutup',
       hasilJudul: 'Resume tersimpan', hasilPesan: (surat: string | null) => (surat ? `Resume tersimpan dan surat ${surat} dibuat.` : 'Resume tersimpan.'),
@@ -1104,13 +1098,12 @@ export const REKAM_MEDIS = {
     },
     laporan: {
       judul: 'Laporan rekam medis', jenis: 'Jenis laporan', dari: 'Dari tanggal', sampai: 'Sampai tanggal', buat: 'Buat laporan', membuat: 'Membuat...', unduh: 'Unduh CSV', kosong: 'Tidak ada data pada rentang ini.', total: (n: number) => `Total ${n}`, rentang: (a: string, b: string) => `Rentang ${a} s.d. ${b}`,
-      petunjuk: 'Kunjungan yang ditutup pada rentang tanggal; kosongkan untuk 30 hari terakhir.', gagal: 'Laporan gagal dibuat.', jenisLabel: { kunjungan_per_poli: 'Kunjungan per poli', diagnosis_terbanyak: 'Diagnosis terbanyak', status_pengkodean: 'Status pengkodean' } as Record<string, string>,
+      petunjuk: 'Kunjungan yang ditutup pada rentang tanggal; kosongkan untuk 30 hari terakhir.', gagal: 'Laporan gagal dibuat.', jenisLabel: { kunjungan_per_poli: 'Kunjungan per poli', diagnosis_terbanyak: 'Diagnosis terbanyak' } as Record<string, string>,
     },
   },
   galat: {
-    tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.', bagian: 'Pilih bagian catatan.', keputusan: 'Pilih setujui atau tolak.', catatanTolak: 'Catatan wajib bila menolak.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10, E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
-    diagnosisWajib: 'Minimal satu diagnosis.', satuUtama: 'Harus ada tepat satu diagnosis utama.', kodeGanda: 'Kode tidak boleh ganda.', kunjunganTidakAda: 'Kunjungan tidak ditemukan.', permintaanTidakAda: 'Permintaan tidak ditemukan.', sudahDiputuskan: 'Permintaan sudah diputuskan.',
-    belumDisahkan: 'Bagian ini belum pernah disahkan.', penyetujuSama: 'Penyetuju harus orang lain, bukan pemohon.', sudahMenunggu: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.', belumDitutup: 'Pengkodean dilakukan setelah kunjungan ditutup.',
+    tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.', bagian: 'Pilih bagian catatan.', keputusan: 'Pilih setujui atau tolak.', catatanTolak: 'Catatan wajib bila menolak.',  kunjunganTidakAda: 'Kunjungan tidak ditemukan.', permintaanTidakAda: 'Permintaan tidak ditemukan.', sudahDiputuskan: 'Permintaan sudah diputuskan.',
+    belumDisahkan: 'Bagian ini belum pernah disahkan.', penyetujuSama: 'Penyetuju harus orang lain, bukan pemohon.', sudahMenunggu: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.',
     bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', isiTidakSah: 'Isi perbaikan tidak sah.',
     jenisSurat: 'Pilih jenis surat.', tujuanRujukan: 'Tujuan wajib untuk surat rujukan.', dasar: 'Pilih dasar pembukaan.', alasanHukum: 'Pilih alasan hukum.', hubungan: 'Pilih hubungan penerima.', bentuk: 'Pilih bentuk penyampaian.',
     buktiWajib: 'Bukti persetujuan pasien wajib untuk keluarga atau pihak lain.', jenisLaporan: 'Pilih jenis laporan.', rentangTerbalik: 'Tanggal akhir tidak boleh sebelum tanggal awal.', belumDitutup2: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
@@ -1163,10 +1156,10 @@ export const KLAIM = {
   berkasLabel: { fpk: 'Formulir pengajuan klaim (FPK) bertanda tangan pimpinan', rekapitulasi: 'Rekapitulasi pelayanan', kuitansi: 'Kuitansi asli bermaterai', surat_tanggung_jawab: 'Surat tanggung jawab mutlak bermaterai', spri: 'Surat perintah rawat inap (SPRI)', ringkasan_rm: 'Ringkasan rekam medis' } as Record<string, string>,
   siap: {
     judul: 'Penyiapan klaim', langkah: { kunjungan: 'Kunjungan dan SEP', kode: 'Diagnosis dan tindakan', berkas: 'Berkas klaim', ringkasan: 'Ringkasan' }, kunjungan: 'Kunjungan JKN yang sudah ditutup', pilihKunjungan: 'Pilih kunjungan...', tanpaKandidat: 'Tidak ada kunjungan JKN yang siap diklaim.',
-    sep: 'Nomor SEP', sepPetunjuk: 'Boleh menyusul; klaim menunggu sampai SEP dan berkas lengkap.', diagnosis: 'Diagnosis (ICD-10)', tindakan: 'Tindakan (ICD-9 CM)', kosongKode: 'Tidak ada.', kodeSumber: 'Kode mengikuti rekam medis (pengkodean final bila ada, selain itu catatan dokter).',
-    kodeBelum: 'Pengkodean final belum dibuat; kode diambil dari catatan dokter. Sebaiknya kodekan dulu di Rekam medis.', berkasPetunjuk: 'Centang berkas yang sudah lengkap.', catatan: 'Catatan', resumeBelum: 'Resume medis belum dibuat; klaim rawat inap membutuhkannya.',
+    sep: 'Nomor SEP', sepPetunjuk: 'Boleh menyusul; klaim menunggu sampai SEP dan berkas lengkap.', diagnosis: 'Diagnosis (ICD-10)', tindakan: 'Tindakan (ICD-9 CM)', kosongKode: 'Tidak ada.', kodeSumber: 'Kode mengikuti catatan dokter pada rekam medis.',
+    berkasPetunjuk: 'Centang berkas yang sudah lengkap.', catatan: 'Catatan', resumeBelum: 'Resume medis belum dibuat; klaim rawat inap membutuhkannya.',
     simpan: 'Simpan klaim', menyimpan: 'Menyimpan...', gagal: 'Klaim gagal disimpan.', hasilJudul: 'Klaim tersimpan', hasilPesan: (status: string) => `Klaim tersimpan dengan status ${status}.`, kurang: (n: number) => `${n} berkas wajib belum lengkap.`,
-    ubahJudul: 'Berkas dan SEP klaim', kodeBeda: 'Kode klaim berbeda dari rekam medis saat ini (PMK 24/2022 P19). Periksa pengkodean; klaim memakai salinan kode saat disiapkan.',
+    ubahJudul: 'Berkas dan SEP klaim', kodeBeda: 'Kode klaim berbeda dari rekam medis saat ini (PMK 24/2022 P19). Periksa catatan dokter; klaim memakai salinan kode saat disiapkan.',
   },
   status: {
     judul: 'Ubah status klaim', aksi: 'Tindakan', aksiLabel: { ajukan: 'Ajukan ke BPJS', dikembalikan: 'Berkas dikembalikan BPJS', ajukan_ulang: 'Ajukan ulang', ditolak: 'Ditolak BPJS', dibayar: 'Dibayar BPJS' } as Record<string, string>,

@@ -147,25 +147,14 @@ export class RepositoriDokumenPrisma {
       const baris = g.map((x): [string, number] => [x.lokasi_id ? lokasi.get(x.lokasi_id) ?? '-' : 'Tanpa poli', x._count._all]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
       return { jenis: f.jenis, dari, sampai, kolom: ['Poli', 'Kunjungan'], baris, total: baris.reduce((s, b) => s + b[1], 0) };
     }
-    if (f.jenis === 'status_pengkodean') {
-      const ditutup = await prisma.kunjungan.findMany({ where: dasar, select: { id: true } });
-      const sudah = await prisma.pengkodean.count({ where: { fasyankes_id: fasyankesId, kunjungan_id: { in: ditutup.map((k) => k.id) } } });
-      const baris: [string, number][] = [['Sudah dikodekan', sudah], ['Belum dikodekan', ditutup.length - sudah]];
-      return { jenis: f.jenis, dari, sampai, kolom: ['Status', 'Kunjungan'], baris, total: ditutup.length };
-    }
-    // Diagnosis terbanyak: kode final bila ada, selain itu diagnosis utama dokter versi terakhir.
+    // Diagnosis terbanyak: diagnosis utama dokter versi terakhir.
     const ditutup = await prisma.kunjungan.findMany({ where: dasar, select: { id: true } });
     const ids = ditutup.map((k) => k.id);
-    const final = new Map<number, { kode: string; nama: string }>();
-    for (const p of await prisma.pengkodean.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: { in: ids } }, select: { kunjungan_id: true, isi: true } })) {
-      const u = (p.isi as { diagnosis: { kode: string; nama: string; peran: string }[] }).diagnosis.find((d) => d.peran === 'utama');
-      if (u) final.set(p.kunjungan_id, { kode: u.kode, nama: u.nama });
-    }
-    const diag = await prisma.diagnosis.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: { in: ids.filter((i) => !final.has(i)) }, peran: 'utama' }, orderBy: { versi: 'asc' }, select: { kunjungan_id: true, kode_icd10: true, nama: true } });
+    const diag = await prisma.diagnosis.findMany({ where: { fasyankes_id: fasyankesId, kunjungan_id: { in: ids }, peran: 'utama' }, orderBy: { versi: 'asc' }, select: { kunjungan_id: true, kode_icd10: true, nama: true } });
     const terakhir = new Map(diag.map((d) => [d.kunjungan_id, { kode: d.kode_icd10, nama: d.nama }]));
     const hitung = new Map<string, { nama: string; n: number }>();
-    for (const d of [...final.values(), ...terakhir.values()]) hitung.set(d.kode, { nama: d.nama, n: (hitung.get(d.kode)?.n ?? 0) + 1 });
+    for (const d of terakhir.values()) hitung.set(d.kode, { nama: d.nama, n: (hitung.get(d.kode)?.n ?? 0) + 1 });
     const baris = [...hitung].map(([kode, v]): [string, string, number] => [kode, v.nama, v.n]).sort((a, b) => b[2] - a[2] || a[0].localeCompare(b[0])).slice(0, 20);
-    return { jenis: f.jenis, dari, sampai, kolom: ['Kode ICD-10', 'Diagnosis', 'Kunjungan'], baris, total: final.size + terakhir.size };
+    return { jenis: f.jenis, dari, sampai, kolom: ['Kode ICD-10', 'Diagnosis', 'Kunjungan'], baris, total: terakhir.size };
   }
 }

@@ -38,7 +38,7 @@ export type ResumeDto = { isi: ResumeIsi; versi: number; pengesahan: PengesahanD
 export type DokumenKunjunganDto = {
   kunjungan: { id: number; pasien_id: number; pasien_nama: string; pasien_nomor_rm: string; tahap_layanan: string };
   resume: ResumeDto | null;
-  /** Isian awal dari catatan dokter dan pengkodean (boleh diubah). */
+  /** Isian awal dari catatan dokter (boleh diubah). */
   saran: { diagnosis_akhir: string; terapi: string; kondisi_pulang: string };
   surat: SuratDto[];
 };
@@ -105,7 +105,7 @@ export type PenyampaianDto = {
 export type HalamanPenyampaianDto = { data: PenyampaianDto[]; halaman: number; ukuran: number; total: number };
 
 // ---- Laporan ----
-export const JENIS_LAPORAN = ['kunjungan_per_poli', 'diagnosis_terbanyak', 'status_pengkodean'] as const;
+export const JENIS_LAPORAN = ['kunjungan_per_poli', 'diagnosis_terbanyak'] as const;
 export type JenisLaporan = (typeof JENIS_LAPORAN)[number];
 export const filterLaporan = z
   .object({ jenis: z.enum(JENIS_LAPORAN, { error: R.galat.jenisLaporan }), dari: tglIso, sampai: tglIso })

@@ -73,7 +73,7 @@ d('rekam medis (resume, surat, pembukaan, penyampaian, laporan) terhadap klira_u
     const where = { fasyankes_id: { in: [fas, fasLain] } };
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
-    for (const m of [prisma.resumeMedis, prisma.surat, prisma.pembukaanRm, prisma.penyampaianRm, prisma.pengkodean, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
+    for (const m of [prisma.resumeMedis, prisma.surat, prisma.pembukaanRm, prisma.penyampaianRm, prisma.versiCatatan, prisma.pengesahanCatatan, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
     await (prisma.diagnosis as any).deleteMany({ where });
     await prisma.antrean.deleteMany({ where });
     await prisma.kunjungan.deleteMany({ where });
@@ -153,7 +153,7 @@ d('rekam medis (resume, surat, pembukaan, penyampaian, laporan) terhadap klira_u
     expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'penyampaian_rm' } })).toBe(2);
   });
 
-  it('laporan: per poli, diagnosis terbanyak, status pengkodean, CSV, rentang terbalik ditolak', async () => {
+  it('laporan: per poli, diagnosis terbanyak, CSV, rentang terbalik ditolak', async () => {
     const poli = await prisma.lokasi.create({ data: { fasyankes_id: fas, nama: 'Poli Umum', jenis: 'poli' as any } });
     const k1 = await kunjunganTutup('ditutup', fas, poli.id);
     const k2 = await kunjunganTutup('ditutup', fas, poli.id);
@@ -163,8 +163,7 @@ d('rekam medis (resume, surat, pembukaan, penyampaian, laporan) terhadap klira_u
     expect(poliLap.badan.data.baris.find((b: any) => b[0] === 'Poli Umum')[1]).toBe(2);
     const diag = await panggil('GET', '/rekam-medis/laporan?jenis=diagnosis_terbanyak', 'perekam');
     expect(diag.badan.data.baris[0]).toEqual(['I10', 'Hipertensi esensial', 2]);
-    const kod = await panggil('GET', '/rekam-medis/laporan?jenis=status_pengkodean', 'perekam');
-    expect(kod.badan.data.total).toBeGreaterThanOrEqual(2);
+    expect((await panggil('GET', '/rekam-medis/laporan?jenis=status_pengkodean', 'perekam')).status).toBe(400);
     const csv = await fetch(url('/rekam-medis/laporan?jenis=kunjungan_per_poli&format=csv'), { headers: { cookie: cookie.perekam } });
     expect(csv.headers.get('content-type')).toContain('text/csv');
     expect((await csv.text()).split('\n')[0]).toBe('Poli,Kunjungan');

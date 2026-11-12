@@ -136,14 +136,14 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteKlinis(layananAkses, layananIzin, layananKlinis));
   const repoRm = new RepositoriRmPrisma();
   app.use('/api', buatRuteRm(layananAkses, layananIzin, buatLayananRm({
-    repo: repoRm, pengesahanRepo: new RepositoriPengesahanPrisma(), pengesahan: layananPengesahan, klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+    repo: repoRm, pengesahanRepo: new RepositoriPengesahanPrisma(), klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));
   const repoDokumen = new RepositoriDokumenPrisma();
   const layananDokumen = buatLayananDokumen({ repo: repoDokumen, repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma() });
   app.use('/api', buatRuteDokumen(layananAkses, layananIzin, layananDokumen));
   app.use('/api', buatRutePdp(layananAkses, layananIzin, buatLayananPdp({ repo: new RepositoriPdpPrisma(), audit: new PenampungAuditPrisma() })));
   app.use('/api', buatRuteKlaim(layananAkses, layananIzin, buatLayananKlaim({
-    repo: new RepositoriKlaimPrisma(), rm: { pengkodean: (fas, id) => repoRm.pengkodean(fas, id), resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+    repo: new RepositoriKlaimPrisma(), rm: { resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditPrisma(),
   })));
   app.use('/api', buatRuteRawatInap(layananAkses, layananIzin, buatLayananRawatInap({
     repo: new RepositoriRawatInapPrisma(), pengesahan: layananPengesahan, audit: new PenampungAuditPrisma(), simpanResume: layananDokumen.simpanResume,

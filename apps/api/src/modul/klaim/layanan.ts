@@ -2,7 +2,7 @@ import {
   batasAjukanUlang, batasPengajuan, berkasKurang, KLAIM, kodeKlaimBeda, sisaHariBatas, STATUS_KLAIM, statusAwalKlaim, statusKlaimEfektif, TRANSISI_KLAIM, unikPerKode,
 } from '@klira/shared';
 import type {
-  BagianKlinis, BerkasKlaim, FilterKlaim, HalamanKlaimDto, KandidatKlaimDto, KlaimDto, KodeKlaim, PenggunaSaya, PengkodeanIsi, SiapkanKlaimMasukan, UbahBerkasKlaimMasukan, UbahStatusKlaimMasukan,
+  BagianKlinis, BerkasKlaim, FilterKlaim, HalamanKlaimDto, KandidatKlaimDto, KlaimDto, KodeKlaim, PenggunaSaya, SiapkanKlaimMasukan, UbahBerkasKlaimMasukan, UbahStatusKlaimMasukan,
 } from '@klira/shared';
 import type { PenampungAudit } from '../../middleware/audit';
 import { gagal } from '../hasil';
@@ -17,8 +17,8 @@ type TindakanDokter = { item?: { kode: string; nama: string }[] };
 
 export type DependensiKlaim = {
   repo: RepositoriKlaimPrisma;
-  /** Kode final (pengkodean) dan isi catatan dokter, ketersediaan resume medis. */
-  rm: { pengkodean: (fasyankesId: number, kunjunganId: number) => Promise<{ isi: PengkodeanIsi } | null>; resumeAda: (fasyankesId: number, kunjunganIds: number[]) => Promise<Set<number>> };
+  /** Ketersediaan resume medis. */
+  rm: { resumeAda: (fasyankesId: number, kunjunganIds: number[]) => Promise<Set<number>> };
   baca: { bacaBagian: (fasyankesId: number, kunjunganId: number, bagian: BagianKlinis) => Promise<unknown> };
   audit: PenampungAudit;
   sekarang?: () => Date;
@@ -34,12 +34,10 @@ export function buatLayananKlaim({ repo, rm, baca, audit, sekarang = () => new D
   const catat = (p: Pelaku, aksi: 'input' | 'perbaikan' | 'lihat', id: number | null, keterangan: string, alamat?: string) =>
     audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas: 'klaim', entitas_id: id, keterangan, alamat });
 
-  /** Kode rekam medis sekarang: pengkodean final bila ada, selain itu catatan dokter (versi terakhir). */
-  async function kodeRm(fas: number, kunjunganId: number): Promise<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[]; final: boolean }> {
-    const final = await rm.pengkodean(fas, kunjunganId);
-    if (final) return { diagnosis: final.isi.diagnosis.map((d) => ({ kode: d.kode, nama: d.nama })), tindakan: final.isi.tindakan.map((t) => ({ kode: t.kode, nama: t.nama })), final: true };
+  /** Kode rekam medis sekarang: catatan dokter (versi terakhir). */
+  async function kodeRm(fas: number, kunjunganId: number): Promise<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[] }> {
     const [d, t] = await Promise.all([baca.bacaBagian(fas, kunjunganId, 'diagnosis') as Promise<DiagnosisDokter | null>, baca.bacaBagian(fas, kunjunganId, 'tindakan') as Promise<TindakanDokter | null>]);
-    return { diagnosis: (d?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama })), tindakan: unikPerKode((t?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama }))), final: false };
+    return { diagnosis: (d?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama })), tindakan: unikPerKode((t?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama }))) };
   }
 
   async function keDto(fas: number, k: KlaimBaris, kunj: KunjunganKlaim | undefined, resume: Set<number>, riwayat: Awaited<ReturnType<typeof repo.riwayat>>, nama: Map<number, string>): Promise<KlaimDto> {
@@ -76,13 +74,13 @@ export function buatLayananKlaim({ repo, rm, baca, audit, sekarang = () => new D
       const resume = await rm.resumeAda(p.fasyankes_id, k.map((x) => x.id));
       const out: KandidatKlaimDto[] = [];
       for (const x of k) {
-        out.push({ kunjungan_id: x.id, pasien_nama: x.pasien_nama, pasien_nomor_rm: x.pasien_nomor_rm, jenis: x.jenis, waktu_tutup: (x.waktu_tutup ?? new Date(0)).toISOString(), nomor_sep: x.nomor_sep, resume_ada: resume.has(x.id), kode_ada: !!(await rm.pengkodean(p.fasyankes_id, x.id)) });
+        out.push({ kunjungan_id: x.id, pasien_nama: x.pasien_nama, pasien_nomor_rm: x.pasien_nomor_rm, jenis: x.jenis, waktu_tutup: (x.waktu_tutup ?? new Date(0)).toISOString(), nomor_sep: x.nomor_sep, resume_ada: resume.has(x.id) });
       }
       return out;
     },
 
     /** Kode klaim yang akan disalin untuk satu kunjungan (pratinjau di modal Penyiapan klaim). */
-    async kodeKunjungan(p: Pelaku, kunjunganId: number): Promise<Hasil<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[]; final: boolean }>> {
+    async kodeKunjungan(p: Pelaku, kunjunganId: number): Promise<Hasil<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[] }>> {
       if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId))) return gagal('tidak_ditemukan', G.kunjunganTidakAda);
       return { ok: true, data: await kodeRm(p.fasyankes_id, kunjunganId) };
     },

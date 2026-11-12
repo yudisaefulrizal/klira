@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { REKAM_MEDIS, STATUS_KODE } from '@klira/shared';
+import { REKAM_MEDIS } from '@klira/shared';
 import type { BerkasBarisDto, HalamanBerkasDto } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien';
 import { daftarBerkas } from '../../api-klien/rekam-medis';
@@ -10,13 +10,11 @@ import { Isian } from '../../komponen/ui/isian';
 import { Kartu } from '../../komponen/ui/kartu';
 import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
-import { Pilihan } from '../../komponen/ui/pilihan';
 import { Sebaris } from '../../komponen/ui/susunan';
 import { BarisTabel, SelTabel, Tabel } from '../../komponen/ui/tabel';
 import { Tombol } from '../../komponen/ui/tombol';
 import { token } from '../../gaya/token';
 import { PanelRiwayat } from '../../modal/pelayanan-klinik/panel-riwayat';
-import { PengkodeanIcd } from '../../modal/pelayanan-klinik/pengkodean-icd';
 import { LaporanRm } from '../../modal/pelayanan-klinik/laporan-rm';
 import { PerbaikiCatatan } from '../../modal/pelayanan-klinik/perbaiki-catatan';
 import { ResumeSurat } from '../../modal/pelayanan-klinik/resume-surat';
@@ -24,16 +22,15 @@ import { formatWaktu } from '../../util/penyaring-tab';
 
 const B = REKAM_MEDIS.berkas;
 const UKURAN = 20;
-const KOLOM = [{ judul: B.kolom.pasien }, { judul: B.kolom.ditutup }, { judul: B.kolom.diagnosis }, { judul: B.kolom.kode }, { judul: B.kolom.arsip }, { judul: B.kolom.tindakan, rataKanan: true }];
-const OPSI_KODE = [{ nilai: '', label: B.semuaKode }, { nilai: 'belum', label: STATUS_KODE.label('belum') }, { nilai: 'sudah', label: STATUS_KODE.label('sudah') }];
-type Saringan = { cari: string; kode: '' | 'belum' | 'sudah'; dari: string; sampai: string; halaman: number };
-const AWAL: Saringan = { cari: '', kode: '', dari: '', sampai: '', halaman: 1 };
-type Modal = { jenis: 'riwayat' | 'perbaiki' | 'kode' | 'resume'; baris: BerkasBarisDto } | null;
+const KOLOM = [{ judul: B.kolom.pasien }, { judul: B.kolom.ditutup }, { judul: B.kolom.diagnosis }, { judul: B.kolom.perbaikan }, { judul: B.kolom.arsip }, { judul: B.kolom.tindakan, rataKanan: true }];
+type Saringan = { cari: string; dari: string; sampai: string; halaman: number };
+const AWAL: Saringan = { cari: '', dari: '', sampai: '', halaman: 1 };
+type Modal = { jenis: 'riwayat' | 'perbaiki' | 'resume'; baris: BerkasBarisDto } | null;
 
-/** Tab Berkas pasien (3.1): kunjungan yang sudah ditutup dengan status pengkodean dan arsip; riwayat, perbaikan catatan, dan pengkodean dibuka dari baris. */
-export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 'belum' | 'sudah', laporan = false }: { judulDaftar?: string; kodeAwal?: '' | 'belum' | 'sudah'; laporan?: boolean }) {
+/** Tab Berkas pasien (3.1): kunjungan yang sudah ditutup dengan status arsip; riwayat, perbaikan catatan, dan resume dibuka dari baris. */
+export function TabBerkas({ judulDaftar = B.kolom.pasien, laporan = false }: { judulDaftar?: string; laporan?: boolean }) {
   const boleh = useIzin();
-  const awal: Saringan = { ...AWAL, kode: kodeAwal };
+  const awal: Saringan = AWAL;
   const [terapan, setTerapan] = useState<Saringan>(awal);
   const [draf, setDraf] = useState<Saringan>(awal);
   const [hasil, setHasil] = useState<HalamanBerkasDto | null>(null);
@@ -49,7 +46,7 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
 
   useEffect(() => {
     let batal = false;
-    daftarBerkas({ cari: terapan.cari, kode: terapan.kode || undefined, dari: terapan.dari || undefined, sampai: terapan.sampai || undefined, halaman: terapan.halaman, ukuran: UKURAN })
+    daftarBerkas({ cari: terapan.cari, dari: terapan.dari || undefined, sampai: terapan.sampai || undefined, halaman: terapan.halaman, ukuran: UKURAN })
       .then((h) => {
         if (batal) return;
         setHasil(h);
@@ -68,7 +65,6 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
       <Kartu style={{ padding: 0, overflow: 'hidden' }}>
         <BilahPenyaring labelTerapkan={B.terapkan} labelAturUlang={B.aturUlang} nonaktif={terbalik} onTerapkan={() => setTerapan({ ...draf, halaman: 1 })} onAturUlang={() => { setDraf(awal); setTerapan(awal); }}>
           <Isian id="berkas-cari" label={B.cari} type="search" value={draf.cari} onChange={(e) => setDraf({ ...draf, cari: e.target.value })} autoComplete="off" />
-          <Pilihan id="berkas-kode" label={B.filterKode} opsi={OPSI_KODE} value={draf.kode} onChange={(e) => setDraf({ ...draf, kode: e.target.value as Saringan['kode'] })} />
           <Isian id="berkas-dari" label={B.dari} type="date" value={draf.dari} onChange={(e) => setDraf({ ...draf, dari: e.target.value })} />
           <Isian id="berkas-sampai" label={B.sampai} type="date" value={draf.sampai} onChange={(e) => setDraf({ ...draf, sampai: e.target.value })} galat={terbalik ? 'Tanggal akhir sebelum tanggal awal.' : undefined} />
           {laporan && boleh('rekam-medis', 'lihat') && <Tombol type="button" varian="sekunder" onClick={() => setLapor(true)}>{REKAM_MEDIS.dok.tombolLaporan}</Tombol>}
@@ -79,15 +75,14 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
             <BarisTabel key={b.kunjungan_id}>
               <SelTabel><div style={{ fontWeight: token.huruf.berat.tebal }}>{b.pasien_nama}</div><div style={{ color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }}>{b.pasien_nomor_rm} · {B.rawat[b.jenis]}</div></SelTabel>
               <SelTabel>{b.waktu_tutup ? formatWaktu(b.waktu_tutup) : '-'}</SelTabel>
-              <SelTabel>{b.diagnosis_final ?? b.diagnosis_dokter ?? '-'}</SelTabel>
-              <SelTabel><Lencana warna={STATUS_KODE.warna(b.status_kode)}>{STATUS_KODE.label(b.status_kode)}</Lencana>{b.perbaikan_menunggu > 0 && <> <Lencana warna="kuning">{B.perbaikanMenunggu(b.perbaikan_menunggu)}</Lencana></>}</SelTabel>
+              <SelTabel>{b.diagnosis_dokter ?? '-'}</SelTabel>
+              <SelTabel>{b.perbaikan_menunggu > 0 ? <Lencana warna="kuning">{B.perbaikanMenunggu(b.perbaikan_menunggu)}</Lencana> : '-'}</SelTabel>
               <SelTabel>{b.diarsipkan_pada && b.retensi_sampai ? B.diarsipkan(b.retensi_sampai) : B.belumArsip}</SelTabel>
               <SelTabel style={{ textAlign: 'right' }}>
                 <Sebaris sebaris jarak="sm" bungkus sebaran="akhir">
                   <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'riwayat', baris: b })}>{B.riwayat}</Tombol>
                   <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'resume', baris: b })}>{REKAM_MEDIS.dok.tombolResume}</Tombol>
                   {boleh('klinis', 'perbaikan') && <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'perbaiki', baris: b })}>{B.perbaiki}</Tombol>}
-                  {boleh('rekam-medis', 'input') && <Tombol type="button" varian="teks" onClick={() => setModal({ jenis: 'kode', baris: b })}>{B.kodekan}</Tombol>}
                 </Sebaris>
               </SelTabel>
             </BarisTabel>
@@ -101,7 +96,6 @@ export function TabBerkas({ judulDaftar = B.kolom.pasien, kodeAwal = '' as '' | 
       {modal?.jenis === 'perbaiki' && <PerbaikiCatatan kunjunganId={modal.baris.kunjungan_id} pasien={{ id: modal.baris.pasien_id, nama: modal.baris.pasien_nama, nomor_rm: modal.baris.pasien_nomor_rm }} onTutup={() => setModal(null)} onSelesai={selesai} />}
       {modal?.jenis === 'resume' && <ResumeSurat kunjunganId={modal.baris.kunjungan_id} onTutup={() => setModal(null)} onSelesai={selesai} />}
       {lapor && <LaporanRm onTutup={() => setLapor(false)} />}
-      {modal?.jenis === 'kode' && <PengkodeanIcd kunjunganId={modal.baris.kunjungan_id} onTutup={() => setModal(null)} onSelesai={selesai} />}
     </>
   );
 }

@@ -53,7 +53,7 @@ export const filterKlaim = z.object({
 });
 export type FilterKlaim = z.infer<typeof filterKlaim>;
 
-export type KandidatKlaimDto = { kunjungan_id: number; pasien_nama: string; pasien_nomor_rm: string; jenis: 'AMB' | 'IMP'; waktu_tutup: string; nomor_sep: string | null; resume_ada: boolean; kode_ada: boolean };
+export type KandidatKlaimDto = { kunjungan_id: number; pasien_nama: string; pasien_nomor_rm: string; jenis: 'AMB' | 'IMP'; waktu_tutup: string; nomor_sep: string | null; resume_ada: boolean };
 export type RiwayatKlaimDto = { dari: StatusKlaim | null; ke: StatusKlaim; alasan: string | null; oleh_nama: string | null; waktu: string };
 export type KlaimDto = {
   id: number; kunjungan_id: number; pasien_nama: string; pasien_nomor_rm: string; jenis: 'AMB' | 'IMP'; nomor_sep: string | null; status: StatusKlaim; tanggal_selesai: string; batas_pengajuan: string; batas_ajukan_ulang: string | null;

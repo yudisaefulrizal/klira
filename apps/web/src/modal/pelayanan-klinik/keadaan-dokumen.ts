@@ -65,6 +65,6 @@ export const bentukPenyampaian = (k: KeadaanPenyampaian): PenyampaianForm => ({ 
 export const galatPenyampaian = (k: KeadaanPenyampaian): Record<string, string> => petakan(penyampaianMasukan.safeParse(bentukPenyampaian(k)).error?.issues);
 
 // ---- Laporan ----
-export type KeadaanLaporan = { jenis: 'kunjungan_per_poli' | 'diagnosis_terbanyak' | 'status_pengkodean'; dari: string; sampai: string };
+export type KeadaanLaporan = { jenis: 'kunjungan_per_poli' | 'diagnosis_terbanyak'; dari: string; sampai: string };
 export const awalLaporan = (): KeadaanLaporan => ({ jenis: 'kunjungan_per_poli', dari: '', sampai: '' });
 export const galatLaporan = (k: KeadaanLaporan): Record<string, string> => petakan(filterLaporan.safeParse(k).error?.issues);

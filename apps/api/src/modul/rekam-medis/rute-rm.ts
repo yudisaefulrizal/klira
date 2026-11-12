@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, RequestHandler, Response } from 'express';
-import { filterBerkas, filterPerbaikan, GALAT, idParam, keputusanPerbaikanMasukan, pengkodeanMasukan, perbaikanMasukan } from '@klira/shared';
+import { filterBerkas, filterPerbaikan, GALAT, idParam, keputusanPerbaikanMasukan, perbaikanMasukan } from '@klira/shared';
 import type { PenggunaSaya, ResponsGalat } from '@klira/shared';
 import { wajibMasuk } from '../../middleware/auth';
 import { alamatDari } from '../../middleware/audit';
@@ -11,7 +11,7 @@ import { galatValidasi, kirimHasil } from '../hasil';
 import type { LayananRm } from './layanan-rm';
 
 /**
- * Rute Rekam medis (3.1, 4.2): perbaikan catatan (pemohon: izin `klinis` perbaikan; peninjau: `rekam-medis` perbaikan), pengkodean ICD (izin `rekam-medis`),
+ * Rute Rekam medis (3.1, 4.2): perbaikan catatan (pemohon: izin `klinis` perbaikan; peninjau: `rekam-medis` perbaikan),
  * daftar berkas (lihat `rekam-medis` atau `klinis`). Dibatasi pada fasyankes akun; tidak ada rute hapus.
  */
 export function buatRuteRm(layananAkses: LayananAkses, layananIzin: LayananIzin, layanan: LayananRm): Router {
@@ -49,19 +49,6 @@ export function buatRuteRm(layananAkses: LayananAkses, layananIzin: LayananIzin,
     const m = keputusanPerbaikanMasukan.safeParse(req.body ?? {});
     if (!m.success) return galatValidasi(res, m.error);
     kirimHasil(res, await layanan.putuskan(pengguna(res), id.data.id, m.data, alamatDari(req)));
-  }));
-
-  rute.get('/kunjungan/:id/pengkodean', masuk, wajibIzin('rekam-medis', 'lihat'), bungkus(async (req, res) => {
-    const id = idParam.safeParse(req.params);
-    if (!id.success) return tidakAda(res);
-    kirimHasil(res, await layanan.kode(pengguna(res), id.data.id, alamatDari(req)));
-  }));
-  rute.put('/kunjungan/:id/pengkodean', masuk, wajibIzin('rekam-medis', 'input'), bungkus(async (req, res) => {
-    const id = idParam.safeParse(req.params);
-    if (!id.success) return tidakAda(res);
-    const m = pengkodeanMasukan.safeParse(req.body ?? {});
-    if (!m.success) return galatValidasi(res, m.error);
-    kirimHasil(res, await layanan.simpanKode(pengguna(res), id.data.id, m.data, alamatDari(req)));
   }));
 
   return rute;

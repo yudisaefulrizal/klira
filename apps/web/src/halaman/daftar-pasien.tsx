@@ -9,7 +9,7 @@ import { EditPasien } from '../modal/pelayanan-klinik/edit-pasien';
 import { usePesan } from '../komponen/pesan/konteks-pesan';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS, TAHAP_LAYANAN,
+  tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS,
 } from '@klira/shared';
 import type { AksiAntrean, DaftarPasienDto, PasienBarisDto } from '@klira/shared';
 import { aksiAntrean } from '../api-klien/kunjungan';
@@ -54,7 +54,7 @@ const IKON_AKSI: Record<AksiBaris['jenis'], NamaIkonPasien> = {
 const ikonAksi = (jenis: AksiBaris['jenis']): NamaIkonPasien => IKON_AKSI[jenis];
 const KOLOM = [
   { judul: DAFTAR_PASIEN.kolom.antrean }, { judul: DAFTAR_PASIEN.kolom.pasien }, { judul: DAFTAR_PASIEN.kolom.nomorRm }, { judul: DAFTAR_PASIEN.kolom.poliDpjp },
-  { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.tahap }, { judul: DAFTAR_PASIEN.kolom.menunggu }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },
+  { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.menunggu }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },
 ];
 
 type PasienTerpilih = { id: number; nama: string; nomor_rm: string };
@@ -237,29 +237,27 @@ function AntreanPasien() {
                 <SelTabel style={{ fontWeight: token.huruf.berat.tebal }}>
                   {k?.antrean ? (
                     <span>
-                      {k.antrean.kode}
-                      <div><Lencana warna={STATUS_ANTREAN.warna(k.antrean.status)}>{STATUS_ANTREAN.label(k.antrean.status)}</Lencana></div>
+                      {k.antrean.kode} <Lencana warna={STATUS_ANTREAN.warna(k.antrean.status)}>{STATUS_ANTREAN.label(k.antrean.status)}</Lencana>
                     </span>
                   ) : DAFTAR_PASIEN.tanpaAntrean}
                 </SelTabel>
                 <SelTabel>
                   <Tombol type="button" varian="teks" onClick={() => setTerbuka({ jenis: 'edit-pasien', pasien: pasienDari(b) })} aria-label={`Buka data pasien ${b.nama}`} style={{ fontWeight: token.huruf.berat.tebal, padding: 0 }}>{b.nama}</Tombol>
-                  <div style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>
-                    {DAFTAR_PASIEN.jenisKelaminSingkat[b.jenis_kelamin]}, {DAFTAR_PASIEN.umur(b.umur_tahun)}
+                  <span style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>
+                     {' '}({DAFTAR_PASIEN.jenisKelaminSingkat[b.jenis_kelamin]}, {DAFTAR_PASIEN.umur(b.umur_tahun)})
                     {b.status_identitas === 'sementara' && <> <Lencana warna={STATUS_IDENTITAS.warna('sementara')}>{STATUS_IDENTITAS.label('sementara')}</Lencana></>}
-                  </div>
+                  </span>
                 </SelTabel>
                 <SelTabel style={{ color: token.warna.teksMenu }}>{b.nomor_rm}</SelTabel>
                 <SelTabel>
                   {k ? (
                     <>
-                      <div>{k.poli_nama ?? <Lencana warna={JENIS_KUNJUNGAN.warna(k.jenis)}>{JENIS_KUNJUNGAN.label(k.jenis)}</Lencana>}</div>
-                      <div style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>{k.dpjp_nama ?? '-'}</div>
+                      <span>{k.poli_nama ?? <Lencana warna={JENIS_KUNJUNGAN.warna(k.jenis)}>{JENIS_KUNJUNGAN.label(k.jenis)}</Lencana>}</span>{' '}
+                      <span style={{ fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }}>{k.dpjp_nama ?? '-'}</span>
                     </>
                   ) : <span style={{ color: token.warna.teksRedup }}>{DAFTAR_PASIEN.tanpaKunjungan}</span>}
                 </SelTabel>
                 <SelTabel>{k ? CARA_PEMBAYARAN.label(k.cara_pembayaran) : '-'}</SelTabel>
-                <SelTabel>{k ? <Lencana warna={k.antrean?.status === 'batal' ? 'merah' : TAHAP_LAYANAN.warna(k.tahap_layanan)}>{k.antrean?.status === 'batal' ? 'Batal' : TAHAP_LAYANAN.label(k.tahap_layanan)}</Lencana> : '-'}</SelTabel>
                 <SelTabel style={{ color: token.warna.teksMenu }}>
                   {tunggu ? (tunggu.jam ? DAFTAR_PASIEN.jamMenit(tunggu.jam, tunggu.menit) : DAFTAR_PASIEN.menit(tunggu.menit)) : '-'}
                 </SelTabel>

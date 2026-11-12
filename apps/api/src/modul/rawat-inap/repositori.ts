@@ -1,7 +1,7 @@
 import { selesaiAntreanDalam } from '../kunjungan/antrean-otomatis';
 import { prisma } from '@klira/db';
 import type { Prisma } from '@klira/db';
-import { hargaTarif, TAHAP_BERJALAN } from '@klira/shared';
+import { hargaTarif, TAHAP_BERJALAN, tanggalRetensi } from '@klira/shared';
 import type {
   CaraPembayaran,
   AdmisiMasukan, AsalAdmisiDto, BedDto, CatatanHarianMasukan, HasilAdmisiDto, KelasRawat, MenungguRuanganDto, OpsiRawatInapDto, PapanDto, PemulanganDto, PemulanganMasukan, PenempatanDto, PenempatanMasukan, RawatInapDto,
@@ -162,7 +162,7 @@ export class RepositoriRawatInapPrisma {
     }
     await tx.resep.updateMany({ where: { kunjungan_id: asalId, fasyankes_id: p.fasyankesId, status: { not: 'diserahkan' } }, data: { kunjungan_id: baruId } });
     await selesaiAntreanDalam(tx, p.fasyankesId, asalId, sekarang);
-    await tx.kunjungan.update({ where: { id: asalId }, data: { tahap_layanan: 'ditutup', status: 'finished', selesai: sekarang, waktu_tutup: sekarang } });
+    await tx.kunjungan.update({ where: { id: asalId }, data: { tahap_layanan: 'ditutup', status: 'finished', selesai: sekarang, waktu_tutup: sekarang, diarsipkan_pada: sekarang, retensi_sampai: tanggalRetensi(sekarang) } });
   }
 
   // ---- Detail dan penempatan ----

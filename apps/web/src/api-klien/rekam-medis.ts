@@ -1,10 +1,9 @@
-import type { BagianKlinis, FilterBerkas, FilterPerbaikan, HalamanBerkasDto, HalamanPerbaikanDto, HasilPerbaikanDto, PengkodeanDto, PengkodeanMasukan, PermintaanPerbaikanDto } from '@klira/shared';
+import type { BagianKlinis, FilterBerkas, FilterPerbaikan, HalamanBerkasDto, HalamanPerbaikanDto, HasilPerbaikanDto, PermintaanPerbaikanDto } from '@klira/shared';
 import { panggilApi } from './klien';
 
 export function queryBerkas(f: Partial<FilterBerkas>): string {
   const q = new URLSearchParams({ halaman: String(f.halaman ?? 1), ukuran: String(f.ukuran ?? 20) });
   if (f.cari?.trim()) q.set('cari', f.cari.trim());
-  if (f.kode) q.set('kode', f.kode);
   if (f.dari) q.set('dari', f.dari);
   if (f.sampai) q.set('sampai', f.sampai);
   return q.toString();
@@ -20,5 +19,3 @@ export function queryPerbaikan(f: Partial<FilterPerbaikan>): string {
 export const daftarPerbaikan = (f: Partial<FilterPerbaikan>) => panggilApi<HalamanPerbaikanDto>('GET', `/rekam-medis/perbaikan?${queryPerbaikan(f)}`);
 export const putuskanPerbaikan = (id: number, m: { keputusan: 'setujui' | 'tolak'; catatan?: string }) => panggilApi<PermintaanPerbaikanDto>('POST', `/rekam-medis/perbaikan/${id}/keputusan`, m);
 
-export const ambilPengkodean = (kunjunganId: number) => panggilApi<PengkodeanDto>('GET', `/kunjungan/${kunjunganId}/pengkodean`);
-export const simpanPengkodean = (kunjunganId: number, m: PengkodeanMasukan) => panggilApi<PengkodeanDto>('PUT', `/kunjungan/${kunjunganId}/pengkodean`, m);

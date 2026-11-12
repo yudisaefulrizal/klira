@@ -30,7 +30,7 @@ export function PenyiapanKlaim({ klaim = null, onTutup, onSelesai }: Props) {
   const awal = useMemo(() => awalKlaim(klaim), [klaim]);
   const [k, setK] = useState<KeadaanKlaim>(awal);
   const [kandidat, setKandidat] = useState<KandidatKlaimDto[] | null>(ubah ? [] : null);
-  const [kode, setKode] = useState<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[]; final: boolean } | null>(klaim ? { diagnosis: klaim.diagnosis, tindakan: klaim.tindakan, final: true } : null);
+  const [kode, setKode] = useState<{ diagnosis: KodeKlaim[]; tindakan: KodeKlaim[] } | null>(klaim ? { diagnosis: klaim.diagnosis, tindakan: klaim.tindakan } : null);
   const [indeks, setIndeks] = useState(0);
   const [dicoba, setDicoba] = useState(false);
   const [galat, setGalat] = useState<string | null>(null);
@@ -101,7 +101,6 @@ export function PenyiapanKlaim({ klaim = null, onTutup, onSelesai }: Props) {
       id: 'kode', judul: S.langkah.kode,
       isi: (
         <Kolom>
-          {kode && !kode.final && <Peringatan>{S.kodeBelum}</Peringatan>}
           {klaim?.kode_beda && <Peringatan>{S.kodeBeda}</Peringatan>}
           <DaftarRingkasan bagian={[{ judul: S.kodeSumber, baris: [{ label: S.diagnosis, nilai: kode ? teksKode(kode.diagnosis) : '-' }, { label: S.tindakan, nilai: kode ? teksKode(kode.tindakan) : '-' }] }]} />
         </Kolom>

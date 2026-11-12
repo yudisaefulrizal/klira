@@ -1433,7 +1433,7 @@ model PengeluaranObat {
   @@map("pengeluaran_obat")
 }
 
-// ---- Rekam medis (4.2, 4.9): permintaan perbaikan setelah 2x24 jam, pengkodean ICD final ----
+// ---- Rekam medis (4.2, 4.9): permintaan perbaikan setelah 2x24 jam ----
 enum StatusPerbaikan {
   diajukan
   disetujui
@@ -1458,20 +1458,6 @@ model PermintaanPerbaikan {
   @@index([fasyankes_id, status])
   @@index([kunjungan_id])
   @@map("permintaan_perbaikan")
-}
-
-// Kode final hasil verifikasi perekam medis (satu baris per kunjungan; riwayat lewat versi catatan dan pengesahan entitas `pengkodean`).
-model Pengkodean {
-  id              Int      @id @default(autoincrement())
-  fasyankes_id    Int
-  kunjungan_id    Int      @unique
-  isi             Json
-  pengode_id      Int
-  diperbarui_pada DateTime @default(now()) @db.DateTime(3)
-  dibuat_pada     DateTime @default(now()) @db.DateTime(3)
-
-  @@index([fasyankes_id])
-  @@map("pengkodean")
 }
 
 // ---- Rekam medis (lanjutan): resume dan surat, pembukaan tanpa persetujuan, penyampaian ----
