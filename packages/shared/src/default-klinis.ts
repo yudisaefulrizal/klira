@@ -68,19 +68,10 @@ export const DEFAULT_KEPERAWATAN = {
   nyeri_durasi: null,
   nyeri_frekuensi: null,
   nyeri_hilang_bila: null,
-  jatuh_tidak_seimbang: false,
-  jatuh_menopang: false,
   gizi_bb_turun: false,
   gizi_asupan_kurang: false,
 } as const;
 export type KunciDefaultKeperawatan = keyof typeof DEFAULT_KEPERAWATAN;
-
-export type HasilRisikoJatuh = 'tidak_berisiko' | 'risiko_rendah' | 'risiko_tinggi';
-/** Get Up and Go: tidak ada "ya" = tidak berisiko, satu = risiko rendah, dua = risiko tinggi. Dihitung, tidak disimpan. */
-export function hasilRisikoJatuh(d: { jatuh_tidak_seimbang: boolean; jatuh_menopang: boolean }): HasilRisikoJatuh {
-  const ya = Number(d.jatuh_tidak_seimbang) + Number(d.jatuh_menopang);
-  return ya === 0 ? 'tidak_berisiko' : ya === 1 ? 'risiko_rendah' : 'risiko_tinggi';
-}
 
 export type HasilRisikoGizi = 'tidak_berisiko' | 'berisiko';
 /** Skrining gizi sederhana: ada "ya" = berisiko malnutrisi. Dihitung, tidak disimpan. */

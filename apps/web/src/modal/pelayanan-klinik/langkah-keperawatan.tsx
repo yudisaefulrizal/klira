@@ -1,9 +1,9 @@
-import { hasilRisikoGizi, hasilRisikoJatuh, JENIS_KUNJUNGAN, KLINIS, SKALA_NYERI_MAKS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, STATUS_RISIKO_JATUH, STATUS_SKRINING_VISUAL } from '@klira/shared';
+import { hasilRisikoGizi, JENIS_KUNJUNGAN, KLINIS, SKALA_NYERI_MAKS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, STATUS_SKRINING_VISUAL } from '@klira/shared';
 import type { KonteksKlinisDto, SkriningVisual } from '@klira/shared';
 import { token } from '../../gaya/token';
 import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan';
 import { HanyaDenganIzin } from '../../komponen/izin-saja';
-import { BilahNormal, KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal';
+import { KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal';
 import { AreaTeks } from '../../komponen/ui/area-teks';
 import { Isian } from '../../komponen/ui/isian';
 import { Lencana } from '../../komponen/ui/lencana';
@@ -11,7 +11,7 @@ import { PilihanPil } from '../../komponen/ui/pilihan-pil';
 import { Baris, DaftarRingkasan, Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
 import {
-  adaNyeri, kelompokBerdefault, keperawatanDiubah, keperawatanKosong, keperawatanNormal, ringkasanKeperawatan, ubahJenisNyeri,
+  adaNyeri, kelompokBerdefault, keperawatanDiubah, keperawatanKosong, ringkasanKeperawatan, ubahJenisNyeri,
 } from './keadaan-keperawatan';
 import type { IdKelompokKeperawatan, KeadaanKeperawatan, KunciKeperawatan } from './keadaan-keperawatan';
 import type { KeadaanPemeriksaan } from './keadaan-pemeriksaan';
@@ -46,23 +46,21 @@ export function BagianKeperawatan({ k, ubah, galat, server }: DasarLangkah) {
   const d = (n: KunciKeperawatan) => diubah.has(n);
   const kelompok = (id: IdKelompokKeperawatan) => ({
     judul: t.kelompok[id],
+    tanpaJudul: id === 'kajian' || id === 'asuhan',
     diubah: kelompokBerdefault(id) ? keperawatanDiubah(kp, id).length : 0,
-    onNormal: kelompokBerdefault(id) ? () => ubah({ keperawatan: keperawatanNormal(kp, id) }) : undefined,
   });
   const teksIsian = (n: 'kajian_keperawatan' | 'telah_diobati' | 'obat_dikonsumsi' | 'rencana_asuhan', maks: number) => (
     <AreaTeks id={`kp-${n}`} label={t[n]} value={kp[n]} maxLength={maks} diubah={d(n)} onChange={(e) => set({ [n]: e.target.value })} />
   );
-  const yaTidak = (n: 'jatuh_tidak_seimbang' | 'jatuh_menopang' | 'gizi_bb_turun' | 'gizi_asupan_kurang') => (
+  const yaTidak = (n: 'gizi_bb_turun' | 'gizi_asupan_kurang') => (
     <PilihanPil id={`kp-${n}`} label={t[n]} opsi={OPSI_YA_TIDAK} nilai={kp[n] ? 'ya' : 'tidak'} diubah={d(n)} onUbah={(v) => set({ [n]: v === 'ya' })} />
   );
   const skalaKosong = adaNyeri(kp) && kp.nyeri_skala.trim() === '';
-  const jatuh = hasilRisikoJatuh(kp);
   const gizi = hasilRisikoGizi(kp);
   return (
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      <BilahNormal diubah={diubah.size} onKembalikan={() => ubah({ keperawatan: keperawatanNormal(kp) })} />
       <KelompokNormal {...kelompok('kajian')}>
         {teksIsian('kajian_keperawatan', 1000)}
         <Baris>
@@ -82,10 +80,6 @@ export function BagianKeperawatan({ k, ubah, galat, server }: DasarLangkah) {
             ))}
           </Baris>
         </>}
-      </KelompokNormal>
-      <KelompokNormal {...kelompok('jatuh')} aksi={<span>{t.hasil}: <Lencana warna={STATUS_RISIKO_JATUH.warna(jatuh)}>{STATUS_RISIKO_JATUH.label(jatuh)}</Lencana></span>}>
-        {yaTidak('jatuh_tidak_seimbang')}
-        {yaTidak('jatuh_menopang')}
       </KelompokNormal>
       <KelompokNormal {...kelompok('gizi')} aksi={<span>{t.hasil}: <Lencana warna={STATUS_RISIKO_GIZI.warna(gizi)}>{STATUS_RISIKO_GIZI.label(gizi)}</Lencana></span>}>
         {yaTidak('gizi_bb_turun')}

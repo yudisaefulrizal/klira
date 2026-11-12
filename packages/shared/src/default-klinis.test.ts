@@ -1,6 +1,6 @@
 import {
   bidangKelompok, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, DEFINISI_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, PEMERIKSAAN_BIDANG, pemeriksaanIsi, anamnesisIsi, ringkasanPemeriksaan,
-  alergiTercatat, berartiTidakAda, DEFAULT_KEPERAWATAN, hasilRisikoGizi, hasilRisikoJatuh, isiDefault, isianDiubah, jumlahDiubah, keperawatanIsi, kembalikanNormal, samaDenganDefault,
+  alergiTercatat, berartiTidakAda, DEFAULT_KEPERAWATAN, hasilRisikoGizi, isiDefault, isianDiubah, jumlahDiubah, keperawatanIsi, kembalikanNormal, samaDenganDefault,
 } from './index';
 
 describe('default keadaan baik (util bersama)', () => {
@@ -47,7 +47,7 @@ describe('default keadaan baik (util bersama)', () => {
 describe('skrining keperawatan (P6)', () => {
   it('default lolos skema; isian kosong menjadi null dan boolean false', () => {
     const h = keperawatanIsi.parse(DEFAULT_KEPERAWATAN);
-    expect(h).toMatchObject({ kajian_keperawatan: 'keadaan umum baik', alergi: 'tidak ada', nyeri_jenis: 'tidak', nyeri_skala: null, jatuh_menopang: false, diagnosa_keperawatan: null, skrining_visual: null });
+    expect(h).toMatchObject({ kajian_keperawatan: 'keadaan umum baik', alergi: 'tidak ada', nyeri_jenis: 'tidak', nyeri_skala: null, gizi_bb_turun: false, diagnosa_keperawatan: null, skrining_visual: null });
     expect(keperawatanIsi.parse({})).toMatchObject({ nyeri_jenis: 'tidak', gizi_bb_turun: false, alergi: null });
   });
 
@@ -60,11 +60,7 @@ describe('skrining keperawatan (P6)', () => {
     expect(keperawatanIsi.safeParse({ alergi: 'x'.repeat(501) }).success).toBe(false);
   });
 
-  it('hasil risiko jatuh dan gizi dihitung', () => {
-    expect(hasilRisikoJatuh({ jatuh_tidak_seimbang: false, jatuh_menopang: false })).toBe('tidak_berisiko');
-    expect(hasilRisikoJatuh({ jatuh_tidak_seimbang: true, jatuh_menopang: false })).toBe('risiko_rendah');
-    expect(hasilRisikoJatuh({ jatuh_tidak_seimbang: false, jatuh_menopang: true })).toBe('risiko_rendah');
-    expect(hasilRisikoJatuh({ jatuh_tidak_seimbang: true, jatuh_menopang: true })).toBe('risiko_tinggi');
+  it('hasil risiko gizi dihitung', () => {
     expect(hasilRisikoGizi({ gizi_bb_turun: false, gizi_asupan_kurang: false })).toBe('tidak_berisiko');
     expect(hasilRisikoGizi({ gizi_bb_turun: false, gizi_asupan_kurang: true })).toBe('berisiko');
   });

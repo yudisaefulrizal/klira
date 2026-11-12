@@ -694,8 +694,7 @@ export const KUNJUNGAN = {
 
 /** Penanda default keadaan baik (P6–P8): isian yang berbeda dari default, tombol kembali ke normal. */
 export const PENANDA_NORMAL = {
-  semuaNormal: 'Semua normal', kembalikanSemua: 'Kembalikan semua ke normal', diubah: 'diubah', jumlahDiubah: (n: number) => `${n} isian diubah`,
-  petunjuk: 'Isian sudah terisi keadaan baik. Ubah hanya yang tidak normal.', semuaSesuai: 'Semua isian sesuai keadaan baik.',
+  diubah: 'diubah', jumlahDiubah: (n: number) => `${n} isian diubah`,
 } as const;
 
 /** Pemeriksaan klinis (MODAL-BERTAHAP), panel pendamping, dan catatan klinis (3.3, 4.2). */
@@ -718,27 +717,24 @@ export const KLINIS = {
   },
   /** Skrining keperawatan (P6). */
   keperawatan: {
-    judul: 'Skrining keperawatan', jenisKunjungan: 'Jenis kunjungan', kunjunganBaru: 'Baru', kunjunganLama: 'Lama', jenisRawat: 'Jenis rawat',
-    kelompok: { kajian: 'Kajian keperawatan', nyeri: 'Skrining nyeri', jatuh: 'Risiko jatuh (Get Up and Go)', gizi: 'Skrining gizi', asuhan: 'Asuhan keperawatan' },
-    kajian_keperawatan: 'Kajian keperawatan', telah_diobati: 'Telah diobati', alergi: 'Alergi', obat_dikonsumsi: 'Obat yang sedang dikonsumsi',
+    judul: 'Skrining keperawatan', jenisKunjungan: 'Jns. Kunjung', kunjunganBaru: 'Baru', kunjunganLama: 'Lama', jenisRawat: 'Jns. Rawat',
+    kelompok: { kajian: 'Kajian keperawatan', nyeri: 'Skrining Nyeri', gizi: 'Skrining Gizi', asuhan: 'Asuhan keperawatan' },
+    kajian_keperawatan: 'Kajian Keperawatan', telah_diobati: 'Telah diobati sebelumnya', alergi: 'Alergi obat & catatan khusus lain', obat_dikonsumsi: 'Obat yang telah/sedang diminum',
     alergiKet: 'Pisahkan dengan koma bila lebih dari satu.',
-    diagnosa_keperawatan: 'Diagnosa keperawatan', rencana_asuhan: 'Rencana asuhan keperawatan',
-    nyeri_jenis: 'Nyeri', nyeri_skala: 'Skala nyeri (0–10)', nyeri_lokasi: 'Lokasi', nyeri_durasi: 'Durasi', nyeri_frekuensi: 'Frekuensi', nyeri_hilang_bila: 'Nyeri hilang bila',
-    jatuh_tidak_seimbang: 'Cara berjalan tidak seimbang (sempoyongan, limbung, atau memakai alat bantu)?',
-    jatuh_menopang: 'Menopang saat akan duduk (memegang benda sekitar)?',
-    gizi_bb_turun: 'Berat badan turun tanpa disengaja dalam 6 bulan terakhir?',
-    gizi_asupan_kurang: 'Asupan makan berkurang karena nafsu makan menurun?',
-    skrining_visual: 'Skrining visual', tidakDiisi: 'Tidak diisi', hasil: 'Hasil', ya: 'Ya', tidak: 'Tidak',
+    diagnosa_keperawatan: 'Diagnosa Keperawatan', rencana_asuhan: 'Rencana Asuhan Keperawatan',
+    nyeri_jenis: 'Jns. Nyeri', nyeri_skala: 'Skala Nyeri', nyeri_lokasi: 'Lokasi', nyeri_durasi: 'Durasi', nyeri_frekuensi: 'Frekuensi', nyeri_hilang_bila: 'Nyeri Hilang Bila',
+    gizi_bb_turun: 'Adakah penurunan berat badan yang tidak diinginkan dalam 6 bulan terakhir?',
+    gizi_asupan_kurang: 'Apakah asupan makanan berkurang karena tidak nafsu makan?',
+    skrining_visual: 'Skrn. Visual', tidakDiisi: 'Tidak diisi', hasil: 'Hasil skrining gizi', ya: 'Ya', tidak: 'Tidak',
     ringkasanJudul: 'Hasil skrining perawat', belumDikaji: 'Skrining keperawatan belum diisi.', ubah: 'Ubah keperawatan', tutupUbah: 'Tutup isian keperawatan',
   },
   /** Penanda default keadaan baik (P6–P8). */
   normal: PENANDA_NORMAL,
   tandaVital: {
-    sistolik: 'Tekanan darah sistolik', diastolik: 'Tekanan darah diastolik', nadi: 'Nadi', suhu: 'Suhu', respirasi: 'Laju napas', spo2: 'Saturasi oksigen (SpO2)',
-    berat_badan: 'Berat badan', tinggi_badan: 'Tinggi badan',
-    singkat: { sistolik: 'TD', nadi: 'N', suhu: 'S', respirasi: 'RR', spo2: 'SpO2', berat_badan: 'BB', tinggi_badan: 'TB' },
-    petunjuk: 'Isi yang diukur saja. Satuan mengikuti standar (UCUM).',
-    satuan: { 'mm[Hg]': 'mmHg', '/min': 'per menit', Cel: '°C', '%': '%', kg: 'kg', cm: 'cm' } as Record<string, string>,
+    sistolik: 'Sistole', diastolik: 'Diastole', nadi: 'Heart Rate', suhu: 'Suhu', respirasi: 'Resp. Rate',
+    berat_badan: 'Berat', tinggi_badan: 'Tinggi',
+    singkat: { sistolik: 'TD', nadi: 'N', suhu: 'S', respirasi: 'RR', berat_badan: 'BB', tinggi_badan: 'TB' },
+    satuan: { 'mm[Hg]': 'mmHg', '/min': 'x/mnt', Cel: '°C', '%': '%', kg: 'kg', cm: 'cm' } as Record<string, string>,
   },
   /** Pemeriksaan fisik terstruktur (P7); label bidang dan kelompok di DEFINISI_PEMERIKSAAN/KELOMPOK_PEMERIKSAAN. */
   pemeriksaan: {

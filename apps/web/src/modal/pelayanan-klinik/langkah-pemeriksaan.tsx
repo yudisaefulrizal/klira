@@ -2,10 +2,10 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, LABEL_NARASI, KLINIS, MAKS_NARASI, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL,
-  bidangKelompok, isianDiubah, kembalikanNormal, labelBidangPemeriksaan, samaDenganDefault,
+  bidangKelompok, isianDiubah, labelBidangPemeriksaan, samaDenganDefault,
 } from '@klira/shared';
 import type { BagianNarasi, BagianKlinis, BagianKlinisDto, FavoritDto, KunciDefaultAnamnesis } from '@klira/shared';
-import { BilahNormal, KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal';
+import { KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal';
 import { cariTerminologi, cariTindakanKlinik } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan';
@@ -67,7 +67,6 @@ export function LangkahTandaVital({ k, ubah, galat, server }: DasarLangkah) {
   return (
     <Kolom>
       <InfoPengesahan bagian={server} />
-      <p style={teksRedup}>{KLINIS.tandaVital.petunjuk}</p>
       <GalatBagian galat={galat} />
       <Baris>
         {TANDA_VITAL.map((t) => (
@@ -95,12 +94,10 @@ export function LangkahPemeriksaan({ k, ubah, galat, server }: DasarLangkah) {
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      <BilahNormal diubah={diubah.size} onKembalikan={() => ubah({ pemeriksaan: kembalikanNormal(pm, DEFAULT_PEMERIKSAAN) })} />
       {KELOMPOK_PEMERIKSAAN.filter((g) => g.kunci !== 'odontogram').map((g) => {
         const bidang = bidangKelompok(g.kunci);
         return (
-          <KelompokNormal key={g.kunci} judul={g.label} diubah={bidang.filter((b) => diubah.has(b as never)).length}
-            onNormal={() => ubah({ pemeriksaan: kembalikanNormal(pm, DEFAULT_PEMERIKSAAN, bidang as never[]) })}>
+          <KelompokNormal key={g.kunci} judul={g.label} diubah={bidang.filter((b) => diubah.has(b as never)).length}>
             <Baris>
               {bidang.map((b) => (
                 <Isian key={b} id={`pemeriksaan-${b}`} label={labelBidangPemeriksaan(b)} value={pm[b]} maxLength={300} autoComplete="off"

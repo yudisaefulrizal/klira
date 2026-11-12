@@ -37,7 +37,7 @@ const bentukTandaVital = Object.fromEntries(TANDA_VITAL.map((t) => [t.kunci, ang
 export const tandaVitalIsi = z.object(bentukTandaVital).refine((d) => Object.values(d).some((v) => v !== null), { message: KLINIS.galat.tandaVitalKosong });
 export type TandaVitalIsi = Record<KunciTandaVital, number | null>;
 
-// Skrining keperawatan (P6): teks opsional, nyeri bersyarat, risiko jatuh dan gizi ya/tidak (hasil dihitung, tidak disimpan).
+// Skrining keperawatan (P6): teks opsional, nyeri bersyarat, gizi ya/tidak (hasil dihitung, tidak disimpan).
 const yaTidak = z.preprocess((v) => (v === null || v === undefined || v === '' ? false : v), z.boolean());
 const skalaNyeri = z.preprocess(
   (v) => (typeof v === 'string' ? (v.trim() === '' ? null : Number(v)) : kosongJadiNull(v)),
@@ -57,8 +57,6 @@ export const keperawatanIsi = z
     nyeri_durasi: teksNull(200),
     nyeri_frekuensi: teksNull(200),
     nyeri_hilang_bila: teksNull(200),
-    jatuh_tidak_seimbang: yaTidak,
-    jatuh_menopang: yaTidak,
     gizi_bb_turun: yaTidak,
     gizi_asupan_kurang: yaTidak,
     skrining_visual: z.preprocess(kosongJadiNull, z.enum(SKRINING_VISUAL).nullable()),

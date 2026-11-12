@@ -217,13 +217,13 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect(r.status).toBe(200);
     expect(r.badan.data.bagian).toMatchObject({
       verifikasi: 'sah', pengesahan: { versi: 1 },
-      isi: { kajian_keperawatan: 'keadaan umum baik', alergi: 'Tidak Ada', nyeri_jenis: 'tidak', nyeri_lokasi: null, jatuh_menopang: false, skrining_visual: null },
+      isi: { kajian_keperawatan: 'keadaan umum baik', alergi: 'Tidak Ada', nyeri_jenis: 'tidak', nyeri_lokasi: null, gizi_bb_turun: false, skrining_visual: null },
     });
     expect(await konteksAlergi()).toBeNull();
-    const ubah = { ...DEFAULT_KEPERAWATAN, alergi: 'Penisilin', nyeri_jenis: 'kronis', nyeri_skala: '6', nyeri_lokasi: 'Lutut', jatuh_menopang: true, skrining_visual: 'kuning' };
+    const ubah = { ...DEFAULT_KEPERAWATAN, alergi: 'Penisilin', nyeri_jenis: 'kronis', nyeri_skala: '6', nyeri_lokasi: 'Lutut', gizi_bb_turun: true, skrining_visual: 'kuning' };
     expect((await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: ubah })).status).toBe(400); // perbaikan tanpa alasan
     const v2 = await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: ubah, alasan: 'Alergi terlewat' });
-    expect(v2.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { alergi: 'Penisilin', nyeri_skala: 6, nyeri_lokasi: 'Lutut', jatuh_menopang: true, skrining_visual: 'kuning' } });
+    expect(v2.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { alergi: 'Penisilin', nyeri_skala: 6, nyeri_lokasi: 'Lutut', gizi_bb_turun: true, skrining_visual: 'kuning' } });
     expect(await prisma.keperawatan.count({ where: { kunjungan_id: kunjA1 } })).toBe(2);
     expect((await prisma.versiCatatan.findFirstOrThrow({ where: { entitas: 'keperawatan', entitas_id: kunjA1 } })).alasan).toBe('Alergi terlewat');
     const semua = (await panggil('GET', `/kunjungan/${kunjA1}/klinis`, 'dokter')).badan.data;

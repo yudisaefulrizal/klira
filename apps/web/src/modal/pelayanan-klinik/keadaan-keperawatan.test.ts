@@ -1,7 +1,7 @@
 import type { KlinisKunjunganDto } from '@klira/shared';
 import { BAGIAN_KLINIS, DEFAULT_KEPERAWATAN, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import {
-  defaultKeperawatan, keperawatanDiubah, keperawatanKosong, keperawatanNormal, kosongKeperawatan, ringkasanKeperawatan, ubahJenisNyeri,
+  defaultKeperawatan, keperawatanDiubah, keperawatanKosong, kosongKeperawatan, ringkasanKeperawatan, ubahJenisNyeri,
 } from './keadaan-keperawatan';
 import {
   adaPerubahanBagian, galatBagian, isiBagian, keadaanAwalForm, keadaanDariServer, mulaiUbahKeperawatan, pulihkanKeadaan, rencanaSimpan, ringkasanIsi,
@@ -53,21 +53,12 @@ describe('form keperawatan: default keadaan baik', () => {
 
 describe('penanda diubah dan Semua normal', () => {
   it('menghitung isian berbeda dari default (huruf besar/kecil diabaikan), per kelompok dan seluruhnya', () => {
-    const k = { ...defaultKeperawatan(), alergi: 'Penisilin', telah_diobati: '  Tidak Ada ', jatuh_menopang: true, diagnosa_keperawatan: 'Nyeri akut' };
-    expect(keperawatanDiubah(k)).toEqual(['alergi', 'jatuh_menopang']);
+    const k = { ...defaultKeperawatan(), alergi: 'Penisilin', telah_diobati: '  Tidak Ada ', gizi_bb_turun: true, diagnosa_keperawatan: 'Nyeri akut' };
+    expect(keperawatanDiubah(k)).toEqual(['alergi', 'gizi_bb_turun']);
     expect(keperawatanDiubah(k, 'kajian')).toEqual(['alergi']);
     expect(keperawatanDiubah(k, 'asuhan')).toEqual([]);
     // dikosongkan juga ditandai
     expect(keperawatanDiubah({ ...defaultKeperawatan(), kajian_keperawatan: '' })).toEqual(['kajian_keperawatan']);
-  });
-
-  it('Semua normal satu kelompok; Kembalikan semua tidak menyentuh isian tanpa default', () => {
-    const k = { ...ubahJenisNyeri(defaultKeperawatan(), 'kronis'), nyeri_skala: '7', nyeri_lokasi: 'Lutut', alergi: 'Penisilin', gizi_bb_turun: true, rencana_asuhan: 'Edukasi' };
-    const nyeri = keperawatanNormal(k, 'nyeri');
-    expect(nyeri).toMatchObject({ nyeri_jenis: 'tidak', nyeri_skala: '', nyeri_lokasi: '', alergi: 'Penisilin', gizi_bb_turun: true });
-    const semua = keperawatanNormal(k);
-    expect(keperawatanDiubah(semua)).toEqual([]);
-    expect(semua.rencana_asuhan).toBe('Edukasi');
   });
 
   it('tidak nyeri mengosongkan isian nyeri lain; skala wajib bila nyeri', () => {
@@ -81,13 +72,12 @@ describe('penanda diubah dan Semua normal', () => {
 });
 
 describe('ringkasan keperawatan', () => {
-  it('hasil risiko jatuh dan gizi dihitung; nyeri rinci hanya bila nyeri; masuk ringkasan akhir bila terisi', () => {
-    const k = { ...defaultKeperawatan(), jatuh_tidak_seimbang: true, jatuh_menopang: true, gizi_asupan_kurang: true };
+  it('hasil risiko gizi dihitung; nyeri rinci hanya bila nyeri; masuk ringkasan akhir bila terisi', () => {
+    const k = { ...defaultKeperawatan(), gizi_asupan_kurang: true };
     const r = ringkasanKeperawatan(k);
     expect(r.baris).toEqual(expect.arrayContaining([
-      { label: 'Risiko jatuh (Get Up and Go)', nilai: 'Risiko tinggi (Ya/Ya)' },
-      { label: 'Skrining gizi', nilai: 'Berisiko malnutrisi (Tidak/Ya)' },
-      { label: 'Nyeri', nilai: 'Tidak nyeri' },
+      { label: 'Skrining Gizi', nilai: 'Berisiko malnutrisi (Tidak/Ya)' },
+      { label: 'Jns. Nyeri', nilai: 'Tidak nyeri' },
     ]));
     expect(r.baris.map((b) => b.label)).not.toContain('Lokasi');
     const awal = keadaanDariServer(kosongServer());

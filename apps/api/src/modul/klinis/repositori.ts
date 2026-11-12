@@ -102,7 +102,7 @@ async function bacaVersiLepas(c: Klien, bagian: BagianKlinis, fasyankesId: numbe
         kajian_keperawatan: p.kajian_keperawatan, telah_diobati: p.telah_diobati, alergi: p.alergi, obat_dikonsumsi: p.obat_dikonsumsi,
         diagnosa_keperawatan: p.diagnosa_keperawatan, rencana_asuhan: p.rencana_asuhan,
         nyeri_jenis: p.nyeri_jenis, nyeri_skala: p.nyeri_skala, nyeri_lokasi: p.nyeri_lokasi, nyeri_durasi: p.nyeri_durasi, nyeri_frekuensi: p.nyeri_frekuensi, nyeri_hilang_bila: p.nyeri_hilang_bila,
-        jatuh_tidak_seimbang: p.jatuh_tidak_seimbang, jatuh_menopang: p.jatuh_menopang, gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
+        gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
         skrining_visual: p.skrining_visual,
       } satisfies KeperawatanIsi) : null;
     }

@@ -16,7 +16,7 @@ describe('skema catatan klinis', () => {
 
   it('tanda vital: angka (juga teks berkoma) dalam rentang, minimal satu nilai', () => {
     const h = tandaVitalIsi.parse({ sistolik: '150', diastolik: 95, suhu: '36,7' });
-    expect(h).toMatchObject({ sistolik: 150, diastolik: 95, suhu: 36.7, nadi: null, spo2: null });
+    expect(h).toMatchObject({ sistolik: 150, diastolik: 95, suhu: 36.7, nadi: null, respirasi: null });
     expect(tandaVitalIsi.safeParse({}).success).toBe(false);
     expect(tandaVitalIsi.safeParse({ suhu: 80 }).success).toBe(false);
     expect(tandaVitalIsi.safeParse({ nadi: 'abc' }).success).toBe(false);

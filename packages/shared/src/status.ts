@@ -185,16 +185,11 @@ export const STATUS_PERAN_DIAGNOSIS = buat({
   penyerta: { label: 'Penyerta', warna: 'abu' },
 });
 
-/** Skrining keperawatan (P6): jenis nyeri, hasil risiko jatuh dan gizi (dihitung), skrining visual. */
+/** Skrining keperawatan (P6): jenis nyeri, hasil risiko gizi (dihitung), skrining visual. */
 export const STATUS_JENIS_NYERI = buat({
   tidak: { label: 'Tidak nyeri', warna: 'hijau' },
   akut: { label: 'Nyeri akut', warna: 'kuning' },
   kronis: { label: 'Nyeri kronis', warna: 'kuning' },
-});
-export const STATUS_RISIKO_JATUH = buat({
-  tidak_berisiko: { label: 'Tidak berisiko', warna: 'hijau' },
-  risiko_rendah: { label: 'Risiko rendah', warna: 'kuning' },
-  risiko_tinggi: { label: 'Risiko tinggi', warna: 'merah' },
 });
 export const STATUS_RISIKO_GIZI = buat({
   tidak_berisiko: { label: 'Tidak berisiko malnutrisi', warna: 'hijau' },

@@ -833,8 +833,6 @@ model Keperawatan {
   nyeri_durasi         String?         @db.VarChar(200)
   nyeri_frekuensi      String?         @db.VarChar(200)
   nyeri_hilang_bila    String?         @db.VarChar(200)
-  jatuh_tidak_seimbang Boolean         @default(false)
-  jatuh_menopang       Boolean         @default(false)
   gizi_bb_turun        Boolean         @default(false)
   gizi_asupan_kurang   Boolean         @default(false)
   skrining_visual      SkriningVisual?

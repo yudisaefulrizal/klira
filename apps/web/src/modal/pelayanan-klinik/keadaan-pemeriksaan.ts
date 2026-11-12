@@ -310,7 +310,6 @@ export function ringkasTandaVital(tv: TandaVitalIsi | null): string {
   if (tv.nadi !== null) bagian.push(`${s.nadi} ${angkaId(tv.nadi)}`);
   if (tv.suhu !== null) bagian.push(`${s.suhu} ${angkaId(tv.suhu)}`);
   if (tv.respirasi !== null) bagian.push(`${s.respirasi} ${angkaId(tv.respirasi)}`);
-  if (tv.spo2 !== null) bagian.push(`${s.spo2} ${angkaId(tv.spo2)}%`);
   return bagian.join(' · ');
 }
 

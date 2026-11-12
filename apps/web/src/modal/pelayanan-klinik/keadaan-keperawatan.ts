@@ -1,5 +1,5 @@
 import {
-  DEFAULT_KEPERAWATAN, hasilRisikoGizi, hasilRisikoJatuh, isiDefault, isianDiubah, KLINIS, kembalikanNormal, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, STATUS_RISIKO_JATUH,
+  DEFAULT_KEPERAWATAN, hasilRisikoGizi, isiDefault, isianDiubah, KLINIS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI,
   STATUS_SKRINING_VISUAL,
 } from '@klira/shared';
 import type { JenisNyeri, KeperawatanIsi, SkriningVisual } from '@klira/shared';
@@ -21,8 +21,6 @@ export type KeadaanKeperawatan = {
   nyeri_durasi: string;
   nyeri_frekuensi: string;
   nyeri_hilang_bila: string;
-  jatuh_tidak_seimbang: boolean;
-  jatuh_menopang: boolean;
   gizi_bb_turun: boolean;
   gizi_asupan_kurang: boolean;
   skrining_visual: SkriningVisual | '';
@@ -32,7 +30,7 @@ export type KunciKeperawatan = keyof KeadaanKeperawatan;
 export const kosongKeperawatan = (): KeadaanKeperawatan => ({
   kajian_keperawatan: '', telah_diobati: '', alergi: '', obat_dikonsumsi: '', diagnosa_keperawatan: '', rencana_asuhan: '',
   nyeri_jenis: '', nyeri_skala: '', nyeri_lokasi: '', nyeri_durasi: '', nyeri_frekuensi: '', nyeri_hilang_bila: '',
-  jatuh_tidak_seimbang: false, jatuh_menopang: false, gizi_bb_turun: false, gizi_asupan_kurang: false, skrining_visual: '',
+  gizi_bb_turun: false, gizi_asupan_kurang: false, skrining_visual: '',
 });
 
 /** Form keperawatan baru: terisi default keadaan baik (satu sumber: DEFAULT_KEPERAWATAN di packages/shared). */
@@ -40,12 +38,11 @@ export const defaultKeperawatan = (): KeadaanKeperawatan => isiDefault(kosongKep
 
 export const ISIAN_NYERI_LAIN = ['nyeri_skala', 'nyeri_lokasi', 'nyeri_durasi', 'nyeri_frekuensi', 'nyeri_hilang_bila'] as const;
 
-export type IdKelompokKeperawatan = 'kajian' | 'nyeri' | 'jatuh' | 'gizi' | 'asuhan';
+export type IdKelompokKeperawatan = 'kajian' | 'nyeri' | 'gizi' | 'asuhan';
 /** Kelompok isian (kartu); kelompok tanpa isian berdefault tidak punya tombol "Semua normal". */
 export const KELOMPOK_KEPERAWATAN: readonly { id: IdKelompokKeperawatan; kunci: readonly KunciKeperawatan[] }[] = [
   { id: 'kajian', kunci: ['kajian_keperawatan', 'telah_diobati', 'alergi', 'obat_dikonsumsi'] },
   { id: 'nyeri', kunci: ['nyeri_jenis', ...ISIAN_NYERI_LAIN] },
-  { id: 'jatuh', kunci: ['jatuh_tidak_seimbang', 'jatuh_menopang'] },
   { id: 'gizi', kunci: ['gizi_bb_turun', 'gizi_asupan_kurang'] },
   { id: 'asuhan', kunci: ['diagnosa_keperawatan', 'rencana_asuhan', 'skrining_visual'] },
 ];
@@ -57,10 +54,6 @@ export const kelompokBerdefault = (id: IdKelompokKeperawatan): boolean => kunciK
 /** Isian yang berbeda dari default (seluruh form atau satu kelompok). */
 export const keperawatanDiubah = (k: KeadaanKeperawatan, kelompok?: IdKelompokKeperawatan): KunciKeperawatan[] =>
   isianDiubah(k, DEFAULT_KEPERAWATAN, kelompok ? kunciKelompok(kelompok).filter((x): x is keyof typeof DEFAULT_KEPERAWATAN => x in DEFAULT_KEPERAWATAN) : undefined);
-
-/** "Semua normal" (satu kelompok) atau "Kembalikan semua ke normal" (tanpa kelompok). */
-export const keperawatanNormal = (k: KeadaanKeperawatan, kelompok?: IdKelompokKeperawatan): KeadaanKeperawatan =>
-  kembalikanNormal(k, DEFAULT_KEPERAWATAN, kelompok ? kunciKelompok(kelompok).filter((x): x is keyof typeof DEFAULT_KEPERAWATAN => x in DEFAULT_KEPERAWATAN) : undefined);
 
 /** Ubah jenis nyeri; "tidak" mengosongkan isian nyeri lain (disembunyikan dan disimpan null). */
 export const ubahJenisNyeri = (k: KeadaanKeperawatan, jenis: JenisNyeri): KeadaanKeperawatan =>
@@ -76,7 +69,7 @@ export const keperawatanDariIsi = (p: KeperawatanIsi): KeadaanKeperawatan => ({
   diagnosa_keperawatan: teks(p.diagnosa_keperawatan), rencana_asuhan: teks(p.rencana_asuhan),
   nyeri_jenis: p.nyeri_jenis, nyeri_skala: p.nyeri_skala === null ? '' : String(p.nyeri_skala), nyeri_lokasi: teks(p.nyeri_lokasi), nyeri_durasi: teks(p.nyeri_durasi),
   nyeri_frekuensi: teks(p.nyeri_frekuensi), nyeri_hilang_bila: teks(p.nyeri_hilang_bila),
-  jatuh_tidak_seimbang: p.jatuh_tidak_seimbang, jatuh_menopang: p.jatuh_menopang, gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
+  gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
   skrining_visual: p.skrining_visual ?? '',
 });
 
@@ -103,7 +96,6 @@ export function ringkasanKeperawatan(k: KeadaanKeperawatan): BagianRingkasan {
       { label: t.nyeri_skala, nilai: nilai(k.nyeri_skala) }, { label: t.nyeri_lokasi, nilai: nilai(k.nyeri_lokasi) }, { label: t.nyeri_durasi, nilai: nilai(k.nyeri_durasi) },
       { label: t.nyeri_frekuensi, nilai: nilai(k.nyeri_frekuensi) }, { label: t.nyeri_hilang_bila, nilai: nilai(k.nyeri_hilang_bila) },
     ] : []),
-    { label: t.kelompok.jatuh, nilai: `${STATUS_RISIKO_JATUH.label(hasilRisikoJatuh(k))} (${yaTidak(k.jatuh_tidak_seimbang)}/${yaTidak(k.jatuh_menopang)})` },
     { label: t.kelompok.gizi, nilai: `${STATUS_RISIKO_GIZI.label(hasilRisikoGizi(k))} (${yaTidak(k.gizi_bb_turun)}/${yaTidak(k.gizi_asupan_kurang)})` },
     { label: t.diagnosa_keperawatan, nilai: nilai(k.diagnosa_keperawatan) },
     { label: t.rencana_asuhan, nilai: nilai(k.rencana_asuhan) },

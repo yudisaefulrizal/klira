@@ -8,14 +8,13 @@ export type DefinisiTandaVital = { kunci: string; loinc: string; satuan: string;
 
 /** Kode LOINC dan satuan UCUM tanda vital umum; batas hanya untuk menangkap salah ketik. */
 export const TANDA_VITAL = [
+  { kunci: 'tinggi_badan', loinc: '8302-2', satuan: 'cm', min: 20, max: 250 },
+  { kunci: 'berat_badan', loinc: '29463-7', satuan: 'kg', min: 0.2, max: 500 },
   { kunci: 'sistolik', loinc: '8480-6', satuan: 'mm[Hg]', min: 30, max: 300 },
   { kunci: 'diastolik', loinc: '8462-4', satuan: 'mm[Hg]', min: 20, max: 200 },
+  { kunci: 'respirasi', loinc: '9279-1', satuan: '/min', min: 5, max: 80 },
   { kunci: 'nadi', loinc: '8867-4', satuan: '/min', min: 20, max: 250 },
   { kunci: 'suhu', loinc: '8310-5', satuan: 'Cel', min: 30, max: 45 },
-  { kunci: 'respirasi', loinc: '9279-1', satuan: '/min', min: 5, max: 80 },
-  { kunci: 'spo2', loinc: '59408-5', satuan: '%', min: 30, max: 100 },
-  { kunci: 'berat_badan', loinc: '29463-7', satuan: 'kg', min: 0.2, max: 500 },
-  { kunci: 'tinggi_badan', loinc: '8302-2', satuan: 'cm', min: 20, max: 250 },
 ] as const satisfies readonly DefinisiTandaVital[];
 export type KunciTandaVital = (typeof TANDA_VITAL)[number]['kunci'];
 

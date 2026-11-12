@@ -28,7 +28,7 @@ describe('langkah dari konfigurasi', () => {
 describe('keadaan dari server dan isi kirim', () => {
   it('bolak-balik: keadaan dari catatan tersimpan tidak dianggap berubah', () => {
     const server = sahkan(sahkan(sahkan(sahkan(bagianKosongServer(), 'anamnesis', { keluhan_utama: 'Batuk', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: null, riwayat_keluarga: null, kajian_sosial: null }),
-      'tanda_vital', { sistolik: 150, diastolik: 95, nadi: null, suhu: 36.7, respirasi: null, spo2: null, berat_badan: null, tinggi_badan: null }),
+      'tanda_vital', { sistolik: 150, diastolik: 95, nadi: null, suhu: 36.7, respirasi: null, berat_badan: null, tinggi_badan: null }),
       'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama', snomed: null }] }),
       'tindakan', { item: [{ kode: '89.52', nama: 'EKG', performer_id: 1, mulai: '2026-10-25T01:30:00.000Z', selesai: null }] });
     const k = keadaanDariServer(server);
@@ -109,7 +109,7 @@ describe('perubahan, validasi, dan rencana simpan', () => {
 
 describe('ringkasan kepala', () => {
   it('tanda vital singkat dengan koma desimal; alergi dipecah', () => {
-    expect(ringkasTandaVital({ sistolik: 150, diastolik: 95, nadi: 82, suhu: 36.7, respirasi: null, spo2: 98, berat_badan: null, tinggi_badan: null })).toBe('TD 150/95 · N 82 · S 36,7 · SpO2 98%');
+    expect(ringkasTandaVital({ sistolik: 150, diastolik: 95, nadi: 82, suhu: 36.7, respirasi: 18, berat_badan: null, tinggi_badan: null })).toBe('TD 150/95 · N 82 · S 36,7 · RR 18');
     expect(ringkasTandaVital(null)).toBe('');
     expect(daftarAlergi('Penisilin, Seafood; debu\n')).toEqual(['Penisilin', 'Seafood', 'debu']);
     expect(daftarAlergi(null)).toEqual([]);
@@ -200,7 +200,7 @@ describe('pemulihan draf server', () => {
     draf.riwayat.riwayat_pribadi = 'Asma';
     draf.keperawatan.alergi = 'Debu';
     draf.keperawatan.nyeri_jenis = 'akut';
-    draf.keperawatan.jatuh_menopang = true;
+    draf.keperawatan.gizi_bb_turun = true;
     draf.pemeriksaan.paru_bunyi = 'vesikuler';
     draf.tanda_vital.suhu = '37,2';
     draf.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
