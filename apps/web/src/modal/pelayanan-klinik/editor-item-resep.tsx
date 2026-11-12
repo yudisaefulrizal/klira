@@ -7,7 +7,7 @@ import { Peringatan } from '../../komponen/ui/peringatan';
 import { Pilihan } from '../../komponen/ui/pilihan';
 import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
-import { barisResepKosong, biayaResep, hapusBarisResep, opsiRute, ubahBarisResep } from './keadaan-farmasi';
+import { barisResepKosong, biayaResep, hapusBarisResep, isiDariObat, opsiRute, ubahBarisResep } from './keadaan-farmasi';
 import type { BarisResep } from './keadaan-farmasi';
 import { PencarianObatResep } from './pencarian-obat-resep';
 import './langkah-resep.css';
@@ -26,7 +26,7 @@ const I = FARMASI.item;
 
 /**
  * Editor item resep oleh apoteker saat telaah (P3): obat dari master obat klinik, jumlah bulat (unit dari stok), aturan pakai wajib,
- * bentuk dan rute opsional (rute terisi dari master obat saat obat dipilih). Obat yang sama boleh lebih dari sekali (obat tunggal dan bahan racikan).
+ * bentuk dan rute opsional (rute terisi dari master obat, atau ditebak dari bentuk sediaan). Obat yang sama boleh lebih dari sekali (obat tunggal dan bahan racikan).
  */
 export function EditorItemResep({ idAwal, baris, obat, onUbah, galat, tampilGalat, disabled }: Props) {
   const [versi, setVersi] = useState(0);
@@ -53,7 +53,7 @@ export function EditorItemResep({ idAwal, baris, obat, onUbah, galat, tampilGala
               return <div className="resep-baris" key={`${versi}-${n}`}>
                 <div className="resep-baris-utama">
                   <PencarianObatResep id={`${idAwal}-obat-${n}`} obat={obat} value={b.master_obat_id}
-                    onPilih={(o) => onUbah(ubahBarisResep(baris, n, { master_obat_id: o ? String(o.id) : '', bentuk: b.bentuk || (o?.bentuk_sediaan ?? ''), rute: o?.rute ?? '' }))}
+                    onPilih={(o) => onUbah(ubahBarisResep(baris, n, isiDariObat(b, o)))}
                     galat={g(n, 'master_obat_id')} />
                   <div className="resep-jumlah">
                     <Isian id={`${idAwal}-jumlah-${n}`} label={dipilih ? I.jumlahSatuan(dipilih.satuan) : I.jumlah} inputMode="numeric" value={b.jumlah}

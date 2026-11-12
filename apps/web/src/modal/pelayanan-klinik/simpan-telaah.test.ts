@@ -14,7 +14,7 @@ test('satu simpan mencatat semua telaah beserta item dan hanya menyiapkan resep 
   };
   await simpanSeluruhTelaah([resep(1), resep(2), resep(3, 'siap')], { 1: isian(false), 2: isian(true) }, api);
   expect(urutan).toEqual(['telaah 1', 'telaah 2', 'siap 2']);
-  expect(kiriman[0]).toEqual({ administratif: true, farmasetik: true, klinis: true, catatan: '', item: [{ master_obat_id: 1, jumlah: '1', aturan_pakai: '3 x 1', bentuk: null, rute: null }] });
+  expect(kiriman[0]).toEqual({ administratif: true, farmasetik: true, klinis: true, catatan: '', item: [{ master_obat_id: 1, jumlah: '1', aturan_pakai: '3 x 1', bentuk: null, rute: 'Oral' }] });
   expect(api.selesaiResep).toHaveBeenCalledTimes(2);
 });
 test('kegagalan penyiapan tetap mengabarkan telaah yang berhasil dan menghentikan resep berikutnya', async () => {

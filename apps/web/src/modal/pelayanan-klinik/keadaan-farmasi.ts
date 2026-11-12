@@ -1,4 +1,4 @@
-import { KASIR, FARMASI, RUTE_PEMBERIAN, daftarItemResepMasukan, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
+import { KASIR, FARMASI, ATURAN_PAKAI_BAWAAN, RUTE_BAWAAN, RUTE_PEMBERIAN, ruteDariBentuk, daftarItemResepMasukan, masterObatMasukan, mutasiStokMasukan, resepMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
 import type { ItemResepDto, MasterObatDto, ReferensiKfaDto, StokObatDto } from '@klira/shared';
 
 type Isu = { path: PropertyKey[]; message: string };
@@ -17,15 +17,22 @@ export const opsiRute = (nilai: string) => [
   ...(nilai && !(RUTE_PEMBERIAN as readonly string[]).includes(nilai) ? [{ nilai, label: nilai }] : []),
 ];
 
+/** Memilih obat di item resep: bentuk dari KFA bila belum diisi; rute dari master obat, atau dari bentuk (bawaan Oral) bila master kosong. */
+export function isiDariObat(b: BarisResep, o: MasterObatDto | null): Partial<BarisResep> {
+  const bentuk = b.bentuk || (o?.bentuk_sediaan ?? '');
+  return { master_obat_id: o ? String(o.id) : '', bentuk, rute: o ? o.rute || (ruteDariBentuk(bentuk) ?? '') : RUTE_BAWAAN };
+}
+
 export type KeadaanMasterObat = { kfa: ReferensiKfaDto | null; nama_tampil: string; satuan: string; rute: string; harga: string; aktif: boolean };
 
 export const awalMasterObat = (m?: MasterObatDto): KeadaanMasterObat => ({
   kfa: null, nama_tampil: m?.nama_tampil ?? '', satuan: m?.satuan ?? '', rute: m?.rute ?? '', harga: m ? String(m.harga) : '', aktif: m?.aktif ?? true,
 });
 
-/** Memilih kode KFA mengisi nama tampil dan satuan awal bila masih kosong (boleh diubah klinik). */
+/** Memilih kode KFA mengisi nama tampil, satuan, dan rute (ditebak dari bentuk sediaan) bila masih kosong (boleh diubah klinik). */
 export const pilihKfa = (k: KeadaanMasterObat, kfa: ReferensiKfaDto): KeadaanMasterObat => ({
   ...k, kfa, nama_tampil: k.nama_tampil.trim() ? k.nama_tampil : kfa.nama, satuan: k.satuan.trim() ? k.satuan : kfa.satuan ?? '',
+  rute: k.rute || (ruteDariBentuk(kfa.bentuk_sediaan) ?? ''),
 });
 
 /** Galat untuk tambah (kode KFA wajib) atau ubah (tanpa kode KFA; hanya bidang yang berubah divalidasi). */
@@ -79,7 +86,8 @@ export const galatResep = (teks: string): Record<string, string> => petakan(rese
 
 // ---- Item resep (apoteker saat telaah) ----
 export type BarisResep = { master_obat_id: string; jumlah: string; aturan_pakai: string; bentuk: string; rute: string };
-export const barisResepKosong = (): BarisResep => ({ master_obat_id: '', jumlah: '1', aturan_pakai: '', bentuk: '', rute: '' });
+/** Baris baru langsung berisi nilai bawaan (jumlah 1, aturan pakai 3 x 1, rute Oral); apoteker menyesuaikan bila berbeda. */
+export const barisResepKosong = (): BarisResep => ({ master_obat_id: '', jumlah: '1', aturan_pakai: ATURAN_PAKAI_BAWAAN, bentuk: '', rute: RUTE_BAWAAN });
 export const ubahBarisResep = (b: readonly BarisResep[], n: number, p: Partial<BarisResep>): BarisResep[] => b.map((x, i) => (i === n ? { ...x, ...p } : x));
 export const hapusBarisResep = (b: readonly BarisResep[], n: number): BarisResep[] => b.filter((_, i) => i !== n);
 /** Item tersimpan menjadi baris editor (urutan sama). */

@@ -18,6 +18,8 @@ export type LangkahModal = {
   isi: ReactNode;
   /** Langkah sudah terisi sah (penanda centang di daftar langkah). */
   selesai?: boolean;
+  /** Aksi utama khusus langkah ini (mis. Catat pembayaran di tengah alur); menggantikan Lanjut/labelKirim dan dipicu Enter. */
+  kirim?: { label: string; onKirim: () => void; nonaktif?: boolean };
 };
 
 type Props = {
@@ -70,7 +72,9 @@ export function ModalBertahap({
   const status = statusLangkah(i, jumlah, langkah.map((l) => !!l.selesai));
 
   function kirimForm() {
-    if (terakhir) onKirim();
+    if (aktif.kirim) {
+      if (!aktif.kirim.nonaktif) aktif.kirim.onKirim();
+    } else if (terakhir) onKirim();
     else if (!onLanjut || onLanjut(i)) onIndeks(langkahBerikut(i, jumlah));
   }
 
@@ -140,7 +144,7 @@ export function ModalBertahap({
             <Sebaris tag="footer" jarak="md" padding="md" garis="atas">
               <Tombol type="button" varian="sekunder" disabled={adalahPertama(i)} onClick={() => onIndeks(langkahSebelum(i, jumlah))}>{TOMBOL.kembali}</Tombol>
               <span style={{ flexGrow: 1, textAlign: 'center', color: token.warna.teksRedup }}>{MODAL.langkah(pos.nomor, pos.dari)}</span>
-              <Tombol type="submit" disabled={terakhir && kirimNonaktif}>{terakhir ? labelKirim : TOMBOL.lanjut}</Tombol>
+              <Tombol type="submit" disabled={aktif.kirim ? aktif.kirim.nonaktif : terakhir && kirimNonaktif}>{aktif.kirim ? aktif.kirim.label : terakhir ? labelKirim : TOMBOL.lanjut}</Tombol>
             </Sebaris>
           </Kolom>
         </Sebaris>

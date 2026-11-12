@@ -57,7 +57,8 @@ export function aksiBaris(baris: PasienBarisDto, boleh: Boleh): AksiBaris[] {
   const perluResep = (jenis: string) => jenis !== 'telaah' || !!k?.ada_resep;
   for (const l of langkah) if (k && tahap === l.idx && boleh(...l.izin) && perluResep(l.jenis)) hasil.push({ jenis: l.jenis });
   for (const l of langkah) if (k && tahap > l.idx && boleh(...l.izin) && perluResep(l.jenis)) hasil.push({ jenis: l.jenis, ubah: true });
-  if (k?.tahap_layanan === 'kasir' && k.ada_resep && boleh('farmasi', 'input')) hasil.push({ jenis: 'serah_obat' });
+  // Serah obat menjadi langkah di modal Pembayaran; aksi tersendiri hanya untuk akun farmasi tanpa izin kasir.
+  if (k?.tahap_layanan === 'kasir' && k.ada_resep && boleh('farmasi', 'input') && !boleh('kasir', 'input')) hasil.push({ jenis: 'serah_obat' });
   if (k?.tahap_layanan === 'kasir' && boleh('kasir', 'input')) hasil.push({ jenis: 'bayar' });
   if (k?.tahap_layanan === 'kasir' && boleh('kasir', 'perbaikan')) hasil.push({ jenis: 'tutup_kunjungan' });
   if (!k && boleh('kunjungan', 'input')) hasil.push({ jenis: 'daftarkan' });

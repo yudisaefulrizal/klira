@@ -15,6 +15,36 @@ export const RUTE_PEMBERIAN = [
   'Oral', 'Sublingual', 'Bukal', 'Topikal', 'Transdermal', 'Mata', 'Telinga', 'Hidung', 'Inhalasi', 'Rektal', 'Vaginal',
   'Intravena (IV)', 'Intramuskular (IM)', 'Subkutan (SC)', 'Intrakutan (IC)',
 ] as const;
+export type RutePemberian = (typeof RUTE_PEMBERIAN)[number];
+/** Rute bawaan bila data farmasi tidak menyebutkan rute. */
+export const RUTE_BAWAAN: RutePemberian = 'Oral';
+/** Aturan pakai bawaan untuk item resep baru (apoteker menyesuaikan dengan resep dokter). */
+export const ATURAN_PAKAI_BAWAAN = '3 x 1';
+/** Aturan tebakan rute dari bentuk sediaan KFA; urutan penting (yang lebih spesifik lebih dulu). */
+const ATURAN_RUTE: readonly [RegExp, RutePemberian | null][] = [
+  [/mata dan telinga|injeksi|implant|iud|obat kumur/, null], // lebih dari satu kemungkinan rute: biarkan apoteker memilih
+  [/sublingual/, 'Sublingual'],
+  [/vagina|ovula|pessary/, 'Vaginal'],
+  [/supositoria|enema/, 'Rektal'],
+  [/mata/, 'Mata'],
+  [/telinga/, 'Telinga'],
+  [/hidung/, 'Hidung'],
+  [/inhal|metered dose/, 'Inhalasi'],
+  [/infus/, 'Intravena (IV)'],
+  [/patch/, 'Transdermal'],
+  [/krim|salep|gel|obat luar|topical|tulle|plester|pasta|sampo|aerosol spray/, 'Topikal'],
+  [/tablet|kaplet|kapsul|sirup|suspensi|oral|eliksir|emulsi|granula|effervescent|obat dalam|orodispersible/, 'Oral'],
+];
+/**
+ * Rute bawaan dari bentuk sediaan (mis. Salep -> Topikal); bentuk kosong atau tidak dikenali -> Oral.
+ * null bila bentuknya jelas bukan oral tetapi rutenya tidak pasti (mis. injeksi: IV/IM/SC), agar apoteker memilih sendiri.
+ */
+export function ruteDariBentuk(bentuk: string | null | undefined): RutePemberian | null {
+  const b = (bentuk ?? '').toLowerCase();
+  if (!b.trim()) return RUTE_BAWAAN;
+  for (const [pola, rute] of ATURAN_RUTE) if (pola.test(b)) return rute;
+  return RUTE_BAWAAN;
+}
 /** Ambang stok menipis (satuan) dan kedaluwarsa dekat (hari) untuk penanda di tabel. */
 export const AMBANG_STOK_MENIPIS = 50;
 export const AMBANG_HARI_KEDALUWARSA = 90;

@@ -21,15 +21,28 @@ import { rupiah } from './keadaan-order-lab';
 import { LengkapiHarga } from './lengkapi-harga';
 import { TambahItemTarif } from './tambah-item-tarif';
 import { UbahHarga } from './ubah-harga';
+import { useSerahObat } from './serah-terima-obat';
 import { Tombol } from '../../komponen/ui/tombol';
 
-type Props = { kunjunganId: number; onTutup: () => void; onSelesai: () => void };
+type Props = {
+  kunjunganId: number;
+  pasien: { nama: string; nomor_rm: string };
+  /** Izin kasir.input: langkah Tagihan dan Pembayaran. */
+  kasir: boolean;
+  /** Izin farmasi.input: langkah Serah terima obat (bila kunjungan punya resep). */
+  farmasi: boolean;
+  onTutup: () => void;
+  onSelesai: () => void;
+};
 const B = KASIR.bayar;
 const OPSI_METODE = (['tunai', 'transfer', 'qris'] as const).map((m) => ({ nilai: m, label: METODE_BAYAR.label(m) }));
 const KOLOM_TAGIHAN = [{ judul: B.kolom.item }, { judul: B.kolom.jumlah }, { judul: B.kolom.harga }, { judul: B.kolom.subtotal, rataKanan: true }];
 
-/** Pembayaran kasir terpisah dari penyerahan obat oleh farmasi. */
-export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
+/**
+ * Pembayaran dan serah terima obat dalam satu modal bertahap. Keduanya tetap proses terpisah (endpoint, izin, dan data sendiri):
+ * langkah Tagihan/Pembayaran untuk izin kasir, langkah Serah terima obat untuk izin farmasi bila ada resep.
+ */
+export function Pembayaran({ kunjunganId, pasien, kasir, farmasi, onTutup, onSelesai }: Props) {
   const [g, setG] = useState<KasirKunjunganDto | null>(null);
   const [indeks, setIndeks] = useState(0);
   const [bayar, setBayar] = useState<KeadaanBayar>(awalBayar());
@@ -39,6 +52,8 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   const [memproses, setMemproses] = useState(false);
   const [berubah, setBerubah] = useState(false);
   const [itemUbah, setItemUbah] = useState<ItemTagihanDto | null>(null);
+  const serah = useSerahObat(kunjunganId, farmasi);
+  const adaSerah = farmasi && !!serah.resep && serah.resep.length > 0;
 
   const muat = useCallback(async (sesuaikan = false) => {
     const h = await kasirKunjungan(kunjunganId);
@@ -48,8 +63,8 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   }, [kunjunganId]);
 
   useEffect(() => {
-    muat(true).catch((e) => setGalat(e instanceof GalatApi ? e.message : B.gagal));
-  }, [muat]);
+    if (kasir) muat(true).catch((e) => setGalat(e instanceof GalatApi ? e.message : B.gagal));
+  }, [muat, kasir]);
 
   const t = g?.tagihan;
   /** Gambaran baru dari server (tambah/hapus item, lengkapi harga): jumlah bayar mengikuti sisa terbaru. */
@@ -92,7 +107,7 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
   /** Pasien JKN tidak wajib membayar: tanpa jumlah diisi, tombol utama menjadi Selesai. */
   const perluBayar = !!t && t.sisa > 0 && !(g?.syarat.ditanggung_jkn && bayar.baris.every((b) => !b.jumlah.trim()));
 
-  const langkah: LangkahModal[] = [
+  const langkahKasir: LangkahModal[] = [
     {
       id: 'tagihan', judul: B.langkah.tagihan, selesai: !!t && t.status_tagihan === 'lengkap',
       isi: !t ? <span style={{ color: token.warna.teksRedup }}>{KASIR.memuat}</span> : (
@@ -134,6 +149,8 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
     },
     {
       id: 'pembayaran', judul: B.langkah.pembayaran, selesai: !!t && t.total > 0 && (t.sisa === 0 || !!g?.syarat.ditanggung_jkn),
+      // Bila serah obat menyusul, Catat pembayaran tetap aksi utama langkah ini (bukan Lanjut).
+      kirim: adaSerah && perluBayar ? { label: memproses ? B.mencatat : B.catat, onKirim: catat, nonaktif: memproses || !g?.shift_terbuka || t?.status_tagihan !== 'lengkap' } : undefined,
       isi: !t || !g ? <span style={{ color: token.warna.teksRedup }}>{KASIR.memuat}</span> : (
         <Kolom>
           {g.syarat.ditanggung_jkn && <Peringatan nada="biru"><strong>{KASIR.jkn.ditanggung}.</strong> {KASIR.jkn.petunjukBayar}</Peringatan>}
@@ -173,21 +190,28 @@ export function Pembayaran({ kunjunganId, onTutup, onSelesai }: Props) {
       ),
     },
   ];
+  const langkahSerah: LangkahModal = { id: 'serah', judul: B.langkah.serah, selesai: serah.selesai, isi: serah.isi };
+  const langkah = [...(kasir ? langkahKasir : []), ...(adaSerah || !kasir ? [langkahSerah] : [])];
+  const diSerah = langkah[Math.min(indeks, langkah.length - 1)]?.id === 'serah';
+  const sibuk = memproses || serah.memproses;
+  const adaPerubahan = berubah || serah.berubah;
+  const selesaiTutup = () => (adaPerubahan ? onSelesai : onTutup)();
+  const pesanInfo = diSerah ? serah.info : info;
 
   return (
     <>
       <ModalBertahap
-        judul={B.judul}
+        judul={kasir ? (adaSerah ? B.judulDenganObat : B.judul) : B.serahJudul}
         langkah={langkah}
         indeks={indeks}
         onIndeks={setIndeks}
-        konteks={g ? <KepalaPasien nama={g.kunjungan.pasien_nama} nomorRm={g.kunjungan.pasien_nomor_rm} /> : undefined}
-        catatan={info ? <Peringatan nada="biru">{info}</Peringatan> : undefined}
-        galat={galat}
-        onTutup={() => { if (!memproses) (berubah ? onSelesai : onTutup)(); }}
-        labelKirim={perluBayar ? (memproses ? B.mencatat : B.catat) : B.selesai}
-        kirimNonaktif={memproses || (perluBayar && (!g?.shift_terbuka || t?.status_tagihan !== 'lengkap')) || !t}
-        onKirim={perluBayar ? catat : (berubah ? onSelesai : onTutup)}
+        konteks={<KepalaPasien nama={g?.kunjungan.pasien_nama ?? pasien.nama} nomorRm={g?.kunjungan.pasien_nomor_rm ?? pasien.nomor_rm} />}
+        catatan={pesanInfo ? <Peringatan nada="biru">{pesanInfo}</Peringatan> : undefined}
+        galat={diSerah ? serah.galat : galat}
+        onTutup={() => { if (!sibuk) selesaiTutup(); }}
+        {...(diSerah
+          ? { labelKirim: serah.bisaSerah ? (serah.memproses ? B.menyerahkan : B.serah) : B.selesai, kirimNonaktif: sibuk, onKirim: serah.bisaSerah ? serah.serahkan : selesaiTutup }
+          : { labelKirim: perluBayar ? (memproses ? B.mencatat : B.catat) : B.selesai, kirimNonaktif: memproses || (perluBayar && (!g?.shift_terbuka || t?.status_tagihan !== 'lengkap')) || !t, onKirim: perluBayar ? catat : selesaiTutup })}
       />
       {itemUbah && <UbahHarga kunjunganId={kunjunganId} item={itemUbah} onTutup={() => setItemUbah(null)} onUbah={(h) => { setItemUbah(null); terapkan(h); }} />}
     </>

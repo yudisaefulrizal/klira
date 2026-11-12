@@ -938,7 +938,7 @@ export const FARMASI = {
   },
   telaah: {
     judul: 'Telaah dan siapkan resep', resep: (n: string) => `Resep ${n}`, administratif: 'Telaah administratif (identitas pasien, dokter, tanggal, aturan lengkap)', farmasetik: 'Telaah farmasetik (bentuk, dosis, stabilitas, cara pemberian)',
-    klinis: 'Telaah klinis (indikasi, alergi, interaksi, duplikasi)', catatan: 'Catatan telaah', simpan: 'Catat telaah', siap: 'Tandai siap', memproses: 'Memproses...', siapInfo: 'Setelah siap, farmasi menyerahkan obat melalui aksi Serahkan obat. Pembayaran dicatat terpisah oleh kasir.',
+    klinis: 'Telaah klinis (indikasi, alergi, interaksi, duplikasi)', catatan: 'Catatan telaah', simpan: 'Catat telaah', siap: 'Tandai siap', memproses: 'Memproses...', siapInfo: 'Setelah siap, obat diserahkan pada langkah Serah terima obat di modal Pembayaran (atau aksi Serahkan obat bagi akun tanpa izin kasir).',
     kosong: 'Tidak ada resep yang perlu ditelaah pada kunjungan ini.', tercatat: 'Telaah tercatat.', sudahSiap: 'Resep siap.', stokKurang: (nama: string, butuh: number, ada: number) => `Stok ${nama} kurang: butuh ${butuh}, tersedia ${ada}.`,
     stokKurangJudul: 'Stok kurang', gagal: 'Telaah gagal dicatat.', alergiPeringatan: 'Periksa alergi pasien sebelum menyiapkan obat.', oleh: (nama: string) => `Ditelaah oleh ${nama}`, selesaiJudul: 'Resep siap', selesaiPesan: 'Resep ditandai siap; tahap kunjungan maju ke kasir.',
   },
@@ -987,7 +987,7 @@ export const KASIR = {
   },
   rekap: { judul: 'Rekap harian', tanggal: 'Tanggal', total: 'Total diterima', jumlah: 'Jumlah pembayaran', gagalMuat: 'Rekap harian gagal dimuat.', catatan: 'Pembayaran dan tutup kunjungan dibuka dari Daftar pasien. Penyerahan obat dilakukan oleh farmasi.', perMetode: 'Per metode bayar' },
   bayar: {
-    judul: 'Pembayaran', langkah: { tagihan: 'Tagihan', pembayaran: 'Pembayaran', serah: 'Serah terima obat', ringkasan: 'Ringkasan' }, tagihanJudul: 'Rincian tagihan', kolom: { item: 'Item', jumlah: 'Jumlah', harga: 'Harga', subtotal: 'Subtotal' },
+    judul: 'Pembayaran', judulDenganObat: 'Pembayaran dan serah obat', langkah: { tagihan: 'Tagihan', pembayaran: 'Pembayaran', serah: 'Serah terima obat', ringkasan: 'Ringkasan' }, tagihanJudul: 'Rincian tagihan', kolom: { item: 'Item', jumlah: 'Jumlah', harga: 'Harga', subtotal: 'Subtotal' },
     total: 'Total', dibayar: 'Sudah dibayar', sisa: 'Sisa', lunas: 'Lunas', tagihanLengkap: 'Tagihan lengkap', tagihanBelum: 'Ada item tanpa harga: tagihan belum lengkap dan belum bisa dibayar.', metode: 'Metode bayar', diterima: 'Jumlah diterima (Rp)',
     kembalian: (rp: string) => `Kembalian ${rp}`, catat: 'Catat pembayaran', mencatat: 'Mencatat...', pembayaranJudul: 'Pembayaran tercatat', tanpaPembayaran: 'Belum ada pembayaran.', tanpaShift: 'Buka shift kasir dulu di halaman Kasir dan klaim.',
     tercatat: (rp: string) => `Pembayaran ${rp} tercatat.`, serahJudul: 'Serah terima obat', serahKosong: 'Tidak ada resep pada kunjungan ini.', serahBelumSiap: 'Resep belum siap di farmasi; serah terima menunggu apoteker menyiapkan.',

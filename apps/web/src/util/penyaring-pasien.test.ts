@@ -38,9 +38,15 @@ describe('pengelompokan tindakan baris', () => {
   it('Telaah resep dan Serahkan obat hanya muncul bila kunjungan punya resep', () => {
     expect(aksiBaris(kunjungan(), semua).map((a) => a.jenis)).not.toContain('serah_obat');
     expect(aksiBaris(kunjungan(), semua).map((a) => a.jenis)).not.toContain('telaah');
-    const dgnResep = aksiBaris(kunjungan({ ada_resep: true }), semua).map((a) => a.jenis);
-    expect(dgnResep).toContain('serah_obat');
-    expect(dgnResep).toContain('telaah');
+    const farmasiSaja = aksiBaris(kunjungan({ ada_resep: true }), (f) => f === 'farmasi').map((a) => a.jenis);
+    expect(farmasiSaja).toContain('serah_obat');
+    expect(farmasiSaja).toContain('telaah');
+  });
+
+  it('Akun dengan izin kasir menyerahkan obat lewat modal Pembayaran (tanpa aksi Serahkan obat terpisah)', () => {
+    const jenis = aksiBaris(kunjungan({ ada_resep: true }), semua).map((a) => a.jenis);
+    expect(jenis).toContain('bayar');
+    expect(jenis).not.toContain('serah_obat');
   });
 
   it('di tahap kasir tanpa order lab: pembayaran dan tutup langsung tampil; sisanya masuk menu', () => {
@@ -134,11 +140,15 @@ describe('tindakan per baris', () => {
     expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'perbaikan')).toEqual(['tutup_kunjungan']);
     expect(kasir('kasir', (f, a) => f === 'kasir' && a === 'lihat')).toEqual([]);
   });
-  it('penyerahan obat terpisah dari pembayaran dan hanya tersedia bagi farmasi pada tahap kasir', () => {
+  it('serah obat: langkah modal Pembayaran bagi kasir; aksi tersendiri hanya bagi farmasi tanpa izin kasir, pada tahap kasir', () => {
     const k = { ...kunj(null)!, tahap_layanan: 'kasir' as const };
     const farmasi = jenis(baris(k), (f, a) => f === 'farmasi' && a === 'input');
-    expect(farmasi).toEqual(['serah_obat']);
+    expect(farmasi).toContain('serah_obat');
+    expect(farmasi).not.toContain('bayar');
     expect(jenis(baris(k), (f, a) => f === 'kasir' && a === 'input')).toEqual(['bayar']);
+    const keduanya = jenis(baris(k), (f, a) => (f === 'kasir' || f === 'farmasi') && a === 'input');
+    expect(keduanya).toContain('bayar');
+    expect(keduanya).not.toContain('serah_obat');
     expect(jenis(baris({ ...k, tahap_layanan: 'ditutup' }), semua)).not.toContain('serah_obat');
   });
   it('tombol tanpa izin tidak ditampilkan', () => {

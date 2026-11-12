@@ -1,4 +1,3 @@
-import { SerahTerimaObat } from '../modal/pelayanan-klinik/serah-terima-obat';
 import { KelolaMasterTab } from '../komponen/kelola-master-tab';
 import { Tab } from '../komponen/ui/tab';
 import { pilihTab } from '../util/ingatan-tab';
@@ -294,8 +293,9 @@ function AntreanPasien() {
         <PemeriksaanKlinis kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} mode={terbuka.mode} onTutup={tutup} onSelesai={selesai} />
       )}
       {terbuka?.jenis === 'persetujuan' && <PersetujuanTindakan kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
-      {terbuka?.jenis === 'serah_obat' && <SerahTerimaObat kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
-      {terbuka?.jenis === 'bayar' && <Pembayaran kunjunganId={terbuka.kunjunganId} onTutup={tutup} onSelesai={selesai} />}
+      {(terbuka?.jenis === 'bayar' || terbuka?.jenis === 'serah_obat') && (
+        <Pembayaran kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} kasir={terbuka.jenis === 'bayar' && boleh('kasir', 'input')} farmasi={boleh('farmasi', 'input')} onTutup={tutup} onSelesai={selesai} />
+      )}
       {terbuka?.jenis === 'tutup_kunjungan' && <TutupKunjungan kunjunganId={terbuka.kunjunganId} onTutup={tutup} onSelesai={selesai} />}
       {terbuka?.jenis === 'telaah' && <TelaahResep kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} onTutup={tutup} onSelesai={selesai} />}
       {terbuka?.jenis === 'order_lab' && <OrderLab kunjunganId={terbuka.kunjunganId} pasien={terbuka.pasien} cara={terbuka.cara} onTutup={tutup} onSelesai={selesai} />}

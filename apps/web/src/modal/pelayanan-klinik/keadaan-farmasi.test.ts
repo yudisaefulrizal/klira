@@ -1,6 +1,6 @@
 import { FARMASI } from '@klira/shared';
 import type { MasterObatDto } from '@klira/shared';
-import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
+import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, isiDariObat, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi';
 
 const kfa = { kode: '93000001', nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, satuan: 'tablet', status: 'aktif', lokal: false };
 
@@ -113,5 +113,23 @@ describe('rute pemberian', () => {
     expect(awal.rute).toBe('Oral');
     expect(perubahanMasterObat(awal, awal)).toEqual({});
     expect(perubahanMasterObat(awal, { ...awal, rute: 'Intravena (IV)' })).toEqual({ rute: 'Intravena (IV)' });
+  });
+});
+
+describe('rute bawaan', () => {
+  const obat = (rute: string | null, bentuk_sediaan: string | null) =>
+    ({ id: 7, kfa_kode: '93', kfa_nama: 'X', nama_tampil: 'X', satuan: 'tablet', harga: 1, aktif: true, rute, bentuk_sediaan, stok_total: 0, kedaluwarsa_terdekat: null, status_stok: 'habis' }) as MasterObatDto;
+  it('item resep: rute master didahulukan, lalu tebakan dari bentuk, kosong bila tidak pasti', () => {
+    expect(isiDariObat(barisResepKosong(), obat('Intramuskular (IM)', 'Larutan Injeksi'))).toEqual({ master_obat_id: '7', bentuk: 'Larutan Injeksi', rute: 'Intramuskular (IM)' });
+    expect(isiDariObat(barisResepKosong(), obat(null, 'Tablet'))).toMatchObject({ bentuk: 'Tablet', rute: 'Oral' });
+    expect(isiDariObat(barisResepKosong(), obat(null, 'Larutan Injeksi')).rute).toBe('');
+    expect(isiDariObat({ ...barisResepKosong(), bentuk: 'Salep', rute: 'Topikal' }, null)).toEqual({ master_obat_id: '', bentuk: 'Salep', rute: 'Oral' });
+    expect(isiDariObat(barisResepKosong(), obat(null, null)).rute).toBe('Oral');
+    expect(barisResepKosong()).toMatchObject({ jumlah: '1', aturan_pakai: '3 x 1', rute: 'Oral' });
+  });
+  it('master obat: memilih KFA menebak rute bila belum diisi', () => {
+    expect(pilihKfa(awalMasterObat(), { ...kfa, bentuk_sediaan: 'Krim' }).rute).toBe('Topikal');
+    expect(pilihKfa(awalMasterObat(), kfa).rute).toBe('Oral');
+    expect(pilihKfa({ ...awalMasterObat(), rute: 'Mata' }, { ...kfa, bentuk_sediaan: 'Krim' }).rute).toBe('Mata');
   });
 });
