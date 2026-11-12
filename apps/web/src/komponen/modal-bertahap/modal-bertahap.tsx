@@ -31,6 +31,8 @@ type Props = {
   konteks?: ReactNode;
   /** Tombol pendamping pada header, terpisah dari ringkasan pasien. */
   aksiHeader?: ReactNode;
+  /** Modal memanfaatkan hampir seluruh layar; isian pendek disusun rapat dalam banyak kolom. */
+  luas?: boolean;
   /** Info di atas isi langkah (mis. draf dipulihkan). */
   catatan?: ReactNode;
   galat?: string | null;
@@ -53,7 +55,7 @@ type Props = {
  * dan tombol kembali peramban menutup modal. Draf otomatis dipasang pemanggil lewat useDrafOtomatis.
  */
 export function ModalBertahap({
-  judul, langkah, indeks, onIndeks, konteks, aksiHeader, catatan, galat, onTutup, lindungiTutup = false, onLanjut, labelKirim, onKirim, kirimNonaktif, hasil,
+  judul, langkah, indeks, onIndeks, konteks, aksiHeader, luas = false, catatan, galat, onTutup, lindungiTutup = false, onLanjut, labelKirim, onKirim, kirimNonaktif, hasil,
 }: Props) {
   const jumlah = langkah.length;
   const i = batasi(indeks, jumlah);
@@ -90,7 +92,7 @@ export function ModalBertahap({
 
   return (
     <>
-      <Dialog judul={judul} onEsc={() => void mintaTutup()} lebar="modalBesar" tinggi="tinggiModal">
+      <Dialog judul={judul} onEsc={() => void mintaTutup()} lebar={luas ? 'modalLuas' : 'modalBesar'} tinggi={luas ? 'maksLayar' : 'tinggiModal'} className={luas ? 'modal-luas' : undefined}>
         <KepalaDialog className={aksiHeader ? 'modal-header-dengan-aksi' : undefined} judul={judul} onTutup={() => void mintaTutup()}>{aksiHeader ?? konteks}</KepalaDialog>
         {aksiHeader && konteks && <div className="modal-konteks-header" style={{ padding: `${token.jarak.sm} ${token.jarak.lg}`, borderBottom: `1px solid ${token.warna.garis}` }}>{konteks}</div>}
         <Sebaris className="modal-langkah-layout" jarak="tanpa" sejajar="regang" style={{ flexGrow: 1, minHeight: 0 }}>

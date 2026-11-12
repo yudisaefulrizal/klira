@@ -34,6 +34,31 @@ export function setelUlangLapisan(): void {
   beri();
 }
 
+let kunciAktif = 0;
+let guliranAsli = '';
+/**
+ * Kunci gulir halaman selama ada lapisan terbuka. Nilai `overflow` asli dicatat sekali oleh pengunci pertama dan
+ * dipulihkan setelah pengunci terakhir melepas, apa pun urutan pelepasannya (modal dan konfirmasi di atasnya boleh
+ * dilepas dalam urutan berbeda). Mengembalikan fungsi pelepas, aman dipanggil dua kali.
+ */
+export function kunciGuliran(target: { overflow: string }): () => void {
+  if (kunciAktif === 0) guliranAsli = target.overflow;
+  kunciAktif += 1;
+  target.overflow = 'hidden';
+  let lepas = false;
+  return () => {
+    if (lepas) return;
+    lepas = true;
+    kunciAktif -= 1;
+    if (kunciAktif === 0) target.overflow = guliranAsli;
+  };
+}
+/** Hanya untuk uji. */
+export function setelUlangKunciGuliran(): void {
+  kunciAktif = 0;
+  guliranAsli = '';
+}
+
 export type TargetPemulihan = 'pemicu' | 'pertamaAtas' | 'tidak';
 /**
  * Murni: ke mana fokus dikembalikan saat sebuah lapisan keluar.

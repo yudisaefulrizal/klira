@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { MODAL } from '@klira/shared';
 import { token } from '../../gaya/token';
 import { SELEKTOR_FOKUS, fokusBerikut } from '../../util/fokus';
-import { adalahAtas, adalahInert, keluarLapisan, langgananLapisan, lapisanAtas, masukLapisan, pilihTargetPemulihan, potretLapisan } from '../../util/lapisan';
+import { adalahAtas, adalahInert, keluarLapisan, langgananLapisan, lapisanAtas, masukLapisan, kunciGuliran, pilihTargetPemulihan, potretLapisan } from '../../util/lapisan';
 import { Tombol } from './tombol';
 
 type Props = {
@@ -17,6 +17,7 @@ type Props = {
   lebar?: keyof typeof token.ukuran;
   /** Tinggi tetap dialog (kunci token ukuran); tanpa ini mengikuti isi sampai batas layar. */
   tinggi?: keyof typeof token.ukuran;
+  className?: string;
   children: ReactNode;
 };
 
@@ -39,7 +40,7 @@ const terlihat = (e: HTMLElement) => e.getClientRects().length > 0;
  * hanya lapisan teratas yang menanggapi keyboard dan lapisan di bawahnya inert. Tidak ada tutup lewat klik tirai
  * agar isian tidak hilang tanpa sengaja.
  */
-export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar = 'modalSedang', tinggi, children }: Props) {
+export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar = 'modalSedang', tinggi, className, children }: Props) {
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
   const onEscTerakhir = useRef(onEsc);
@@ -57,8 +58,7 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
 
   useEffect(() => {
     const pemicu = pemicuRef.current;
-    const gulirAwal = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const lepasGulir = kunciGuliran(document.body.style);
     const el = ref.current;
     if (el && !el.contains(document.activeElement)) (el.querySelector<HTMLElement>(SELEKTOR_FOKUS) ?? el).focus();
 
@@ -78,7 +78,7 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
     document.addEventListener('keydown', tekan);
     return () => {
       document.removeEventListener('keydown', tekan);
-      document.body.style.overflow = gulirAwal;
+      lepasGulir();
       pulihkanFokus(pemicu);
     };
   }, [id]);
@@ -95,6 +95,7 @@ export function Dialog({ judul, onEsc, letak = 'tengah', lapis = 'dialog', lebar
       <div
         ref={ref}
         data-lapisan={id}
+        className={className}
         role="dialog"
         aria-modal="true"
         aria-label={judul}

@@ -1,4 +1,4 @@
-import { adaLapisan, adalahAtas, keluarLapisan, langgananLapisan, lapisanAtas, masukLapisan, pilihTargetPemulihan, potretLapisan, setelUlangLapisan } from './lapisan';
+import { adaLapisan, adalahAtas, keluarLapisan, kunciGuliran, langgananLapisan, lapisanAtas, masukLapisan, pilihTargetPemulihan, potretLapisan, setelUlangKunciGuliran, setelUlangLapisan } from './lapisan';
 import { fokusBerikut } from './fokus';
 
 describe('tumpukan lapisan', () => {
@@ -72,5 +72,30 @@ describe('pilihTargetPemulihan', () => {
     expect(pilihTargetPemulihan(false, null, 'modal')).toBe('pertamaAtas');
     expect(pilihTargetPemulihan(true, 'modal', 'konfirmasi')).toBe('pertamaAtas');
     expect(pilihTargetPemulihan(true, null, 'modal')).toBe('pertamaAtas');
+  });
+});
+
+describe('kunci gulir halaman', () => {
+  beforeEach(setelUlangKunciGuliran);
+  it('modal dan konfirmasi bertumpuk: gulir kembali walau induk dilepas lebih dulu', () => {
+    const body = { overflow: '' };
+    const lepasModal = kunciGuliran(body);
+    const lepasKonfirmasi = kunciGuliran(body);
+    expect(body.overflow).toBe('hidden');
+    lepasModal();
+    expect(body.overflow).toBe('hidden');
+    lepasKonfirmasi();
+    expect(body.overflow).toBe('');
+  });
+  it('nilai awal dipulihkan; melepas dua kali tidak merusak hitungan', () => {
+    const body = { overflow: 'scroll' };
+    const lepas = kunciGuliran(body);
+    lepas();
+    lepas();
+    expect(body.overflow).toBe('scroll');
+    const lagi = kunciGuliran(body);
+    expect(body.overflow).toBe('hidden');
+    lagi();
+    expect(body.overflow).toBe('scroll');
   });
 });

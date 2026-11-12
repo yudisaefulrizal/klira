@@ -6,3 +6,12 @@
   .modal-langkah-form { min-height: 0; }
   .modal-langkah-isi { padding: 16px !important; }
 }
+
+/* Modal luas (skrining, periksa): layar lebar dimanfaatkan dengan isian pendek berkolom banyak dan nav lebih ramping. */
+.modal-luas { width: min(1760px, 100%) !important; }
+.modal-luas .modal-langkah-nav { flex-basis: 200px !important; }
+.modal-luas .modal-langkah-isi { padding: 16px 28px !important; }
+.modal-luas .modal-langkah-isi div[style*="grid-template-columns"] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)) !important; }
+@media (max-width: 700px) {
+  .modal-luas .modal-langkah-isi { padding: 16px !important; }
+}

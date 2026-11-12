@@ -301,6 +301,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   return (
     <>
       <ModalBertahap
+        luas
         judul={judul}
         langkah={langkah}
         indeks={indeks}
