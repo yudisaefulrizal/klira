@@ -29,7 +29,7 @@ Migrasi baru: `20261111090000_penjamin_asuransi`, `20261111110000_tindakan_klini
 Catatan:
 - Uji integrasi database dilewati (tanpa `DATABASE_URL_UJI`); belum diuji di peramban.
 - Kegagalan bawaan yang belum disentuh: lint 19 galat (daftar-pasien.tsx:80, require() di output/*.cjs), uji gagal penyaring-pasien.test.ts (3) dan keadaan-lab.test.ts (1).
-- `dokumen/panduan-klira.pdf` dan skrip `output/pembayaran-farmasi/periksa.cjs` belum mengikuti perubahan.
+- Skrip `output/pembayaran-farmasi/periksa.cjs` belum mengikuti perubahan.
 - Rekam medis, resume, dan cetak dokumen RM belum menampilkan resep (sebelumnya juga tidak).
 - Pilihan default agent tercatat di `dokumen/laporan/pertanyaan.md`.
 
