@@ -81,3 +81,6 @@
 | Cara bayar asuransi lain dan data penjamin (P2, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Registrasi pasien baru | Bisa dikerjakan | ✔ |
 | Daftar tindakan klinik dan tagihan tindakan otomatis (P5, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Tagihan | Menunggu bagian lain | ✔ |
 | Resep teks bebas dan item oleh farmasi (P3, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Telaah dan siapkan resep | Menunggu bagian lain | ✔ |
+| Skrining keperawatan (P6, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Pemeriksaan klinis | Bisa dikerjakan | ☐ |
+| Isian dokter mengikuti formulir dan default keadaan baik (P7, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Pemeriksaan klinis | Menunggu bagian lain | ☐ |
+| Cetak rekam medis rawat jalan (P8, renca-update-hasil-persentasi/rencana-perubahan.md) | Fitur | Rekam medis | Menunggu bagian lain | ☐ |
