@@ -3,7 +3,7 @@
 // Variabel opsional: KLIRA_URL, KLIRA_ADMIN_USER, KLIRA_ADMIN_SANDI, KLIRA_SANDI_DEMO.
 import { createRequire } from 'node:module';
 // Default keadaan baik skrining keperawatan dari packages/shared (satu sumber; butuh `npm run build -w packages/shared`).
-const { DEFAULT_KEPERAWATAN } = createRequire(import.meta.url)('../packages/shared/dist/index.js');
+const { DEFAULT_ANAMNESIS, DEFAULT_KEPERAWATAN, DEFAULT_PEMERIKSAAN } = createRequire(import.meta.url)('../packages/shared/dist/index.js');
 
 const BASE = (process.env.KLIRA_URL ?? 'http://127.0.0.1:8074') + '/api';
 const ADMIN = { username: process.env.KLIRA_ADMIN_USER ?? 'pimpinan', kata_sandi: process.env.KLIRA_ADMIN_SANDI ?? 'admin123' };
@@ -293,7 +293,8 @@ async function siapkanPasien() {
 // ---------------------------------------------------------------- alur kunjungan
 const KASUS = [
   { keluhan: 'Demam dan batuk pilek 3 hari, sesak ringan', ttv: { sistolik: 120, diastolik: 80, nadi: 92, suhu: 38.2, respirasi: 22, spo2: 96, berat_badan: 60, tinggi_badan: 158 },
-    periksa: { keadaan_umum: 'Tampak sakit ringan', kepala_leher: 'Faring hiperemis', thorax: 'Vesikuler, wheezing minimal', abdomen: 'Supel' },
+    periksa: { tht_tonsil_kanan: 'T2', tht_tonsil_kiri: 'T2', tht_warna_tonsil: 'hiperemis', tht_faring: 'hiperemis', paru_wheezing: 'ada, minimal kedua paru' },
+    banding: 'Faringitis akut', kie: 'Istirahat cukup, banyak minum air hangat, kontrol bila demam lebih dari 3 hari atau sesak memberat.', obatPoli: 'Salbutamol nebul 2,5 mg',
     dx: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }],
     // Tindakan klinik tanpa harga acuan: kasir melengkapi harga sebelum pembayaran.
     tindakan: [['TIN-NEBU', '93.94', 'Nebulisasi', 1]],
@@ -301,19 +302,20 @@ const KASUS = [
     resep: { teks: 'R/ Parasetamol 500 mg tab ½\n    CTM 4 mg tab ½\n    m.f. pulv. dtd No. X\n    s 3 dd pulv I (bila demam)\nR/ Ambroxol 30 mg tab No. X\n    s 3 dd tab I',
       item: [['Parasetamol 500 mg', 'Racikan puyer: 3 x 1 bungkus bila demam', 5, 'puyer'], ['CTM 4 mg', 'Racikan puyer: 3 x 1 bungkus bila demam', 5, 'puyer'], ['Ambroksol 30 mg', '3 x 1 tablet', 10]] } },
   { keluhan: 'Kontrol tekanan darah tinggi, pusing tengkuk', ttv: { sistolik: 160, diastolik: 100, nadi: 84, suhu: 36.6, respirasi: 18, spo2: 97, berat_badan: 78, tinggi_badan: 168 },
-    periksa: { keadaan_umum: 'Baik, kompos mentis', thorax: 'Jantung reguler, murmur (-)', ekstremitas: 'Edema (-)' },
+    periksa: {}, kie: 'Diet rendah garam, olahraga ringan teratur, minum obat rutin setiap pagi, kontrol 1 bulan.',
     dx: [{ kode: 'I10', nama: 'Essential (primary) hypertension', peran: 'utama' }], lab: ['KOL', 'AU'],
     resep: { teks: 'R/ Amlodipine 5 mg tab No. XXX\n    s 1 dd tab I (pagi)', item: [['Amlodipin 5 mg', '1 x 1 tablet pagi', 30]] } },
   { keluhan: 'Nyeri ulu hati dan mual sejak 2 hari', ttv: { sistolik: 110, diastolik: 70, nadi: 80, suhu: 36.8, respirasi: 18, spo2: 99, berat_badan: 55, tinggi_badan: 155 },
-    periksa: { keadaan_umum: 'Baik', abdomen: 'Nyeri tekan epigastrium (+)' },
+    periksa: { abdomen_lain: 'nyeri tekan epigastrium' }, banding: 'Dispepsia fungsional', kie: 'Makan sedikit tapi sering, hindari makanan pedas, asam, dan kopi.',
     dx: [{ kode: 'K29.7', nama: 'Gastritis, unspecified', peran: 'utama' }],
     resep: { teks: 'R/ Omeprazole 20 mg caps No. VI\n    s 2 dd caps I a.c.\nR/ Antasida DOEN tab No. X\n    s 3 dd tab I (kunyah)', item: [['Omeprazol 20 mg', '2 x 1 kapsul sebelum makan', 6], ['Antasida DOEN', '3 x 1 tablet dikunyah', 10]] } },
   { keluhan: 'Sering haus dan sering BAK, riwayat kencing manis', ttv: { sistolik: 130, diastolik: 85, nadi: 88, suhu: 36.7, respirasi: 18, spo2: 98, berat_badan: 82, tinggi_badan: 165 },
-    periksa: { keadaan_umum: 'Baik', ekstremitas: 'Sensibilitas kaki baik' },
+    periksa: {}, kie: 'Diet rendah gula, periksa kaki setiap hari, kontrol gula darah rutin.',
     dx: [{ kode: 'E11.9', nama: 'Type 2 diabetes mellitus without complications', peran: 'utama' }], lab: ['GDS'],
     resep: { teks: 'R/ Glucophage 500 mg tab No. LX\n    s 2 dd tab I p.c.', item: [['Metformin 500 mg', '2 x 1 tablet sesudah makan', 60]] } },
   { keluhan: 'Luka robek telapak tangan kanan terkena pisau dapur', ttv: { sistolik: 125, diastolik: 80, nadi: 84, suhu: 36.5, respirasi: 16, spo2: 98, berat_badan: 70, tinggi_badan: 163 },
-    periksa: { keadaan_umum: 'Baik', ekstremitas: 'Vulnus laceratum palmar dekstra panjang 3 cm, perdarahan aktif minimal' },
+    periksa: { lokalis_bentuk: 'vulnus laceratum', lokalis_letak: 'palmar dekstra', lokalis_jumlah: '1', lokalis_warna: 'merah, perdarahan aktif minimal', lokalis_ukuran: 'panjang 3 cm' },
+    kie: 'Jaga luka tetap kering, ganti balutan tiap hari, kontrol lepas jahitan hari ke-7.', obatPoli: 'Lidokain 2% infiltrasi lokal',
     dx: [{ kode: 'S61.9', nama: 'Open wound of wrist and hand part, part unspecified', peran: 'utama' }],
     tindakan: [['TIN-JAHIT-KECIL', '86.59', 'Jahit luka ≤ 5 cm', 1], ['TIN-LUKA', '93.57', 'Perawatan luka sederhana', 1]],
     resep: { teks: 'R/ Ibuprofen 400 mg tab No. X\n    s 3 dd tab I p.c. (bila nyeri)', item: [['Ibuprofen 400 mg', '3 x 1 tablet sesudah makan', 10]] } },
@@ -358,13 +360,14 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
         skrining_visual: 'hijau',
       },
     });
-    await wajib('anamnesis (perawat)', 'perawat', 'PUT', `/kunjungan/${kid}/klinis/anamnesis`, { isi: { keluhan_utama: kasus.keluhan, riwayat_pribadi: null, riwayat_keluarga: null, penyerta: null } });
     if (target === 'skrining') continue;
-    // Pemeriksaan dokter
-    await wajib('pemeriksaan fisik (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/pemeriksaan`, { isi: kasus.periksa });
+    // Pemeriksaan dokter (anamnesa ditandatangani dokter sesuai formulir klinik)
+    await wajib('anamnesa (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/anamnesis`, { isi: { ...DEFAULT_ANAMNESIS, keluhan_utama: kasus.keluhan } });
+    await wajib('pemeriksaan fisik (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/pemeriksaan`, { isi: { ...DEFAULT_PEMERIKSAAN, ...kasus.periksa } });
     await wajib('diagnosis ICD-10 (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/diagnosis`, { isi: { item: kasus.dx } });
-    await wajib('assessment (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/assessment`, { isi: { isi: `${kasus.dx[0].nama}. Kondisi umum stabil.` } });
-    await wajib('plan (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/plan`, { isi: { isi: 'Terapi simtomatik, edukasi, kontrol bila keluhan menetap.' } });
+    if (kasus.banding) await wajib('diagnosa banding (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/diagnosis_banding`, { isi: { isi: kasus.banding } });
+    await wajib('KIE (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/kie`, { isi: { isi: kasus.kie } });
+    if (kasus.obatPoli) await wajib('obat diberikan di poli (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/obat_poli`, { isi: { isi: kasus.obatPoli } });
     if (kasus.tindakan) {
       // Tindakan dari daftar tindakan klinik: item tagihan tindakan dibuat otomatis (harga sesuai cara bayar).
       const item = kasus.tindakan.map(([kodeTarif, kode, nama, jumlah]) => ({ kode, nama, tarif_layanan_id: idTarif[kodeTarif] ?? null, jumlah, mulai: new Date(Date.now() - 10 * 60_000).toISOString() }));

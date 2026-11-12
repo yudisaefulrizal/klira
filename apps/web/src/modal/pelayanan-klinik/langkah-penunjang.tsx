@@ -19,7 +19,7 @@ type Props = {
 };
 
 /**
- * Pilihan lab di P–Plan; status dan hasil tersimpan dibaca di ringkasan dan bagian Objective.
+ * Pilihan lab di langkah Pemeriksaan penunjang; status dan hasil tersimpan tampil di langkah yang sama dan di ringkasan.
  * Pilihan dikelola induk sebagai draf dan dikirim lewat Simpan pemeriksaan.
  */
 export function LangkahPenunjang({ cara, k, onUbah, disabled, galatPilihan }: Props) {

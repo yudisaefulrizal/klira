@@ -790,8 +790,10 @@ model Anamnesis {
   versi            Int
   keluhan_utama    String   @db.Text
   penyerta         String?  @db.Text
+  riwayat_sekarang String?  @db.Text
   riwayat_pribadi  String?  @db.Text
   riwayat_keluarga String?  @db.Text
+  kajian_sosial    String?  @db.Text
   dibuat_oleh      Int?
   dibuat_pada      DateTime @default(now()) @db.DateTime(3)
 
@@ -2168,10 +2170,9 @@ model WebsiteKlinik {
 }
 
 enum BagianNarasi {
-  assessment
-  plan
-  implementasi
-  evaluasi
+  diagnosis_banding
+  kie
+  obat_poli
 }
 
 model NarasiKlinis {

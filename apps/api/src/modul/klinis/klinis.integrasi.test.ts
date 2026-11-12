@@ -164,7 +164,10 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect(tanpaAlasan.status).toBe(400);
     const lain = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter2', { isi: { keluhan_utama: 'Batuk 4 hari' }, alasan: 'Koreksi' });
     expect(lain.status).toBe(409);
-    const ok = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', { isi: { keluhan_utama: 'Batuk 4 hari' }, alasan: 'Durasi salah' });
+    const ok = await panggil('PUT', klinis(kunjA1, 'anamnesis'), 'dokter', {
+      isi: { keluhan_utama: 'Batuk 4 hari', riwayat_sekarang: 'Batuk kering sejak 4 hari, memberat malam', riwayat_pribadi: 'tidak ada', kajian_sosial: 'Perokok aktif' }, alasan: 'Durasi salah',
+    });
+    expect(ok.badan.data.bagian.isi).toMatchObject({ riwayat_sekarang: 'Batuk kering sejak 4 hari, memberat malam', riwayat_pribadi: 'tidak ada', kajian_sosial: 'Perokok aktif', riwayat_keluarga: null });
     expect(ok.status).toBe(200);
     expect(ok.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { keluhan_utama: 'Batuk 4 hari' } });
     const versi = await prisma.versiCatatan.findMany({ where: { entitas: 'anamnesis', entitas_id: kunjA1 } });
@@ -181,7 +184,8 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
   });
 
   it('pemeriksaan, diagnosis, tindakan, dan tindak lanjut tersimpan dan terbaca kembali sah', async () => {
-    expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { keadaan_umum: 'Baik', abdomen: 'Supel' } })).status).toBe(200);
+    expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { mata_konjungtiva: 'tidak anemis', paru_rhonki: 'basah halus', odontogram_tanggal: '2026-10-20', kunci_tak_dikenal: 'dibuang' } })).status).toBe(200);
+    expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { odontogram_tanggal: '2026-02-30' } })).status).toBe(400);
     const salah = await panggil('PUT', klinis(kunjA1, 'diagnosis'), 'dokter', { isi: { item: [{ kode: 'I10', nama: 'x', peran: 'penyerta' }] } });
     expect(salah.status).toBe(400);
     expect((await panggil('PUT', klinis(kunjA1, 'diagnosis'), 'dokter', { isi: diagnosis })).status).toBe(200);
@@ -194,6 +198,12 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     const semua = (await panggil('GET', `/kunjungan/${kunjA1}/klinis`, 'dokter')).badan.data;
     for (const b of ['anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut']) expect(semua.bagian[b].verifikasi).toBe('sah');
     expect(semua.bagian.diagnosis.isi.item.map((i: any) => i.kode)).toEqual(['I10', 'E11.9']);
+    expect(semua.bagian.pemeriksaan.isi).toMatchObject({ mata_konjungtiva: 'tidak anemis', paru_rhonki: 'basah halus', odontogram_tanggal: '2026-10-20', paru_bunyi: null });
+    expect(semua.bagian.pemeriksaan.isi).not.toHaveProperty('kunci_tak_dikenal');
+    expect(await prisma.observasi.count({ where: { kunjungan_id: kunjA1, kelompok: 'pemeriksaan', bidang: 'kunci_tak_dikenal' } })).toBe(0);
+    // Diagnosa banding: narasi teks bebas, tidak menjadi baris diagnosis.
+    expect((await panggil('PUT', klinis(kunjA1, 'diagnosis_banding'), 'dokter', { isi: { isi: 'J45.9 Asma' } })).status).toBe(200);
+    expect(await prisma.diagnosis.count({ where: { kunjungan_id: kunjA1, kode_icd10: 'J45.9' } })).toBe(0);
   });
 
   it('skrining keperawatan: tersimpan berversi, nyeri bersyarat, alergi default "tidak ada" berarti tanpa alergi', async () => {
@@ -232,6 +242,8 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
       pasien: { id: pasienA, nama: 'Budi Santoso', umur_tahun: expect.any(Number) }, kunjungan: { id: kunjA1, tahap_layanan: 'pemeriksaan', pasien_baru: true }, alergi: 'Penisilin',
       diagnosis_aktif: [{ kode: 'I10' }, { kode: 'E11.9' }], tanda_vital_terakhir: { sistolik: 150, suhu: 36.7 },
     });
+    // Diagnosa banding tidak masuk diagnosis aktif.
+    expect(r.badan.data.diagnosis_aktif).toHaveLength(2);
   });
 
   it('draf server: satu draf per pengguna, izin, lintas fasyankes 404, tanpa audit isi, dihapus saat selesai', async () => {
@@ -287,7 +299,7 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect(await prisma.draf.count({ where: { kunjungan_id: kunjA1 } })).toBe(0);
     expect((await panggil('PUT', `/kunjungan/${kunjA1}/draf/pemeriksaan-klinis`, 'dokter', { langkah: 1, isi: {} })).status).toBe(409);
     expect((await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', {})).status).toBe(409);
-    expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { catatan: 'Terlambat' } })).status).toBe(409);
+    expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { paru_lain: 'Terlambat' } })).status).toBe(409);
   });
 
   it('riwayat dan salin dari kunjungan sebelumnya (draf, pasien sama saja)', async () => {
@@ -297,10 +309,11 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     const riwayat = await panggil('GET', `/pasien/${pasienA}/riwayat-kunjungan?kecuali=${kunjA2}`, 'dokter');
     expect(riwayat.badan.data).toHaveLength(1);
     expect(riwayat.badan.data[0]).toMatchObject({ id: kunjA1, keluhan_utama: 'Batuk 4 hari', tindak_lanjut: 'rujuk', diagnosis: [{ kode: 'I10', peran: 'utama' }, { kode: 'E11.9', peran: 'penyerta' }] });
+    expect(riwayat.badan.data[0].diagnosis).toHaveLength(2); // tanpa diagnosa banding
     expect((await panggil('GET', `/pasien/${pasienA}/riwayat-kunjungan`, 'lain')).status).toBe(404);
     const salin = await panggil('GET', `/kunjungan/${kunjA2}/salinan/${kunjA1}`, 'dokter');
     expect(salin.status).toBe(200);
-    expect(salin.badan.data).toMatchObject({ sumber: { id: kunjA1 }, anamnesis: { keluhan_utama: 'Batuk 4 hari' }, diagnosis: { item: [{ kode: 'I10' }, { kode: 'E11.9' }] }, tindakan: { item: [{ kode: '89.52' }] } });
+    expect(salin.badan.data).toMatchObject({ sumber: { id: kunjA1 }, anamnesis: { keluhan_utama: 'Batuk 4 hari', riwayat_sekarang: 'Batuk kering sejak 4 hari, memberat malam', kajian_sosial: 'Perokok aktif' }, diagnosis: { item: [{ kode: 'I10' }, { kode: 'E11.9' }] }, tindakan: { item: [{ kode: '89.52' }] } });
     // hanya draf: tidak ada yang tersimpan di kunjungan tujuan
     expect(await prisma.anamnesis.count({ where: { kunjungan_id: kunjA2 } })).toBe(0);
     expect((await panggil('GET', `/kunjungan/${kunjB}/salinan/${kunjA1}`, 'dokter')).status).toBe(400);
@@ -370,21 +383,22 @@ d('klinis, pengesahan, dan pendamping terhadap klira_uji', () => {
     expect(await prisma.logAudit.count({ where: { fasyankes_id: fas, entitas: 'kunjungan', aksi: 'perbaikan' } })).toBeGreaterThanOrEqual(2);
   });
 
-  it('narasi SOAPIE tersimpan berversi, dibaca kembali, dan dibatasi fasyankes', async () => {
+  it('narasi formulir (diagnosa banding, KIE, obat di poli) tersimpan berversi, dibaca kembali, dan dibatasi fasyankes', async () => {
     const kunj = await buatKunjungan(fas, pasienA, 'pemeriksaan');
-    const kosong = await panggil('PUT', klinis(kunj, 'evaluasi'), 'dokter', { isi: { isi: '' } });
+    const kosong = await panggil('PUT', klinis(kunj, 'kie'), 'dokter', { isi: { isi: '' } });
     expect(kosong.badan.data).toMatchObject({ tersimpan: false, bagian: { isi: null, pengesahan: null } });
-    for (const bagian of ['assessment', 'plan', 'implementasi', 'evaluasi']) {
+    expect((await panggil('PUT', klinis(kunj, 'kie'), 'dokter', { isi: { isi: 'x'.repeat(2001) } })).status).toBe(400);
+    for (const bagian of ['diagnosis_banding', 'kie', 'obat_poli']) {
       const h = await panggil('PUT', klinis(kunj, bagian), 'dokter', { isi: { isi: `Isi ${bagian}` } });
       expect(h.status).toBe(200);
       expect(h.badan.data.bagian).toMatchObject({ isi: { isi: `Isi ${bagian}` }, verifikasi: 'sah', pengesahan: { versi: 1, pengguna_id: id.dokter } });
     }
-    const ubah = await panggil('PUT', klinis(kunj, 'evaluasi'), 'dokter', { isi: { isi: 'Respons membaik' }, alasan: 'Melengkapi hasil evaluasi' });
-    expect(ubah.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, isi: { isi: 'Respons membaik' } });
-    const lama = await prisma.versiCatatan.findFirst({ where: { fasyankes_id: fas, entitas: 'evaluasi', entitas_id: kunj } });
-    expect(lama?.isi_lama).toEqual({ isi: 'Isi evaluasi' });
+    const ubah = await panggil('PUT', klinis(kunj, 'obat_poli'), 'dokter', { isi: { isi: 'Parasetamol 500 mg 1 tablet' }, alasan: 'Melengkapi obat di poli' });
+    expect(ubah.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, isi: { isi: 'Parasetamol 500 mg 1 tablet' } });
+    const lama = await prisma.versiCatatan.findFirst({ where: { fasyankes_id: fas, entitas: 'obat_poli', entitas_id: kunj } });
+    expect(lama?.isi_lama).toEqual({ isi: 'Isi obat_poli' });
     const baca = await panggil('GET', `/kunjungan/${kunj}/klinis`, 'perekam');
-    expect(baca.badan.data.bagian.evaluasi).toMatchObject({ isi: { isi: 'Respons membaik' }, verifikasi: 'sah' });
+    expect(baca.badan.data.bagian.obat_poli).toMatchObject({ isi: { isi: 'Parasetamol 500 mg 1 tablet' }, verifikasi: 'sah' });
     expect((await panggil('GET', `/kunjungan/${kunj}/klinis`, 'lain')).status).toBe(404);
   });
 

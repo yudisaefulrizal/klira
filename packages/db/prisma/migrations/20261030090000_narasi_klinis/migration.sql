@@ -2,7 +2,7 @@ CREATE TABLE `narasi_klinis` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `fasyankes_id` INTEGER NOT NULL,
     `kunjungan_id` INTEGER NOT NULL,
-    `bagian` ENUM('assessment', 'plan', 'implementasi', 'evaluasi') NOT NULL,
+    `bagian` ENUM('diagnosis_banding', 'kie', 'obat_poli') NOT NULL,
     `isi` TEXT NULL,
     `versi` INTEGER NOT NULL,
     `dibuat_oleh` INTEGER NULL,

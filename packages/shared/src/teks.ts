@@ -703,21 +703,18 @@ export const KLINIS = {
   judul: 'Pemeriksaan klinis',
   judulSkrining: 'Skrining',
   langkah: {
-    anamnesis: 'Anamnesis', tandaVital: 'Tanda vital', keperawatan: 'Keperawatan', pemeriksaan: 'Pemeriksaan', diagnosis: 'Diagnosis', tindakan: 'Tindakan', resep: 'Resep',
-    penunjang: 'Order penunjang', tindakLanjut: 'Rencana tindak lanjut', ringkasan: 'Ringkasan', ringkasanSkrining: 'Ringkasan skrining',
+    anamnesis: 'Anamnesa', tandaVital: 'Tanda vital', keperawatan: 'Keperawatan', pemeriksaan: 'Pemeriksaan fisik', diagnosis: 'Diagnosis', tindakan: 'Tindakan', resep: 'Resep',
+    penunjang: 'Pemeriksaan penunjang', kesimpulan: 'Kesimpulan', terapi: 'Terapi', tindakLanjut: 'Tindak lanjut', ringkasan: 'Ringkasan', ringkasanSkrining: 'Ringkasan skrining',
   },
-  belumTersedia: {
-    resep: 'Langkah ini tersedia setelah Master obat selesai dikerjakan. Anda dapat melewatinya.',
-    penunjang: 'Langkah ini tersedia setelah Order lab selesai dikerjakan. Anda dapat melewatinya.',
-  },
-  lewati: 'Lewati langkah ini',
   tombol: { riwayat: 'Riwayat', salin: 'Salin dari kunjungan sebelumnya', favorit: 'Favorit dan templat', keluarga: 'Family folder', simpan: 'Simpan dan sahkan', menyimpan: 'Menyimpan...', skrining: 'Skrining', periksa: 'Periksa' },
   konteks: {
     alergi: 'Alergi', diagnosisAktif: 'Diagnosis aktif', tandaVital: 'Tanda vital', tidakAda: 'Belum tercatat', memuat: 'Memuat data pasien...',
     gagal: 'Data kunjungan gagal dimuat.',
   },
   anamnesis: {
-    keluhanUtama: 'Keluhan utama', penyerta: 'Keluhan penyerta', riwayatPribadi: 'Riwayat penyakit pribadi', riwayatKeluarga: 'Riwayat penyakit keluarga',
+    keluhanUtama: 'Alasan kedatangan / keluhan utama', penyerta: 'Keluhan tambahan', riwayatSekarang: 'Riwayat perjalanan penyakit sekarang',
+    riwayatPribadi: 'Riwayat penyakit dahulu', riwayatKeluarga: 'Riwayat penyakit keluarga', kajianSosial: 'Kajian sosial',
+    kelompokRiwayat: 'Riwayat dan kajian sosial',
   },
   /** Skrining keperawatan (P6). */
   keperawatan: {
@@ -743,8 +740,19 @@ export const KLINIS = {
     petunjuk: 'Isi yang diukur saja. Satuan mengikuti standar (UCUM).',
     satuan: { 'mm[Hg]': 'mmHg', '/min': 'per menit', Cel: '°C', '%': '%', kg: 'kg', cm: 'cm' } as Record<string, string>,
   },
+  /** Pemeriksaan fisik terstruktur (P7); label bidang dan kelompok di DEFINISI_PEMERIKSAAN/KELOMPOK_PEMERIKSAAN. */
   pemeriksaan: {
-    keadaan_umum: 'Keadaan umum', kepala_leher: 'Kepala dan leher', thorax: 'Thorax (jantung dan paru)', abdomen: 'Abdomen', ekstremitas: 'Ekstremitas', catatan: 'Catatan pemeriksaan lain',
+    odontogramDibuat: 'Sudah dibuat', odontogramTanggal: 'Tanggal pembuatan', odontogramBelum: 'Belum dibuat', semuaNormalKalimat: 'Dalam batas normal',
+  },
+  /** Kesimpulan dan terapi (P7). */
+  kesimpulan: {
+    diagnosaMedis: 'Diagnosa medis', diagnosaTambahan: 'Diagnosa tambahan', bandingKet: 'Teks bebas, boleh berisi kode. Tidak ikut pengkodean dan klaim.',
+  },
+  /** Detail rekam medis satu kunjungan (riwayat, resume). */
+  detail: { judul: 'Rekam medis kunjungan', lihat: 'Lihat rekam medis', tutup: 'Tutup rekam medis', memuat: 'Memuat rekam medis…', gagal: 'Rekam medis kunjungan gagal dimuat.' },
+  penunjang: { pesanLab: 'Pesan pemeriksaan laboratorium' },
+  terapi: {
+    obatPoliKet: 'Catatan saja: tidak mengurangi stok dan tidak membuat tagihan.', obatPulang: 'Obat yang dibawa pulang (resep)',
   },
   diagnosis: {
     cari: 'Cari diagnosis (ICD-10)', petunjukCari: 'Ketik kode atau nama diagnosis', hasil: 'Hasil pencarian', tidakAda: 'Tidak ada kode yang cocok. Anda dapat menambahkannya sebagai teks sendiri.',
@@ -794,7 +802,7 @@ export const KLINIS = {
   },
   galat: {
     angka: 'Isi dengan angka.', skalaNyeri: 'Skala nyeri 0 sampai 10.', skalaNyeriWajib: 'Pilih skala nyeri.', rentang: (min: number, maks: number) => `Nilai harus antara ${min} dan ${maks}.`, tandaVitalKosong: 'Isi minimal satu tanda vital.',
-    pemeriksaanKosong: 'Isi minimal satu bidang pemeriksaan.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10 atau E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
+    pemeriksaanKosong: 'Isi minimal satu bidang pemeriksaan.', tanggalOdontogram: 'Tanggal odontogram tidak valid.', odontogramWajib: 'Isi tanggal pembuatan odontogram.', kodeIcd10: 'Kode ICD-10 tidak valid (contoh: I10 atau E11.9).', kodeIcd9: 'Kode ICD-9 CM tidak valid (contoh: 89.52).',
     tindakanGanda: 'Tindakan yang sama (kode dan tindakan klinik) tidak boleh dicatat dua kali.', jumlahTindakan: 'Jumlah tindakan 1 sampai 100.', tarifTindakanTidakAda: 'Tindakan klinik tidak ditemukan.',
     kodeTarifTidakCocok: 'Kode ICD-9-CM tindakan tidak sesuai dengan tindakan klinik yang dipilih.',
     diagnosisKosong: 'Tambahkan minimal satu diagnosis.', diagnosisUtama: 'Pilih tepat satu diagnosis utama.', kodeGanda: 'Kode tidak boleh ganda.', selesaiSebelumMulai: 'Waktu selesai tidak boleh sebelum mulai.',
@@ -1047,7 +1055,7 @@ export const REKAM_MEDIS = {
   perbaikan: {
     judul: 'Perbaiki catatan', bagian: 'Bagian catatan', pilihBagian: 'Pilih bagian...', alasan: 'Alasan perbaikan', alasanPetunjuk: 'Alasan wajib dan tersimpan bersama versi lama.', ajukan: 'Simpan perbaikan', mengajukan: 'Menyimpan...',
     diterapkan: 'Perbaikan diterapkan sebagai versi baru; versi lama tetap tersimpan.', diajukanPesan: 'Perbaikan melewati 2x24 jam atau bukan dari pembuat catatan: diajukan ke persetujuan.', belumDisahkan: 'Bagian ini belum disahkan; isi lewat Pemeriksaan klinis.',
-    gagal: 'Perbaikan gagal disimpan.', bagianLabel: { assessment: 'Penilaian klinis', plan: 'Rencana pelayanan', implementasi: 'Pelaksanaan pelayanan', evaluasi: 'Evaluasi', anamnesis: 'Anamnesis', tanda_vital: 'Tanda vital', keperawatan: 'Skrining keperawatan', pemeriksaan: 'Pemeriksaan', diagnosis: 'Diagnosis', tindakan: 'Tindakan', tindak_lanjut: 'Rencana tindak lanjut' } as Record<string, string>,
+    gagal: 'Perbaikan gagal disimpan.', bagianLabel: { diagnosis_banding: 'Diagnosa banding', kie: 'Komunikasi, informasi, dan edukasi', obat_poli: 'Obat yang diberikan di poli', anamnesis: 'Anamnesa', tanda_vital: 'Tanda vital', keperawatan: 'Skrining keperawatan', pemeriksaan: 'Pemeriksaan fisik', diagnosis: 'Diagnosis', tindakan: 'Tindakan', tindak_lanjut: 'Tindak lanjut' } as Record<string, string>,
     batasInfo: 'Pembuat catatan dapat memperbaiki langsung dalam 2x24 jam sejak pengesahan terakhir.', sudahAda: 'Sudah ada permintaan perbaikan untuk bagian ini yang menunggu persetujuan.',
   },
   tinjau: {

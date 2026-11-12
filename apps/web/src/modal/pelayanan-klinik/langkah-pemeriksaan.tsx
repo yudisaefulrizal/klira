@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { LABEL_NARASI, KLINIS, PEMERIKSAAN_BIDANG, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL } from '@klira/shared';
-import type { BagianNarasi, BagianKlinis, BagianKlinisDto, FavoritDto } from '@klira/shared';
+import {
+  DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, LABEL_NARASI, KLINIS, MAKS_NARASI, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL,
+  bidangKelompok, isianDiubah, kembalikanNormal, labelBidangPemeriksaan, samaDenganDefault,
+} from '@klira/shared';
+import type { BagianNarasi, BagianKlinis, BagianKlinisDto, FavoritDto, KunciDefaultAnamnesis } from '@klira/shared';
+import { BilahNormal, KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal';
 import { cariTerminologi, cariTindakanKlinik } from '../../api-klien/klinis';
 import { token } from '../../gaya/token';
 import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan';
@@ -15,7 +20,7 @@ import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../ko
 import { Tombol } from '../../komponen/ui/tombol';
 import { hapusDiagnosis, hapusTindakan, jadikanUtama, kunciItemTindakan, ringkasanIsi, tambahDiagnosis, tambahTindakan, ubahTindakan } from './keadaan-pemeriksaan';
 import { rupiahAtau } from './keadaan-order-lab';
-import type { KeadaanPemeriksaan, KonfigLangkah, RencanaSimpan } from './keadaan-pemeriksaan';
+import type { KeadaanPemeriksaan, RencanaSimpan } from './keadaan-pemeriksaan';
 import { Bingkai } from '../../komponen/ui/kartu';
 
 type Ubah = (perubahan: Partial<KeadaanPemeriksaan>) => void;
@@ -36,17 +41,23 @@ export function GalatBagian({ galat }: { galat?: string | null }) {
   return galat ? <Peringatan>{galat}</Peringatan> : null;
 }
 
+/** Anamnesa sesuai formulir klinik; riwayat penyakit dahulu dan keluarga berdefault "tidak ada". */
 export function LangkahAnamnesis({ k, ubah, galat, server }: DasarLangkah) {
   const a = KLINIS.anamnesis;
+  const setA = (n: keyof KeadaanPemeriksaan['anamnesis'], v: string) => ubah({ anamnesis: { ...k.anamnesis, [n]: v } });
+  const setR = (n: keyof KeadaanPemeriksaan['riwayat'], v: string) => ubah({ riwayat: { ...k.riwayat, [n]: v } });
+  const diubah = (n: KunciDefaultAnamnesis) => !samaDenganDefault(k.riwayat[n], DEFAULT_ANAMNESIS[n]);
   return (
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      <AreaTeks id="anamnesis-keluhan" label={a.keluhanUtama} value={k.anamnesis.keluhan_utama} onChange={(e) => ubah({ anamnesis: { ...k.anamnesis, keluhan_utama: e.target.value } })} />
-      <AreaTeks id="anamnesis-penyerta" label={a.penyerta} value={k.anamnesis.penyerta} onChange={(e) => ubah({ anamnesis: { ...k.anamnesis, penyerta: e.target.value } })} />
       <Baris>
-        <AreaTeks id="anamnesis-pribadi" label={a.riwayatPribadi} value={k.riwayat.riwayat_pribadi} onChange={(e) => ubah({ riwayat: { ...k.riwayat, riwayat_pribadi: e.target.value } })} />
-        <AreaTeks id="anamnesis-keluarga" label={a.riwayatKeluarga} value={k.riwayat.riwayat_keluarga} onChange={(e) => ubah({ riwayat: { ...k.riwayat, riwayat_keluarga: e.target.value } })} />
+        <AreaTeks id="anamnesis-keluhan" label={a.keluhanUtama} required value={k.anamnesis.keluhan_utama} maxLength={1000} onChange={(e) => setA('keluhan_utama', e.target.value)} />
+        <AreaTeks id="anamnesis-penyerta" label={a.penyerta} value={k.anamnesis.penyerta} maxLength={1000} onChange={(e) => setA('penyerta', e.target.value)} />
+        <AreaTeks id="anamnesis-sekarang" label={a.riwayatSekarang} value={k.anamnesis.riwayat_sekarang} maxLength={1000} onChange={(e) => setA('riwayat_sekarang', e.target.value)} />
+        <AreaTeks id="anamnesis-dahulu" label={a.riwayatPribadi} value={k.riwayat.riwayat_pribadi} maxLength={1000} diubah={diubah('riwayat_pribadi')} onChange={(e) => setR('riwayat_pribadi', e.target.value)} />
+        <AreaTeks id="anamnesis-keluarga" label={a.riwayatKeluarga} value={k.riwayat.riwayat_keluarga} maxLength={1000} diubah={diubah('riwayat_keluarga')} onChange={(e) => setR('riwayat_keluarga', e.target.value)} />
+        <AreaTeks id="anamnesis-sosial" label={a.kajianSosial} value={k.riwayat.kajian_sosial} maxLength={1000} onChange={(e) => setR('kajian_sosial', e.target.value)} />
       </Baris>
     </Kolom>
   );
@@ -70,14 +81,43 @@ export function LangkahTandaVital({ k, ubah, galat, server }: DasarLangkah) {
   );
 }
 
+/**
+ * Pemeriksaan fisik terstruktur per kelompok organ (formulir klinik): isian berdefault keadaan baik, isian yang berbeda ditandai,
+ * "Semua normal" per kelompok dan "Kembalikan semua ke normal". Odontogram: centang "Sudah dibuat" dan tanggal.
+ */
 export function LangkahPemeriksaan({ k, ubah, galat, server }: DasarLangkah) {
+  const pm = k.pemeriksaan;
+  const set = (p: Partial<KeadaanPemeriksaan['pemeriksaan']>) => ubah({ pemeriksaan: { ...pm, ...p } });
+  const diubah = new Set(isianDiubah(pm, DEFAULT_PEMERIKSAAN));
+  const p = KLINIS.pemeriksaan;
+  const [odontogramDibuat, setOdontogramDibuat] = useState(pm.odontogram_tanggal !== '');
   return (
     <Kolom>
       <InfoPengesahan bagian={server} />
       <GalatBagian galat={galat} />
-      {PEMERIKSAAN_BIDANG.map((b) => (
-        <AreaTeks key={b} id={`pemeriksaan-${b}`} label={KLINIS.pemeriksaan[b]} value={k.pemeriksaan[b]} onChange={(e) => ubah({ pemeriksaan: { ...k.pemeriksaan, [b]: e.target.value } })} />
-      ))}
+      <BilahNormal diubah={diubah.size} onKembalikan={() => ubah({ pemeriksaan: kembalikanNormal(pm, DEFAULT_PEMERIKSAAN) })} />
+      {KELOMPOK_PEMERIKSAAN.filter((g) => g.kunci !== 'odontogram').map((g) => {
+        const bidang = bidangKelompok(g.kunci);
+        return (
+          <KelompokNormal key={g.kunci} judul={g.label} diubah={bidang.filter((b) => diubah.has(b as never)).length}
+            onNormal={() => ubah({ pemeriksaan: kembalikanNormal(pm, DEFAULT_PEMERIKSAAN, bidang as never[]) })}>
+            <Baris>
+              {bidang.map((b) => (
+                <Isian key={b} id={`pemeriksaan-${b}`} label={labelBidangPemeriksaan(b)} value={pm[b]} maxLength={300} autoComplete="off"
+                  diubah={diubah.has(b as never)} onChange={(e) => set({ [b]: e.target.value })} />
+              ))}
+            </Baris>
+          </KelompokNormal>
+        );
+      })}
+      <KelompokNormal judul={KELOMPOK_PEMERIKSAAN.find((g) => g.kunci === 'odontogram')?.label ?? ''}>
+        <Baris>
+          <KotakCentang id="odontogram-dibuat" label={p.odontogramDibuat} checked={odontogramDibuat}
+            onChange={(e) => { setOdontogramDibuat(e.target.checked); if (!e.target.checked) set({ odontogram_tanggal: '' }); }} />
+          {odontogramDibuat && <Isian id="odontogram-tanggal" type="date" label={p.odontogramTanggal} required value={pm.odontogram_tanggal}
+            galat={pm.odontogram_tanggal ? undefined : KLINIS.galat.odontogramWajib} onChange={(e) => set({ odontogram_tanggal: e.target.value })} />}
+        </Baris>
+      </KelompokNormal>
     </Kolom>
   );
 }
@@ -108,7 +148,7 @@ export function LangkahDiagnosis({ k, ubah, galat, server, favorit }: DasarLangk
               <Bingkai tag="li" jarak="md" key={x.kode}>
                 <strong style={{ minWidth: token.ukuran.kolomKode }}>{x.kode}</strong>
                 <Tumbuh>{x.nama}</Tumbuh>
-                <Lencana warna={STATUS_PERAN_DIAGNOSIS.warna(x.peran)}>{STATUS_PERAN_DIAGNOSIS.label(x.peran)}</Lencana>
+                <Lencana warna={STATUS_PERAN_DIAGNOSIS.warna(x.peran)}>{x.peran === 'utama' ? KLINIS.kesimpulan.diagnosaMedis : KLINIS.kesimpulan.diagnosaTambahan}</Lencana>
                 {x.peran !== 'utama' && <Tombol type="button" varian="teks" onClick={() => ubah({ diagnosis: jadikanUtama(k.diagnosis, x.kode) })}>{d.jadikanUtama}</Tombol>}
                 <Tombol type="button" varian="teks" onClick={() => ubah({ diagnosis: hapusDiagnosis(k.diagnosis, x.kode) })}>{d.hapus}</Tombol>
               </Bingkai>
@@ -170,16 +210,6 @@ export function LangkahTindakan({ k, ubah, galat, server, favorit }: DasarLangka
           );
         })}
       </Kolom>
-    </Kolom>
-  );
-}
-
-/** Langkah yang belum tersedia (Resep, Order penunjang): penjelasan singkat dan dapat dilewati. */
-export function LangkahMenyusul({ langkah, onLewati }: { langkah: KonfigLangkah; onLewati: () => void }) {
-  return (
-    <Kolom>
-      <Peringatan nada="biru">{langkah.menyusul ? KLINIS.belumTersedia[langkah.menyusul] : ''}</Peringatan>
-      <div><Tombol type="button" varian="sekunder" onClick={onLewati}>{KLINIS.lewati}</Tombol></div>
     </Kolom>
   );
 }
@@ -253,10 +283,12 @@ export function LangkahRingkasan({ k, ubah, rencana, status, bagian, labelBagian
 }
 
 
-export function LangkahNarasi({ bagian, k, ubah, galat, server }: DasarLangkah & { bagian: BagianNarasi }) {
-  return <Kolom>
+/** Isian teks bebas formulir (diagnosa banding, KIE, obat yang diberikan di poli). */
+export function LangkahNarasi({ bagian, k, ubah, galat, server, keterangan }: DasarLangkah & { bagian: BagianNarasi; keterangan?: string }) {
+  return <Kolom jarak="sm">
     <InfoPengesahan bagian={server} />
     <GalatBagian galat={galat} />
-    <AreaTeks id={`narasi-${bagian}`} label={LABEL_NARASI[bagian]} value={k[bagian]} maxLength={10000} onChange={(e) => ubah({ [bagian]: e.target.value })} />
+    <AreaTeks id={`narasi-${bagian}`} label={LABEL_NARASI[bagian]} value={k[bagian]} maxLength={MAKS_NARASI[bagian]} onChange={(e) => ubah({ [bagian]: e.target.value })} />
+    {keterangan && <p style={{ ...teksRedup, fontSize: token.huruf.ukuran.kecil }}>{keterangan}</p>}
   </Kolom>;
 }

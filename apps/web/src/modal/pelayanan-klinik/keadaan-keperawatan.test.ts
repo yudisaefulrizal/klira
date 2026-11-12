@@ -1,5 +1,5 @@
 import type { KlinisKunjunganDto } from '@klira/shared';
-import { BAGIAN_KLINIS, DEFAULT_KEPERAWATAN, SKEMA_BAGIAN } from '@klira/shared';
+import { BAGIAN_KLINIS, DEFAULT_KEPERAWATAN, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import {
   defaultKeperawatan, keperawatanDiubah, keperawatanKosong, keperawatanNormal, kosongKeperawatan, ringkasanKeperawatan, ubahJenisNyeri,
 } from './keadaan-keperawatan';
@@ -91,7 +91,7 @@ describe('ringkasan keperawatan', () => {
     ]));
     expect(r.baris.map((b) => b.label)).not.toContain('Lokasi');
     const awal = keadaanDariServer(kosongServer());
-    expect(ringkasanIsi(awal)[0].judul).toBe('S — Subjective');
+    expect(ringkasanIsi(awal)[0].judul).toBe(KLINIS.langkah.anamnesis);
     expect(ringkasanIsi({ ...awal, keperawatan: k })[0].judul).toBe('Skrining keperawatan');
     expect(keperawatanKosong(kosongKeperawatan())).toBe(true);
   });

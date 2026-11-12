@@ -1,7 +1,7 @@
 import type { BagianKlinis, KlinisKunjunganDto, SalinanKunjunganDto } from '@klira/shared';
-import { BAGIAN_KLINIS, SKEMA_BAGIAN } from '@klira/shared';
+import { BAGIAN_KLINIS, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import {
-  langkahDraf, bagianLangkah, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
+  barisPemeriksaanFisik, keadaanAwalForm, langkahDraf, bagianLangkah, VERSI_DRAF, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian,
   hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan,
   pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan, kunciItemTindakan, ubahTindakan,
 } from './keadaan-pemeriksaan';
@@ -15,20 +15,19 @@ const sahkan = (b: KlinisKunjunganDto['bagian'], bagian: BagianKlinis, isi: unkn
 };
 
 describe('langkah dari konfigurasi', () => {
-  it('pemeriksaan memuat enam kelompok SOAPIE dan ringkasan', () => {
-    expect(LANGKAH_PEMERIKSAAN.map((l) => l.id)).toEqual(['subjective', 'objective', 'assessment', 'plan', 'implementasi', 'evaluasi', 'ringkasan']);
-    expect(LANGKAH_PEMERIKSAAN.filter((l) => !l.aktif)).toEqual([]);
+  it('pemeriksaan mengikuti urutan formulir klinik', () => {
+    expect(LANGKAH_PEMERIKSAAN.map((l) => l.id)).toEqual(['anamnesis', 'pemeriksaan', 'penunjang', 'kesimpulan', 'terapi', 'tindak_lanjut', 'ringkasan']);
   });
   it('skrining: satu langkah keperawatan (tanda vital + keperawatan) dan ringkasan; bagian yang disimpan hanya dari langkah aktif', () => {
     expect(daftarLangkah('skrining').map((l) => l.id)).toEqual(['keperawatan', 'ringkasan']);
     expect(bagianDiModal('skrining')).toEqual(['tanda_vital', 'keperawatan']);
-    expect(bagianDiModal('periksa')).toEqual(['keperawatan', 'anamnesis', 'tanda_vital', 'pemeriksaan', 'assessment', 'diagnosis', 'plan', 'tindak_lanjut', 'implementasi', 'tindakan', 'evaluasi']);
+    expect(bagianDiModal('periksa')).toEqual(['keperawatan', 'anamnesis', 'tanda_vital', 'pemeriksaan', 'diagnosis', 'diagnosis_banding', 'kie', 'tindakan', 'obat_poli', 'tindak_lanjut']);
   });
 });
 
 describe('keadaan dari server dan isi kirim', () => {
   it('bolak-balik: keadaan dari catatan tersimpan tidak dianggap berubah', () => {
-    const server = sahkan(sahkan(sahkan(sahkan(bagianKosongServer(), 'anamnesis', { keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null }),
+    const server = sahkan(sahkan(sahkan(sahkan(bagianKosongServer(), 'anamnesis', { keluhan_utama: 'Batuk', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: null, riwayat_keluarga: null, kajian_sosial: null }),
       'tanda_vital', { sistolik: 150, diastolik: 95, nadi: null, suhu: 36.7, respirasi: null, spo2: null, berat_badan: null, tinggi_badan: null }),
       'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama', snomed: null }] }),
       'tindakan', { item: [{ kode: '89.52', nama: 'EKG', performer_id: 1, mulai: '2026-10-25T01:30:00.000Z', selesai: null }] });
@@ -86,7 +85,7 @@ describe('perubahan, validasi, dan rencana simpan', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'Batuk';
     k.tanda_vital.nadi = '82';
-    const tak = { assessment: false, plan: false, implementasi: false, evaluasi: false, anamnesis: false, tanda_vital: false, keperawatan: false, pemeriksaan: false, diagnosis: false, tindakan: false, tindak_lanjut: false };
+    const tak = { diagnosis_banding: false, kie: false, obat_poli: false, anamnesis: false, tanda_vital: false, keperawatan: false, pemeriksaan: false, diagnosis: false, tindakan: false, tindak_lanjut: false };
     const r = rencanaSimpan('periksa', k, server, tak);
     expect(r.map((x) => x.bagian)).toEqual(['anamnesis', 'tanda_vital']);
     expect(perluAlasan(r, tak)).toBe(false);
@@ -100,7 +99,7 @@ describe('perubahan, validasi, dan rencana simpan', () => {
   it('status ringkasan per bagian', () => {
     const k = awalKeadaan();
     expect(statusRingkasan('pemeriksaan', k, server, 'belum_disahkan')).toBe('belum_diisi');
-    k.pemeriksaan.abdomen = 'Supel';
+    k.pemeriksaan.abdomen_massa = 'Supel';
     expect(statusRingkasan('pemeriksaan', k, server, 'belum_disahkan')).toBe('akan_disimpan');
     expect(statusRingkasan('pemeriksaan', server, server, 'sah')).toBe('sudah_sah');
     expect(statusRingkasan('pemeriksaan', server, server, 'berubah')).toBe('berubah');
@@ -153,7 +152,7 @@ describe('diagnosis dan tindakan', () => {
 describe('penyalinan dari kunjungan sebelumnya', () => {
   const salinan: SalinanKunjunganDto = {
     sumber: { id: 3, mulai: '2026-10-01T00:00:00Z' },
-    anamnesis: { keluhan_utama: 'Batuk lama', penyerta: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null },
+    anamnesis: { keluhan_utama: 'Batuk lama', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null, kajian_sosial: null },
     diagnosis: { item: [{ kode: 'J06.9', nama: 'ISPA', peran: 'utama', snomed: null }] },
     tindakan: null,
   };
@@ -162,15 +161,15 @@ describe('penyalinan dari kunjungan sebelumnya', () => {
   });
   it('menyalin bagian terpilih sebagai draf tanpa menyentuh bagian lain', () => {
     const k = awalKeadaan();
-    k.pemeriksaan.abdomen = 'Supel';
+    k.pemeriksaan.abdomen_massa = 'Supel';
     k.tindakan = [{ kode: '89.52', nama: 'EKG', mulai: '2026-10-25T08:30', selesai: '' }];
     const { keadaan, jumlah } = salinKeKeadaan(k, salinan, ['anamnesis', 'diagnosis', 'tindakan'], new Date(2026, 9, 25, 9, 0));
     expect(jumlah).toBe(2);
     expect(keadaan.anamnesis.keluhan_utama).toBe('Batuk lama');
-    expect(keadaan.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '' });
+    expect(keadaan.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '', kajian_sosial: '' });
     expect(keadaan.diagnosis).toEqual([{ kode: 'J06.9', nama: 'ISPA', peran: 'utama', snomed: '' }]);
     expect(keadaan.tindakan).toHaveLength(1);
-    expect(keadaan.pemeriksaan.abdomen).toBe('Supel');
+    expect(keadaan.pemeriksaan.abdomen_massa).toBe('Supel');
     expect(salinKeKeadaan(k, salinan, ['diagnosis'], new Date()).keadaan.anamnesis.keluhan_utama).toBe('');
     // hasil salinan berstatus perubahan (belum disahkan) terhadap yang tersimpan
     expect(adaPerubahanBagian('diagnosis', keadaan, awalKeadaan())).toBe(true);
@@ -182,14 +181,13 @@ describe('templat', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'lama';
     k.riwayat.riwayat_pribadi = 'Asma';
-    // templat lama yang masih memuat alergi diabaikan (alergi pindah ke keperawatan)
-    const t = pakaiTemplat(k, { bagian: 'anamnesis', isi: { keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam', alergi: 'Debu' } });
-    expect(t.anamnesis).toEqual({ keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam' });
-    expect(t.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '' });
-    const p = pakaiTemplat(k, { bagian: 'pemeriksaan', isi: { keadaan_umum: 'Baik' } });
-    expect(p.pemeriksaan.keadaan_umum).toBe('Baik');
-    expect(p.pemeriksaan.abdomen).toBe('');
-    expect(isiTemplatDari('anamnesis', k)).toEqual({ keluhan_utama: 'lama', penyerta: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null });
+    const t = pakaiTemplat(k, { bagian: 'anamnesis', isi: { keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam' } });
+    expect(t.anamnesis).toEqual({ keluhan_utama: 'Batuk dan pilek', penyerta: 'Demam', riwayat_sekarang: '' });
+    expect(t.riwayat).toEqual({ riwayat_pribadi: 'Asma', riwayat_keluarga: '', kajian_sosial: '' });
+    const p = pakaiTemplat(k, { bagian: 'pemeriksaan', isi: { paru_wheezing: 'ada, minimal' } });
+    expect(p.pemeriksaan.paru_wheezing).toBe('ada, minimal');
+    expect(p.pemeriksaan.abdomen_massa).toBe('');
+    expect(isiTemplatDari('anamnesis', k)).toEqual({ keluhan_utama: 'lama', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: 'Asma', riwayat_keluarga: null, kajian_sosial: null });
   });
 });
 
@@ -203,7 +201,7 @@ describe('pemulihan draf server', () => {
     draf.keperawatan.alergi = 'Debu';
     draf.keperawatan.nyeri_jenis = 'akut';
     draf.keperawatan.jatuh_menopang = true;
-    draf.pemeriksaan.catatan = 'Paru bersih';
+    draf.pemeriksaan.paru_bunyi = 'vesikuler';
     draf.tanda_vital.suhu = '37,2';
     draf.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
     draf.alasan = 'Koreksi';
@@ -215,7 +213,8 @@ describe('pemulihan draf server', () => {
     expect(pulihkanKeadaan(dasar, null)).toBe(dasar);
     expect(pulihkanKeadaan(dasar, 'x')).toBe(dasar);
     expect(pulihkanKeadaan(dasar, [])).toBe(dasar);
-    const h = pulihkanKeadaan(dasar, { anamnesis: 'bukan objek', diagnosis: [1, null, { kode: 'I10', nama: 'x', peran: 'utama', snomed: '' }], tanda_vital: { suhu: 5, nadi: '80' }, alasan: 7 });
+    expect(pulihkanKeadaan(dasar, { versi_draf: 2, alasan: 'x' })).toBe(dasar);
+    const h = pulihkanKeadaan(dasar, { versi_draf: VERSI_DRAF, anamnesis: 'bukan objek', diagnosis: [1, null, { kode: 'I10', nama: 'x', peran: 'utama', snomed: '' }], tanda_vital: { suhu: 5, nadi: '80' }, alasan: 7 });
     expect(h.anamnesis).toEqual(dasar.anamnesis);
     expect(h.diagnosis).toHaveLength(1);
     expect(h.tanda_vital.suhu).toBe('');
@@ -225,64 +224,78 @@ describe('pemulihan draf server', () => {
 });
 
 describe('isi ringkasan', () => {
-  it('menampilkan SPRI rawat inap dan waktu tindakan tanpa mengubah waktu lokal', () => {
+  it('urut blok formulir; SPRI hanya untuk rawat inap', () => {
     const k = awalKeadaan();
     k.tindak_lanjut = { jenis: 'rawat_inap', tujuan: 'Bangsal A', spri: 'SPRI-123', catatan: '' };
-    k.tindakan = [{ kode: '89.52', nama: 'EKG', mulai: '2026-10-30T09:00', selesai: '2026-10-30T09:15' }];
     const r = ringkasanIsi(k);
-    expect(r[3].baris).toEqual(expect.arrayContaining([expect.objectContaining({ nilai: 'SPRI-123' })]));
-    expect(r[4].baris).toEqual(expect.arrayContaining([
-      expect.objectContaining({ nilai: '2026-10-30 09:00' }),
-      expect.objectContaining({ nilai: '2026-10-30 09:15' }),
-    ]));
+    expect(r.map((b) => b.judul)).toEqual([KLINIS.langkah.anamnesis, KLINIS.langkah.pemeriksaan, KLINIS.langkah.kesimpulan, KLINIS.langkah.terapi, KLINIS.langkah.tindakLanjut]);
+    expect(r[4].baris).toEqual(expect.arrayContaining([expect.objectContaining({ nilai: 'SPRI-123' })]));
     k.tindak_lanjut.jenis = 'pulang';
-    expect(ringkasanIsi(k)[3].baris).not.toEqual(expect.arrayContaining([expect.objectContaining({ nilai: 'SPRI-123' })]));
+    expect(ringkasanIsi(k)[4].baris).not.toEqual(expect.arrayContaining([expect.objectContaining({ nilai: 'SPRI-123' })]));
   });
 
-  it('memuat keluhan, diagnosis beserta peran, tindakan, dan rencana', () => {
+  it('memuat keluhan, diagnosa medis/tambahan, diagnosa banding, KIE, dan obat di poli', () => {
     const k = awalKeadaan();
     k.anamnesis.keluhan_utama = 'Batuk';
-    k.diagnosis = tambahDiagnosis([], { kode: 'I10', nama: 'Hipertensi' });
-    k.tindak_lanjut = { jenis: 'rujuk', tujuan: 'RS Umum', spri: '', catatan: '' };
+    k.diagnosis = tambahDiagnosis(tambahDiagnosis([], { kode: 'J03.9', nama: 'Tonsilitis akut' }), { kode: 'J45.9', nama: 'Asma' });
+    k.diagnosis_banding = 'Faringitis akut';
+    k.kie = 'Istirahat cukup';
+    k.obat_poli = 'Salbutamol nebul';
     const r = ringkasanIsi(k);
-    expect(r[0].baris).toEqual(expect.arrayContaining([{ label: 'Keluhan utama', nilai: 'Batuk' }]));
-    expect(r[0].baris.map((b) => b.label)).not.toContain('Alergi');
-    expect(r[2].baris).toEqual(expect.arrayContaining([{ label: 'I10', nilai: 'Hipertensi (Utama)' }]));
-    expect(r[3].baris).toEqual(expect.arrayContaining([{ label: 'Tindak lanjut', nilai: 'Rujuk keluar' }, { label: 'Tujuan rujukan', nilai: 'RS Umum' }]));
+    expect(r[0].baris).toEqual(expect.arrayContaining([{ label: KLINIS.anamnesis.keluhanUtama, nilai: 'Batuk' }]));
+    expect(r[2].baris).toEqual(expect.arrayContaining([
+      { label: 'J03.9', nilai: `Tonsilitis akut (${KLINIS.kesimpulan.diagnosaMedis})` }, { label: 'J45.9', nilai: `Asma (${KLINIS.kesimpulan.diagnosaTambahan})` },
+      { label: 'Diagnosa banding', nilai: 'Faringitis akut' }, { label: 'Komunikasi, informasi, dan edukasi', nilai: 'Istirahat cukup' },
+    ]));
+    expect(r[3].baris).toEqual(expect.arrayContaining([{ label: 'Obat yang diberikan di poli', nilai: 'Salbutamol nebul' }]));
+  });
+
+  it('pemeriksaan fisik: kelompok normal satu kalimat, kelompok berubah per bidang bertanda', () => {
+    const pm = { ...DEFAULT_PEMERIKSAAN, odontogram_tanggal: '' };
+    const normal = barisPemeriksaanFisik(pm);
+    expect(normal.find((b) => b.label === 'Mata')?.nilai).toBe('Konjungtiva tidak anemis, sklera tidak ikterik, lain-lain tidak ada');
+    expect(normal.find((b) => b.label === 'Odontogram')?.nilai).toBe(KLINIS.pemeriksaan.odontogramBelum);
+    const ubah = barisPemeriksaanFisik({ ...pm, tht_faring: 'hiperemis', odontogram_tanggal: '2026-11-12' });
+    expect(ubah.find((b) => b.label === 'THT')?.nilai).toContain('Faring hiperemis (!)');
+    expect(ubah.find((b) => b.label === 'Odontogram')?.nilai).toContain('2026-11-12');
   });
 });
 
-describe('SOAPIE: kompatibilitas dan narasi', () => {
-  it('memetakan draf lama ke kelompok baru dan mempertahankan draf versi baru', () => {
-    expect(langkahDraf('periksa', 4, {})).toBe(4);
-    expect(langkahDraf('periksa', 5, {})).toBe(3);
-    expect(langkahDraf('periksa', 8, {})).toBe(6);
-    expect(langkahDraf('periksa', 5, { versi_draf: 2 })).toBe(5);
-    expect(langkahDraf('skrining', 1, {})).toBe(1);
+describe('default keadaan baik dan draf', () => {
+  it('pemeriksaan dan riwayat anamnesa baru terisi default di mode periksa; yang tersimpan tidak ditimpa', () => {
+    const kosong = bagianKosongServer();
+    const k = keadaanAwalForm('periksa', kosong);
+    expect(k.pemeriksaan.mata_konjungtiva).toBe(DEFAULT_PEMERIKSAAN.mata_konjungtiva);
+    expect(k.pemeriksaan.odontogram_tanggal).toBe('');
+    expect(k.riwayat.riwayat_pribadi).toBe(DEFAULT_ANAMNESIS.riwayat_pribadi);
+    expect(k.anamnesis.keluhan_utama).toBe('');
+    expect(keadaanAwalForm('skrining', kosong).pemeriksaan.mata_konjungtiva).toBe('');
+    const tersimpan = sahkan(bagianKosongServer(), 'pemeriksaan', { mata_konjungtiva: 'anemis' });
+    expect(keadaanAwalForm('periksa', tersimpan).pemeriksaan.mata_sklera).toBe('');
+    // form default saja tidak disimpan; begitu dokter mengisi, pemeriksaan default ikut tersimpan sebagai keadaan baik
+    const server = keadaanDariServer(kosong);
+    expect(rencanaSimpan('periksa', k, server, disahkanDari(kosong))).toEqual([]);
+    const diisi = { ...k, anamnesis: { ...k.anamnesis, keluhan_utama: 'Demam' } };
+    expect(rencanaSimpan('periksa', diisi, server, disahkanDari(kosong))).toEqual([{ bagian: 'anamnesis', galat: null }, { bagian: 'pemeriksaan', galat: null }]);
+  });
+
+  it('draf format lama mulai dari langkah pertama; draf versi sekarang dipertahankan', () => {
+    expect(langkahDraf(4, {})).toBe(0);
+    expect(langkahDraf(4, { versi_draf: 2 })).toBe(0);
+    expect(langkahDraf(4, { versi_draf: VERSI_DRAF })).toBe(4);
     expect(bagianLangkah(LANGKAH_PEMERIKSAAN[1])).toEqual(['tanda_vital', 'pemeriksaan']);
   });
 
-  it('memulihkan narasi, menyimpan perubahan dan pengosongan sebagai koreksi', () => {
-    const b = sahkan(bagianKosongServer(), 'implementasi', { isi: 'Luka dibersihkan' });
+  it('narasi: tersimpan dipulihkan, pengosongan setelah disahkan tetap dikirim dengan alasan', () => {
+    const b = sahkan(bagianKosongServer(), 'kie', { isi: 'Minum air hangat' });
     const awal = keadaanDariServer(b);
-    expect(awal.implementasi).toBe('Luka dibersihkan');
-    expect(awal.evaluasi).toBe('');
-    const k = pulihkanKeadaan(awal, { evaluasi: 'Nyeri berkurang' });
-    expect(isiBagian('evaluasi', k)).toEqual({ isi: 'Nyeri berkurang' });
-    expect(rencanaSimpan('periksa', k, awal, disahkanDari(b)).map((r) => r.bagian)).toEqual(['evaluasi']);
-    k.implementasi = '';
+    expect(awal.kie).toBe('Minum air hangat');
+    const k = { ...awal, kie: '', obat_poli: 'Salbutamol nebul' };
     const r = rencanaSimpan('periksa', k, awal, disahkanDari(b));
-    expect(r.find((x) => x.bagian === 'implementasi')).toEqual({ bagian: 'implementasi', galat: null });
+    expect(r.map((x) => x.bagian)).toEqual(['kie', 'obat_poli']);
     expect(perluAlasan(r, disahkanDari(b))).toBe(true);
-    expect(galatBagian('evaluasi', { ...k, evaluasi: 'x'.repeat(10001) })).not.toBeNull();
-  });
-
-  it('I/E kosong tidak membuat rencana simpan dan tidak menghalangi syarat selesai lama', () => {
-    const k = awalKeadaan();
-    const disahkan = disahkanDari(bagianKosongServer());
-    expect(rencanaSimpan('periksa', k, awalKeadaan(), disahkan)).toEqual([]);
-    expect(syaratSelesaiTerpenuhi({ ...disahkan, anamnesis: true, diagnosis: true, tindak_lanjut: true }, [])).toBe(true);
-    expect(ringkasanIsi(k).map((r) => r.judul)).toEqual(['S — Subjective', 'O — Objective', 'A — Assessment', 'P — Plan', 'I — Implementation', 'E — Evaluation']);
+    expect(galatBagian('diagnosis_banding', { ...k, diagnosis_banding: 'x'.repeat(1001) })).not.toBeNull();
+    expect(syaratSelesaiTerpenuhi({ ...disahkanDari(b), anamnesis: true, diagnosis: true, tindak_lanjut: true }, [])).toBe(true);
   });
 });
 
@@ -295,30 +308,18 @@ describe('draf order lab bersama pemeriksaan', () => {
     const draf = { ...awal, lab_dipilih: true, order_lab: { pemeriksaan: [7, 9], prioritas: 'segera' as const, catatan: 'Puasa' } };
     expect(pulihkanKeadaan(awal, JSON.parse(JSON.stringify(draf)))).toEqual(draf);
   });
-  it('draf lama dan pilihan rusak dipulihkan dengan aman', () => {
-    expect(pulihkanKeadaan(awalKeadaan(), { plan: 'Kontrol' }).order_lab.pemeriksaan).toEqual([]);
-    const k = pulihkanKeadaan(awalKeadaan(), { lab_dipilih: 'ya', order_lab: { pemeriksaan: [1, 1, -1, '2', null, 3.5], prioritas: 'rusak', catatan: 12 } });
+  it('pilihan rusak dipulihkan dengan aman', () => {
+    const k = pulihkanKeadaan(awalKeadaan(), { versi_draf: VERSI_DRAF, lab_dipilih: 'ya', order_lab: { pemeriksaan: [1, 1, -1, '2', null, 3.5], prioritas: 'rusak', catatan: 12 } });
     expect(k.lab_dipilih).toBe(false);
     expect(k.order_lab).toEqual({ pemeriksaan: [1], prioritas: 'rutin', catatan: '' });
   });
 });
 
 
-test('draf teks resep dipulihkan; draf lama berbentuk daftar obat diabaikan', () => {
+test('draf teks resep dipulihkan; bentuk tidak sesuai diabaikan', () => {
   const awal = awalKeadaan();
   const draf = { ...awal, resep: 'R/ Parasetamol 500 mg tab ½, CTM 4 mg tab ½, m.f. pulv. dtd No. X, s 3 dd pulv I' };
   expect(pulihkanKeadaan(awal, JSON.parse(JSON.stringify(draf)))).toEqual(draf);
-  expect(pulihkanKeadaan(awal, { plan: 'Kontrol' }).resep).toBe('');
-  expect(pulihkanKeadaan(awal, { resep: [{ master_obat_id: '7', jumlah: '10', aturan_pakai: '2 x 1' }] }).resep).toBe('');
+  expect(pulihkanKeadaan(awal, { versi_draf: VERSI_DRAF, resep: [{ master_obat_id: '7', jumlah: '10', aturan_pakai: '2 x 1' }] }).resep).toBe('');
 });
 
-
-test('ringkasan Plan mengikuti urutan formulir dan menyembunyikan rincian rujukan yang tidak berlaku', () => {
-  const k = awalKeadaan();
-  k.plan = 'Kontrol ulang';
-  k.tindak_lanjut = { jenis: 'pulang', tujuan: 'Tujuan lama', spri: 'SPRI-lama', catatan: '' };
-  const p = ringkasanIsi(k)[3];
-  expect(p.baris[0]).toEqual({ label: 'Tindak lanjut', nilai: 'Pulang' });
-  expect(p.baris[1]).toEqual({ label: 'Rencana pelayanan', nilai: 'Kontrol ulang' });
-  expect(p.baris).not.toEqual(expect.arrayContaining([expect.objectContaining({ nilai: 'Tujuan lama' }), expect.objectContaining({ nilai: 'SPRI-lama' })]));
-});

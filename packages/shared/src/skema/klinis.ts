@@ -2,9 +2,11 @@ import { z } from 'zod';
 import { GALAT, KLINIS } from '../teks';
 import type { CaraPembayaran, JenisKunjungan, StatusPengesahan, TahapLayanan } from '../status';
 import {
-  BAGIAN_KLINIS, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, PEMERIKSAAN_BIDANG, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL,
+  BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL,
 } from '../klinis';
-import type { BagianKlinis, BagianTemplat, JenisFavorit, JenisTindakLanjut, KunciTandaVital, PeranDiagnosis, SistemTerminologi, BidangPemeriksaan } from '../klinis';
+import type { BagianKlinis, BagianNarasi, BagianTemplat, JenisFavorit, JenisTindakLanjut, KunciTandaVital, PeranDiagnosis, SistemTerminologi } from '../klinis';
+import { BIDANG_TEKS_PEMERIKSAAN } from '../default-klinis';
+import type { BidangTeksPemeriksaan } from '../default-klinis';
 import { idPositif, tanggal, teksWajib } from './umum';
 import type { KunjunganDto } from './kunjungan';
 
@@ -14,11 +16,13 @@ const teksNull = (maks: number) => z.preprocess(kosongJadiNull, z.string().trim(
 
 export const bagianKlinis = z.enum(BAGIAN_KLINIS);
 
-// Anamnesis
+// Anamnesa (P7: urutan dan isian mengikuti formulir klinik)
 const anamnesisDasar = {
   penyerta: teksNull(1000),
+  riwayat_sekarang: teksNull(1000),
   riwayat_pribadi: teksNull(1000),
   riwayat_keluarga: teksNull(1000),
+  kajian_sosial: teksNull(1000),
 };
 export const anamnesisIsi = z.object({ keluhan_utama: teksWajib(1000), ...anamnesisDasar });
 export type AnamnesisIsi = z.infer<typeof anamnesisIsi>;
@@ -66,10 +70,21 @@ export const keperawatanIsi = z
   .transform((d) => (d.nyeri_jenis === 'tidak' ? { ...d, nyeri_skala: null, nyeri_lokasi: null, nyeri_durasi: null, nyeri_frekuensi: null, nyeri_hilang_bila: null } : d));
 export type KeperawatanIsi = z.infer<typeof keperawatanIsi>;
 
-// Pemeriksaan fisik: teks per bidang, minimal satu terisi.
-const bentukPemeriksaan = Object.fromEntries(PEMERIKSAAN_BIDANG.map((b) => [b, teksNull(1000)])) as Record<BidangPemeriksaan, ReturnType<typeof teksNull>>;
+// Pemeriksaan fisik terstruktur (P7): teks per bidang (maks 300) dan tanggal odontogram (YYYY-MM-DD), minimal satu terisi.
+const POLA_TANGGAL = /^\d{4}-\d{2}-\d{2}$/;
+/** Tanggal kalender YYYY-MM-DD yang sah (mis. 2026-02-30 ditolak). */
+export const tanggalKalenderSah = (v: string): boolean => {
+  if (!POLA_TANGGAL.test(v)) return false;
+  const d = new Date(`${v}T00:00:00.000Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+};
+const tanggalOdontogram = z.preprocess(kosongJadiNull, z.string().trim().refine(tanggalKalenderSah, KLINIS.galat.tanggalOdontogram).nullable());
+const bentukPemeriksaan = {
+  ...(Object.fromEntries(BIDANG_TEKS_PEMERIKSAAN.map((b) => [b, teksNull(300)])) as Record<BidangTeksPemeriksaan, ReturnType<typeof teksNull>>),
+  odontogram_tanggal: tanggalOdontogram,
+};
 export const pemeriksaanIsi = z.object(bentukPemeriksaan).refine((d) => Object.values(d).some((v) => v !== null), { message: KLINIS.galat.pemeriksaanKosong });
-export type PemeriksaanIsi = Record<BidangPemeriksaan, string | null>;
+export type PemeriksaanIsi = Record<BidangTeksPemeriksaan | 'odontogram_tanggal', string | null>;
 
 // Diagnosis ICD-10: tepat satu peran utama.
 export const diagnosisItem = z.object({
@@ -130,16 +145,18 @@ export const tindakLanjutIsi = z
   .transform((d) => ({ ...d, tujuan: d.jenis === 'pulang' ? null : d.tujuan, spri: d.jenis === 'rawat_inap' ? d.spri : null }));
 export type TindakLanjutIsi = z.infer<typeof tindakLanjutIsi>;
 
-export const narasiKlinisIsi = z.object({ isi: teksNull(10000) });
-export type NarasiKlinisIsi = z.infer<typeof narasiKlinisIsi>;
+/** Narasi formulir (P7): diagnosa banding, KIE, obat yang diberikan di poli; panjang maksimal per bagian. */
+const narasiIsi = (b: BagianNarasi) => z.object({ isi: teksNull(MAKS_NARASI[b]) });
+export const SKEMA_NARASI = Object.fromEntries(BAGIAN_NARASI.map((b) => [b, narasiIsi(b)])) as Record<BagianNarasi, ReturnType<typeof narasiIsi>>;
+export type NarasiKlinisIsi = { isi: string | null };
 
 /** Skema isi per bagian; `alasan` wajib saat memperbaiki bagian yang sudah disahkan. */
 export const SKEMA_BAGIAN = {
-  assessment: narasiKlinisIsi, plan: narasiKlinisIsi, implementasi: narasiKlinisIsi, evaluasi: narasiKlinisIsi,
+  diagnosis_banding: SKEMA_NARASI.diagnosis_banding, kie: SKEMA_NARASI.kie, obat_poli: SKEMA_NARASI.obat_poli,
   anamnesis: anamnesisIsi, tanda_vital: tandaVitalIsi, keperawatan: keperawatanIsi, pemeriksaan: pemeriksaanIsi, diagnosis: diagnosisIsi, tindakan: tindakanIsi, tindak_lanjut: tindakLanjutIsi,
 } as const satisfies Record<BagianKlinis, z.ZodType>;
 export type IsiBagian = {
-  assessment: NarasiKlinisIsi; plan: NarasiKlinisIsi; implementasi: NarasiKlinisIsi; evaluasi: NarasiKlinisIsi;
+  diagnosis_banding: NarasiKlinisIsi; kie: NarasiKlinisIsi; obat_poli: NarasiKlinisIsi;
   anamnesis: AnamnesisIsi; tanda_vital: TandaVitalIsi; keperawatan: KeperawatanIsi; pemeriksaan: PemeriksaanIsi; diagnosis: DiagnosisIsi; tindakan: TindakanIsi; tindak_lanjut: TindakLanjutIsi;
 };
 

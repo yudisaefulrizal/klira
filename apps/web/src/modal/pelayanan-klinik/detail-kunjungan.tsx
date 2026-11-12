@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BAGIAN_KLINIS } from '@klira/shared';
+import { BAGIAN_KLINIS, KLINIS } from '@klira/shared';
 import type { KlinisKunjunganDto } from '@klira/shared';
 import { ambilKlinis } from '../../api-klien/klinis';
 import { GalatApi } from '../../api-klien/klien';
@@ -11,7 +11,8 @@ import { LABEL_BAGIAN, keadaanDariServer, ringkasanIsi } from './keadaan-pemerik
 import { HasilPenunjangKunjungan } from './hasil-penunjang-kunjungan';
 import { RingkasanOrderKunjungan } from './ringkasan-order-kunjungan';
 
-export function DetailSoapie({ kunjunganId }: { kunjunganId: number }) {
+/** Rekam medis satu kunjungan (baca saja) berurutan blok formulir klinik, beserta order, hasil penunjang, dan pengesahan per bagian. */
+export function DetailKunjungan({ kunjunganId }: { kunjunganId: number }) {
   const [data, setData] = useState<KlinisKunjunganDto | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   useEffect(() => {
@@ -19,11 +20,11 @@ export function DetailSoapie({ kunjunganId }: { kunjunganId: number }) {
     setData(null);
     setGalat(null);
     ambilKlinis(kunjunganId).then((d) => { if (!batal) setData(d); })
-      .catch((e) => { if (!batal) setGalat(e instanceof GalatApi ? e.message : 'Catatan SOAPIE gagal dimuat.'); });
+      .catch((e) => { if (!batal) setGalat(e instanceof GalatApi ? e.message : KLINIS.detail.gagal); });
     return () => { batal = true; };
   }, [kunjunganId]);
   if (galat) return <Peringatan>{galat}</Peringatan>;
-  if (!data) return <span>Memuat catatan SOAPIE…</span>;
+  if (!data) return <span>{KLINIS.detail.memuat}</span>;
   return <Kolom>
     <DaftarRingkasan bagian={ringkasanIsi(keadaanDariServer(data.bagian))} />
     <RingkasanOrderKunjungan kunjunganId={kunjunganId} />

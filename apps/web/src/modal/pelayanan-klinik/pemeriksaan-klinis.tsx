@@ -29,7 +29,7 @@ import {
 } from './keadaan-pemeriksaan';
 import type { BagianSalinan, KeadaanPemeriksaan, ModePemeriksaan } from './keadaan-pemeriksaan';
 import {
-  LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahMenyusul, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
+  LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahPemeriksaan, LangkahRingkasan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut,
 } from './langkah-pemeriksaan';
 import { BagianKeperawatan, InfoKunjunganSkrining, RingkasanSkriningDokter } from './langkah-keperawatan';
 import { LangkahPenunjang } from './langkah-penunjang';
@@ -57,8 +57,9 @@ type Props = {
 const labelBagian = LABEL_BAGIAN;
 
 /**
- * Modal Pemeriksaan klinis: S > O > A > P > I > E > Ringkasan. Daftar langkah dari konfigurasi (keadaan-pemeriksaan). Perawat memakai mode skrining
- * (tanda vital dan keperawatan, P6); dokter melihat ringkasan skrining di atas langkah S.
+ * Modal Pemeriksaan klinis mengikuti formulir rekam medis klinik: Anamnesa > Pemeriksaan fisik > Pemeriksaan penunjang > Kesimpulan > Terapi >
+ * Tindak lanjut > Ringkasan (konfigurasi di keadaan-pemeriksaan). Perawat memakai mode skrining (tanda vital dan keperawatan); dokter melihat
+ * ringkasan skrining di atas langkah Anamnesa.
  * Simpan = pengesahan catatan per bagian yang berubah. Draf otomatis disimpan di SERVER (data kesehatan tidak boleh di penyimpanan lokal
  * komputer bersama), kedaluwarsa di server, dan dihapus saat selesai.
  */
@@ -116,7 +117,7 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (!klinis || !drafSiap || formSiap) return;
     const dasar = keadaanAwalForm(mode, klinis.bagian);
     if (pulihan) {
-      const n = batasi(langkahDraf(mode, pulihan.langkah, pulihan.nilai), konfig.length);
+      const n = batasi(langkahDraf(pulihan.langkah, pulihan.nilai), konfig.length);
       setKeadaan(pulihkanKeadaan(dasar, pulihan.nilai));
       setIndeks(n);
       setDikunjungi(Array.from({ length: n + 1 }, (_x, i) => i));
@@ -143,13 +144,11 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
   const infoServer = (b?: BagianKlinis) => (b && klinis ? klinis.bagian[b] : null);
   const dasar = (b?: BagianKlinis) => ({ k: keadaan, ubah, galat: galatDi(b), server: infoServer(b) });
   const favoritDari = (j: JenisFavorit) => favorit.filter((f) => f.jenis === j);
-  const berikut = () => pindah(indeks + 1);
 
   const isiLangkah = (l: (typeof konfig)[number]) => {
     if (!klinis || !formSiap) return galatMuat ? <Peringatan>{galatMuat}</Peringatan> : <span style={{ color: token.warna.teksRedup }}>{KLINIS.konteks.memuat}</span>;
-    if (!l.aktif) return <LangkahMenyusul langkah={l} onLewati={berikut} />;
     switch (l.id) {
-      case 'subjective': {
+      case 'anamnesis': {
         const keperawatanBerubah = adaPerubahanBagian('keperawatan', keadaan, server);
         return <Kolom>
           <RingkasanSkriningDokter {...dasar('keperawatan')} tersimpan={server} terbuka={ubahKeperawatan || keperawatanBerubah} berubah={keperawatanBerubah}
@@ -163,35 +162,26 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
         <LangkahTandaVital {...dasar('tanda_vital')} />
         <BagianKeperawatan {...dasar('keperawatan')} />
       </Kolom>;
-      case 'objective': return <Kolom>
+      case 'pemeriksaan': return <Kolom>
         <LangkahTandaVital {...dasar('tanda_vital')} />
         <LangkahPemeriksaan {...dasar('pemeriksaan')} />
+      </Kolom>;
+      case 'penunjang': return <Kolom>
         <HasilPenunjangKunjungan kunjunganId={kunjunganId} />
+        <KotakCentang id="penunjang-lab" label={KLINIS.penunjang.pesanLab} checked={keadaan.lab_dipilih} disabled={memproses} onChange={(e) => ubah({ lab_dipilih: e.target.checked })} />
+        {keadaan.lab_dipilih && <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat ? galatOrderLab(keadaan.order_lab) : null} />}
       </Kolom>;
-      case 'assessment': return <Kolom>
-        <LangkahNarasi bagian="assessment" {...dasar('assessment')} />
+      case 'kesimpulan': return <Kolom>
         <LangkahDiagnosis {...dasar('diagnosis')} favorit={favoritDari('diagnosis')} />
+        <LangkahNarasi bagian="diagnosis_banding" keterangan={KLINIS.kesimpulan.bandingKet} {...dasar('diagnosis_banding')} />
+        <LangkahNarasi bagian="kie" {...dasar('kie')} />
       </Kolom>;
-      case 'plan': return <Kolom>
-        <LangkahTindakLanjut {...dasar('tindak_lanjut')} ringkas />
-        <LangkahNarasi bagian="plan" {...dasar('plan')} />
-        <LangkahResep teks={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />
-        <KotakCentang id="plan-lab" label="Lab" checked={keadaan.lab_dipilih} disabled={memproses} onChange={(e) => ubah({ lab_dipilih: e.target.checked })} />
-        {keadaan.lab_dipilih && <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat && keadaan.lab_dipilih ? galatOrderLab(keadaan.order_lab) : null} />}
-      </Kolom>;
-      case 'implementasi': return <Kolom>
-        <LangkahNarasi bagian="implementasi" {...dasar('implementasi')} />
+      case 'terapi': return <Kolom>
         <LangkahTindakan {...dasar('tindakan')} favorit={favoritDari('tindakan')} />
+        <LangkahNarasi bagian="obat_poli" keterangan={KLINIS.terapi.obatPoliKet} {...dasar('obat_poli')} />
+        <LangkahResep teks={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />
       </Kolom>;
-      case 'evaluasi': return <LangkahNarasi bagian="evaluasi" {...dasar('evaluasi')} />;
-      case 'anamnesis': return <LangkahAnamnesis {...dasar(l.bagian)} />;
-      case 'tanda_vital': return <LangkahTandaVital {...dasar(l.bagian)} />;
-      case 'pemeriksaan': return <LangkahPemeriksaan {...dasar(l.bagian)} />;
-      case 'diagnosis': return <LangkahDiagnosis {...dasar(l.bagian)} favorit={favoritDari('diagnosis')} />;
-      case 'tindakan': return <LangkahTindakan {...dasar(l.bagian)} favorit={favoritDari('tindakan')} />;
-      case 'resep': return <LangkahResep teks={keadaan.resep} onUbah={(resep) => ubah({ resep })} tampilGalat={tampilGalat && adaResepBaru} disabled={memproses} />;
-      case 'penunjang': return <LangkahPenunjang cara={konteks?.kunjungan.cara_pembayaran === 'jkn' ? 'jkn' : 'umum'} k={keadaan.order_lab} onUbah={(order_lab) => ubah({ order_lab })} disabled={memproses} galatPilihan={tampilGalat && keadaan.lab_dipilih ? galatOrderLab(keadaan.order_lab) : null} />;
-      case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar(l.bagian)} />;
+      case 'tindak_lanjut': return <LangkahTindakLanjut {...dasar('tindak_lanjut')} />;
       default:
         return (
           <LangkahRingkasan
@@ -215,13 +205,13 @@ export function PemeriksaanKlinis({ kunjunganId, pasien, mode, onTutup, onSelesa
     if (galatObat) {
       setTampilGalat(true);
       setGalat(galatObat);
-      pindah(konfig.findIndex((l) => l.id === 'plan' || l.id === 'resep'));
+      pindah(konfig.findIndex((l) => l.id === 'terapi'));
       return;
     }
     if (keadaan.lab_dipilih && galatOrderLab(keadaan.order_lab)) {
       setTampilGalat(true);
       setGalat(galatOrderLab(keadaan.order_lab));
-      pindah(konfig.findIndex((l) => l.id === 'plan' || l.id === 'penunjang'));
+      pindah(konfig.findIndex((l) => l.id === 'penunjang'));
       return;
     }
     const masalah = rencana.findIndex((r) => r.galat);

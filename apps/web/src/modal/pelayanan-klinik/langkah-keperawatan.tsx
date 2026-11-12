@@ -110,7 +110,7 @@ type PropsRingkasanDokter = DasarLangkah & {
   berubah: boolean;
 };
 
-/** Ringkasan skrining perawat (tanda vital dan keperawatan, baca saja) di atas langkah S; dokter berizin klinis boleh membuka isian keperawatan. */
+/** Ringkasan skrining perawat (tanda vital dan keperawatan, baca saja) di atas langkah Anamnesa; dokter berizin klinis boleh membuka isian keperawatan. */
 export function RingkasanSkriningDokter({ tersimpan, terbuka, onBuka, onTutupUbah, berubah, ...dasar }: PropsRingkasanDokter) {
   const ttv = ringkasTandaVitalTeks(tersimpan);
   return (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { BAGIAN_KLINIS, REKAM_MEDIS, TOMBOL } from '@klira/shared';
-import type { BagianKlinis, HasilPerbaikanDto, KlinisKunjunganDto } from '@klira/shared';
+import { BAGIAN_KLINIS, BAGIAN_NARASI, REKAM_MEDIS, TOMBOL } from '@klira/shared';
+import type { BagianKlinis, BagianNarasi, HasilPerbaikanDto, KlinisKunjunganDto } from '@klira/shared';
 import { ambilKlinis } from '../../api-klien/klinis';
 import { GalatApi } from '../../api-klien/klien';
 import { ajukanPerbaikan } from '../../api-klien/rekam-medis';
@@ -103,7 +103,7 @@ export function PerbaikiCatatan({ kunjunganId, pasien, onTutup, onSelesai }: Pro
             id="perbaikan-bagian" label={P.bagian} opsi={opsi} value={bagian}
             onChange={(e) => { setBagian(e.target.value as BagianKlinis | ''); setK(keadaanDariServer(klinis.bagian)); setDicoba(false); }}
           />
-          {(bagian === 'assessment' || bagian === 'plan' || bagian === 'implementasi' || bagian === 'evaluasi') && <LangkahNarasi bagian={bagian} {...dasar} />}
+          {(BAGIAN_NARASI as readonly string[]).includes(bagian) && <LangkahNarasi bagian={bagian as BagianNarasi} {...dasar} />}
           {opsi.length === 1 && <Peringatan nada="biru">{P.belumDisahkan}</Peringatan>}
           {bagian === 'anamnesis' && <LangkahAnamnesis {...dasar} />}
           {bagian === 'tanda_vital' && <LangkahTandaVital {...dasar} />}

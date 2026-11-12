@@ -6,7 +6,9 @@ import {
 describe('skema catatan klinis', () => {
   it('anamnesis: keluhan wajib dan bidang kosong dinormalkan menjadi null', () => {
     expect(anamnesisIsi.safeParse({ keluhan_utama: '  ' }).success).toBe(false);
-    expect(anamnesisIsi.parse({ keluhan_utama: ' Batuk ', penyerta: ' ' })).toEqual({ keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null });
+    expect(anamnesisIsi.parse({ keluhan_utama: ' Batuk ', penyerta: ' ' })).toEqual({ keluhan_utama: 'Batuk', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: null, riwayat_keluarga: null, kajian_sosial: null });
+    expect(anamnesisIsi.parse({ keluhan_utama: 'Batuk', riwayat_sekarang: ' Sejak 3 hari ', kajian_sosial: 'Perokok' })).toMatchObject({ riwayat_sekarang: 'Sejak 3 hari', kajian_sosial: 'Perokok' });
+    expect(anamnesisIsi.safeParse({ keluhan_utama: 'Batuk', riwayat_sekarang: 'x'.repeat(1001) }).success).toBe(false);
     // alergi pindah ke skrining keperawatan (P6)
     expect(anamnesisIsi.parse({ keluhan_utama: 'Batuk', alergi: 'Penisilin' })).not.toHaveProperty('alergi');
   });
@@ -21,7 +23,17 @@ describe('skema catatan klinis', () => {
 
   it('pemeriksaan: minimal satu bidang terisi', () => {
     expect(pemeriksaanIsi.safeParse({}).success).toBe(false);
-    expect(pemeriksaanIsi.parse({ keadaan_umum: 'Baik' })).toMatchObject({ keadaan_umum: 'Baik', abdomen: null });
+    expect(pemeriksaanIsi.parse({ mata_konjungtiva: 'anemis' })).toMatchObject({ mata_konjungtiva: 'anemis', paru_bunyi: null, odontogram_tanggal: null });
+    expect(pemeriksaanIsi.safeParse({ paru_bunyi: 'x'.repeat(301) }).success).toBe(false);
+    // Kunci tak dikenal dibuang sehingga tidak ada bidang terisi.
+    expect(pemeriksaanIsi.safeParse({ kunci_tak_dikenal: 'Baik' }).success).toBe(false);
+  });
+
+  it('pemeriksaan: tanggal odontogram YYYY-MM-DD yang sah', () => {
+    expect(pemeriksaanIsi.parse({ odontogram_tanggal: '2026-11-12' })).toMatchObject({ odontogram_tanggal: '2026-11-12' });
+    expect(pemeriksaanIsi.safeParse({ odontogram_tanggal: '2026-02-30' }).success).toBe(false);
+    expect(pemeriksaanIsi.safeParse({ odontogram_tanggal: '12/11/2026' }).success).toBe(false);
+    expect(pemeriksaanIsi.parse({ paru_bunyi: 'vesikuler', odontogram_tanggal: '' })).toMatchObject({ odontogram_tanggal: null });
   });
 
   it('diagnosis: kode ICD-10 sah, tepat satu utama, tanpa kode ganda', () => {
@@ -51,7 +63,16 @@ describe('skema catatan klinis', () => {
   });
 
   it('semua bagian punya skema', () => {
-    expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'].sort());
+    expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'diagnosis_banding', 'kie', 'obat_poli'].sort());
+  });
+
+  it('narasi formulir: panjang maksimal per bagian, kosong menjadi null', () => {
+    expect(SKEMA_BAGIAN.diagnosis_banding.parse({ isi: ' J02.9 faringitis ' })).toEqual({ isi: 'J02.9 faringitis' });
+    expect(SKEMA_BAGIAN.diagnosis_banding.safeParse({ isi: 'x'.repeat(1001) }).success).toBe(false);
+    expect(SKEMA_BAGIAN.kie.safeParse({ isi: 'x'.repeat(2000) }).success).toBe(true);
+    expect(SKEMA_BAGIAN.kie.safeParse({ isi: 'x'.repeat(2001) }).success).toBe(false);
+    expect(SKEMA_BAGIAN.obat_poli.safeParse({ isi: 'x'.repeat(1001) }).success).toBe(false);
+    expect(SKEMA_BAGIAN.obat_poli.parse({ isi: '  ' })).toEqual({ isi: null });
   });
 });
 
@@ -67,6 +88,7 @@ describe('skema pendamping', () => {
     expect(favoritMasukan.safeParse({ jenis: 'lain', kode: 'I10', nama: 'x' }).success).toBe(false);
     expect(templatMasukan.safeParse({ bagian: 'anamnesis', nama: 'Batuk', isi: { keluhan_utama: 'Batuk' } }).success).toBe(true);
     expect(templatMasukan.safeParse({ bagian: 'tindakan', nama: 'x', isi: {} }).success).toBe(false);
+    expect(templatMasukan.parse({ bagian: 'pemeriksaan', nama: 'Faringitis', isi: { tht_faring: 'hiperemis', kunci_tak_dikenal: 'x' } }).isi).not.toHaveProperty('kunci_tak_dikenal');
     expect(keluargaMasukan.safeParse({ anggota_pasien_id: 3, hubungan: 'Anak' }).success).toBe(true);
     expect(ubahKeluargaMasukan.safeParse({}).success).toBe(false);
     expect(ubahKeluargaMasukan.safeParse({ dibatasi: true }).success).toBe(true);

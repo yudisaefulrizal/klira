@@ -70,7 +70,7 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
     const { l, catatan, pengesahanTersimpan } = buatDunia();
     const h = await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
     expect(h).toMatchObject({ ok: true, data: { tersimpan: true, bagian: { verifikasi: 'sah', pengesahan: { versi: 1, jenis_akun: 'Dokter/DPJP' } } } });
-    expect(pengesahanTersimpan.get('anamnesis:10')?.hash).toBe(hashIsi({ keluhan_utama: 'Batuk', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null }));
+    expect(pengesahanTersimpan.get('anamnesis:10')?.hash).toBe(hashIsi({ keluhan_utama: 'Batuk', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: null, riwayat_keluarga: null, kajian_sosial: null }));
     expect(catatan).toEqual([expect.objectContaining({ aksi: 'input', entitas: 'anamnesis', entitas_id: 10 })]);
   });
 
@@ -103,7 +103,7 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
   it('deteksi perubahan: isi di basis data diubah di luar alur terlihat sebagai berubah', async () => {
     const { l, isi } = buatDunia();
     await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
-    isi.set('anamnesis:10', { keluhan_utama: 'Diubah langsung', penyerta: null, riwayat_pribadi: null, riwayat_keluarga: null });
+    isi.set('anamnesis:10', { keluhan_utama: 'Diubah langsung', penyerta: null, riwayat_sekarang: null, riwayat_pribadi: null, riwayat_keluarga: null, kajian_sosial: null });
     const h = await l.ambil(saya, 10);
     expect(h).toMatchObject({ ok: true, data: { bagian: { anamnesis: { verifikasi: 'berubah' }, diagnosis: { verifikasi: 'belum_disahkan', isi: null } } } });
   });
@@ -240,8 +240,8 @@ describe('layanan klinis: draf server', () => {
   });
 });
 
-describe('narasi SOAPIE', () => {
-  it.each(['assessment', 'plan', 'implementasi', 'evaluasi'] as const)('%s: simpan, buka, koreksi, audit, dan isolasi fasyankes', async (bagian) => {
+describe('narasi formulir (diagnosa banding, KIE, obat di poli)', () => {
+  it.each(['diagnosis_banding', 'kie', 'obat_poli'] as const)('%s: simpan, buka, koreksi, audit, dan isolasi fasyankes', async (bagian) => {
     const { l, catatan, versiCatatan } = buatDunia();
     expect(await l.simpanBagian(saya, 10, bagian, { isi: '  Catatan nakes  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: true, bagian: { isi: { isi: 'Catatan nakes' }, verifikasi: 'sah', pengesahan: { versi: 1, pengguna_id: 7 } } } });
     expect(await l.ambil(saya, 10)).toMatchObject({ ok: true, data: { bagian: { [bagian]: { isi: { isi: 'Catatan nakes' }, verifikasi: 'sah' } } } });
@@ -254,8 +254,17 @@ describe('narasi SOAPIE', () => {
 
   it('narasi kosong pertama tidak menghasilkan versi atau pengesahan', async () => {
     const { l, repo } = buatDunia();
-    expect(await l.simpanBagian(saya, 10, 'evaluasi', { isi: '  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: false, bagian: { isi: null, pengesahan: null } } });
+    expect(await l.simpanBagian(saya, 10, 'kie', { isi: '  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: false, bagian: { isi: null, pengesahan: null } } });
     expect(repo.simpanBagian).not.toHaveBeenCalled();
+  });
+
+  it('narasi bukan syarat penyelesaian', async () => {
+    const { l, dunia } = buatDunia();
+    await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
+    await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama' }] }, undefined);
+    await l.simpanBagian(saya, 10, 'tindak_lanjut', { jenis: 'pulang' }, undefined);
+    expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: true });
+    expect(dunia.tahap).toBe('kasir');
   });
 
   it('penyelesaian menolak bagian wajib yang berubah setelah disahkan', async () => {

@@ -1,7 +1,7 @@
 /** Konstanta modul klinis (4.2, 4.8): bagian catatan, tanda vital dengan kode LOINC dan satuan UCUM, bidang pemeriksaan. */
 
 /** Bagian pemeriksaan klinis; tiap bagian disahkan sendiri (satu pengesahan per bagian, entitas_id = id kunjungan). */
-export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'assessment', 'plan', 'implementasi', 'evaluasi'] as const;
+export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'diagnosis_banding', 'kie', 'obat_poli'] as const;
 export type BagianKlinis = (typeof BAGIAN_KLINIS)[number];
 
 export type DefinisiTandaVital = { kunci: string; loinc: string; satuan: string; min: number; max: number };
@@ -27,8 +27,7 @@ export const SKALA_NYERI_MAKS = 10;
 export const SKRINING_VISUAL = ['hijau', 'kuning', 'merah'] as const;
 export type SkriningVisual = (typeof SKRINING_VISUAL)[number];
 
-export const PEMERIKSAAN_BIDANG = ['keadaan_umum', 'kepala_leher', 'thorax', 'abdomen', 'ekstremitas', 'catatan'] as const;
-export type BidangPemeriksaan = (typeof PEMERIKSAAN_BIDANG)[number];
+// Bidang pemeriksaan fisik terstruktur (P7): PEMERIKSAAN_BIDANG, definisi, kelompok, dan default di default-klinis.ts.
 
 export const PERAN_DIAGNOSIS = ['utama', 'penyerta'] as const;
 export type PeranDiagnosis = (typeof PERAN_DIAGNOSIS)[number];
@@ -49,9 +48,15 @@ export const BATAS_PERBAIKAN_JAM = 48;
 export const POLA_ICD10 = /^[A-Z]\d{2}(\.[0-9A-Z]{1,4})?$/;
 export const POLA_ICD9CM = /^\d{2}(\.\d{1,2})?$/;
 
-/** Bagian narasi yang melengkapi data klinis terstruktur. */
-export const BAGIAN_NARASI = ['assessment', 'plan', 'implementasi', 'evaluasi'] as const;
+/**
+ * Bagian narasi (teks bebas) yang melengkapi data klinis terstruktur, mengikuti formulir klinik (P7):
+ * diagnosa banding dan KIE di Kesimpulan, obat yang diberikan di poli di Terapi. Bukan syarat penyelesaian,
+ * dan diagnosa banding tidak ikut pengkodean, klaim, statistik, maupun diagnosis aktif.
+ */
+export const BAGIAN_NARASI = ['diagnosis_banding', 'kie', 'obat_poli'] as const;
 export type BagianNarasi = (typeof BAGIAN_NARASI)[number];
 export const LABEL_NARASI: Record<BagianNarasi, string> = {
-  assessment: 'Penilaian klinis', plan: 'Rencana pelayanan', implementasi: 'Pelaksanaan pelayanan', evaluasi: 'Evaluasi',
+  diagnosis_banding: 'Diagnosa banding', kie: 'Komunikasi, informasi, dan edukasi', obat_poli: 'Obat yang diberikan di poli',
 };
+/** Panjang maksimal isi narasi per bagian. */
+export const MAKS_NARASI: Record<BagianNarasi, number> = { diagnosis_banding: 1000, kie: 2000, obat_poli: 1000 };

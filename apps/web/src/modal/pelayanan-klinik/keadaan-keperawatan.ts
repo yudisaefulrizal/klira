@@ -89,7 +89,7 @@ export const keperawatanKosong = (k: KeadaanKeperawatan): boolean =>
 
 const yaTidak = (v: boolean) => (v ? KLINIS.keperawatan.ya : KLINIS.keperawatan.tidak);
 
-/** Ringkasan baca saja (ringkasan dokter di atas langkah S, ringkasan akhir, detail SOAPIE). */
+/** Ringkasan baca saja (ringkasan dokter di atas langkah Anamnesa, ringkasan akhir, detail kunjungan). */
 export function ringkasanKeperawatan(k: KeadaanKeperawatan): BagianRingkasan {
   const t = KLINIS.keperawatan;
   const nilai = (v: string) => v.trim() || '-';

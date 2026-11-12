@@ -1,11 +1,13 @@
 import { awalResep } from './keadaan-farmasi';
 import { awalOrderLab } from './keadaan-order-lab';
 import type { KeadaanOrderLab } from './keadaan-order-lab';
-import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL, kunciTindakan } from '@klira/shared';
+import {
+  BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL, isiDefault, isianDiubah, kunciTindakan, ringkasanPemeriksaan,
+} from '@klira/shared';
 import type {
   BagianNarasi, BagianKlinis, BidangPemeriksaan, JenisTindakLanjut, KlinisKunjunganDto, KunciTandaVital, SalinanKunjunganDto, TandaVitalIsi, TemplatDto, PeranDiagnosis, StatusPengesahan,
 } from '@klira/shared';
-import { KLINIS, STATUS_PERAN_DIAGNOSIS } from '@klira/shared';
+import { KLINIS } from '@klira/shared';
 import type { BagianRingkasan } from '../../komponen/ui/susunan';
 import { defaultKeperawatan, keperawatanDariIsi, keperawatanKosong, kosongKeperawatan, ringkasanKeperawatan } from './keadaan-keperawatan';
 import type { KeadaanKeperawatan } from './keadaan-keperawatan';
@@ -22,9 +24,9 @@ const tarifJumlah = (t: { tarif_layanan_id?: number | null; jumlah?: number | nu
   ...(t.tarif_layanan_id ? { tarif_layanan_id: t.tarif_layanan_id } : {}), ...(t.jumlah && t.jumlah !== 1 ? { jumlah: String(t.jumlah) } : {}),
 });
 export type KeadaanPemeriksaan = {
-  anamnesis: { keluhan_utama: string; penyerta: string };
-  /** Riwayat kesehatan pribadi. */
-  riwayat: { riwayat_pribadi: string; riwayat_keluarga: string };
+  anamnesis: { keluhan_utama: string; penyerta: string; riwayat_sekarang: string };
+  /** Riwayat penyakit dahulu, keluarga, dan kajian sosial. */
+  riwayat: { riwayat_pribadi: string; riwayat_keluarga: string; kajian_sosial: string };
   tanda_vital: Record<KunciTandaVital, string>;
   /** Skrining keperawatan (P6); alergi pasien dikaji di sini. */
   keperawatan: KeadaanKeperawatan;
@@ -34,10 +36,10 @@ export type KeadaanPemeriksaan = {
   tindak_lanjut: { jenis: JenisTindakLanjut | ''; tujuan: string; spri: string; catatan: string };
   /** Alasan perbaikan bagian yang sudah disahkan. */
   alasan: string;
-  assessment: string;
-  plan: string;
-  implementasi: string;
-  evaluasi: string;
+  /** Narasi formulir klinik: diagnosa banding dan KIE (Kesimpulan), obat yang diberikan di poli (Terapi). */
+  diagnosis_banding: string;
+  kie: string;
+  obat_poli: string;
   versi_draf: number;
   lab_dipilih: boolean;
   order_lab: KeadaanOrderLab;
@@ -52,6 +54,8 @@ export type KeadaanPemeriksaan = {
 export function pulihkanKeadaan(dasar: KeadaanPemeriksaan, nilai: unknown): KeadaanPemeriksaan {
   if (!nilai || typeof nilai !== 'object' || Array.isArray(nilai)) return dasar;
   const n = nilai as Record<string, unknown>;
+  // Draf format lama dibuang.
+  if (n.versi_draf !== VERSI_DRAF) return dasar;
   const hasil: Record<string, unknown> = { ...dasar };
   for (const [kunci, d] of Object.entries(dasar)) {
     const v = n[kunci];
@@ -78,9 +82,12 @@ export function pulihkanKeadaan(dasar: KeadaanPemeriksaan, nilai: unknown): Kead
 
 const kosongTeks = <K extends string>(kunci: readonly K[]) => Object.fromEntries(kunci.map((k) => [k, ''])) as Record<K, string>;
 
+/** Versi format draf; draf dengan versi lain diabaikan. */
+export const VERSI_DRAF = 3;
+
 export const awalKeadaan = (): KeadaanPemeriksaan => ({
-  anamnesis: { keluhan_utama: '', penyerta: '' },
-  riwayat: { riwayat_pribadi: '', riwayat_keluarga: '' },
+  anamnesis: { keluhan_utama: '', penyerta: '', riwayat_sekarang: '' },
+  riwayat: { riwayat_pribadi: '', riwayat_keluarga: '', kajian_sosial: '' },
   tanda_vital: kosongTeks(TANDA_VITAL.map((t) => t.kunci)),
   keperawatan: kosongKeperawatan(),
   pemeriksaan: kosongTeks(PEMERIKSAAN_BIDANG),
@@ -88,51 +95,46 @@ export const awalKeadaan = (): KeadaanPemeriksaan => ({
   tindakan: [],
   tindak_lanjut: { jenis: '', tujuan: '', spri: '', catatan: '' },
   lab_dipilih: false, order_lab: awalOrderLab(), resep: awalResep(),
-  alasan: '', assessment: '', plan: '', implementasi: '', evaluasi: '', versi_draf: 2,
+  alasan: '', diagnosis_banding: '', kie: '', obat_poli: '', versi_draf: VERSI_DRAF,
 });
 
-// --- Langkah dari konfigurasi (titik sambung untuk butir berikutnya) ---
+// --- Langkah dari konfigurasi ---
 
-export type IdLangkah = 'keperawatan' | 'subjective' | 'objective' | 'assessment' | 'plan' | 'implementasi' | 'evaluasi' | 'anamnesis' | 'tanda_vital' | 'pemeriksaan' | 'diagnosis' | 'tindakan' | 'resep' | 'penunjang' | 'tindak_lanjut' | 'ringkasan';
+export type IdLangkah = 'keperawatan' | 'anamnesis' | 'pemeriksaan' | 'penunjang' | 'kesimpulan' | 'terapi' | 'tindak_lanjut' | 'ringkasan';
 export type KonfigLangkah = {
   id: IdLangkah;
   judul: string;
   /** Bagian catatan yang diisi langkah ini (kosong untuk langkah tanpa catatan). */
   bagian?: BagianKlinis;
   bagianGrup?: readonly BagianKlinis[];
-  /** false = langkah belum tersedia: menampilkan penjelasan `menyusul` dan dapat dilewati. Butir berikutnya cukup mengubahnya menjadi true dan memasang isinya. */
-  aktif: boolean;
-  menyusul?: 'resep' | 'penunjang';
 };
 
-/** Kelompok SOAPIE menggabungkan bagian catatan dan modul layanan. */
+/** Langkah dokter mengikuti formulir rekam medis klinik (P7). */
 export const LANGKAH_PEMERIKSAAN: readonly KonfigLangkah[] = [
-  // Keperawatan diisi perawat saat skrining; dokter melihat ringkasannya di atas S dan boleh mengubahnya (P6).
-  { id: 'subjective', judul: 'S — Subjective', bagianGrup: ['keperawatan', 'anamnesis'], aktif: true },
-  { id: 'objective', judul: 'O — Objective', bagianGrup: ['tanda_vital', 'pemeriksaan'], aktif: true },
-  { id: 'assessment', judul: 'A — Assessment', bagianGrup: ['assessment', 'diagnosis'], aktif: true },
-  { id: 'plan', judul: 'P — Plan', bagianGrup: ['plan', 'tindak_lanjut'], aktif: true },
-  { id: 'implementasi', judul: 'I — Implementation', bagianGrup: ['implementasi', 'tindakan'], aktif: true },
-  { id: 'evaluasi', judul: 'E — Evaluation', bagianGrup: ['evaluasi'], aktif: true },
-  { id: 'ringkasan', judul: KLINIS.langkah.ringkasan, aktif: true },
+  // Keperawatan diisi perawat saat skrining; dokter melihat ringkasannya di atas Anamnesa dan boleh mengubahnya (P6).
+  { id: 'anamnesis', judul: KLINIS.langkah.anamnesis, bagianGrup: ['keperawatan', 'anamnesis'] },
+  { id: 'pemeriksaan', judul: KLINIS.langkah.pemeriksaan, bagianGrup: ['tanda_vital', 'pemeriksaan'] },
+  { id: 'penunjang', judul: KLINIS.langkah.penunjang },
+  { id: 'kesimpulan', judul: KLINIS.langkah.kesimpulan, bagianGrup: ['diagnosis', 'diagnosis_banding', 'kie'] },
+  { id: 'terapi', judul: KLINIS.langkah.terapi, bagianGrup: ['tindakan', 'obat_poli'] },
+  { id: 'tindak_lanjut', judul: KLINIS.langkah.tindakLanjut, bagianGrup: ['tindak_lanjut'] },
+  { id: 'ringkasan', judul: KLINIS.langkah.ringkasan },
 ];
 
 export const bagianLangkah = (l: KonfigLangkah): readonly BagianKlinis[] => l.bagianGrup ?? (l.bagian ? [l.bagian] : []);
 
-/** Draf sebelum SOAPIE menyimpan indeks dari sembilan langkah lama. */
-export function langkahDraf(mode: ModePemeriksaan, langkah: number, nilai: unknown): number {
-  if (mode === 'skrining' || (nilai && typeof nilai === 'object' && 'versi_draf' in nilai && nilai.versi_draf === 2)) return langkah;
-  return [0, 1, 1, 2, 4, 3, 3, 3, 6][langkah] ?? 0;
-}
+/** Indeks langkah dari draf; draf format lain mulai dari langkah pertama. */
+export const langkahDraf = (langkah: number, nilai: unknown): number =>
+  nilai && typeof nilai === 'object' && 'versi_draf' in nilai && nilai.versi_draf === VERSI_DRAF ? langkah : 0;
 
 /** Skrining perawat (P6): tanda vital dan isian keperawatan dalam satu langkah, dua bagian tersimpan. */
 export const LANGKAH_SKRINING: readonly KonfigLangkah[] = [
-  { id: 'keperawatan', judul: KLINIS.langkah.keperawatan, bagianGrup: ['tanda_vital', 'keperawatan'], aktif: true },
-  { id: 'ringkasan', judul: KLINIS.langkah.ringkasanSkrining, aktif: true },
+  { id: 'keperawatan', judul: KLINIS.langkah.keperawatan, bagianGrup: ['tanda_vital', 'keperawatan'] },
+  { id: 'ringkasan', judul: KLINIS.langkah.ringkasanSkrining },
 ];
 
 export const daftarLangkah = (mode: ModePemeriksaan): readonly KonfigLangkah[] => (mode === 'skrining' ? LANGKAH_SKRINING : LANGKAH_PEMERIKSAAN);
-export const bagianDiModal = (mode: ModePemeriksaan): BagianKlinis[] => daftarLangkah(mode).flatMap((l) => l.aktif ? [...bagianLangkah(l)] : []);
+export const bagianDiModal = (mode: ModePemeriksaan): BagianKlinis[] => daftarLangkah(mode).flatMap((l) => [...bagianLangkah(l)]);
 
 /** Nama bagian catatan untuk tampilan (ringkasan dan pesan galat). */
 export const LABEL_BAGIAN: Record<BagianKlinis, string> = {
@@ -169,8 +171,8 @@ export function keadaanDariServer(b: BagianServer): KeadaanPemeriksaan {
   for (const n of BAGIAN_NARASI) k[n] = b[n]?.isi?.isi ?? '';
   const a = b.anamnesis.isi;
   if (a) {
-    k.anamnesis = { keluhan_utama: a.keluhan_utama, penyerta: teks(a.penyerta) };
-    k.riwayat = { riwayat_pribadi: teks(a.riwayat_pribadi), riwayat_keluarga: teks(a.riwayat_keluarga) };
+    k.anamnesis = { keluhan_utama: a.keluhan_utama, penyerta: teks(a.penyerta), riwayat_sekarang: teks(a.riwayat_sekarang) };
+    k.riwayat = { riwayat_pribadi: teks(a.riwayat_pribadi), riwayat_keluarga: teks(a.riwayat_keluarga), kajian_sosial: teks(a.kajian_sosial) };
   }
   const kp = b.keperawatan?.isi;
   if (kp) k.keperawatan = keperawatanDariIsi(kp);
@@ -187,11 +189,16 @@ export function keadaanDariServer(b: BagianServer): KeadaanPemeriksaan {
 
 /**
  * Keadaan awal form saat dibuka (sebelum draf): isi tersimpan, ditambah default keadaan baik untuk bagian yang belum pernah disimpan.
- * Skrining: keperawatan baru terisi default. Mode periksa tidak mengisi default keperawatan (dokter membuka isiannya sendiri, lihat `mulaiUbahKeperawatan`).
+ * Skrining: keperawatan baru terisi default. Periksa: anamnesa (riwayat) dan pemeriksaan fisik baru terisi default; keperawatan tidak
+ * (dokter membuka isiannya sendiri, lihat `mulaiUbahKeperawatan`).
  */
 export function keadaanAwalForm(mode: ModePemeriksaan, b: BagianServer): KeadaanPemeriksaan {
   const k = keadaanDariServer(b);
   if (mode === 'skrining' && !b.keperawatan?.isi) k.keperawatan = defaultKeperawatan();
+  if (mode === 'periksa') {
+    if (!b.anamnesis.isi) k.riwayat = isiDefault(k.riwayat, DEFAULT_ANAMNESIS);
+    if (!b.pemeriksaan.isi) k.pemeriksaan = isiDefault(k.pemeriksaan, DEFAULT_PEMERIKSAAN);
+  }
   return k;
 }
 
@@ -201,7 +208,7 @@ export const mulaiUbahKeperawatan = (k: KeadaanPemeriksaan): KeadaanPemeriksaan 
 /** Isi yang dikirim ke API untuk satu bagian (server menormalkan dan memvalidasi ulang). */
 export function isiBagian(bagian: BagianKlinis, k: KeadaanPemeriksaan): unknown {
   switch (bagian) {
-    case 'assessment': case 'plan': case 'implementasi': case 'evaluasi': return { isi: k[bagian] };
+    case 'diagnosis_banding': case 'kie': case 'obat_poli': return { isi: k[bagian] };
     case 'anamnesis': return { ...k.anamnesis, ...k.riwayat };
     case 'tanda_vital': return { ...k.tanda_vital };
     case 'keperawatan': return { ...k.keperawatan };
@@ -230,12 +237,16 @@ const bagianKeadaan = (bagian: BagianKlinis, k: KeadaanPemeriksaan): unknown => 
 export const adaPerubahanBagian = (bagian: BagianKlinis, k: KeadaanPemeriksaan, server: KeadaanPemeriksaan): boolean =>
   JSON.stringify(bagianKeadaan(bagian, k)) !== JSON.stringify(bagianKeadaan(bagian, server));
 
-/** Tidak ada isian sama sekali pada bagian ini. */
+/** Pemeriksaan fisik hanya berisi default keadaan baik (belum ada isian dokter). */
+const pemeriksaanHanyaDefault = (k: KeadaanPemeriksaan): boolean =>
+  k.pemeriksaan.odontogram_tanggal === '' && isianDiubah(k.pemeriksaan, DEFAULT_PEMERIKSAAN).length === 0;
+
+/** Tidak ada isian pada bagian ini (riwayat anamnesa yang masih default dianggap belum diisi). */
 export function bagianKosong(bagian: BagianKlinis, k: KeadaanPemeriksaan): boolean {
   const kosong = (o: Record<string, string>) => Object.values(o).every((v) => v.trim() === '');
   switch (bagian) {
-    case 'assessment': case 'plan': case 'implementasi': case 'evaluasi': return !k[bagian].trim();
-    case 'anamnesis': return kosong(k.anamnesis) && kosong(k.riwayat);
+    case 'diagnosis_banding': case 'kie': case 'obat_poli': return !k[bagian].trim();
+    case 'anamnesis': return kosong(k.anamnesis) && !k.riwayat.kajian_sosial.trim() && isianDiubah(k.riwayat, DEFAULT_ANAMNESIS).every((n) => !k.riwayat[n].trim());
     case 'tanda_vital': return kosong(k.tanda_vital);
     case 'keperawatan': return keperawatanKosong(k.keperawatan);
     case 'pemeriksaan': return kosong(k.pemeriksaan);
@@ -261,9 +272,10 @@ export type RencanaSimpan = { bagian: BagianKlinis; galat: string | null }[];
 
 /** Bagian yang akan disimpan (urut menurut langkah) beserta galat validasinya. */
 export function rencanaSimpan(mode: ModePemeriksaan, k: KeadaanPemeriksaan, server: KeadaanPemeriksaan, disahkan: Record<BagianKlinis, boolean>): RencanaSimpan {
-  return bagianDiModal(mode)
-    .filter((b) => perluDisimpan(b, k, server, disahkan[b]))
-    .map((bagian) => ({ bagian, galat: galatBagian(bagian, k) }));
+  const bagian = bagianDiModal(mode).filter((b) => perluDisimpan(b, k, server, disahkan[b]));
+  // Pemeriksaan fisik yang masih default ikut disimpan bersama pemeriksaan dokter lainnya, bukan sendirian (membuka form tanpa mengisi apa pun).
+  const hanyaDefault = !disahkan.pemeriksaan && pemeriksaanHanyaDefault(k) && bagian.every((b) => b === 'pemeriksaan');
+  return bagian.filter((b) => !(hanyaDefault && b === 'pemeriksaan')).map((b) => ({ bagian: b, galat: galatBagian(b, k) }));
 }
 
 /** Perbaikan butuh alasan bila ada bagian yang sudah disahkan ikut disimpan. */
@@ -348,8 +360,8 @@ export function salinKeKeadaan(k: KeadaanPemeriksaan, s: SalinanKunjunganDto, pi
   let jumlah = 0;
   if (pilih.includes('anamnesis') && s.anamnesis) {
     const a = s.anamnesis;
-    hasil.anamnesis = { keluhan_utama: a.keluhan_utama, penyerta: teks(a.penyerta) };
-    hasil.riwayat = { riwayat_pribadi: teks(a.riwayat_pribadi), riwayat_keluarga: teks(a.riwayat_keluarga) };
+    hasil.anamnesis = { keluhan_utama: a.keluhan_utama, penyerta: teks(a.penyerta), riwayat_sekarang: teks(a.riwayat_sekarang) };
+    hasil.riwayat = { riwayat_pribadi: teks(a.riwayat_pribadi), riwayat_keluarga: teks(a.riwayat_keluarga), kajian_sosial: teks(a.kajian_sosial) };
     jumlah += 1;
   }
   if (pilih.includes('diagnosis') && s.diagnosis) {
@@ -377,9 +389,11 @@ export function pakaiTemplat(k: KeadaanPemeriksaan, t: Pick<TemplatDto, 'bagian'
     const ganti = (v: string, n: string) => isi(n) ?? v;
     return {
       ...k,
-      anamnesis: { keluhan_utama: ganti(k.anamnesis.keluhan_utama, 'keluhan_utama'), penyerta: ganti(k.anamnesis.penyerta, 'penyerta') },
+      anamnesis: {
+        keluhan_utama: ganti(k.anamnesis.keluhan_utama, 'keluhan_utama'), penyerta: ganti(k.anamnesis.penyerta, 'penyerta'), riwayat_sekarang: ganti(k.anamnesis.riwayat_sekarang, 'riwayat_sekarang'),
+      },
       riwayat: {
-        riwayat_pribadi: ganti(k.riwayat.riwayat_pribadi, 'riwayat_pribadi'), riwayat_keluarga: ganti(k.riwayat.riwayat_keluarga, 'riwayat_keluarga'),
+        riwayat_pribadi: ganti(k.riwayat.riwayat_pribadi, 'riwayat_pribadi'), riwayat_keluarga: ganti(k.riwayat.riwayat_keluarga, 'riwayat_keluarga'), kajian_sosial: ganti(k.riwayat.kajian_sosial, 'kajian_sosial'),
       },
     };
   }
@@ -389,30 +403,51 @@ export function pakaiTemplat(k: KeadaanPemeriksaan, t: Pick<TemplatDto, 'bagian'
 /** Alergi sebagai daftar singkat untuk kepala modal. */
 export const daftarAlergi = (alergi: string | null): string[] => (alergi ?? '').split(/[\n,;]+/).map((a) => a.trim()).filter(Boolean);
 
-/** Isi singkat untuk ringkasan akhir: skrining keperawatan (bila ada), keluhan, diagnosis, tindakan, dan rencana. */
+/** Ringkasan pemeriksaan fisik per kelompok: kelompok normal satu kalimat, selain itu per bidang (bidang berubah ditandai "!"). */
+export function barisPemeriksaanFisik(isi: Partial<Record<string, string | null>>): { label: string; nilai: string }[] {
+  return ringkasanPemeriksaan(isi).flatMap((g) => {
+    if (g.kelompok === 'odontogram') {
+      const tgl = g.baris[0]?.nilai;
+      return [{ label: g.label, nilai: tgl ? `${KLINIS.pemeriksaan.odontogramDibuat} (${tgl})` : KLINIS.pemeriksaan.odontogramBelum }];
+    }
+    if (g.kalimat) return [{ label: g.label, nilai: g.kalimat }];
+    const terisi = g.baris.filter((b) => b.nilai !== null);
+    return terisi.length ? [{ label: g.label, nilai: terisi.map((b) => `${b.label} ${b.nilai}${b.diubah ? ' (!)' : ''}`).join(', ') }] : [];
+  });
+}
+
+/** Isi singkat untuk ringkasan akhir, urut blok formulir klinik. */
 export function ringkasanIsi(k: KeadaanPemeriksaan): BagianRingkasan[] {
   const text = (v: string) => v.trim() || '-';
   const narasi = (b: BagianNarasi) => ({ label: LABEL_NARASI[b], nilai: text(k[b]) });
   const jenis = KLINIS.tindakLanjut.jenisOpsi.find((o) => o.nilai === k.tindak_lanjut.jenis)?.label ?? '-';
+  const a = KLINIS.anamnesis;
   return [
     ...(keperawatanKosong(k.keperawatan) ? [] : [ringkasanKeperawatan(k.keperawatan)]),
-    { judul: 'S — Subjective', baris: [
-      { label: KLINIS.anamnesis.keluhanUtama, nilai: text(k.anamnesis.keluhan_utama) },
-      { label: KLINIS.anamnesis.penyerta, nilai: text(k.anamnesis.penyerta) },
-      { label: KLINIS.anamnesis.riwayatPribadi, nilai: text(k.riwayat.riwayat_pribadi) },
-      { label: KLINIS.anamnesis.riwayatKeluarga, nilai: text(k.riwayat.riwayat_keluarga) },
+    { judul: KLINIS.langkah.anamnesis, baris: [
+      { label: a.keluhanUtama, nilai: text(k.anamnesis.keluhan_utama) },
+      { label: a.penyerta, nilai: text(k.anamnesis.penyerta) },
+      { label: a.riwayatSekarang, nilai: text(k.anamnesis.riwayat_sekarang) },
+      { label: a.riwayatPribadi, nilai: text(k.riwayat.riwayat_pribadi) },
+      { label: a.riwayatKeluarga, nilai: text(k.riwayat.riwayat_keluarga) },
+      { label: a.kajianSosial, nilai: text(k.riwayat.kajian_sosial) },
     ] },
-    { judul: 'O — Objective', baris: [
-      ...TANDA_VITAL.map((t) => ({ label: KLINIS.tandaVital[t.kunci], nilai: k.tanda_vital[t.kunci] ? `${k.tanda_vital[t.kunci]} ${t.satuan}` : '-' })),
-      ...PEMERIKSAAN_BIDANG.map((b) => ({ label: KLINIS.pemeriksaan[b], nilai: text(k.pemeriksaan[b]) })),
+    { judul: KLINIS.langkah.pemeriksaan, baris: [
+      ...TANDA_VITAL.filter((t) => k.tanda_vital[t.kunci]).map((t) => ({ label: KLINIS.tandaVital[t.kunci], nilai: `${k.tanda_vital[t.kunci]} ${t.satuan}` })),
+      ...barisPemeriksaanFisik(k.pemeriksaan),
     ] },
-    { judul: 'A — Assessment', baris: [narasi('assessment'), ...k.diagnosis.map((d) => ({ label: d.kode, nilai: `${d.nama} (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})` }))] },
-    { judul: 'P — Plan', baris: [{ label: 'Tindak lanjut', nilai: jenis }, ...(k.tindak_lanjut.jenis === 'rujuk' ? [{ label: KLINIS.tindakLanjut.tujuan, nilai: text(k.tindak_lanjut.tujuan) }] : []), narasi('plan'), ...(k.tindak_lanjut.jenis === 'rawat_inap' ? [{ label: KLINIS.tindakLanjut.spri, nilai: text(k.tindak_lanjut.spri) }] : []), { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) }] },
-    { judul: 'I — Implementation', baris: [narasi('implementasi'), ...k.tindakan.flatMap((t) => [
+    { judul: KLINIS.langkah.kesimpulan, baris: [
+      ...k.diagnosis.map((d) => ({ label: d.kode, nilai: `${d.nama} (${d.peran === 'utama' ? KLINIS.kesimpulan.diagnosaMedis : KLINIS.kesimpulan.diagnosaTambahan})` })),
+      narasi('diagnosis_banding'), narasi('kie'),
+    ] },
+    { judul: KLINIS.langkah.terapi, baris: [...k.tindakan.flatMap((t) => [
       { label: t.kode, nilai: t.jumlah && t.jumlah.trim() !== '1' ? `${t.nama} (${KLINIS.tindakan.jumlah} ${t.jumlah.trim()})` : t.nama },
-      { label: KLINIS.tindakan.mulai, nilai: text(t.mulai.replace('T', ' ')) },
-      { label: KLINIS.tindakan.selesai, nilai: text(t.selesai.replace('T', ' ')) },
-    ])] },
-    { judul: 'E — Evaluation', baris: [narasi('evaluasi')] },
+    ]), narasi('obat_poli')] },
+    { judul: KLINIS.langkah.tindakLanjut, baris: [
+      { label: KLINIS.langkah.tindakLanjut, nilai: jenis },
+      ...(k.tindak_lanjut.jenis === 'rujuk' ? [{ label: KLINIS.tindakLanjut.tujuan, nilai: text(k.tindak_lanjut.tujuan) }] : []),
+      ...(k.tindak_lanjut.jenis === 'rawat_inap' ? [{ label: KLINIS.tindakLanjut.spri, nilai: text(k.tindak_lanjut.spri) }] : []),
+      { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) },
+    ] },
   ];
 }

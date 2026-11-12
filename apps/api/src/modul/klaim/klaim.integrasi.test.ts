@@ -75,7 +75,7 @@ d('klaim JKN/BPJS terhadap klira_uji', () => {
     const where = { fasyankes_id: { in: [fas, fasLain] } };
     await prisma.logAudit.deleteMany({ where });
     await prisma.sesi.deleteMany({ where: { pengguna_id: { in: Object.values(id) } } });
-    for (const m of [prisma.riwayatKlaim, prisma.klaim, prisma.resumeMedis, prisma.pengkodean, prisma.pengesahanCatatan, prisma.diagnosis, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
+    for (const m of [prisma.riwayatKlaim, prisma.klaim, prisma.resumeMedis, prisma.pengkodean, prisma.pengesahanCatatan, prisma.narasiKlinis, prisma.diagnosis, prisma.peringatanIzin, prisma.izinPerAkun] as any[]) await m.deleteMany({ where });
     await prisma.kunjungan.deleteMany({ where });
     await prisma.pasien.deleteMany({ where });
     await prisma.penugasanJenis.deleteMany({ where });
@@ -110,6 +110,8 @@ d('klaim JKN/BPJS terhadap klira_uji', () => {
     expect((await siapkan(umum, { berkas: ['salah'] })).status).toBe(400);
     const tutup = new Date('2026-08-10T05:00:00Z');
     const k = await kunjunganBaru({ waktuTutup: tutup, kode: [['I10', 'Hipertensi esensial'], ['E11.9', 'DM tipe 2']] });
+    // Diagnosa banding (narasi P7) tidak ikut kode klaim walau berisi kode.
+    await prisma.narasiKlinis.create({ data: { fasyankes_id: fas, kunjungan_id: k, bagian: 'diagnosis_banding', isi: 'I15.0 Hipertensi renovaskular', versi: 1 } });
     const a = await siapkan(k, { berkas: ['fpk'] });
     expect(a.status).toBe(201);
     expect(a.badan.data.status).toBe('menunggu_sep');

@@ -10,7 +10,7 @@ import { Lencana } from '../../komponen/ui/lencana';
 import { Peringatan } from '../../komponen/ui/peringatan';
 import { Kolom, Sebaris } from '../../komponen/ui/susunan';
 import { Tombol } from '../../komponen/ui/tombol';
-import { DetailSoapie } from './detail-soapie';
+import { DetailKunjungan } from './detail-kunjungan';
 import { tanggalPendek } from '../../util/format';
 
 type Props = { pasienId: number; nama: string; kecualiKunjunganId?: number; onTutup: () => void };
@@ -52,8 +52,8 @@ export function PanelRiwayat({ pasienId, nama, kecualiKunjunganId, onTutup }: Pr
               {r.diagnosis.length === 0 ? p.tanpaDiagnosis : r.diagnosis.map((d) => `${d.kode} ${d.nama}${d.peran === 'utama' ? '' : ` (${STATUS_PERAN_DIAGNOSIS.label(d.peran)})`}`).join('; ')}
             </div>
             {r.tindak_lanjut && <div><span style={{ color: token.warna.teksRedup }}>{p.tindakLanjut}: </span>{jenisLanjut(r.tindak_lanjut)}</div>}
-            <Tombol type="button" varian="teks" onClick={() => setTerbuka(terbuka === r.id ? null : r.id)}>{terbuka === r.id ? 'Tutup catatan SOAPIE' : 'Lihat catatan SOAPIE'}</Tombol>
-            {terbuka === r.id && <DetailSoapie kunjunganId={r.id} />}
+            <Tombol type="button" varian="teks" onClick={() => setTerbuka(terbuka === r.id ? null : r.id)}>{terbuka === r.id ? KLINIS.detail.tutup : KLINIS.detail.lihat}</Tombol>
+            {terbuka === r.id && <DetailKunjungan kunjunganId={r.id} />}
           </Kolom>
         </Kartu>
       ))}

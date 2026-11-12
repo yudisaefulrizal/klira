@@ -1,6 +1,6 @@
-import { DetailSoapie } from './detail-soapie';
+import { DetailKunjungan } from './detail-kunjungan';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { REKAM_MEDIS, TOMBOL } from '@klira/shared';
+import { KLINIS, REKAM_MEDIS, TOMBOL } from '@klira/shared';
 import type { DokumenKunjunganDto } from '@klira/shared';
 import { buatSurat, ambilDokumen, simpanResume } from '../../api-klien/dokumen-rm';
 import { GalatApi } from '../../api-klien/klien';
@@ -92,8 +92,8 @@ export function ResumeSurat({ kunjunganId, onTutup, onSelesai }: Props) {
       isi: (
         <Kolom>
           <details>
-            <summary>Catatan pemeriksaan SOAPIE</summary>
-            <DetailSoapie kunjunganId={kunjunganId} />
+            <summary>{KLINIS.detail.judul}</summary>
+            <DetailKunjungan kunjunganId={kunjunganId} />
           </details>
           {!ada && <span style={kecil}>{R.saran}</span>}
           <AreaTeks id="rs-ringkasan" label={R.ringkasan} value={k.ringkasan} maxLength={3000} onChange={set('ringkasan')} aria-invalid={tampil('ringkasan') ? true : undefined} />
