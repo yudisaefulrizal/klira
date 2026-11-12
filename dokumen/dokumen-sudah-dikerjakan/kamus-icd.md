@@ -7,7 +7,7 @@ API GET /api/terminologi/kamus menerima sistem, halaman, ukuran (maksimal 50), d
 
 ## Referensi primer lokal
 
-Salinan resmi ICD-10 dan ICD-9-CM yang ditautkan SATUSEHAT telah disimpan dalam folder `dokumen/referensi primer`. Lihat [catatan sumber dan verifikasi](<referensi primer/icd-satusehat-2010.md>) serta [manifest unduhan](<referensi primer/manifest-icd-satusehat-2010.json>). Salinan 30 Oktober 2026 memuat 18.542 kode ICD-10 dan 4.626 kode ICD-9-CM versi 2010. Berkas ini menjadi acuan primer untuk pengolahan referensi kamus berikutnya.
+Salinan resmi ICD-10 dan ICD-9-CM yang ditautkan SATUSEHAT telah disimpan dalam folder `dokumen/referensi primer`. Lihat [catatan sumber dan verifikasi](<../referensi primer/icd-satusehat-2010.md>) serta [manifest unduhan](<../referensi primer/manifest-icd-satusehat-2010.json>). Salinan 30 Oktober 2026 memuat 18.542 kode ICD-10 dan 4.626 kode ICD-9-CM versi 2010. Berkas ini menjadi acuan primer untuk pengolahan referensi kamus berikutnya.
 
 
 ## JSON statis untuk aplikasi
@@ -24,4 +24,4 @@ Perubahan ini tidak memigrasikan atau menghapus data rekam medis maupun tabel te
 
 ## Nama tindakan Indonesia ICD-9-CM
 
-Kamus dan pencarian ICD-9-CM kini menyertakan nama tindakan terkait dari pemetaan KPTL resmi SATUSEHAT untuk 2.363 kode yang cocok kode dan nama Inggrisnya dengan primer 2010. UI memberi label **Nama tindakan KPTL**, mempertahankan nama ICD Inggris sebagai nama utama. Ini pemetaan, bukan terjemahan harfiah. Hasil pilihan tetap menyimpan kode/nama ICD asli. Semua pemetaan satu-ke-banyak dipertahankan; sepuluh baris yang tidak cocok disisihkan. Lihat [asal sumber, checksum dan batas pemakaian](<referensi tambahan/icd9cm-kptl/README.md>). Regenerasi: `python3 skrip/buat-padanan-icd9cm.py`.
+Kamus dan pencarian ICD-9-CM kini menyertakan nama tindakan terkait dari pemetaan KPTL resmi SATUSEHAT untuk 2.363 kode yang cocok kode dan nama Inggrisnya dengan primer 2010. UI memberi label **Nama tindakan KPTL**, mempertahankan nama ICD Inggris sebagai nama utama. Ini pemetaan, bukan terjemahan harfiah. Hasil pilihan tetap menyimpan kode/nama ICD asli. Semua pemetaan satu-ke-banyak dipertahankan; sepuluh baris yang tidak cocok disisihkan. Lihat [asal sumber, checksum dan batas pemakaian](<../referensi tambahan/icd9cm-kptl/README.md>). Regenerasi: `python3 skrip/buat-padanan-icd9cm.py`.
