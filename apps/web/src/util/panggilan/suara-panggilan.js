@@ -97,7 +97,7 @@ export function buatSuaraPanggilan(fasilitas, berubah) {
         // Beberapa mesin tidak mengirim galat saat autoplay diblokir; jangan tampilkan status aktif palsu.
         k.batasMulai = setTimeout(() => gagal(versi, true), 8000);
         if (!bacakan(true))
-            ucap(otomatis ? 'Suara panggilan siap!' : 'Suara panggilan aktif! Silakan menunggu nomor antrean Anda.');
+            ucap(otomatis ? 'Suara panggilan siap.' : 'Suara panggilan diaktifkan. Silakan menunggu nomor antrean Anda.');
         berubah(status);
     }
     function ubahSuara() {

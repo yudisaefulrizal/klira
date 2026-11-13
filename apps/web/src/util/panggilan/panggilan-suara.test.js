@@ -3,7 +3,7 @@ import { PemilihPanggilanSuara, teksPanggilan } from './panggilan-suara.js';
 const hari = '2026-10-29';
 const panggilan = (poli_id = 9, waktu_panggil = '2026-10-29T03:00:00Z') => ({ kode: 'A-023', poli_id, poli_nama: 'Poli Umum', waktu_panggil });
 test('nomor dibaca per digit agar nol di depan tidak hilang, diikuti tujuan poli', () => {
-    expect(teksPanggilan(panggilan())).toBe('Perhatian! Nomor antrean A nol dua tiga! Silakan menuju Poli Umum. Terima kasih!');
+    expect(teksPanggilan(panggilan())).toBe('Nomor antrean A nol dua tiga. Silakan menuju Poli Umum.');
 });
 test('polling berulang tidak mengulang audio; panggil ulang dengan waktu baru dibaca lagi', () => {
     const pemilih = new PemilihPanggilanSuara();
