@@ -3,9 +3,9 @@ import { riwayatObat } from '../../api-klien/farmasi.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
-import { bukaSerahTerimaObat } from '../../modal/pelayanan-klinik/serah-terima-obat.js';
+import { bukaSerahTerimaObat } from '../../modal/farmasi/serah-terima-obat.js';
 import { token } from '../../gaya/token.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 
 export function pasangTabRiwayat(wadah) {
   const R = FARMASI.riwayat, boleh = izinSaatIni(), awal = { status: '', dari: '', sampai: '', halaman: 1 };

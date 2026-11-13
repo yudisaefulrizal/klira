@@ -1,9 +1,9 @@
 import { PDP, punyaIzin } from '@klira/shared';
 import { token } from '../gaya/token.js';
 import { tab } from '../komponen/ui/primitif.js';
-import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
-import { TABS_PDP } from '../util/tab-pdp.js';
-import { pasangTabPdp } from './pelindungan-data/tab-native.js';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
+import { TABS_PDP } from '../util/tab/tab-pdp.js';
+import { pasangTabPdp } from './pelindungan-data/kerangka-tab.js';
 const HALAMAN = 'pelindungan-data';
 const simpanan = () => typeof sessionStorage === 'undefined' ? null : sessionStorage;
 

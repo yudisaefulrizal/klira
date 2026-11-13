@@ -6,7 +6,7 @@ import { bukaKonfirmasi } from './modal-1/modal-1.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, tab, paginasi } from './ui/primitif.js';
 import { token } from '../gaya/token.js';
 import { bukaModalMasterProfil } from '../modal/akun-pengaturan/master-profil.js';
-import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../util/penyaring-tab.js';
+import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../util/tab/penyaring-tab.js';
 import { jenisMasterDiHalaman } from '../util/lokasi-master.js';
 
 export function DaftarMaster({ search, ubahAlamat, jenisDaftar }) {

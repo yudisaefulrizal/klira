@@ -4,8 +4,8 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { bukaMasterPemeriksaan } from '../../modal/pelayanan-klinik/master-pemeriksaan.js';
-import { rupiahAtau } from '../../modal/pelayanan-klinik/keadaan-order-lab.js';
+import { bukaMasterPemeriksaan } from '../../modal/penunjang/master-pemeriksaan.js';
+import { rupiahAtau } from '../../modal/penunjang/keadaan-order-lab.js';
 
 export function pasangTabMasterPemeriksaan(wadah) {
   const M = PENUNJANG.master, boleh = izinSaatIni(), el = document.createElement('div'), toolbar = document.createElement('div'), status = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), kosong = document.createElement('div');

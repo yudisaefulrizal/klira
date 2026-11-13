@@ -1,7 +1,7 @@
 import { punyaIzin } from '@klira/shared';
 import { daftarPasien } from '../../api-klien/pasien.js';
 import { infoKontakWa, ubahWa } from '../../api-klien/instagram.js';
-import { penggunaSaatIni } from '../../util/konteks-pengguna.js';
+import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { sesiPesan } from './konteks-pesan.js';
 import { tombol, bidang, peringatan } from '../ui/primitif.js';
 import { IkonPesan } from '../pesan/ikon-svg.js';

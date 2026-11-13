@@ -8,10 +8,10 @@ import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
-import { adaPerubahan } from '../../util/draf.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { awalInsiden, bentukInsiden, buangPasienTerdampak, galatInsiden, langkahBermasalahInsiden, tambahPasienTerdampak } from './keadaan-pdp.js';
-import { bidangPdp } from './formulir-dom.js';
+import { bidangPdp } from './formulir.js';
 const I = PDP.insiden;
 const batasDari = diketahui => diketahui ? new Date(new Date(`${diketahui}:00+07:00`).getTime() + 72 * 3600000).toISOString() : '';
 export function bukaInsidenPdp({ insiden = null, onTutup, onSelesai }) {

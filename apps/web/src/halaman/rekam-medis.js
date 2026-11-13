@@ -1,10 +1,10 @@
 import { REKAM_MEDIS } from '@klira/shared';
 import { tab } from '../komponen/ui/primitif.js';
 import { token } from '../gaya/token.js';
-import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
-import { penggunaSaatIni } from '../util/konteks-pengguna.js';
-import { navigasiSaatIni } from '../util/navigasi.js';
-import { tabRekamMedisDiizinkan } from '../util/tab-rekam-medis.js';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
+import { penggunaSaatIni } from '../util/sesi/konteks-pengguna.js';
+import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
+import { tabRekamMedisDiizinkan } from '../util/tab/tab-rekam-medis.js';
 import { TabBerkas } from './rekam-medis/tab-berkas.js';
 import { TabPembukaan } from './rekam-medis/tab-pembukaan.js';
 import { TabPenyampaian } from './rekam-medis/tab-penyampaian.js';

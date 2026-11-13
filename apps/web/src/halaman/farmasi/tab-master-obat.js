@@ -4,9 +4,9 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { bukaMasterObat } from '../../modal/pelayanan-klinik/master-obat.js';
-import { bukaMutasiStok } from '../../modal/pelayanan-klinik/mutasi-stok.js';
-import { rupiah } from '../../modal/pelayanan-klinik/keadaan-order-lab.js';
+import { bukaMasterObat } from '../../modal/farmasi/master-obat.js';
+import { bukaMutasiStok } from '../../modal/farmasi/mutasi-stok.js';
+import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
 
 export function pasangTabMasterObat(wadah) {
   const M = FARMASI.master, boleh = izinSaatIni(), el = document.createElement('div'), toolbar = document.createElement('div'), status = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), kosong = document.createElement('div'), pages = document.createElement('div');

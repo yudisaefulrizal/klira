@@ -1,17 +1,17 @@
 import { KELAS_RAWAT, RAWAT_INAP, STATUS_BED } from '@klira/shared';
 import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
 import { tab, kartu, tombol, lencana, peringatan } from '../komponen/ui/primitif.js';
-import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
-import { navigasiSaatIni } from '../util/navigasi.js';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
+import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
 import { ambilPapan } from '../api-klien/rawat-inap.js';
 import { GalatApi } from '../api-klien/klien.js';
 import { izinSaatIni } from '../komponen/izin-saja.js';
 import { token } from '../gaya/token.js';
-import { bukaAdmisiRawatInap } from '../modal/pelayanan-klinik/admisi-rawat-inap.js';
-import { bukaCatatanHarian } from '../modal/pelayanan-klinik/catatan-harian.js';
-import { bukaPemulanganRawatInap } from '../modal/pelayanan-klinik/pemulangan-rawat-inap.js';
-import { bukaUbahPenempatan } from '../modal/pelayanan-klinik/ubah-penempatan.js';
-import { formatWaktu } from '../util/penyaring-tab.js';
+import { bukaAdmisiRawatInap } from '../modal/rawat-inap/admisi-rawat-inap.js';
+import { bukaCatatanHarian } from '../modal/rawat-inap/catatan-harian.js';
+import { bukaPemulanganRawatInap } from '../modal/rawat-inap/pemulangan-rawat-inap.js';
+import { bukaUbahPenempatan } from '../modal/rawat-inap/ubah-penempatan.js';
+import { formatWaktu } from '../util/tab/penyaring-tab.js';
 
 function PapanBed() {
   const P = RAWAT_INAP.papan, boleh = izinSaatIni(), { ganti } = navigasiSaatIni(), el = document.createElement('div'), toolbar = document.createElement('div'), ringkas = document.createElement('span'), status = document.createElement('div'), isi = document.createElement('div');

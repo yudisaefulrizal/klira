@@ -4,7 +4,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { bidang, tombol } from '../../komponen/ui/primitif.js';
-import { adaPerubahan } from '../../util/draf.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalRopa, galatRopa, langkahBermasalahRopa } from './keadaan-pdp.js';
 const R = PDP.ropa;
 const urutan = [['nama_kegiatan', R.namaKegiatan], ['ppdp_nama', R.ppdp], ['sumber_tujuan', R.sumberTujuan], ['dasar', R.dasar], ['tujuan', R.tujuan], ['jenis_data', R.jenisData], ['kategori_subjek', R.kategoriSubjek], ['pihak_akses', R.pihakAkses], ['pemenuhan_hak', R.pemenuhanHak], ['aliran', R.aliran], ['masa_retensi', R.masaRetensi], ['pengamanan', R.pengamanan], ['transfer', R.transfer]];

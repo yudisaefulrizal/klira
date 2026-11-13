@@ -2,7 +2,7 @@ import { MODAL } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { bukaDialog } from '../ui/buka-dialog.js';
 import { KepalaDialog } from '../ui/dialog.js';
-import { bukaLapisanRiwayat } from '../../util/riwayat-lapisan.js';
+import { bukaLapisanRiwayat } from '../../util/lapisan/riwayat-lapisan.js';
 export function bukaPanel({ judul, onTutup, aksi, children }) {
   const dialog = bukaDialog({ judul, onEsc: onTutup, letak: 'kanan', lebar: 'panelSamping' });
   const isi = document.createElement('div'); Object.assign(isi.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md, padding: token.jarak.lg, overflowY: 'auto', flexGrow: '1' });

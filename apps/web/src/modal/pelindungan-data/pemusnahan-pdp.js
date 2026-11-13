@@ -5,9 +5,9 @@ import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.
 import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
-import { adaPerubahan } from '../../util/draf.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalProsesMusnah, awalRencanaMusnah, bentukRencanaMusnah, galatProsesMusnah, galatRencanaMusnah, indeksTahapMusnah, bentukProsesMusnah } from './keadaan-pdp.js';
-import { bidangPdp } from './formulir-dom.js';
+import { bidangPdp } from './formulir.js';
 const M = PDP.retensi;
 export function bukaPemusnahanPdp({ musnah = null, onTutup, onSelesai }) {
   const tahap = musnah?.tahap_berikut ?? null, baru = !musnah, awalR = awalRencanaMusnah(), awalP = awalProsesMusnah(), r = { ...awalR }, p = { ...awalP };

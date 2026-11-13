@@ -8,8 +8,8 @@ import { baris, sel, tombol, lencana, peringatan } from '../../komponen/ui/primi
 import { token } from '../../gaya/token.js';
 import { barisRiwayat } from '../../modal/akun-pengaturan/keadaan-jenis-akun.js';
 import { bukaModalJenisAkun } from '../../modal/akun-pengaturan/jenis-akun.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
-import { tabelTab } from './tabel-dom.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { tabelTab } from './tabel.js';
 export function pasangTabJenisAkun(wadah) {
   const boleh = izinSaatIni(); let data = null, aktif = true, versi = 0, tutupModal, konfirmasi, panel, versiRiwayat = 0;
   const ui = tabelTab({ id: 'jenis-akun', label: JENIS_AKUN.judulTab, kolom: ['nama', 'syarat', 'izin', 'aktif', 'pemakai', 'tindakan'].map(k => ({ judul: JENIS_AKUN.kolom[k], rataKanan: k === 'tindakan' })), catatan: JENIS_AKUN.catatan }); ui.kepala.style.alignItems = 'center'; wadah.replaceChildren(ui.el);

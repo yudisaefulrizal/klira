@@ -1,6 +1,6 @@
 import { token } from '../../gaya/token.js';
-import { SELEKTOR_FOKUS, fokusBerikut } from '../../util/fokus.js';
-import { adalahAtas, adalahInert, keluarLapisan, langgananLapisan, lapisanAtas, masukLapisan, kunciGuliran, pilihTargetPemulihan } from '../../util/lapisan.js';
+import { SELEKTOR_FOKUS, fokusBerikut } from '../../util/lapisan/fokus.js';
+import { adalahAtas, adalahInert, keluarLapisan, langgananLapisan, lapisanAtas, masukLapisan, kunciGuliran, pilihTargetPemulihan } from '../../util/lapisan/lapisan.js';
 
 let nomorDialog = 0;
 

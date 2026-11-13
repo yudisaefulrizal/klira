@@ -4,7 +4,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
-import { adaPerubahan } from '../../util/draf.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalPemberitahuan, galatPemberitahuan } from './keadaan-pdp.js';
 const P = PDP.pemberitahuan;
 export function bukaVersiPemberitahuan({ berlaku, onTutup, onSelesai }) {

@@ -1,8 +1,8 @@
 import { FARMASI } from '@klira/shared';
 import { token } from '../gaya/token.js';
 import { tab } from '../komponen/ui/primitif.js';
-import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
-import { navigasiSaatIni } from '../util/navigasi.js';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
+import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
 import { pasangTabMasterObat } from './farmasi/tab-master-obat.js';
 import { pasangTabRiwayat } from './farmasi/tab-riwayat.js';
 

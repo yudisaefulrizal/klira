@@ -2,7 +2,7 @@ import { punyaIzin } from '@klira/shared';
 import { BersihkanPesan } from './bersihkan-pesan.js';
 import { sesiPesan } from './konteks-pesan.js';
 import { aksiKoneksiWa, koneksiWa } from '../../api-klien/whatsapp.js';
-import { penggunaSaatIni } from '../../util/konteks-pengguna.js';
+import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { token } from '../../gaya/token.js';
 import { tombol, peringatan } from '../ui/primitif.js';
 export function KoneksiWhatsapp() {

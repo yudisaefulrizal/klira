@@ -1,9 +1,9 @@
 import { token } from '../gaya/token.js';
 import { tab } from '../komponen/ui/primitif.js';
-import { penggunaSaatIni } from '../util/konteks-pengguna.js';
-import { navigasiSaatIni } from '../util/navigasi.js';
-import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
-import { HALAMAN_PENGATURAN, tabDiizinkan } from '../util/tab-pengaturan.js';
+import { penggunaSaatIni } from '../util/sesi/konteks-pengguna.js';
+import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
+import { HALAMAN_PENGATURAN, tabDiizinkan } from '../util/tab/tab-pengaturan.js';
 const simpanan = () => typeof sessionStorage === 'undefined' ? null : sessionStorage;
 const modul = { pengguna: ['tab-pengguna', 'pasangTabPengguna'], 'jenis-akun': ['tab-jenis-akun', 'pasangTabJenisAkun'], peringatan: ['tab-peringatan', 'pasangTabPeringatan'], keamanan: ['tab-keamanan', 'pasangTabKeamanan'], profil: ['tab-profil', 'pasangTabProfil'], backup: ['tab-backup', 'pasangTabBackup'] };
 function buatHalamanPengaturan(kunci) {

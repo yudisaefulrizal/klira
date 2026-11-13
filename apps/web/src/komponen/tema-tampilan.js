@@ -1,5 +1,5 @@
 import { KUNCI_TEMA, temaTersimpan, terapkanTema } from '../util/tema.js';
-import { pantauStatusKoneksi } from '../util/status-koneksi.js';
+import { pantauStatusKoneksi } from '../util/panggilan/status-koneksi.js';
 
 const pilihanTema = [
   { nilai: 'terang', label: 'Terang', ikon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>' },

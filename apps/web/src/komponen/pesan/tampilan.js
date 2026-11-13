@@ -1,7 +1,7 @@
 import { punyaIzin } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { penggunaSaatIni, sesiPengguna } from '../../util/konteks-pengguna.js';
-import { navigasi, navigasiSaatIni } from '../../util/navigasi.js';
+import { penggunaSaatIni, sesiPengguna } from '../../util/sesi/konteks-pengguna.js';
+import { navigasi, navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { tombol, bidang, lencana, peringatan } from '../ui/primitif.js';
 import { IkonPesan } from './ikon-svg.js';
 

@@ -4,11 +4,11 @@ import { daftarBerkas } from '../../api-klien/rekam-medis.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { bukaPanelRiwayat } from '../../modal/pelayanan-klinik/panel-riwayat.js';
-import { bukaLaporanRm } from '../../modal/pelayanan-klinik/laporan-rm.js';
-import { bukaPerbaikiCatatan } from '../../modal/pelayanan-klinik/perbaiki-catatan.js';
-import { bukaResumeSurat } from '../../modal/pelayanan-klinik/resume-surat.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { bukaPanelRiwayat } from '../../modal/pasien/panel-riwayat.js';
+import { bukaLaporanRm } from '../../modal/rekam-medis/laporan-rm.js';
+import { bukaPerbaikiCatatan } from '../../modal/rekam-medis/perbaiki-catatan.js';
+import { bukaResumeSurat } from '../../modal/rekam-medis/resume-surat.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 export function TabBerkas({ judulDaftar = REKAM_MEDIS.berkas.kolom.pasien, laporan = false } = {}) {
   const B = REKAM_MEDIS.berkas, boleh = izinSaatIni(), awal = { cari: '', dari: '', sampai: '', halaman: 1 }, el = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), toolbar = document.createElement('form'), status = document.createElement('div'), vide = document.createElement('div'), pages = document.createElement('div'), controls = new Map();
   let draf = { ...awal }, terapan = { ...awal }, actif = true, version = 0, modal, lapor;

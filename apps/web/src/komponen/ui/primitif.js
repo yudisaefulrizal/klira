@@ -1,6 +1,6 @@
 import { token } from '../../gaya/token.js';
 import { KEAMANAN } from '@klira/shared';
-import { totalHalaman } from '../../util/penyaring-tab.js';
+import { totalHalaman } from '../../util/tab/penyaring-tab.js';
 
 /** Primitif DOM UI yang sudah ada: menerima teks/Node dan mengembalikan elemen browser. */
 export function tombol(teks, onClick, varian = 'utama') {

@@ -1,5 +1,5 @@
 import { AKUN_BARU, dataAkun, izinAkunPembuatan, kunciIzin, penugasanAkunBaru, profilProfesiBaru } from '@klira/shared';
-import { saringTeks } from '../../util/saring-teks.js';
+import { saringTeks } from '../../util/penyaring/saring-teks.js';
 /** Bidang yang tidak pernah masuk draf lokal (komputer klinik bersama). */
 export const BIDANG_SENSITIF_AKUN = ['nik', 'nomor_sip', 'ihs_practitioner_id'];
 export const awalAkun = () => ({

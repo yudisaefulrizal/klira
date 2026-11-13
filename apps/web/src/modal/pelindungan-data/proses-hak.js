@@ -4,10 +4,10 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { tombol } from '../../komponen/ui/primitif.js';
-import { adaPerubahan } from '../../util/draf.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { awalProsesHak, bentukProsesHak, galatProsesHak, indeksTahapHak } from './keadaan-pdp.js';
-import { bidangPdp } from './formulir-dom.js';
+import { bidangPdp } from './formulir.js';
 const H = PDP.hak;
 export function bukaProsesHak({ hak, onTutup, onSelesai }) {
   const tahap = hak.tahap_berikut, awal = awalProsesHak(), k = { ...awal }; let dicoba = false, memproses = false, selesai = false, aktif = true;

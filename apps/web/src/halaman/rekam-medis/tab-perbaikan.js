@@ -4,8 +4,8 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
-import { bukaTinjauPerbaikan } from '../../modal/pelayanan-klinik/tinjau-perbaikan.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { bukaTinjauPerbaikan } from '../../modal/rekam-medis/tinjau-perbaikan.js';
 export function TabPerbaikan() {
   const P = REKAM_MEDIS.tinjau, boleh = izinSaatIni(), awal = { status: 'diajukan', halaman: 1 }, el = kartu({ style: { padding: '0', overflow: 'hidden' } }), toolbar = document.createElement('form'), status = document.createElement('div'), count = document.createElement('span'), vide = document.createElement('div'), pages = document.createElement('div');
   let draf = { ...awal }, terapan = { ...awal }, actif = true, version = 0, modal;

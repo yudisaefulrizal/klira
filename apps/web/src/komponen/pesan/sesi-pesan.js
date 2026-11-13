@@ -1,6 +1,6 @@
 import { punyaIzin } from '@klira/shared';
-import { sesiPengguna } from '../../util/konteks-pengguna.js';
-import { navigasi } from '../../util/navigasi.js';
+import { sesiPengguna } from '../../util/sesi/konteks-pengguna.js';
+import { navigasi } from '../../util/navigasi/navigasi.js';
 /** Lifecycle percakapan per kanal: API, websocket, draf, pagination, notifikasi, dan pergantian pengguna. */
 export function buatSesiPesan(kanal, { percakapanWa, ringkasanWa }) {
   let keadaan = awal(), halaman = 1, generasi = 0, identitas, boleh = false, putus, lepasSesi, lepasNavigasi, timerNotifikasi;

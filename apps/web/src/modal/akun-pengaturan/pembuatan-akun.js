@@ -6,10 +6,10 @@ import { FormPeringatan, dariIsian, isianPeringatanAwal, isianPeringatanSiap } f
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { peringatan as kotak, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { adaPerubahan, adaptorLokal, kunciDraf } from '../../util/draf.js';
-import { buatDrafOtomatis } from '../../util/draf-otomatis.js';
+import { adaPerubahan, adaptorLokal, kunciDraf } from '../../util/draf/draf.js';
+import { buatDrafOtomatis } from '../../util/draf/draf-otomatis.js';
 import { batasi, langkahBermasalah } from '../../util/langkah.js';
-import { penggunaSaatIni } from '../../util/konteks-pengguna.js';
+import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { kirimAkun } from './alur-buat-akun.js';
 import { awalAkun, BIDANG_SENSITIF_AKUN, galatLangkah, hariIniLokal } from './keadaan-akun.js';
 import { IsiHasilAkun, LangkahData, LangkahIzin, LangkahJenis, LangkahProfil, LangkahRingkasan } from './langkah-akun.js';

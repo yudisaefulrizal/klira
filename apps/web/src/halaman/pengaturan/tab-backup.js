@@ -5,8 +5,8 @@ import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { bidang, kartu, tombol, peringatan, baris, sel, lencana, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
-import { tabelTab } from './tabel-dom.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { tabelTab } from './tabel.js';
 export function pasangTabBackup(wadah) {
   let backup = null, halaman = 1, aktif = true, versi = 0, sistemMemproses = false, galatSistem = null, konfirmasi;
   const ui = tabelTab({ id: 'backup', label: KEAMANAN.backupJudul, kolom: ['waktu', 'status', 'ukuran', 'lokasi'].map(k => ({ judul: KEAMANAN.backupKolom[k] })) }); wadah.replaceChildren(ui.el);

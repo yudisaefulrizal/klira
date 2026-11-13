@@ -4,10 +4,10 @@ import { ambilProfilKlinik, daftarRiwayatProfil, simpanProfilKlinik } from '../.
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { kartu, bidang, tombol, peringatan, baris, sel, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { bentukProfil, formDariProfil, galatProfil, labelJenisRiwayat, profilBerubah } from './keadaan-profil.js';
 import { PengaturanWebsiteKlinik } from './website-klinik.js';
-import { tabelTab } from './tabel-dom.js';
+import { tabelTab } from './tabel.js';
 export function pasangTabProfil(wadah) {
   const bolehUbah = izinSaatIni()('profil-klinik', 'perbaikan'); let awal = null, form = null, galat = null, info = null, memproses = false, dicoba = false, aktif = true, riwayat = null, halaman = 1, versi = 0;
   const el = document.createElement('section'), card = kartu({ susun: 'md' }), judul = document.createElement('div'), petunjuk = document.createElement('span'), pesan = document.createElement('div'), formulir = document.createElement('form'), grid = document.createElement('div');

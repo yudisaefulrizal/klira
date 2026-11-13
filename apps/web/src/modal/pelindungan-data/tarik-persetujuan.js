@@ -4,7 +4,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { galatTarik } from './keadaan-pdp.js';
 const T = PDP.tarik;
 export function bukaTarikPersetujuan({ persetujuan, onTutup, onSelesai }) {

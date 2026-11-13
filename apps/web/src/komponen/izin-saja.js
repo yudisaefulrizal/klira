@@ -1,5 +1,5 @@
-import { izinUntuk } from '../util/izin-pengguna.js';
-import { penggunaSaatIni } from '../util/konteks-pengguna.js';
+import { izinUntuk } from '../util/sesi/izin-pengguna.js';
+import { penggunaSaatIni } from '../util/sesi/konteks-pengguna.js';
 export const izinSaatIni = () => izinUntuk(penggunaSaatIni().pengguna);
 export function HanyaDenganIzin({ fitur, aksi, cakupan, children }) {
   const el = document.createDocumentFragment();

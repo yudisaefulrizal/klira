@@ -1,5 +1,5 @@
-import { buatSuaraPanggilan } from '../util/suara-panggilan.js';
-import { sambungkanLayarPanggilan } from '../util/sambungan-layar-panggilan.js';
+import { buatSuaraPanggilan } from '../util/panggilan/suara-panggilan.js';
+import { sambungkanLayarPanggilan } from '../util/panggilan/sambungan-layar-panggilan.js';
 import { teksHtml as aman } from '../util/teks-html.js';
 
 const zona = 'Asia/Jakarta';

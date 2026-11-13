@@ -3,9 +3,9 @@ import { TombolPesan as TombolIg, PanelPesan as PanelIg } from './komponen/insta
 import { sesiPesan as whatsapp } from './komponen/pesan/konteks-pesan.js';
 import { sesiPesan as instagram } from './komponen/instagram/konteks-pesan.js';
 import { HALAMAN_AWAL, HALAMAN_MENU } from '@klira/shared';
-import { sesiPengguna, penggunaSaatIni } from './util/konteks-pengguna.js';
-import { navigasi } from './util/navigasi.js';
-import { putuskanRute } from './util/penjaga-rute.js';
+import { sesiPengguna, penggunaSaatIni } from './util/sesi/konteks-pengguna.js';
+import { navigasi } from './util/navigasi/navigasi.js';
+import { putuskanRute } from './util/sesi/penjaga-rute.js';
 import { pasangTemaTampilan } from './komponen/tema-tampilan.js';
 import { pasangTataLetak } from './komponen/tata-letak.js';
 import { pasangLogAudit } from './halaman/log-audit.js';

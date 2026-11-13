@@ -2,7 +2,7 @@ import { BersihkanPesan } from '../pesan/bersihkan-pesan.js';
 import { panggilApi } from '../../api-klien/klien.js';
 import { koneksiWa } from '../../api-klien/instagram.js';
 import { sesiPesan } from './konteks-pesan.js';
-import { navigasiSaatIni } from '../../util/navigasi.js';
+import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { token } from '../../gaya/token.js';
 import { tombol, peringatan } from '../ui/primitif.js';
 const hasilLogin = { dibatalkan: 'Login Instagram dibatalkan.', state: 'Login kedaluwarsa. Coba lagi.', izin: 'Izin berubah. Silakan masuk kembali.', 'akun-berbeda': 'Gunakan akun Instagram sebelumnya.', gagal: 'Gagal masuk. Coba lagi.' };

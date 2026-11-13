@@ -1,6 +1,6 @@
 import { punyaIzin } from '@klira/shared';
-import { penggunaSaatIni } from '../util/konteks-pengguna.js';
-import { navigasiSaatIni } from '../util/navigasi.js';
+import { penggunaSaatIni } from '../util/sesi/konteks-pengguna.js';
+import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
 import { tab } from '../komponen/ui/primitif.js';
 import { HalamanPesanWhatsapp } from './pesan-whatsapp.js';
 import { HalamanPesanInstagram } from './pesan-instagram.js';

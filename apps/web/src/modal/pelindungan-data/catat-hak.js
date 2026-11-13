@@ -5,10 +5,10 @@ import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.
 import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { tombol } from '../../komponen/ui/primitif.js';
-import { adaPerubahan } from '../../util/draf.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { awalHak, bentukHak, galatHak, langkahBermasalahHak } from './keadaan-pdp.js';
-import { bidangPdp } from './formulir-dom.js';
+import { bidangPdp } from './formulir.js';
 const H = PDP.hak;
 const opsi = (peta, kosong) => [...(kosong ? [{ nilai: '', label: kosong }] : []), ...Object.entries(peta).map(([nilai, label]) => ({ nilai, label }))];
 export function bukaCatatHak({ onTutup, onSelesai }) {

@@ -3,8 +3,8 @@ import { daftarPeringatan } from '../../api-klien/izin.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { bidang, tombol, baris, sel, lencana, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { BAWAAN_PERINGATAN, bacaPenyaring, formatWaktu, queryPenyaring, rentangTerbalik, saringanPeringatan, ubahPenyaring } from '../../util/penyaring-tab.js';
-import { tabelTab } from './tabel-dom.js';
+import { BAWAAN_PERINGATAN, bacaPenyaring, formatWaktu, queryPenyaring, rentangTerbalik, saringanPeringatan, ubahPenyaring } from '../../util/tab/penyaring-tab.js';
+import { tabelTab } from './tabel.js';
 export function pasangTabPeringatan(wadah, { search, ubahAlamat }) {
   let keadaan = bacaPenyaring(search, BAWAAN_PERINGATAN), draf = { ...keadaan.nilai }, hasil = null, aktif = true, versi = 0;
   const ui = tabelTab({ id: 'peringatan', label: D.judulTab, kolom: ['pengguna', 'jenis', 'alasan', 'penetapan', 'waktu', 'diterima'].map(k => ({ judul: D.kolom[k] })), catatan: D.catatan });

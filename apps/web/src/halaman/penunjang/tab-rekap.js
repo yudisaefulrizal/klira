@@ -3,8 +3,8 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { rekapLab } from '../../api-klien/penunjang.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { navigasiSaatIni } from '../../util/navigasi.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 
 export function pasangTabRekap(wadah) {
   const R = PENUNJANG.rekap, { ganti } = navigasiSaatIni(), awal = { status: '', dari: '', sampai: '', halaman: 1 };

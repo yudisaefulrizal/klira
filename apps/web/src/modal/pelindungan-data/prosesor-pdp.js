@@ -5,7 +5,7 @@ import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
-import { adaPerubahan } from '../../util/draf.js';
+import { adaPerubahan } from '../../util/draf/draf.js';
 import { alihButir, awalProsesor, bentukProsesor, galatProsesor, langkahBermasalahProsesor } from './keadaan-pdp.js';
 const P = PDP.prosesor;
 export function bukaProsesorPdp({ prosesor = null, onTutup, onSelesai }) {

@@ -1,6 +1,6 @@
 import { tanggalWib } from '@klira/shared';
 import { panggilApi } from '../api-klien/klien.js';
-import { grafikPenumpukan } from './grafik-penumpukan.js';
+import { grafikPenumpukan } from './statistik/grafik-penumpukan.js';
 import { teksHtml as aman } from '../util/teks-html.js';
 const angka = n => n === null ? '—' : new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(n);
 const durasi = n => n === null ? 'Belum tersedia' : `${angka(n)} menit`;

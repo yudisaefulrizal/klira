@@ -1,6 +1,6 @@
 import { MODAL, TOMBOL } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { bukaLapisanRiwayat } from '../../util/riwayat-lapisan.js';
+import { bukaLapisanRiwayat } from '../../util/lapisan/riwayat-lapisan.js';
 import { alasanSiap } from '../../util/alasan.js';
 import { bukaDialog } from '../ui/buka-dialog.js';
 import { tombol, bidang } from '../ui/primitif.js';

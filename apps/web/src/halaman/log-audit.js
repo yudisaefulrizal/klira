@@ -1,10 +1,10 @@
 import { AKSI_AUDIT, AUDIT, KEAMANAN, MODAL } from '@klira/shared';
 import { daftarAudit, eksporAudit } from '../api-klien/audit.js';
 import { GalatApi } from '../api-klien/klien.js';
-import { BAWAAN_AUDIT, bacaPenyaring, formatWaktu, penggunaIdSah, queryPenyaring, rentangTerbalik, saringanAudit, saringanEkspor, ubahPenyaring, totalHalaman } from '../util/penyaring-tab.js';
+import { BAWAAN_AUDIT, bacaPenyaring, formatWaktu, penggunaIdSah, queryPenyaring, rentangTerbalik, saringanAudit, saringanEkspor, ubahPenyaring, totalHalaman } from '../util/tab/penyaring-tab.js';
 import { unduhTeks } from '../util/unduh.js';
 import { teksHtml as aman } from '../util/teks-html.js';
-import { bukaLapisanRiwayat } from '../util/riwayat-lapisan.js';
+import { bukaLapisanRiwayat } from '../util/lapisan/riwayat-lapisan.js';
 import { bukaDialog } from '../komponen/ui/buka-dialog.js';
 
 const UKURAN = 20;

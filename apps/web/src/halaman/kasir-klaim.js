@@ -6,13 +6,13 @@ import { izinSaatIni } from '../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab } from '../komponen/ui/primitif.js';
 import { token } from '../gaya/token.js';
 import { TabKlaim } from './kasir-klaim/tab-klaim.js';
-import { bukaShiftKasir } from '../modal/pelayanan-klinik/shift-kasir.js';
-import { rupiah } from '../modal/pelayanan-klinik/keadaan-order-lab.js';
-import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
-import { penggunaSaatIni } from '../util/konteks-pengguna.js';
-import { navigasiSaatIni } from '../util/navigasi.js';
-import { formatWaktu } from '../util/penyaring-tab.js';
-import { tabKasirKlaimDiizinkan } from '../util/tab-kasir-klaim.js';
+import { bukaShiftKasir } from '../modal/kasir-klaim/shift-kasir.js';
+import { rupiah } from '../modal/penunjang/keadaan-order-lab.js';
+import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
+import { penggunaSaatIni } from '../util/sesi/konteks-pengguna.js';
+import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
+import { formatWaktu } from '../util/tab/penyaring-tab.js';
+import { tabKasirKlaimDiizinkan } from '../util/tab/tab-kasir-klaim.js';
 
 function TabShift() {
   const S = KASIR.shift, boleh = izinSaatIni(), el = document.createElement('div'), status = document.createElement('div'), shiftBox = kartu(), toolbar = document.createElement('div'), rekapBox = document.createElement('div');

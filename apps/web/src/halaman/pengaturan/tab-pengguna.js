@@ -6,9 +6,9 @@ import { baris, sel, tombol, lencana, bidang } from '../../komponen/ui/primitif.
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bukaAturIzin } from '../../modal/akun-pengaturan/atur-izin.js';
 import { bukaPembuatanAkun } from '../../modal/akun-pengaturan/pembuatan-akun.js';
-import { penggunaSaatIni } from '../../util/konteks-pengguna.js';
-import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from '../../util/penyaring-daftar.js';
-import { tabelTab } from './tabel-dom.js';
+import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
+import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from '../../util/penyaring/penyaring-daftar.js';
+import { tabelTab } from './tabel.js';
 export function pasangTabPengguna(wadah, { search, ubahAlamat }) {
   const saya = penggunaSaatIni().pengguna, boleh = izinSaatIni(); let keadaan = keadaanDariQuery(search), hasil = null, aktif = true, versi = 0, timer, tutupModal;
   const kolom = ['nama', 'jenis', 'izin', 'peringatan', 'status', 'tindakan'].map(k => ({ judul: PENGGUNA.kolom[k], rataKanan: k === 'tindakan' })), ui = tabelTab({ id: 'pengguna', label: PENGGUNA.judulTab, kolom, catatan: PENGGUNA.catatan }); wadah.replaceChildren(ui.el);

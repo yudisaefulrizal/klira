@@ -4,9 +4,9 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { bukaPenyiapanKlaim } from '../../modal/pelayanan-klinik/penyiapan-klaim.js';
-import { bukaUbahStatusKlaim } from '../../modal/pelayanan-klinik/ubah-status-klaim.js';
-import { formatWaktu } from '../../util/penyaring-tab.js';
+import { bukaPenyiapanKlaim } from '../../modal/kasir-klaim/penyiapan-klaim.js';
+import { bukaUbahStatusKlaim } from '../../modal/kasir-klaim/ubah-status-klaim.js';
+import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 
 export function TabKlaim() {
   const boleh = izinSaatIni(), el = kartu({ style: { padding: '0', overflow: 'hidden' } }), toolbar = document.createElement('form'), ringkas = document.createElement('div'), status = document.createElement('div'), kosong = document.createElement('div'), pages = document.createElement('div');
