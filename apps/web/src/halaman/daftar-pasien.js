@@ -40,7 +40,7 @@ const IKON_AKSI = {
 const ikonAksi = (jenis) => IKON_AKSI[jenis];
 const KOLOM = [
     { judul: DAFTAR_PASIEN.kolom.antrean }, { judul: DAFTAR_PASIEN.kolom.pasien }, { judul: DAFTAR_PASIEN.kolom.nomorRm }, { judul: DAFTAR_PASIEN.kolom.poliDpjp },
-    { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.menunggu }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },
+    { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },
 ];
 const labelAksi = (a, status) => a === 'panggil' && status === 'dipanggil' ? DAFTAR_PASIEN.aksi.panggilUlang : DAFTAR_PASIEN.aksi[a === 'batal' ? 'batal' : a];
 export function HalamanDaftarPasien() {
@@ -150,13 +150,15 @@ export function HalamanDaftarPasien() {
         const table=tabel(KOLOM,DAFTAR_PASIEN.judul);box.append(table.el);
         for(const b of hasil?.data??[]){const k=b.kunjungan,tunggu=k&&k.tahap_layanan!=='ditutup'&&k.antrean?.status!=='batal'?lamaMenunggu(k.mulai,sekarang):null,{utama,lainnya}=kelompokAksi(b,aksiBaris(b,boleh));
             const queue=sel();queue.style.fontWeight=token.huruf.berat.tebal;if(k?.antrean)queue.append(k.antrean.kode,' ',lencana(STATUS_ANTREAN.label(k.antrean.status),STATUS_ANTREAN.warna(k.antrean.status)));else queue.append(DAFTAR_PASIEN.tanpaAntrean);
+            // Lama menunggu ditampilkan di sel Antrean, setelah status.
+            if(tunggu){const lama=document.createElement('small');Object.assign(lama.style,{color:token.warna.teksRedup,fontWeight:token.huruf.berat.biasa});lama.textContent=` ${tunggu.jam?DAFTAR_PASIEN.jamMenit(tunggu.jam,tunggu.menit):DAFTAR_PASIEN.menit(tunggu.menit)}`;queue.append(lama);}
             const patient=sel(),name=tombol(b.nama,()=>setTerbuka({jenis:'edit-pasien',pasien:pasienDari(b)}),'teks');name.setAttribute('aria-label',`Buka data pasien ${b.nama}`);Object.assign(name.style,{fontWeight:token.huruf.berat.tebal,padding:'0'});const meta=document.createElement('span');Object.assign(meta.style,{fontSize:token.huruf.ukuran.kecil,color:token.warna.teksRedup});meta.textContent=` (${DAFTAR_PASIEN.jenisKelaminSingkat[b.jenis_kelamin]}, ${DAFTAR_PASIEN.umur(b.umur_tahun)})`;if(b.status_identitas==='sementara')meta.append(' ',lencana(STATUS_IDENTITAS.label('sementara'),STATUS_IDENTITAS.warna('sementara')));patient.append(name,meta);
             const poli=sel();if(k){poli.append(k.poli_nama??lencana(JENIS_KUNJUNGAN.label(k.jenis),JENIS_KUNJUNGAN.warna(k.jenis)));const doctor=document.createElement('small');doctor.style.color=token.warna.teksRedup;doctor.textContent=` ${k.dpjp_nama??'-'}`;poli.append(doctor);}else poli.append(DAFTAR_PASIEN.tanpaKunjungan);
             const actionCell=sel(),row=document.createElement('div');Object.assign(row.style,{display:'inline-flex',gap:token.jarak.sm,flexWrap:'wrap',justifyContent:'flex-end',alignItems:'stretch'});actionCell.style.textAlign='right';
             if(boleh('whatsapp','lihat'))row.append(icon({ikon:'whatsapp',label:'WhatsApp',varian:'teks',onClick(){pesan.bukaPasien({id:b.id,nama:b.nama});}}));
             for(const a of utama){const status=k?.antrean?.status??'',repeat=a.jenis==='panggil'&&status==='dipanggil';row.append(icon({ikon:repeat?'panggil-ulang':ikonAksi(a.jenis),label:texteAksi(a,status),varian:a.jenis==='skrining'||a.jenis==='periksa'?'utama':repeat||['buka','riwayat','keluarga'].includes(a.jenis)?'teks':'sekunder',disabled:a.jenis==='panggil'&&memprosesAksi,onClick(){klikAksi(b,a);}}));}
             if(lainnya.length){const menu=MenuAksi({label:DAFTAR_PASIEN.aksiLainnya,items:lainnya.map(a=>({kunci:`${a.jenis}${a.ubah?'-ubah':''}`,label:texteAksi(a,k?.antrean?.status??''),ikon:IkonPasien({nama:a.ubah?'edit':ikonAksi(a.jenis)}),disabled:memprosesAksi&&['panggil','batal'].includes(a.jenis),onPilih(){klikAksi(b,a);}}))});disposables.push(menu);row.append(menu);}actionCell.append(row);
-            table.tbody.append(baris(queue,patient,sel(b.nomor_rm),poli,sel(k?CARA_PEMBAYARAN.label(k.cara_pembayaran):'-'),sel(tunggu?tunggu.jam?DAFTAR_PASIEN.jamMenit(tunggu.jam,tunggu.menit):DAFTAR_PASIEN.menit(tunggu.menit):'-'),actionCell));
+            table.tbody.append(baris(queue,patient,sel(b.nomor_rm),poli,sel(k?CARA_PEMBAYARAN.label(k.cara_pembayaran):'-'),actionCell));
         }
         if(hasil&&!hasil.data.length){const empty=document.createElement('div');empty.style.padding=token.jarak.md;empty.style.color=token.warna.teksRedup;empty.textContent=DAFTAR_PASIEN.kosong;box.append(empty);}if(hasil){const p=paginasi(keadaan.halaman,hasil.total,hasil.ukuran,h=>terapkan({halaman:h}));if(p)box.append(p);}section.append(box);section.tutup=()=>{for(const d of disposables)d.tutup?.();};return section;
     }
