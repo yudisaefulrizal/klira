@@ -43,8 +43,8 @@ export function bukaDetailPasien({ id, nama, onTutup }) {
     detailPasien(id).then(data => { if (!actif)
         return; function afficher(nom) { if (actif)
         contenu.replaceChildren(lencana(STATUS_IDENTITAS.label(data.status_identitas), STATUS_IDENTITAS.warna(data.status_identitas)), DaftarRingkasan({ bagian: bagianDetailPasien(data, nom) })); } afficher(); if (data.kode_wilayah) {
-        const label = document.createElement('span');
-        lepasWilayah = tampilkanNamaWilayah(label, data.kode_wilayah);
+        // Tampilkan kode dulu, lalu ganti dengan nama wilayah lengkap setelah termuat.
+        lepasWilayah = tampilkanNamaWilayah(data.kode_wilayah, nama => afficher(nama));
     } }).catch(e => { if (actif)
         contenu.replaceChildren(peringatan(e instanceof GalatApi ? e.message : DAFTAR_PASIEN.detailGagal)); });
     return { tutup() { actif = false; lepasWilayah?.(); panel.tutup(); } };
