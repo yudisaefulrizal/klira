@@ -1,8 +1,8 @@
 import { REKAM_MEDIS, STATUS_PERBAIKAN, TOMBOL } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, peringatan, lencana, kartu } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, peringatan, lencana, kartu } from '../../komponen/ui/primitif.js';
 import { formatWaktu } from '../../util/penyaring-tab.js';
 import { putuskanPerbaikan } from '../../api-klien/rekam-medis.js';
 import { ringkasIsi, selisihBaris } from './keadaan-rm.js';

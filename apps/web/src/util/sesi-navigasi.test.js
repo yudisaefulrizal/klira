@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { buatSesiPengguna } from './sesi-pengguna.js';
-import { buatNavigasi, ruteDokumenNative } from './navigasi-native.js';
+import { buatNavigasi, ruteDokumenNative } from './mesin-navigasi.js';
 const janji = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
 test('hasil pemuatan sesi lama tidak menimpa akun yang baru masuk', async () => {
   const baca = janji(); const api = { ambilSaya: () => baca.promise, masuk: async () => ({ id: 2 }) };

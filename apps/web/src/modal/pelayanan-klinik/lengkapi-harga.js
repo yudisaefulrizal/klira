@@ -2,7 +2,7 @@ import { KASIR } from '@klira/shared';
 import { lengkapiHargaItem } from '../../api-klien/kasir.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 
 export function LengkapiHarga({ kunjunganId, gambaran, onUbah }) {
   const L = KASIR.lengkapi, el = document.createElement('div'), status = document.createElement('div'), daftar = document.createElement('div');

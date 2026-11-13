@@ -4,7 +4,7 @@ import { koneksiWa } from '../../api-klien/instagram.js';
 import { sesiPesan } from './konteks-pesan.js';
 import { navigasiSaatIni } from '../../util/navigasi.js';
 import { token } from '../../gaya/token.js';
-import { tombol, peringatan } from '../ui/native.js';
+import { tombol, peringatan } from '../ui/primitif.js';
 const hasilLogin = { dibatalkan: 'Login Instagram dibatalkan.', state: 'Login kedaluwarsa. Coba lagi.', izin: 'Izin berubah. Silakan masuk kembali.', 'akun-berbeda': 'Gunakan akun Instagram sebelumnya.', gagal: 'Gagal masuk. Coba lagi.' };
 export function KoneksiInstagram() {
   const resultat = new URLSearchParams(navigasiSaatIni().search).get('instagram'), el = document.createElement('div'), compte = document.createElement('div'), etat = document.createElement('span'), point = document.createElement('i'), label = document.createElement('span'), nom = document.createElement('strong'), desc = document.createElement('small'), status = document.createElement('div');

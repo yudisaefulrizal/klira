@@ -2,8 +2,8 @@ import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, MODAL, TOMBOL } from '@klira/sha
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan } from '../../api-klien/kasir.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, peringatan, lencana, tabel, baris, sel } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, peringatan, lencana, tabel, baris, sel } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { formatWaktu } from '../../util/penyaring-tab.js';
 import { awalBayar, bentukBayar, galatBayar, hapusBaris, hargaDiubah, ringkasBayar, tambahBaris, ubahBaris, ubahHargaTersedia } from './keadaan-kasir.js';

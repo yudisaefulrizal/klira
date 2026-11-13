@@ -1,6 +1,6 @@
 import { KELAS_RAWAT, RAWAT_INAP, STATUS_BED } from '@klira/shared';
 import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
-import { tab, kartu, tombol, lencana, peringatan } from '../komponen/ui/native.js';
+import { tab, kartu, tombol, lencana, peringatan } from '../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
 import { navigasiSaatIni } from '../util/navigasi.js';
 import { ambilPapan } from '../api-klien/rawat-inap.js';

@@ -5,7 +5,7 @@ import { daftarPasien } from '../../api-klien/pasien.js';
 import { token } from '../../gaya/token.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
-import { bidang, tombol, lencana, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, lencana, peringatan } from '../../komponen/ui/primitif.js';
 export function bukaPanelKeluarga({ pasienId, nama, onTutup }) {
   const P = KLINIS.panel, boleh = izinSaatIni(), bolehUbah = boleh('pasien', 'input') || boleh('klinis', 'input'); let data = null, galat = null, pilih = null, sibuk = false, aktif = true, timer, versi = 0;
   function tutup() { aktif = false; versi++; clearTimeout(timer); panel.tutup(); onTutup(); }

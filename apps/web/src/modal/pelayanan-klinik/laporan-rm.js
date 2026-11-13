@@ -2,8 +2,8 @@ import { laporanKeCsv, REKAM_MEDIS, TOMBOL } from '@klira/shared';
 import { buatLaporan } from '../../api-klien/dokumen-rm.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, tabel, baris, sel, peringatan } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, tabel, baris, sel, peringatan } from '../../komponen/ui/primitif.js';
 import { unduhTeks } from '../../util/unduh.js';
 import { awalLaporan, galatLaporan } from './keadaan-dokumen.js';
 export function bukaLaporanRm({ onTutup }) {

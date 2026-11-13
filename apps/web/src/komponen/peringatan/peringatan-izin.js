@@ -1,8 +1,8 @@
 import { MODAL } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { alasanSiap } from '../../util/alasan.js';
-import { bukaDialog } from '../ui/dialog-dom.js';
-import { bidang, tombol, peringatan as kotak } from '../ui/native.js';
+import { bukaDialog } from '../ui/buka-dialog.js';
+import { bidang, tombol, peringatan as kotak } from '../ui/primitif.js';
 import { KotakCentang } from '../ui/kotak-centang.js';
 export const isianPeringatanAwal = { alasan: '', terima: false };
 export const dariIsian = i => ({ alasan: i.alasan.trim(), terima_untuk_akun: i.terima });

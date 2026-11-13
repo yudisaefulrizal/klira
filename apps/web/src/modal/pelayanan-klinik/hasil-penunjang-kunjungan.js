@@ -1,6 +1,6 @@
 import { ordersKunjungan } from '../../api-klien/penunjang.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { peringatan } from '../../komponen/ui/native.js';
+import { peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { DaftarOrderLab } from './daftar-order-lab.js';
 

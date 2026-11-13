@@ -5,8 +5,8 @@ import { detailPasien, perbaikiPasien } from '../../api-klien/pasien.js';
 import { TAB_EDIT_PASIEN, lokasiGalatEditPasien } from './keadaan-edit-pasien.js';
 import { penggunaSaatIni } from '../../util/konteks-pengguna.js';
 import { bagianDetailPasien } from './detail-pasien.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, peringatan, tab as buatTab } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, peringatan, tab as buatTab } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { token } from '../../gaya/token.js';
 

@@ -1,6 +1,6 @@
 import { KUNJUNGAN } from '@klira/shared';
 import { detailPasien } from '../../api-klien/pasien.js';
-import { peringatan } from '../../komponen/ui/native.js';
+import { peringatan } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { keteranganAsuransi } from './keadaan-kunjungan.js';
 

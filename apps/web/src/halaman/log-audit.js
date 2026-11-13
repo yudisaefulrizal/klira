@@ -5,7 +5,7 @@ import { BAWAAN_AUDIT, bacaPenyaring, formatWaktu, penggunaIdSah, queryPenyaring
 import { unduhTeks } from '../util/unduh.js';
 import { teksHtml as aman } from '../util/teks-html.js';
 import { bukaLapisanRiwayat } from '../util/riwayat-lapisan.js';
-import { bukaDialog } from '../komponen/ui/dialog-dom.js';
+import { bukaDialog } from '../komponen/ui/buka-dialog.js';
 
 const UKURAN = 20;
 export function pasangLogAudit(wadah, search, ubahAlamat) {

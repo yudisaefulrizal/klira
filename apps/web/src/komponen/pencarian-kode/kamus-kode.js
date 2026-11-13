@@ -1,7 +1,7 @@
 import { jelajahKamus } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
 import { bukaPanel } from '../panel/panel.js';
-import { tombol, peringatan, paginasi } from '../ui/native.js';
+import { tombol, peringatan, paginasi } from '../ui/primitif.js';
 import { daftarHasilKode } from './hasil-kode.js';
 export function bukaKamusKode({ judul, sistem, onTutup, onPilih }) {
   let halaman = 1, awalan = '', versi = 0, aktif = true;

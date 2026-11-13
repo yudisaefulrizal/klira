@@ -1,6 +1,6 @@
 import { FARMASI, rupiahTeks } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { barisResepKosong, biayaResep, hapusBarisResep, isiDariObat, opsiRute, ubahBarisResep } from './keadaan-farmasi.js';
 import { PencarianObatResep } from './pencarian-obat-resep.js';
 export function EditorItemResep(awal) {

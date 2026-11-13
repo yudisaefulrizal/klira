@@ -1,4 +1,4 @@
-import { buatNavigasi, ruteDokumenNative } from './navigasi-native.js';
+import { buatNavigasi, ruteDokumenNative } from './mesin-navigasi.js';
 import { bukaLapisanRiwayat } from './riwayat-lapisan.js';
 export const navigasi = buatNavigasi(window, ruteDokumenNative);
 export const navigasiSaatIni = () => ({ ...navigasi.potret(), pindah: navigasi.pindah, ganti: navigasi.ganti });

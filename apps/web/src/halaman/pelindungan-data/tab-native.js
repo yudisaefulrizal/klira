@@ -12,7 +12,7 @@ import { daftarRopa, daftarDpia, daftarInsiden, daftarProsesor, daftarPemusnahan
 import { izinUntuk } from '../../util/izin-pengguna.js';
 import { formatWaktu } from '../../util/penyaring-tab.js';
 import { token } from '../../gaya/token.js';
-import { tombol, sel, baris, lencana, kartu, tabel, bidang } from '../../komponen/ui/native.js';
+import { tombol, sel, baris, lencana, kartu, tabel, bidang } from '../../komponen/ui/primitif.js';
 import { pasangDaftarPdp } from './daftar-native.js';
 const STATUS = { diterima: 'Diterima', disetujui: 'Disetujui', ditolak: 'Ditolak', dilaksanakan: 'Dilaksanakan', selesai: 'Selesai' };
 const WARNA = { diterima: 'kuning', disetujui: 'biru', ditolak: 'merah', dilaksanakan: 'ungu', selesai: 'hijau' };

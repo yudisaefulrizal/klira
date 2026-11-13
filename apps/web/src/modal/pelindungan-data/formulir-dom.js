@@ -1,5 +1,5 @@
 import { token } from '../../gaya/token.js';
-import { bidang, peringatan } from '../../komponen/ui/native.js';
+import { bidang, peringatan } from '../../komponen/ui/primitif.js';
 /** Penyusunan bidang modal PDP; keadaan dan aturan bisnis tetap milik masing-masing alur. */
 export function bidangPdp(k, { prefix, galat, dicoba, berubah }) {
   let fields = [], lepas = [];

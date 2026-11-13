@@ -1,6 +1,6 @@
 import { izinSaatIni } from '../komponen/izin-saja.js';
 import { MenuAksi } from '../komponen/menu-aksi.js';
-import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab } from '../komponen/ui/native.js';
+import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab } from '../komponen/ui/primitif.js';
 import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
 import { pilihTab } from '../util/ingatan-tab.js';
 import { IkonPasien, TombolIkonPasien } from '../komponen/ikon-pasien.js';
@@ -14,8 +14,8 @@ import { token } from '../gaya/token.js';
 import { penggunaSaatIni } from '../util/konteks-pengguna.js';
 import { navigasiSaatIni } from '../util/navigasi.js';
 import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from '../util/penyaring-pasien.js';
-import { bukaKonfirmasi } from '../komponen/modal-1/modal-dom.js';
-import { paginasi } from '../komponen/ui/native.js';
+import { bukaKonfirmasi } from '../komponen/modal-1/modal-1.js';
+import { paginasi } from '../komponen/ui/primitif.js';
 import { bukaEditPasien } from '../modal/pelayanan-klinik/edit-pasien.js';
 import { bukaAmbilSpesimen } from '../modal/pelayanan-klinik/ambil-spesimen.js';
 import { bukaDetailPasien } from '../modal/pelayanan-klinik/detail-pasien.js';

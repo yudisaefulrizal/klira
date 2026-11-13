@@ -1,6 +1,6 @@
 import { PENUNJANG, PRIORITAS_ORDER, hargaTarif } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { bidang, peringatan } from '../../komponen/ui/native.js';
+import { bidang, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { gantiPilihan, perkiraanBiaya, rupiah, saringPemeriksaan } from './keadaan-order-lab.js';
 

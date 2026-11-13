@@ -2,8 +2,8 @@ import { INDIKATOR_KELAS, KELAS_RAWAT, RAWAT_INAP, TOMBOL } from '@klira/shared'
 import { ambilOpsiRawatInap, ambilRawatInap, ubahPenempatan } from '../../api-klien/rawat-inap.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahan } from '../../util/draf.js';
 import { formatWaktu } from '../../util/penyaring-tab.js';

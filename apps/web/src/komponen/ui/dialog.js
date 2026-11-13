@@ -1,7 +1,7 @@
 import { MODAL } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { bukaDialog } from './dialog-dom.js';
-import { tombol } from './native.js';
+import { bukaDialog } from './buka-dialog.js';
+import { tombol } from './primitif.js';
 export { bukaDialog };
 export function KepalaDialog({ judul, onTutup, labelTutup = MODAL.tutup, children, className }) {
   const header = document.createElement('header'), h2 = document.createElement('h2'), slot = document.createElement('div');

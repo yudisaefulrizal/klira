@@ -1,7 +1,7 @@
 import { punyaIzin } from '@klira/shared';
 import { penggunaSaatIni } from '../util/konteks-pengguna.js';
 import { navigasiSaatIni } from '../util/navigasi.js';
-import { tab } from '../komponen/ui/native.js';
+import { tab } from '../komponen/ui/primitif.js';
 import { HalamanPesanWhatsapp } from './pesan-whatsapp.js';
 import { HalamanPesanInstagram } from './pesan-instagram.js';
 export function HalamanPesan() {

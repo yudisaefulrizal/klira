@@ -1,7 +1,7 @@
 import { PDP } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { buatDaftar } from '../../util/use-daftar.js';
-import { kartu, tabel, peringatan, paginasi } from '../../komponen/ui/native.js';
+import { kartu, tabel, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 
 /** Daftar PDP yang sudah ada: UI tabel berhalaman, galat, kosong, dan muat ulang setelah modal selesai. */
 export function pasangDaftarPdp(wadah, { label, kolom, ambil, baris, kosong, aksiAtas, catatan, kepala, saatHasil }) {

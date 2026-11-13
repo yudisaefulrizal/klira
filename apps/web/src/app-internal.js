@@ -7,7 +7,7 @@ import { sesiPengguna, penggunaSaatIni } from './util/konteks-pengguna.js';
 import { navigasi } from './util/navigasi.js';
 import { putuskanRute } from './util/penjaga-rute.js';
 import { pasangTemaTampilan } from './komponen/tema-tampilan.js';
-import { pasangTataLetak } from './komponen/tata-letak-native.js';
+import { pasangTataLetak } from './komponen/tata-letak.js';
 import { pasangLogAudit } from './halaman/log-audit.js';
 import { pasangStatistik } from './halaman/statistik.js';
 import { pasangBerandaTugas } from './halaman/beranda-tugas.js';

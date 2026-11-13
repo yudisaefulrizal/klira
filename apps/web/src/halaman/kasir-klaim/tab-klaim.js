@@ -2,7 +2,7 @@ import { AMBANG_BATAS_DEKAT_HARI, aksiKlaimTersedia, KLAIM, STATUS_KLAIM } from 
 import { daftarKlaim } from '../../api-klien/klaim.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
-import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/native.js';
+import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { bukaPenyiapanKlaim } from '../../modal/pelayanan-klinik/penyiapan-klaim.js';
 import { bukaUbahStatusKlaim } from '../../modal/pelayanan-klinik/ubah-status-klaim.js';

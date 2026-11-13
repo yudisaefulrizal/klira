@@ -2,9 +2,9 @@ import { REKAM_MEDIS, TOMBOL } from '@klira/shared';
 import { catatPenyampaian } from '../../api-klien/dokumen-rm.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf.js';
 import { awalPenyampaian, bentukPenyampaian, galatPenyampaian } from './keadaan-dokumen.js';
 

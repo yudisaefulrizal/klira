@@ -1,6 +1,6 @@
 import { panggilApi } from '../../api-klien/klien.js';
-import { bukaKonfirmasi } from '../modal-1/modal-dom.js';
-import { tombol, peringatan } from '../ui/native.js';
+import { bukaKonfirmasi } from '../modal-1/modal-1.js';
+import { tombol, peringatan } from '../ui/primitif.js';
 import { token } from '../../gaya/token.js';
 export function BersihkanPesan({ kanal, onSelesai }) {
   let sibuk = false, konfirmasi, aktif = true;

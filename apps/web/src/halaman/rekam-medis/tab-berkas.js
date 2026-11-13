@@ -2,7 +2,7 @@ import { REKAM_MEDIS } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { daftarBerkas } from '../../api-klien/rekam-medis.js';
 import { izinSaatIni } from '../../komponen/izin-saja.js';
-import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/native.js';
+import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { bukaPanelRiwayat } from '../../modal/pelayanan-klinik/panel-riwayat.js';
 import { bukaLaporanRm } from '../../modal/pelayanan-klinik/laporan-rm.js';

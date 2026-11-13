@@ -4,7 +4,7 @@ import { riwayatKunjungan, salinanKunjungan } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
-import { tombol, peringatan } from '../../komponen/ui/native.js';
+import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { tanggalPendek } from '../../util/format.js';
 import { bagianDapatDisalin } from './keadaan-pemeriksaan.js';
 

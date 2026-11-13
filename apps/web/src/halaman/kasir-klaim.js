@@ -3,7 +3,7 @@ import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
 import { rekapHarian, shiftSaya } from '../api-klien/kasir.js';
 import { GalatApi } from '../api-klien/klien.js';
 import { izinSaatIni } from '../komponen/izin-saja.js';
-import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab } from '../komponen/ui/native.js';
+import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab } from '../komponen/ui/primitif.js';
 import { token } from '../gaya/token.js';
 import { TabKlaim } from './kasir-klaim/tab-klaim.js';
 import { bukaShiftKasir } from '../modal/pelayanan-klinik/shift-kasir.js';

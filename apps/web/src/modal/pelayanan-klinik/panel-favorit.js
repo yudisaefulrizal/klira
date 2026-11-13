@@ -3,7 +3,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { daftarTemplat, hapusFavorit, hapusTemplat, tambahFavorit, tambahTemplat, ubahUrutanFavorit } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { isiTemplatDari } from './keadaan-pemeriksaan.js';
 export function bukaPanelFavorit(awal) {
   let { k, favorit, onFavorit, onPakaiKode, onPakaiTemplat, onTutup } = awal, templat = null, galat = null, sibuk = false, actif = true; const P = KLINIS.panel;

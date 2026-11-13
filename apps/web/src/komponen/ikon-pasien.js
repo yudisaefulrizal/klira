@@ -1,4 +1,4 @@
-import { tombol } from './ui/native.js';
+import { tombol } from './ui/primitif.js';
 let nomor = 0;
 export function IkonPasien({ nama }) { const el = document.createElement('span'); el.className = 'pasien-ikon'; el.setAttribute('aria-hidden','true'); const mask = `url("/asset/icon/pasien/${nama}.png") center / contain no-repeat`; el.style.mask = el.style.webkitMask = mask; return el; }
 export function TombolIkonPasien({ ikon, ikonKustom, label, children, className = '', varian = 'utama', onClick, disabled, style, ...props }) {

@@ -1,7 +1,7 @@
 import { KLINIS } from '@klira/shared';
 import { ambilRekamMedisCetak } from '../../api-klien/klinis.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { tombol, peringatan } from '../../komponen/ui/native.js';
+import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { Lembar } from './lembar-rekam-medis.js';
 import { muatDataRawatInap } from './data-rawat-inap.js';
 

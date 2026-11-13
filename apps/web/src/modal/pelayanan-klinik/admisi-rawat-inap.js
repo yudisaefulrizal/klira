@@ -2,9 +2,9 @@ import { CARA_PEMBAYARAN, INDIKATOR_KELAS, KELAS_RAWAT, KUNJUNGAN, RAWAT_INAP, T
 import { admisiRawatInap, ambilAsalAdmisi, ambilOpsiRawatInap } from '../../api-klien/rawat-inap.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-dom.js';
+import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { adaPerubahan } from '../../util/draf.js';

@@ -2,8 +2,8 @@ import { DEFINISI_MASTER, MASTER, STATUS_AKUN, STATUS_FILTER_MASTER, STATUS_OPER
 import { daftarMaster, ubahAktifMaster } from '../api-klien/master.js';
 import { GalatApi } from '../api-klien/klien.js';
 import { izinSaatIni } from './izin-saja.js';
-import { bukaKonfirmasi } from './modal-1/modal-dom.js';
-import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, tab, paginasi } from './ui/native.js';
+import { bukaKonfirmasi } from './modal-1/modal-1.js';
+import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, tab, paginasi } from './ui/primitif.js';
 import { token } from '../gaya/token.js';
 import { bukaModalMasterProfil } from '../modal/akun-pengaturan/master-profil.js';
 import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../util/penyaring-tab.js';

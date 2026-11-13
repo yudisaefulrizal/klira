@@ -1,6 +1,6 @@
 import { MODAL } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { bukaDialog } from '../ui/dialog-dom.js';
+import { bukaDialog } from '../ui/buka-dialog.js';
 import { KepalaDialog } from '../ui/dialog.js';
 import { bukaLapisanRiwayat } from '../../util/riwayat-lapisan.js';
 export function bukaPanel({ judul, onTutup, aksi, children }) {

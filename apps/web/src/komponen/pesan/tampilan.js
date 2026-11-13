@@ -2,8 +2,8 @@ import { punyaIzin } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { penggunaSaatIni, sesiPengguna } from '../../util/konteks-pengguna.js';
 import { navigasi, navigasiSaatIni } from '../../util/navigasi.js';
-import { tombol, bidang, lencana, peringatan } from '../ui/native.js';
-import { IkonPesan } from './ikon-svg-native.js';
+import { tombol, bidang, lencana, peringatan } from '../ui/primitif.js';
+import { IkonPesan } from './ikon-svg.js';
 
 // UI percakapan kedua kanal, langsung memakai elemen browser dan controller sesi domain.
 export function buatTampilanPesan({ kanal, nama, prefix, sesi, api, Avatar, Koneksi, Info, logo }) {

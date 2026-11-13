@@ -2,7 +2,7 @@ import { DAFTAR_PASIEN, STATUS_IDENTITAS, TOMBOL, NAVIGASI } from '@klira/shared
 import { detailPasien } from '../../api-klien/pasien.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
-import { tombol, peringatan, lencana } from '../../komponen/ui/native.js';
+import { tombol, peringatan, lencana } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { tampilkanNamaWilayah } from '../../komponen/pencarian-wilayah.js';
 const strip = (v) => (v && v.trim() ? v : '-');

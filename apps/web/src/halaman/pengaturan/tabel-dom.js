@@ -1,5 +1,5 @@
 import { token } from '../../gaya/token.js';
-import { kartu, tabel, peringatan } from '../../komponen/ui/native.js';
+import { kartu, tabel, peringatan } from '../../komponen/ui/primitif.js';
 /** Susunan tabel tab administrasi dari komponen UI yang sama; tanpa state atau renderer. */
 export function tabelTab({ id, label, kolom, catatan }) {
   const el = document.createElement('section'), card = kartu({ style: { padding: '0', overflow: 'hidden' } }), kepala = document.createElement('div'), pesan = document.createElement('div'), kosong = document.createElement('div'), nav = document.createElement('div'), table = tabel(kolom, label);

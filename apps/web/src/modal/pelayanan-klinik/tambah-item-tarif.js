@@ -2,7 +2,7 @@ import { KASIR } from '@klira/shared';
 import { tambahItemTagihan } from '../../api-klien/kasir.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { galatTambahItem } from './keadaan-kasir.js';
 import { rupiahAtau } from './keadaan-order-lab.js';
 

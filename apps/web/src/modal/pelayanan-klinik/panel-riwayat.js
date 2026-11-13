@@ -3,7 +3,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { riwayatKunjungan } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
-import { kartu, tombol, lencana, peringatan } from '../../komponen/ui/native.js';
+import { kartu, tombol, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { DetailKunjungan } from './detail-kunjungan.js';
 import { tanggalPendek } from '../../util/format.js';
 export function bukaPanelRiwayat({ pasienId, nama, kecualiKunjunganId, onTutup }) {

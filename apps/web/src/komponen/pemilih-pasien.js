@@ -1,7 +1,7 @@
 import { REKAM_MEDIS } from '@klira/shared';
 import { daftarPasien } from '../api-klien/pasien.js';
 import { buatNilaiTertunda } from '../util/tunda.js';
-import { bidang } from './ui/native.js';
+import { bidang } from './ui/primitif.js';
 import { token } from '../gaya/token.js';
 const D = REKAM_MEDIS.dok;
 export function PemilihPasien(awal) {

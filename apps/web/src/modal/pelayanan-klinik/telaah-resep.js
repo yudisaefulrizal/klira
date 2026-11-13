@@ -3,8 +3,8 @@ import { resepKunjungan, semuaMasterObatAktif, siapkanResep, telaahResep } from 
 import { ambilKonteksKlinis } from '../../api-klien/klinis.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, kartu, peringatan, lencana } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, kartu, peringatan, lencana } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { KepalaPasien } from './kepala-pasien.js';
 import { EditorItemResep } from './editor-item-resep.js';

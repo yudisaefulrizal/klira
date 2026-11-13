@@ -2,8 +2,8 @@ import { JENIS_AKUN } from '@klira/shared';
 import { buatJenisAkun, daftarIzin, ubahJenisAkun } from '../../api-klien/izin.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahanJenis, alihIzin, awalJenis, bentukBuat, bentukUbah, galatJenis, kelompokkanIzin, labelAksiCakupan, semuaTerpilih, setKelompok } from './keadaan-jenis-akun.js';
 export function bukaModalJenisAkun({ jenis, onTutup, onSelesai }) {

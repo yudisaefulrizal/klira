@@ -1,6 +1,6 @@
 import { PENUNJANG } from '@klira/shared';
 import { token } from '../gaya/token.js';
-import { tab } from '../komponen/ui/native.js';
+import { tab } from '../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
 import { navigasiSaatIni } from '../util/navigasi.js';
 import { pasangTabMasterPemeriksaan } from './penunjang/tab-master-pemeriksaan.js';

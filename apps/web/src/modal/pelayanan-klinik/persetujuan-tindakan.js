@@ -11,8 +11,8 @@ import { DaftarRingkasan, Kolom } from '../../komponen/ui/susunan.js';
 import { adaPerubahan } from '../../util/draf.js';
 import { KepalaPasien } from './kepala-pasien.js';
 import { PILIHAN_MANUAL, awalPersetujuan, bentukPersetujuan, galatPersetujuan, langkahBermasalahPersetujuan, pilihTindakan, } from './keadaan-persetujuan.js';
-import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-dom.js';
-import { tombol } from '../../komponen/ui/native.js';
+import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
+import { tombol } from '../../komponen/ui/primitif.js';
 export function bukaPersetujuanTindakan({ kunjunganId, pasien, onTutup, onSelesai }) {
     const P = PERSETUJUAN_TINDAKAN;
     let siap = null, k = awalPersetujuan(null), awal = awalPersetujuan(null), indeks = 0, dicoba = false, galat = null, memproses = false, tercatat = false, aktif = true, modal;

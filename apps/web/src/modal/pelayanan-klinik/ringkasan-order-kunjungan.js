@@ -3,7 +3,7 @@ import { resepKunjungan } from '../../api-klien/farmasi.js';
 import { daftarMasterPemeriksaan, ordersKunjungan } from '../../api-klien/penunjang.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
-import { peringatan } from '../../komponen/ui/native.js';
+import { peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { adaIsianResep } from './keadaan-farmasi.js';
 import { awalKeadaan } from './keadaan-pemeriksaan.js';

@@ -1,7 +1,7 @@
 import { DAFTAR_PERINGATAN as D, JENIS_PERINGATAN, PERINGATAN_IZIN } from '@klira/shared';
 import { daftarPeringatan } from '../../api-klien/izin.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { bidang, tombol, baris, sel, lencana, paginasi } from '../../komponen/ui/native.js';
+import { bidang, tombol, baris, sel, lencana, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { BAWAAN_PERINGATAN, bacaPenyaring, formatWaktu, queryPenyaring, rentangTerbalik, saringanPeringatan, ubahPenyaring } from '../../util/penyaring-tab.js';
 import { tabelTab } from './tabel-dom.js';

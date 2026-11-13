@@ -1,5 +1,5 @@
 import { token } from '../gaya/token.js';
-import { tab } from '../komponen/ui/native.js';
+import { tab } from '../komponen/ui/primitif.js';
 import { penggunaSaatIni } from '../util/konteks-pengguna.js';
 import { navigasiSaatIni } from '../util/navigasi.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';

@@ -1,8 +1,8 @@
 import { PENUNJANG, TOMBOL } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { buatOrderLab, daftarMasterPemeriksaan } from '../../api-klien/penunjang.js';
-import { bukaModal1 } from '../../komponen/modal-1/modal-dom.js';
-import { peringatan, tombol } from '../../komponen/ui/native.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
+import { peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf.js';
 import { FormOrderLab } from './form-order-lab.js';
 import { KepalaPasien } from './kepala-pasien.js';

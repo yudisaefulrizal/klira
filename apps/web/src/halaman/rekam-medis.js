@@ -1,5 +1,5 @@
 import { REKAM_MEDIS } from '@klira/shared';
-import { tab } from '../komponen/ui/native.js';
+import { tab } from '../komponen/ui/primitif.js';
 import { token } from '../gaya/token.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/ingatan-tab.js';
 import { penggunaSaatIni } from '../util/konteks-pengguna.js';

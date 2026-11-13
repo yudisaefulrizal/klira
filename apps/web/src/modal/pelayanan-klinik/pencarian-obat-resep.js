@@ -1,4 +1,4 @@
-import { bidang } from '../../komponen/ui/native.js';
+import { bidang } from '../../komponen/ui/primitif.js';
 export function PencarianObatResep(awal) {
   let props = awal, kata = '', terbuka = false, aktif = -1;
   const el = document.createElement('div'), hasilEl = document.createElement('div'); el.className = 'resep-pencarian';

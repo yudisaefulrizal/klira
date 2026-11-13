@@ -3,7 +3,7 @@ import { ambilKlinis } from '../../api-klien/klinis.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
-import { tombol, peringatan } from '../../komponen/ui/native.js';
+import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { tanggalWaktuPendek } from '../../util/format.js';
 import { LABEL_BAGIAN, keadaanDariServer, ringkasanIsi } from './keadaan-pemeriksaan.js';

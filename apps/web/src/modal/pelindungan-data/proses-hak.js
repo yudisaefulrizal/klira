@@ -1,9 +1,9 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { prosesHak } from '../../api-klien/pdp.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-dom.js';
+import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
-import { tombol } from '../../komponen/ui/native.js';
+import { tombol } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf.js';
 import { formatWaktu } from '../../util/penyaring-tab.js';
 import { awalProsesHak, bentukProsesHak, galatProsesHak, indeksTahapHak } from './keadaan-pdp.js';

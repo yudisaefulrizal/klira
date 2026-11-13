@@ -1,5 +1,5 @@
 import { token } from '../../gaya/token.js';
-import { tombol, lencana } from '../ui/native.js';
+import { tombol, lencana } from '../ui/primitif.js';
 export function daftarHasilKode(hasil, { label, onPilih, kamus = false, labelContoh = 'Contoh' }) {
   const ul = document.createElement('ul'); ul.setAttribute('aria-label', label);
   Object.assign(ul.style, { display: 'flex', flexDirection: 'column', gap: '0', listStyle: 'none', margin: '0', padding: '0', ...(kamus ? {} : { overflow: 'hidden', border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang }) });

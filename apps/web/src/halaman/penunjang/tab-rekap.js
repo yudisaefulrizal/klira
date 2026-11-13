@@ -1,7 +1,7 @@
 import { INTERPRETASI_HASIL, NILAI_STATUS_ORDER, PENUNJANG, PRIORITAS_ORDER, STATUS_ORDER_PENUNJANG } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { rekapLab } from '../../api-klien/penunjang.js';
-import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/native.js';
+import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { navigasiSaatIni } from '../../util/navigasi.js';
 import { formatWaktu } from '../../util/penyaring-tab.js';

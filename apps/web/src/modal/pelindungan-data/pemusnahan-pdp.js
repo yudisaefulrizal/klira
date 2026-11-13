@@ -1,10 +1,10 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { opsiProsesor, prosesPemusnahan, rencanaPemusnahan } from '../../api-klien/pdp.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-dom.js';
+import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
-import { tombol, peringatan } from '../../komponen/ui/native.js';
+import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf.js';
 import { awalProsesMusnah, awalRencanaMusnah, bentukRencanaMusnah, galatProsesMusnah, galatRencanaMusnah, indeksTahapMusnah, bentukProsesMusnah } from './keadaan-pdp.js';
 import { bidangPdp } from './formulir-dom.js';
