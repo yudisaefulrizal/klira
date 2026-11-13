@@ -516,6 +516,8 @@ export const DAFTAR_PASIEN = {
     jamMenit: (j, m) => `${j} j ${m} mnt`,
     sebelumnya: 'Sebelumnya',
     berikutnya: 'Berikutnya',
+    penyaringTahap: 'Saring menurut tahap layanan',
+    tahap: { semua: 'Semua', menunggu_skrining: 'Skrining', pemeriksaan: 'Pemeriksaan', resep: 'Resep', kasir: 'Kasir', ditutup: 'Selesai', batal: 'Batal' },
     labSpesimen: 'Lab: spesimen',
     labHasil: 'Lab: hasil',
     poliSibuk: (poli, kode) => `${poli} sedang melayani ${kode}`,

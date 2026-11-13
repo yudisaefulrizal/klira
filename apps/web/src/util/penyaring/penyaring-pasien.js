@@ -1,9 +1,22 @@
 import { aksiAntreanTersedia } from '@klira/shared';
+/** Penyaring tahap pada Daftar pasien, berurutan sesuai alur layanan. */
+export const TAHAP_PENYARING = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup', 'batal'];
+/** Penyaring tahap bawaan menurut peran: kasir langsung ke Kasir, farmasi ke Resep; peran klinis dan pendaftaran melihat semua. */
+export function tahapBawaan(boleh) {
+    if (boleh('kunjungan', 'input') || boleh('klinis', 'input'))
+        return 'semua';
+    if (boleh('kasir', 'input'))
+        return 'kasir';
+    if (boleh('farmasi', 'input'))
+        return 'resep';
+    return 'semua';
+}
 export function keadaanPasienDariQuery(search) {
     const q = new URLSearchParams(search);
     const halaman = Number(q.get('halaman'));
     return {
         ...(q.get('tanggal') ? { tanggal: q.get('tanggal') } : {}),
+        ...(TAHAP_PENYARING.includes(q.get('tahap')) ? { tahap: q.get('tahap') } : {}),
         cari: (q.get('cari') ?? '').trim(),
         halaman: Number.isInteger(halaman) && halaman >= 1 ? halaman : 1,
     };
@@ -12,6 +25,8 @@ export function queryPasien(k) {
     const q = new URLSearchParams();
     if (k.tanggal)
         q.set('tanggal', k.tanggal);
+    if (k.tahap)
+        q.set('tahap', k.tahap);
     if (k.cari.trim())
         q.set('cari', k.cari.trim());
     if (k.halaman > 1)
@@ -20,7 +35,7 @@ export function queryPasien(k) {
 }
 /** Mengubah pencarian atau tanggal kembali ke halaman pertama. */
 export function ubahKeadaanPasien(k, perubahan) {
-    const berubah = (perubahan.tanggal !== undefined && perubahan.tanggal !== k.tanggal) || (perubahan.cari !== undefined && perubahan.cari !== k.cari);
+    const berubah = (perubahan.tanggal !== undefined && perubahan.tanggal !== k.tanggal) || (perubahan.cari !== undefined && perubahan.cari !== k.cari) || (perubahan.tahap !== undefined && perubahan.tahap !== k.tahap);
     return { ...k, ...perubahan, halaman: perubahan.halaman ?? (berubah ? 1 : k.halaman) };
 }
 /**

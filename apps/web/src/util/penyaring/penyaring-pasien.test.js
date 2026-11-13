@@ -1,12 +1,12 @@
 import { jest } from '@jest/globals';
-import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from './penyaring-pasien.js';
+import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, tahapBawaan, ubahKeadaanPasien } from './penyaring-pasien.js';
 import { queryDaftarPasien } from '../../api-klien/pasien.js';
 describe('satu daftar pasien', () => {
-    it('mengabaikan tahap pada tautan lama agar seluruh pasien tetap terlihat', () => {
+    it('tahap pada alamat dipertahankan bersama pencarian, halaman, dan tanggal', () => {
         for (const tahap of ['kasir', 'resep', 'batal', 'ditutup', 'pemeriksaan']) {
             const k = keadaanPasienDariQuery(`?tahap=${tahap}&cari=%20Siti%20&halaman=3&tanggal=2026-10-30`);
-            expect(k).toEqual({ cari: 'Siti', halaman: 3, tanggal: '2026-10-30' });
-            expect(queryPasien(k)).toBe('?tanggal=2026-10-30&cari=Siti&halaman=3');
+            expect(k).toEqual({ cari: 'Siti', halaman: 3, tanggal: '2026-10-30', tahap });
+            expect(queryPasien(k)).toBe(`?tanggal=2026-10-30&tahap=${tahap}&cari=Siti&halaman=3`);
         }
     });
     it('alamat kosong dan halaman tidak sah memakai daftar pertama', () => {
@@ -161,5 +161,25 @@ describe('lama menunggu dan pintasan', () => {
         expect(adalahPintasanCari({ key: '/', target: { tagName: 'DIV', isContentEditable: true } })).toBe(false);
         expect(adalahPintasanCari({ key: '/', ctrlKey: true, target: null })).toBe(false);
         expect(adalahPintasanCari({ key: 'a', target: null })).toBe(false);
+    });
+});
+
+
+describe('penyaring tahap', () => {
+    const izin = (...daftar) => (fitur, aksi) => daftar.some(([f, a]) => f === fitur && a === aksi);
+    it('bawaan menurut peran: pendaftaran dan klinis semua, kasir ke kasir, farmasi ke resep', () => {
+        expect(tahapBawaan(izin(['kunjungan', 'input']))).toBe('semua');
+        expect(tahapBawaan(izin(['klinis', 'input'], ['kasir', 'input']))).toBe('semua');
+        expect(tahapBawaan(izin(['kasir', 'input']))).toBe('kasir');
+        expect(tahapBawaan(izin(['farmasi', 'input']))).toBe('resep');
+        expect(tahapBawaan(izin())).toBe('semua');
+    });
+    it('tahap tersimpan di alamat, tahap tidak sah diabaikan, dan pindah tahap kembali ke halaman 1', () => {
+        const k = keadaanPasienDariQuery('?tahap=kasir&halaman=3');
+        expect(k).toMatchObject({ tahap: 'kasir', halaman: 3 });
+        expect(queryPasien(k)).toContain('tahap=kasir');
+        expect(keadaanPasienDariQuery('?tahap=aneh').tahap).toBeUndefined();
+        expect(keadaanPasienDariQuery('?tahap=semua').tahap).toBe('semua');
+        expect(ubahKeadaanPasien(k, { tahap: 'resep' })).toMatchObject({ tahap: 'resep', halaman: 1 });
     });
 });

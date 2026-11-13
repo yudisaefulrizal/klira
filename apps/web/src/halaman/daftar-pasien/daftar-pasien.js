@@ -13,7 +13,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
-import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, ubahKeadaanPasien } from '../../util/penyaring/penyaring-pasien.js';
+import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, TAHAP_PENYARING, tahapBawaan, ubahKeadaanPasien } from '../../util/penyaring/penyaring-pasien.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { paginasi } from '../../komponen/ui/primitif.js';
 import { bukaEditPasien } from '../../modal/pasien/edit-pasien.js';
@@ -144,7 +144,11 @@ export function HalamanDaftarPasien() {
         toolbar.append(searchBox,dates,icon({ikon:'hari-ini',label:'Hari ini',varian:tanggalAktif===hariIni?'sekunder':'teks','aria-pressed':tanggalAktif===hariIni,onClick(){const q=new URLSearchParams(queryPasien({...keadaan,halaman:1}));q.delete('tanggal');ganti(`/pasien?${q}`);}}),icon({ikon:'tanggal',label:'Kemarin',varian:tanggalAktif===kemarin?'sekunder':'teks','aria-pressed':tanggalAktif===kemarin,onClick(){terapkan({tanggal:kemarin});}}));
         if(boleh('kunjungan','input'))actions.append(icon({ikon:'kunjungan-baru',label:DAFTAR_PASIEN.daftarkanKunjungan,varian:'sekunder',onClick(){setTerbuka({jenis:'kunjungan'});}}));
         if(boleh('pasien','input'))actions.append(icon({ikon:'pasien-baru',label:DAFTAR_PASIEN.registrasi,onClick(){setTerbuka({jenis:'registrasi'});}}));
-        header.append(toolbar,actions);section.append(header);if(galat)section.append(peringatan(galat));
+        header.append(toolbar,actions);section.append(header);
+        // Penyaring tahap: tombol dengan jumlah; bawaan menurut peran, pilihan tetap di alamat halaman.
+        const tahapAktif=keadaan.tahap??tahapBawaan(boleh),jumlahTahap=hasil?.jumlah_tahap,penyaring=document.createElement('div');penyaring.className='pasien-penyaring';penyaring.setAttribute('role','group');penyaring.setAttribute('aria-label',DAFTAR_PASIEN.penyaringTahap);
+        for(const t of TAHAP_PENYARING){const n=jumlahTahap?(t==='semua'?Object.values(jumlahTahap).reduce((a,b)=>a+b,0):jumlahTahap[t]??0):null,b=tombol(`${DAFTAR_PASIEN.tahap[t]}${n===null?'':` ${n}`}`,()=>terapkan({tahap:t}),t===tahapAktif?'utama':'sekunder');b.setAttribute('aria-pressed',String(t===tahapAktif));penyaring.append(b);}
+        section.append(penyaring);if(galat)section.append(peringatan(galat));
         const readiness=document.createElement('div');readiness.style.display='contents';section.append(readiness);kesiapanTutup=pasangKesiapan(readiness,pengguna,'spanduk',ganti);
         const box=kartu({style:{padding:'0',overflow:'hidden'}});box.classList.add('pasien-tabel');const title=document.createElement('div'),h=document.createElement('h2'),count=document.createElement('span');title.className='pasien-tabel-judul';h.textContent=DAFTAR_PASIEN.judul;count.setAttribute('role','status');count.textContent=hasil?`${hasil.total} pasien`:'Memuat pasien…';title.append(h,count);box.append(title);
         const table=tabel(KOLOM,DAFTAR_PASIEN.judul);box.append(table.el);
@@ -189,7 +193,7 @@ export function HalamanDaftarPasien() {
     async function muat() {
         const saat = ++version;
         try {
-            const h = await daftarPasien({ tanggal: keadaan.tanggal ?? tanggalWib(sekarang), cari: keadaan.cari, tahap: 'semua', halaman: keadaan.halaman, ukuran: 20 });
+            const h = await daftarPasien({ tanggal: keadaan.tanggal ?? tanggalWib(sekarang), cari: keadaan.cari, tahap: keadaan.tahap ?? tahapBawaan(boleh), halaman: keadaan.halaman, ukuran: 20 });
             if (actif && saat === version) {
                 hasil = h;
                 galat = null;
@@ -221,7 +225,7 @@ export function HalamanDaftarPasien() {
     }
     paint();
     void muat();
-    if (new URLSearchParams(search).has('tahap'))
+    if (new URLSearchParams(search).has('tahap') && !keadaan.tahap)
         ganti(`/pasien${queryPasien(keadaan)}`);
     el.tutup = () => { actif = false; version++; clearTimeout(timer); clearInterval(minute); document.removeEventListener('keydown', tekan); modal?.tutup(); page?.tutup?.(); kesiapanTutup?.(); };
     return el;
