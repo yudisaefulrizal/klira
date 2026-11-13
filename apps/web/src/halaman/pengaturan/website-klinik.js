@@ -1,0 +1,44 @@
+import { websiteKlinikMasukan } from '@klira/shared';
+import { panggilApi } from '../../api-klien/klien.js';
+import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { kartu, bidang, tombol, peringatan } from '../../komponen/ui/native.js';
+import { token } from '../../gaya/token.js';
+export function PengaturanWebsiteKlinik({ onSelesai }) {
+  const bolehUbah = izinSaatIni()('profil-klinik', 'perbaikan'), el = kartu({ susun: 'md' }), controls = new Map();
+  let form = null, awal = null, galat = '', info = '', memproses = false, galatBidang = {}, aktif = true, versi = 0;
+  el.id = 'website-publik';
+  const kepala = document.createElement('div'), identitas = document.createElement('div'), h2 = document.createElement('h2'), intro = document.createElement('p'), link = document.createElement('a'), pesan = document.createElement('div'), loading = document.createElement('div'), formulir = document.createElement('form'), fieldset = document.createElement('fieldset'), isi = document.createElement('div'), aksi = document.createElement('div'), dirty = document.createElement('span');
+  Object.assign(kepala.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, flexWrap: 'wrap' }); identitas.style.flexGrow = '1'; h2.textContent = 'Website publik klinik'; Object.assign(h2.style, { margin: '0', fontSize: token.huruf.ukuran.besar }); intro.textContent = 'Identitas mengikuti nama pada Profil klinik. Layanan dan jadwal mengikuti master klinik.'; Object.assign(intro.style, { margin: '6px 0 0', color: token.warna.teksRedup }); identitas.append(h2, intro); link.textContent = 'Lihat website ↗'; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.style.color = token.warna.utama; kepala.append(identitas, link); pesan.style.display = 'contents';
+  formulir.noValidate = true; Object.assign(formulir.style, { display: 'none', flexDirection: 'column', gap: token.jarak.md }); Object.assign(fieldset.style, { margin: '0', padding: '0', border: '0', minWidth: '0' }); Object.assign(isi.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); Object.assign(aksi.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, flexWrap: 'wrap' }); dirty.textContent = 'Perubahan belum disimpan.'; dirty.style.color = token.warna.teksRedup; fieldset.append(isi); formulir.append(fieldset, aksi); el.append(kepala, pesan, loading, formulir);
+  const grid = () => { const g = document.createElement('div'); Object.assign(g.style, { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: token.jarak.md, rowGap: token.jarak.md }); return g; };
+  function teks(k, label, tipe = 'text') { const f = bidang({ id: `website-${k}`, label, jenis: tipe, ubah(v) { ubah(k, v); } }); controls.set(k, { ...f, tipe }); return f.el; }
+  function area(k, label, maxLength) { const root = document.createElement('div'), f = bidang({ id: `website-${k}`, label, jenis: 'textarea', maxLength, ubah(v) { ubah(k, v); } }), error = document.createElement('p'); error.setAttribute('role', 'alert'); error.style.color = token.warna.status.merah.teks; root.append(f.el, error); controls.set(k, { ...f, area: true, error }); return root; }
+  function centang(k, label) { const node = document.createElement('label'), input = document.createElement('input'); Object.assign(node.style, { display: 'flex', alignItems: 'flex-start', gap: token.jarak.sm }); input.type = 'checkbox'; input.addEventListener('change', () => ubah(k, input.checked)); node.append(input, label); controls.set(k, { kontrol: input, checkbox: true }); return node; }
+  function ket(teks, kecil = false) { const p = document.createElement('p'); p.textContent = teks; Object.assign(p.style, { color: token.warna.teksRedup, margin: '0', ...(kecil ? { fontSize: token.huruf.ukuran.kecil } : {}) }); return p; }
+  const alamat = ket('', true), satu = grid(), dua = grid(), gambar = grid(), kontak = grid(), preset = document.createElement('div'), preview = document.createElement('img');
+  satu.append(teks('slug', 'Alamat halaman (contoh: bhakti-rahayu)'), teks('domain', 'Domain khusus (opsional)')); dua.append(teks('judul', 'Judul utama'), teks('warna_utama', 'Warna utama', 'color')); gambar.append(teks('logo_url', 'Alamat gambar logo (opsional)'), teks('hero_url', 'Alamat gambar utama'));
+  Object.assign(preset.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' }); if (bolehUbah) preset.append(tombol('Ilustrasi dokter dan pasien', () => ubah('hero_url', '/asset/ilustrasi/klinik-dokter-pasien-berhijab-v1.png'), 'sekunder'), tombol('Ilustrasi ruang konsultasi', () => ubah('hero_url', '/asset/ilustrasi/klinik-konsultasi-tanpa-wajah-v1.png'), 'sekunder'));
+  preview.alt = 'Pratinjau gambar utama website klinik'; Object.assign(preview.style, { width: '100%', maxWidth: '440px', aspectRatio: '3/2', objectFit: 'cover', borderRadius: '10px' }); kontak.append(teks('whatsapp', 'Nomor WhatsApp (08… atau +62…)'), teks('telepon', 'Nomor telepon'), teks('email', 'Email publik', 'email'));
+  isi.append(centang('aktif', 'Tampilkan website kepada publik'), satu, alamat, dua, area('ringkasan', 'Pengantar singkat', 500), area('tentang', 'Tentang klinik (opsional)', 3000), gambar, preset, ket('Gunakan ilustrasi bawaan atau alamat HTTPS gambar milik klinik. Kosongkan logo untuk menggunakan lambang bawaan.', true), preview, area('alamat', 'Alamat klinik', 1000), kontak, area('jam_operasional', 'Jam operasional (opsional)', 500), centang('tampilkan_jadwal', 'Tampilkan jadwal praktik yang aktif'), centang('tampilkan_nama_praktisi', 'Tampilkan nama praktisi di website publik'));
+  const simpan = tombol('Simpan website'); simpan.type = 'submit'; if (bolehUbah) aksi.append(simpan); aksi.append(dirty);
+  function ubah(k, nilai) { if (form) form = { ...form, [k]: nilai }; info = ''; tampil(); }
+  function tampil() {
+    const berubah = JSON.stringify(form) !== JSON.stringify(awal); pesan.replaceChildren(); if (galat) pesan.append(peringatan(galat)); if (info) pesan.append(peringatan(info, 'biru'));
+    link.hidden = !awal?.aktif; if (awal?.aktif) link.href = `/klinik/${awal.slug}`; formulir.style.display = form ? 'flex' : 'none'; loading.replaceChildren(); loading.style.display = form ? 'none' : 'block'; if (!form) loading.append(galat ? tombol('Coba lagi', () => void muat(), 'sekunder') : 'Memuat pengaturan website…');
+    fieldset.disabled = memproses; dirty.hidden = !berubah; simpan.disabled = memproses || !berubah; simpan.textContent = memproses ? 'Menyimpan…' : 'Simpan website';
+    if (!form) return;
+    for (const [k, f] of controls) { if (f.checkbox) { f.kontrol.checked = form[k]; f.kontrol.disabled = !bolehUbah || memproses; } else { f.kontrol.value = String(form[k]); f.kontrol.readOnly = !bolehUbah || memproses; if (f.tipe === 'color') f.kontrol.disabled = !bolehUbah || memproses; if (f.area) { f.kontrol.setAttribute('aria-invalid', String(!!galatBidang[k])); f.error.hidden = !galatBidang[k]; f.error.textContent = galatBidang[k] ?? ''; } else f.setGalat(galatBidang[k]); } }
+    alamat.textContent = `Alamat halaman: /klinik/${form.slug || 'nama-klinik'}. Untuk domain khusus, arahkan DNS dan hosting ke server Klira terlebih dahulu. Root / otomatis memakai satu-satunya website aktif jika belum ada domain khusus.`;
+    preview.hidden = !form.hero_url; if (form.hero_url) preview.src = form.hero_url;
+  }
+  async function muat() { const saat = ++versi; try { const data = await panggilApi('GET', '/fasyankes/website'); if (aktif && saat === versi) { form = { ...data }; awal = data; galat = ''; tampil(); } } catch (e) { if (aktif && saat === versi) { galat = e instanceof Error ? e.message : 'Pengaturan website gagal dimuat.'; tampil(); } } }
+  formulir.addEventListener('submit', async e => {
+    e.preventDefault(); if (!form || !bolehUbah || memproses) return; const masukan = websiteKlinikMasukan.safeParse(form);
+    if (!masukan.success) { galatBidang = {}; for (const isu of masukan.error.issues) galatBidang[String(isu.path[0])] ??= isu.message; galat = 'Periksa kembali isian website.'; tampil(); return; }
+    memproses = true; galat = ''; galatBidang = {}; tampil();
+    try { const data = await panggilApi('PUT', '/fasyankes/website', masukan.data); if (!aktif) return; form = { ...data }; awal = data; info = 'Pengaturan website tersimpan.'; onSelesai(); }
+    catch (e) { if (aktif) galat = e instanceof Error ? e.message : 'Pengaturan belum dapat disimpan.'; }
+    finally { if (aktif) { memproses = false; tampil(); } }
+  });
+  const cegah = e => { if (JSON.stringify(form) !== JSON.stringify(awal)) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', cegah); tampil(); void muat(); el.tutup = () => { aktif = false; versi++; window.removeEventListener('beforeunload', cegah); }; return el;
+}

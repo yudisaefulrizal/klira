@@ -1,9 +1,7 @@
 // Mengisi data DEMO (fiktif) lewat API Klira yang sedang berjalan, memakai akun sesuai peran agar izin ikut teruji.
 // Bukan untuk produksi. Pemakaian: node skrip/data-demo.mjs   (server harus sudah jalan, mis. npm run dev)
 // Variabel opsional: KLIRA_URL, KLIRA_ADMIN_USER, KLIRA_ADMIN_SANDI, KLIRA_SANDI_DEMO.
-import { createRequire } from 'node:module';
-// Default keadaan baik skrining keperawatan dari packages/shared (satu sumber; butuh `npm run build -w packages/shared`).
-const { AKUN_DEMO, DEFAULT_ANAMNESIS, DEFAULT_KEPERAWATAN, DEFAULT_PEMERIKSAAN } = createRequire(import.meta.url)('../packages/shared/dist/index.js');
+import { AKUN_DEMO, DEFAULT_ANAMNESIS, DEFAULT_KEPERAWATAN, DEFAULT_PEMERIKSAAN } from '../packages/shared/src/index.js';
 
 const BASE = (process.env.KLIRA_URL ?? 'http://127.0.0.1:8074') + '/api';
 const ADMIN = { username: process.env.KLIRA_ADMIN_USER ?? 'pimpinan', kata_sandi: process.env.KLIRA_ADMIN_SANDI ?? 'admin123' };

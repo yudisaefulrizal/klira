@@ -1,0 +1,28 @@
+import { ambilWilayah, cariWilayah, ingatWilayah } from '../api-klien/wilayah.js';
+import { GalatApi } from '../api-klien/klien.js';
+import { token } from '../gaya/token.js';
+import { bidang } from './ui/native.js';
+export function tampilkanNamaWilayah(kode, berubah) {
+  let aktif = true; berubah(kode ? 'Memuat wilayah…' : '-');
+  if (kode) ambilWilayah(kode).then(w => { if (aktif) berubah(w.label); }).catch(() => { if (aktif) berubah('Wilayah tersimpan belum dapat ditampilkan'); });
+  return () => { aktif = false; };
+}
+export function PencarianWilayah(awal) {
+  let props = awal, nama = '-', kata = '', hasil = { data: [], lebih_banyak: false }, terbuka = false, pilihan = -1, mencari = false, gagal = null, versi = 0, timer, aktif = true, lepasNama;
+  const el = document.createElement('div'), setelah = document.createElement('div'); Object.assign(el.style, { position: 'relative', display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); setelah.style.display = 'contents';
+  const input = bidang({ id: props.id, label: 'Alamat', nilai: '', autoComplete: 'off', maxLength: 100, ubah(value) { props.value = ''; props.onChange(''); kata = value; hasil = { data: [], lebih_banyak: false }; mencari = kata.trim().length >= 2; gagal = null; pilihan = -1; terbuka = true; cari(); tampil(); } }); input.kontrol.placeholder = 'Cari nama desa/kelurahan, kecamatan, atau kota'; input.kontrol.setAttribute('role', 'combobox'); input.kontrol.setAttribute('aria-autocomplete', 'list'); input.kontrol.setAttribute('aria-controls', `${props.id}-hasil`);
+  input.kontrol.addEventListener('focus', () => { terbuka = true; tampil(); }); input.kontrol.addEventListener('blur', () => { terbuka = false; tampil(); });
+  input.kontrol.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); terbuka = false; tampil(); } if (['ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); terbuka = true; pilihan = hasil.data.length ? Math.max(0, Math.min(hasil.data.length - 1, pilihan + (e.key === 'ArrowDown' ? 1 : -1))) : -1; tampil(); } if (e.key === 'Enter' && !props.value) { e.preventDefault(); if (terbuka && hasil.data[pilihan]) pilih(hasil.data[pilihan]); } });
+  el.append(input.el, setelah);
+  function namaWilayah() { lepasNama?.(); lepasNama = tampilkanNamaWilayah(props.value, n => { nama = n; tampil(); }); }
+  function pilih(w) { ingatWilayah(w); props.value = w.kode; props.onChange(w.kode); kata = ''; terbuka = false; pilihan = -1; hasil = { data: [], lebih_banyak: false }; namaWilayah(); tampil(); }
+  function cari() { clearTimeout(timer); const saat = ++versi; if (props.value || kata.trim().length < 2) return; timer = setTimeout(async () => { mencari = true; tampil(); try { const h = await cariWilayah(kata.trim()); if (aktif && saat === versi) hasil = h; } catch (e) { if (aktif && saat === versi) gagal = e instanceof GalatApi ? e.message : 'Pencarian wilayah gagal.'; } finally { if (aktif && saat === versi) { mencari = false; tampil(); } } }, 300); }
+  function tampil() {
+    input.kontrol.value = props.value ? nama : kata; input.setGalat(props.galat); input.kontrol.setAttribute('aria-expanded', String(terbuka && !props.value && hasil.data.length > 0)); if (terbuka && pilihan >= 0) input.kontrol.setAttribute('aria-activedescendant', `${props.id}-opsi-${pilihan}`); else input.kontrol.removeAttribute('aria-activedescendant'); setelah.replaceChildren();
+    if (props.value) { const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Hapus pilihan wilayah'; clear.style.alignSelf = 'flex-start'; clear.addEventListener('click', () => { props.value = ''; props.onChange(''); kata = ''; mencari = false; gagal = null; tampil(); }); setelah.append(clear); }
+    const hint = document.createElement('small'); hint.textContent = 'Pilih hasil yang sesuai. Tambahkan nama kecamatan atau kabupaten untuk mempersempit pencarian.'; hint.style.color = token.warna.teksRedup; setelah.append(hint);
+    if (!props.value && kata.trim().length >= 2) { const status = document.createElement('small'); status.setAttribute('role', 'status'); status.textContent = gagal ?? (mencari ? 'Mencari wilayah…' : !hasil.data.length ? 'Wilayah tidak ditemukan.' : hasil.lebih_banyak ? 'Hasil dibatasi 20 wilayah. Perjelas pencarian jika belum ditemukan.' : 'Pilih salah satu wilayah dari hasil pencarian.'); setelah.append(status); }
+    if (!props.value && terbuka && hasil.data.length) { const ul = document.createElement('ul'); ul.id = `${props.id}-hasil`; ul.setAttribute('role', 'listbox'); ul.setAttribute('aria-label', 'Hasil pencarian desa/kelurahan'); Object.assign(ul.style, { margin: '0', padding: '0', listStyle: 'none', maxHeight: '240px', overflowY: 'auto', border: `1px solid ${token.warna.garis}`, borderRadius: token.radius.sedang }); hasil.data.forEach((w, i) => { const li = document.createElement('li'); li.id = `${props.id}-opsi-${i}`; li.setAttribute('role', 'option'); li.setAttribute('aria-selected', String(pilihan === i)); li.textContent = w.label; Object.assign(li.style, { padding: token.jarak.sm, cursor: 'pointer', background: pilihan === i ? token.warna.latar : token.warna.permukaan }); li.addEventListener('mousedown', e => e.preventDefault()); li.addEventListener('click', () => pilih(w)); ul.append(li); }); setelah.append(ul); }
+  }
+  namaWilayah(); tampil(); el.perbarui = baru => { const code = props.value; props = { ...props, ...baru }; if (code !== props.value) namaWilayah(); cari(); tampil(); }; el.tutup = () => { aktif = false; versi++; clearTimeout(timer); lepasNama?.(); }; return el;
+}

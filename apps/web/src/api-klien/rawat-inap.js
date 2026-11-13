@@ -1,0 +1,10 @@
+import { panggilApi } from './klien.js';
+export const ambilPapan = () => panggilApi('GET', '/rawat-inap/papan');
+export const ambilOpsiRawatInap = () => panggilApi('GET', '/rawat-inap/opsi');
+export const ambilAsalAdmisi = (pasienId) => panggilApi('GET', `/rawat-inap/asal?pasien_id=${pasienId}`);
+export const admisiRawatInap = (m) => panggilApi('POST', '/rawat-inap/admisi', m);
+export const ambilRawatInap = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/rawat-inap`);
+export const ubahPenempatan = (kunjunganId, m) => panggilApi('PUT', `/kunjungan/${kunjunganId}/penempatan`, m);
+export const daftarCatatanHarian = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/cppt`);
+export const tambahCatatanHarian = (kunjunganId, m) => panggilApi('POST', `/kunjungan/${kunjunganId}/cppt`, m);
+export const pulangkanPasien = (kunjunganId, m) => panggilApi('POST', `/kunjungan/${kunjunganId}/pemulangan`, m);

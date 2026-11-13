@@ -1,8 +1,8 @@
 # Database Klira
 
-MySQL 8.0+ diakses melalui satu pool `mysql2` di `src/koneksi.ts`. Konfigurasi dibaca dari `DATABASE_URL` atau `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, dan `DB_NAME`. Skrip npm memuat `.env` melalui `skrip/dengan-env.mjs`.
+MySQL 8.0+ diakses melalui satu pool `mysql2` di `src/koneksi.js`. Konfigurasi dibaca dari `DATABASE_URL` atau `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, dan `DB_NAME`. Skrip npm memuat `.env` melalui `skrip/dengan-env.mjs`.
 
-`src/data-access/` berisi fungsi SQL per tabel. Setiap fungsi menjalankan satu query dan menerima koneksi sebagai argumen terakhir, dengan pool sebagai bawaan. Nilai diikat melalui parameter `?`; aplikasi tidak menyusun SQL. Hasil query diberi tipe di TypeScript; tipe bukan pembentuk query. Query gabungan boleh membaca relasi tabel, dengan hasil dipetakan oleh fungsi yang sama.
+`src/data-access/` berisi fungsi SQL per tabel. Setiap fungsi menjalankan satu query dan menerima koneksi sebagai argumen terakhir, dengan pool sebagai bawaan. Nilai diikat melalui parameter `?`; aplikasi tidak menyusun SQL. Query gabungan boleh membaca relasi tabel, dengan hasil dipetakan oleh fungsi yang sama.
 
 Operasi yang harus atomik memakai `transaksi(async koneksi => ...)` dan meneruskan koneksi tersebut ke setiap fungsi query. Pembungkus menangani commit, rollback transaksi aplikasi, dan pelepasan koneksi. Zona waktu sesi MySQL dan pembacaan tanggal driver diatur ke UTC pada pool. Perhitungan hari layanan WIB tetap dilakukan di domain aplikasi.
 
@@ -14,11 +14,9 @@ Komponen API disusun dalam `apps/api/src/modul/<komponen>/`:
 
 ## Migrasi
 
-Bangun paket sebelum menjalankan CLI:
+CLI berjalan langsung dengan Node.js:
 
 ```sh
-npm run build -w packages/shared
-npm run build -w packages/db
 npm run migrasi -w packages/db -- status
 npm run migrasi -w packages/db -- baru tambah_kolom_pasien
 npm run migrasi -w packages/db -- terapkan
@@ -45,7 +43,7 @@ npm run seed -w packages/db
 
 `npm test` menjalankan uji tanpa mengaktifkan pengujian database. `npm run test:db` menjalankan `fresh` dan seed melalui uji skema terlebih dahulu, kemudian uji integrasi pada database yang dikonfigurasi. Perintah ini menghapus data dev dan menolak lingkungan produksi. Jangan menjalankannya bersamaan dengan aplikasi yang memakai database tersebut.
 
-Fixture query berada di `src/uji/data-access/` dan hanya diimpor pengujian melalui `@klira/db/uji`. Pemeriksaan tipe memakai `npm run typecheck`.
+Fixture query berada di `src/uji/data-access/` dan hanya diimpor pengujian melalui `@klira/db/uji`.
 
 ## Akun demo
 

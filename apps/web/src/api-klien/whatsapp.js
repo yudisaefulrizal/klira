@@ -1,0 +1,12 @@
+import { panggilApi } from './klien.js';
+export const koneksiWa = () => panggilApi('GET', '/whatsapp/koneksi');
+export const aksiKoneksiWa = (aksi) => panggilApi('POST', '/whatsapp/koneksi', { aksi });
+export const percakapanWa = (halaman = 1) => panggilApi('GET', `/whatsapp/percakapan?halaman=${halaman}`);
+export const ringkasanWa = () => panggilApi('GET', '/whatsapp/ringkasan');
+export const pesanWa = (id) => panggilApi('GET', `/whatsapp/percakapan/${id}/pesan`);
+export const bacaWa = (id, pesan_id) => panggilApi('POST', `/whatsapp/percakapan/${id}/baca`, { pesan_id });
+export const bukaWa = (nomor, pasien_id) => panggilApi('POST', '/whatsapp/percakapan', { nomor, pasien_id });
+export const kirimWa = (id, teks, media) => panggilApi('POST', `/whatsapp/percakapan/${id}/pesan`, { teks, media });
+export const ubahWa = (id, data) => panggilApi('PATCH', `/whatsapp/percakapan/${id}`, data);
+export const kontakPasienWa = (id) => panggilApi('GET', `/whatsapp/pasien/${id}`);
+export const infoKontakWa = (id) => panggilApi('GET', `/whatsapp/percakapan/${id}/info`);

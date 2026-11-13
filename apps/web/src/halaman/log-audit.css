@@ -1,0 +1,13 @@
+.audit-native{display:flex;flex-direction:column;gap:var(--jarak-md)}
+.audit-kartu{background:var(--warna-permukaan);border:1px solid var(--warna-garis);border-radius:12px;box-shadow:var(--bayangan-kartu);padding:0;overflow:hidden}
+.audit-judul{padding:var(--jarak-md) var(--jarak-md) 0;font-size:16px;font-weight:600}
+.audit-filter{display:flex;align-items:flex-end;gap:var(--jarak-md);padding:var(--jarak-md);flex-wrap:wrap}
+.audit-bidang{display:flex;flex-direction:column;gap:var(--jarak-xs)}.audit-bidang label{font-size:var(--huruf-dasar);font-weight:500;padding:0}
+.audit-bidang input,.audit-bidang select{height:40px;padding:0 var(--jarak-sm);border:1px solid var(--warna-garis);border-radius:8px;background:var(--warna-permukaan);color:var(--warna-teks);font-family:var(--huruf-keluarga);font-size:var(--huruf-dasar)}
+.audit-bidang [aria-invalid=true]{border-color:var(--status-merah-teks)}.audit-galat-bidang{color:var(--status-merah-teks);font-size:var(--huruf-kecil)}
+.audit-tombol{height:40px;padding:0 var(--jarak-md);background:var(--warna-utama);color:var(--warna-di-atas-utama);border:none;border-radius:8px;font-family:var(--huruf-keluarga);font-size:var(--huruf-dasar);font-weight:500;cursor:pointer;opacity:1}
+.audit-tombol:disabled{cursor:not-allowed;opacity:.6}.audit-sekunder{background:var(--warna-permukaan);color:var(--warna-utama);border:1px solid var(--warna-garis)}.audit-teks{background:transparent;color:var(--warna-utama);border:none}
+.audit-pesan{padding:var(--jarak-sm);border-radius:8px;font-size:var(--huruf-dasar);margin:0 var(--jarak-md) var(--jarak-md);background:var(--status-merah-latar);color:var(--status-merah-teks)}.audit-info{background:var(--status-biru-latar);color:var(--status-biru-teks)}
+.audit-scroll{overflow-x:auto}.audit-native table{width:100%;border-collapse:collapse;font-size:var(--huruf-dasar);min-width:900px}.audit-native thead tr{background:var(--warna-kepala-tabel);text-align:left;color:var(--warna-teks-menu);font-size:var(--huruf-kecil)}
+.audit-native th{padding:var(--jarak-sm) var(--jarak-md);font-weight:600;text-align:left}.audit-native td{padding:var(--jarak-md);vertical-align:top}.audit-native tbody tr{border-top:1px solid var(--warna-garis-halus)}.audit-native th:last-child,.audit-native td:last-child{text-align:right}
+.audit-kosong{padding:var(--jarak-md);color:var(--warna-teks-redup)}.audit-paginasi{display:flex;align-items:center;gap:var(--jarak-md);padding:var(--jarak-md);justify-content:flex-end}

@@ -1,6 +1,6 @@
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { buatPembaruanFotoWhatsapp, fotoProfilWhatsapp } from '../dist/domain/profil.js';
+import { buatPembaruanFotoWhatsapp, fotoProfilWhatsapp } from '../src/domain/profil.js';
 const foto = 'https://pps.whatsapp.net/avatar.jpg?token=abc';
 function siapkan() {
   const kontak = { id: 12, fasyankes_id: 10, jid: '628123@s.whatsapp.net', foto_profil: null };

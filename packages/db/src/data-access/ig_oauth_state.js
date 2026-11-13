@@ -1,0 +1,25 @@
+import { baca, tulis, pool } from '../koneksi.js';
+export async function hapusIgOauthStateUntukPutuskanDanBersihkan(fasyankes_id, koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `ig_oauth_state` t WHERE ((? OR t.`fasyankes_id` <=> ?))", [fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+    return { count: hasil.affectedRows };
+}
+export async function hapusIgOauthStateUntukMulaiLogin(berakhir, fasyankes_id, koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `ig_oauth_state` t WHERE ((((? OR t.`berakhir` < ?))) OR (((? OR t.`fasyankes_id` <=> ?))))", [berakhir === undefined, berakhir ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+    return { count: hasil.affectedRows };
+}
+export async function tambahIgOauthStateUntukMulaiLogin(hash, pengguna_id, fasyankes_id, sesi_hash, generasi, berakhir, koneksi = pool) {
+    const hasil = await tulis("INSERT INTO `ig_oauth_state` (`hash`, `pengguna_id`, `fasyankes_id`, `sesi_hash`, `generasi`, `berakhir`) VALUES (?, ?, ?, ?, ?, ?)", [(hash === undefined ? null : hash) ?? null, (pengguna_id === undefined ? null : pengguna_id) ?? null, (fasyankes_id === undefined ? null : fasyankes_id) ?? null, (sesi_hash === undefined ? null : sesi_hash) ?? null, (generasi === undefined ? null : generasi) ?? null, (berakhir === undefined ? null : berakhir) ?? null], koneksi);
+    return { id: hasil.insertId, count: hasil.affectedRows };
+}
+export async function ambilIgOauthStateUntukSelesaikanLogin(hash, koneksi = pool) {
+    const baris = await baca("SELECT t.`hash`, t.`pengguna_id`, t.`fasyankes_id`, t.`sesi_hash`, t.`generasi`, t.`berakhir` FROM `ig_oauth_state` t WHERE ((? OR t.`hash` <=> ?)) LIMIT 1", [hash === undefined, hash ?? null], koneksi);
+    return (baris[0] ?? null);
+}
+export async function hapusIgOauthStateUntukSelesaikanLogin(hash, koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `ig_oauth_state` t WHERE ((? OR t.`hash` <=> ?))", [hash === undefined, hash ?? null], koneksi);
+    return { count: hasil.affectedRows };
+}
+export async function hapusIgOauthStateUntukPerbaruiTokenInstagram(berakhir, koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `ig_oauth_state` t WHERE ((? OR t.`berakhir` < ?))", [berakhir === undefined, berakhir ?? null], koneksi);
+    return { count: hasil.affectedRows };
+}

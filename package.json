@@ -8,24 +8,14 @@
     "apps/*"
   ],
   "scripts": {
-    "typecheck": "npm run build -w packages/shared && npm run build -w packages/db && npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
-    "test": "node skrip/dengan-env.mjs node node_modules/jest/bin/jest.js",
-    "build": "npm run build --workspaces --if-present",
-    "start": "npm run build && node skrip/dengan-env.mjs node skrip/start.mjs",
+    "test": "node skrip/dengan-env.mjs node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "start": "node skrip/dengan-env.mjs node skrip/start.mjs",
     "dev": "node skrip/dengan-env.mjs node skrip/dev.mjs",
-    "test:db": "npm run build -w packages/shared && npm run build -w packages/db && node skrip/dengan-env.mjs node skrip/uji-db.mjs"
+    "test:db": "node skrip/dengan-env.mjs node skrip/uji-db.mjs"
   },
   "devDependencies": {
-    "@types/express": "^5.0.6",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^26.6.5",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
     "eslint": "^10.13.0",
-    "jest": "^30.5.2",
-    "ts-jest": "^29.4.15",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.72.0"
+    "jest": "^30.5.2"
   }
 }

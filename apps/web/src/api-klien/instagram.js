@@ -1,0 +1,10 @@
+import { panggilApi } from './klien.js';
+export const koneksiWa = () => panggilApi('GET', '/instagram/koneksi');
+export const aksiKoneksiWa = (aksi) => panggilApi('POST', '/instagram/koneksi', { aksi });
+export const percakapanWa = (halaman = 1) => panggilApi('GET', `/instagram/percakapan?halaman=${halaman}`);
+export const ringkasanWa = () => panggilApi('GET', '/instagram/ringkasan');
+export const pesanWa = (id) => panggilApi('GET', `/instagram/percakapan/${id}/pesan`);
+export const bacaWa = (id, pesan_id) => panggilApi('POST', `/instagram/percakapan/${id}/baca`, { pesan_id });
+export const kirimWa = (id, teks, media) => panggilApi('POST', `/instagram/percakapan/${id}/pesan`, { teks, media });
+export const ubahWa = (id, data) => panggilApi('PATCH', `/instagram/percakapan/${id}`, data);
+export const infoKontakWa = (id) => panggilApi('GET', `/instagram/percakapan/${id}/info`);

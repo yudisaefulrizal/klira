@@ -2,9 +2,7 @@
   "name": "@klira/integrasi",
   "version": "0.0.1",
   "private": true,
-  "main": "dist/index.js",
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "tsc"
-  }
+  "main": "src/index.js",
+  "scripts": {},
+  "type": "module"
 }

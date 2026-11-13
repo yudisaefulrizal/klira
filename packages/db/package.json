@@ -2,28 +2,21 @@
   "name": "@klira/db",
   "version": "0.0.1",
   "private": true,
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build": "tsc",
-    "seed": "node ../../skrip/dengan-env.mjs node dist/seed/seed.js",
-    "seed:wilayah": "node ../../skrip/dengan-env.mjs node dist/seed/wilayah.js",
-    "seed:terminologi": "node ../../skrip/dengan-env.mjs node dist/seed/terminologi.js",
-    "migrasi": "node ../../skrip/dengan-env.mjs node dist/migrasi/entry-points/cli.js",
-    "seed:demo": "node ../../skrip/dengan-env.mjs node dist/seed/demo.js"
+    "seed": "node ../../skrip/dengan-env.mjs node src/seed/seed.js",
+    "seed:wilayah": "node ../../skrip/dengan-env.mjs node src/seed/wilayah.js",
+    "seed:terminologi": "node ../../skrip/dengan-env.mjs node src/seed/terminologi.js",
+    "migrasi": "node ../../skrip/dengan-env.mjs node src/migrasi/entry-points/cli.js",
+    "seed:demo": "node ../../skrip/dengan-env.mjs node src/seed/demo.js"
   },
   "dependencies": {
     "@klira/shared": "*",
     "mysql2": "^3.24.6"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./uji": {
-      "types": "./dist/uji/index.d.ts",
-      "default": "./dist/uji/index.js"
-    }
-  }
+    ".": "./src/index.js",
+    "./uji": "./src/uji/index.js"
+  },
+  "type": "module"
 }

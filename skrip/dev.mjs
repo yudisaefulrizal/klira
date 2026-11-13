@@ -1,9 +1,8 @@
-// Dipanggil melalui dengan-env.mjs agar API dan proxy memakai PORT dari .env.
+// API menyajikan frontend ES Modules langsung dari source.
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const akar = fileURLToPath(new URL('../', import.meta.url));
-process.env.KLIRA_DEV = '1';
 const proses = new Set();
 let berhenti = false;
 
@@ -33,30 +32,12 @@ function jalankan(argumen) {
 process.on('SIGINT', () => hentikan());
 process.on('SIGTERM', () => hentikan());
 
-async function siapkan(label, argumen) {
-  const mulai = Date.now();
-  console.log(`[dev] ${label}…`);
-  const anak = jalankan(argumen);
-  const kode = await new Promise((resolve, reject) => {
-    anak.once('error', reject);
-    anak.once('exit', resolve);
-  });
-  if (kode !== 0 || berhenti) throw new Error(`Persiapan gagal: ${label}.`);
-  console.log(`[dev] ${label} selesai (${((Date.now() - mulai) / 1000).toFixed(1)} detik).`);
-}
-
-// Development cukup menerjemahkan kode. Pemeriksaan tipe lengkap tetap melalui npm run typecheck.
-const proyek = ['packages/shared', 'packages/db', 'apps/api', 'apps/whatsapp'];
-const kompilasi = (nama) => ['node_modules/typescript/bin/tsc', '-p', nama, '--noCheck', '--incremental', '--tsBuildInfoFile', `${nama}/dist/.dev.tsbuildinfo`];
-
 try {
-  for (const nama of proyek) await siapkan(`Menyiapkan ${nama}`, kompilasi(nama));
   console.log('[dev] Menjalankan API, engine WhatsApp, dan frontend. Tekan Ctrl+C untuk berhenti.');
-  // Batasi Node ke output backend; file sementara Vite dapat memicu loop jika semua import dipantau.
+  // Pantau source backend; perubahan frontend tersedia saat halaman dimuat ulang.
   const perintah = [
-    ...proyek.map((nama) => [...kompilasi(nama), '--watch', '--preserveWatchOutput']),
-    ['--watch-path=apps/api/dist', '--watch-path=packages/shared/dist', '--watch-path=packages/db/dist', 'apps/api/dist/main.js'],
-    ['--watch-path=apps/whatsapp/dist', '--watch-path=packages/shared/dist', '--watch-path=packages/db/dist', 'apps/whatsapp/dist/entry-points/main.js'],
+    ['--watch-path=apps/api/src', '--watch-path=packages/shared/src', '--watch-path=packages/db/src', 'apps/api/src/main.js'],
+    ['--watch-path=apps/whatsapp/src', '--watch-path=packages/shared/src', '--watch-path=packages/db/src', 'apps/whatsapp/src/entry-points/main.js'],
   ];
   for (const argumen of perintah) {
     const anak = jalankan(argumen);

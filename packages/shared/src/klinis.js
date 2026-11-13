@@ -1,0 +1,40 @@
+/** Konstanta modul klinis (4.2, 4.8): bagian catatan, tanda vital dengan kode LOINC dan satuan UCUM, bidang pemeriksaan. */
+/** Bagian pemeriksaan klinis; tiap bagian disahkan sendiri (satu pengesahan per bagian, entitas_id = id kunjungan). */
+export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'diagnosis_banding', 'kie', 'obat_poli'];
+/** Kode LOINC dan satuan UCUM tanda vital umum; batas hanya untuk menangkap salah ketik. */
+export const TANDA_VITAL = [
+    { kunci: 'tinggi_badan', loinc: '8302-2', satuan: 'cm', min: 20, max: 250 },
+    { kunci: 'berat_badan', loinc: '29463-7', satuan: 'kg', min: 0.2, max: 500 },
+    { kunci: 'sistolik', loinc: '8480-6', satuan: 'mm[Hg]', min: 30, max: 300 },
+    { kunci: 'diastolik', loinc: '8462-4', satuan: 'mm[Hg]', min: 20, max: 200 },
+    { kunci: 'respirasi', loinc: '9279-1', satuan: '/min', min: 5, max: 80 },
+    { kunci: 'nadi', loinc: '8867-4', satuan: '/min', min: 20, max: 250 },
+    { kunci: 'suhu', loinc: '8310-5', satuan: 'Cel', min: 30, max: 45 },
+];
+/** Skrining nyeri keperawatan (P6): `tidak` menyembunyikan isian nyeri lain. */
+export const JENIS_NYERI = ['tidak', 'akut', 'kronis'];
+export const SKALA_NYERI_MAKS = 10;
+/** Skrining visual (warna triase sederhana); arti warna mengikuti ketentuan klinik. */
+export const SKRINING_VISUAL = ['hijau', 'kuning', 'merah'];
+// Bidang pemeriksaan fisik terstruktur (P7): PEMERIKSAAN_BIDANG, definisi, kelompok, dan default di default-klinis.ts.
+export const PERAN_DIAGNOSIS = ['utama', 'penyerta'];
+export const JENIS_TINDAK_LANJUT = ['pulang', 'rujuk', 'rawat_inap'];
+export const SISTEM_TERMINOLOGI = ['icd10', 'icd9cm', 'loinc', 'snomed', 'ucum'];
+export const JENIS_FAVORIT = ['diagnosis', 'tindakan', 'resep'];
+export const BAGIAN_TEMPLAT = ['anamnesis', 'pemeriksaan'];
+/** Perbaikan oleh pembuat tanpa persetujuan hanya dalam 2x24 jam sejak pengesahan terakhir (bagian 7). */
+export const BATAS_PERBAIKAN_JAM = 48;
+/** Pembeda kode diagnosis ICD-10 (mis. I10, E11.9) dan tindakan ICD-9 CM (mis. 89.52). */
+export const POLA_ICD10 = /^[A-Z]\d{2}(\.[0-9A-Z]{1,4})?$/;
+export const POLA_ICD9CM = /^\d{2}(\.\d{1,2})?$/;
+/**
+ * Bagian narasi (teks bebas) yang melengkapi data klinis terstruktur, mengikuti formulir klinik (P7):
+ * diagnosa banding dan KIE di Kesimpulan, obat yang diberikan di poli di Terapi. Bukan syarat penyelesaian,
+ * dan diagnosa banding tidak ikut pengkodean, klaim, statistik, maupun diagnosis aktif.
+ */
+export const BAGIAN_NARASI = ['diagnosis_banding', 'kie', 'obat_poli'];
+export const LABEL_NARASI = {
+    diagnosis_banding: 'Diagnosa banding', kie: 'Komunikasi, informasi, dan edukasi', obat_poli: 'Obat yang diberikan di poli',
+};
+/** Panjang maksimal isi narasi per bagian. */
+export const MAKS_NARASI = { diagnosis_banding: 1000, kie: 2000, obat_poli: 1000 };
