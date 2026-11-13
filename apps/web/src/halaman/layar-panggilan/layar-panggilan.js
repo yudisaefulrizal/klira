@@ -60,6 +60,10 @@ export function pasangLayarPanggilan(wadah) {
     const tampilan = data?.tanggal === tanggal ? data : null;
     const panggilan = tampilan?.panggilan;
     if (sah) {
+      // Jumlah poli menentukan pembagian tinggi layar (daftar pelayanan dan ubin antrean berikutnya).
+      const n = Math.max(1, tampilan?.poli.length ?? 1);
+      elemen('.lp-isi').style.setProperty('--n', String(n));
+      elemen('.lp-isi').style.setProperty('--r', String(Math.ceil(n / 3)));
       elemen('.lp-nomor').textContent = panggilan?.kode ?? '—';
       elemen('.lp-tujuan p').textContent = panggilan ? 'Silakan menuju' : !data && !galat ? 'Memuat antrean…' : 'Silakan menunggu';
       elemen('.lp-tujuan h2').textContent = panggilan?.poli_nama ?? 'Belum ada panggilan';
