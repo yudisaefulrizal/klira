@@ -22,9 +22,6 @@
 .menu-klinik { min-height: calc(100dvh - 54px); }
 .menu-klinik a { transition: background .15s ease; }
 .menu-klinik a:hover { background: var(--warna-utama-latar) !important; }
-.menu-peran { margin-top: 6px; font-size: 12px; }
-.menu-peran summary { cursor: pointer; color: var(--warna-utama); }
-.menu-peran p { max-height: 160px; overflow-y: auto; line-height: 1.6; }
 @media (max-width: 760px) {
   .halaman-pasien { gap: 16px; margin: 0; }
   .pasien-toolbar { flex-basis: 100%; }

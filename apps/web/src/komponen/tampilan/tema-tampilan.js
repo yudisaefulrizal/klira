@@ -1,4 +1,5 @@
 import { KUNCI_TEMA, temaTersimpan, terapkanTema } from '../../util/tema.js';
+import { buatMenuPengguna } from './menu-pengguna.js';
 import { pantauStatusKoneksi } from '../../util/panggilan/status-koneksi.js';
 
 const pilihanTema = [
@@ -12,10 +13,13 @@ function ikon(bentuk) { return `<svg viewBox="0 0 24 24" fill="none" stroke="cur
 function penanda(nada) {
   return `<svg class="status-koneksi-penanda" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5.5" fill="currentColor"/><path d="${nada === 'baik' ? 'm3 6 2 2 4-4' : nada === 'gagal' ? 'm4 4 4 4m0-4-4 4' : nada === 'netral' ? 'M3 6h6' : 'M6 3v3m0 2v1'}" fill="none" stroke="var(--warna-permukaan)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 }
-export function pasangTemaTampilan(wadah, pengguna) {
+export function pasangTemaTampilan(wadah, pengguna, keluar) {
   let tema = temaTersimpan(), server = 'memeriksa', layar = { status: 'memeriksa', jumlah: null };
   const fasilitas = pengguna && !pengguna.wajib_ganti_kredensial ? pengguna.fasyankes_id : undefined;
   wadah.innerHTML = `<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:8px 16px;background:var(--warna-permukaan);border-bottom:1px solid var(--warna-garis)"><span class="pemilih-tema-label">Tampilan</span><div class="pemilih-tema" role="group" aria-label="Pilih tema tampilan"><span class="pemilih-tema-indikator" aria-hidden="true"></span>${pilihanTema.map(p => `<button type="button" class="pemilih-tema-opsi" data-tema="${p.nilai}" title="${p.nilai === 'sistem' ? 'Ikuti tema sistem' : `Tema ${p.label.toLowerCase()}`}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p.ikon}</svg><span>${p.label}</span></button>`).join('')}</div><div class="status-koneksi" role="group" aria-label="Status koneksi"><span data-server class="status-koneksi-ikon" role="img" tabindex="0"></span><${fasilitas ? 'a' : 'span'} data-layar class="status-koneksi-ikon${fasilitas ? ' status-koneksi-tautan' : ''}"></${fasilitas ? 'a' : 'span'}></div></div>`;
+  // Menu pengguna mengisi sisi kiri bilah atas (hanya untuk sesi aktif yang bisa keluar).
+  const menuPengguna = pengguna && keluar ? buatMenuPengguna({ pengguna, keluar }) : null;
+  if (menuPengguna) wadah.firstElementChild.prepend(menuPengguna.el);
   const statusServer = wadah.querySelector('[data-server]'), statusLayar = wadah.querySelector('[data-layar]');
   if (fasilitas) { statusLayar.href = `/layar-panggilan/${fasilitas}`; statusLayar.target = '_blank'; statusLayar.rel = 'noopener noreferrer'; }
   else { statusLayar.setAttribute('role', 'img'); statusLayar.tabIndex = 0; }
@@ -49,7 +53,7 @@ export function pasangTemaTampilan(wadah, pengguna) {
   window.addEventListener('online', periksa); window.addEventListener('offline', periksa);
   perbaruiTema(); perbaruiStatus();
   return () => {
-    pantau.tutup(); wadah.removeEventListener('click', klik); media.removeEventListener('change', perbaruiTema); window.removeEventListener('storage', sinkronkan);
+    menuPengguna?.tutup(); pantau.tutup(); wadah.removeEventListener('click', klik); media.removeEventListener('change', perbaruiTema); window.removeEventListener('storage', sinkronkan);
     window.removeEventListener('online', periksa); window.removeEventListener('offline', periksa); wadah.replaceChildren();
   };
 }

@@ -60,7 +60,7 @@ export async function pasangAplikasiInternal(wadah) {
   navigasi.mulai(); whatsapp.mulai(); instagram.mulai();
   const lapisanPesan = [TombolWa(), TombolIg(), PanelWa(), PanelIg()]; pesan.append(...lapisanPesan);
   const lepasNavigasi = navigasi.langganan(() => void tampilkan());
-  const lepasSesi = sesiPengguna.langganan(() => { tutupTema?.(); tutupTema = pasangTemaTampilan(tema, penggunaSaatIni().pengguna); void tampilkan(); });
+  const lepasSesi = sesiPengguna.langganan(() => { tutupTema?.(); { const { pengguna, keluar } = penggunaSaatIni(); tutupTema = pasangTemaTampilan(tema, pengguna, keluar); } void tampilkan(); });
   await sesiPengguna.muat();
   return () => { aktif = false; generasi++; lepasNavigasi(); lepasSesi(); for (const el of lapisanPesan) el.tutup(); navigasi.tutup(); whatsapp.tutup(); instagram.tutup(); tutupTema?.(); tutupHalaman?.(); kerangka?.tutup(); wadah.replaceChildren(); };
 }

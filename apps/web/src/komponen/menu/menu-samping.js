@@ -1,6 +1,5 @@
-import { HALAMAN_AWAL, MASUK, NAVIGASI, halamanMenuDiizinkan } from '@klira/shared';
+import { HALAMAN_AWAL, NAVIGASI, halamanMenuDiizinkan } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { tombol } from '../ui/primitif.js';
 import { buatIkonMenu } from './ikon-menu.js';
 
 export function buatMenuSamping(opsi) {
@@ -17,14 +16,6 @@ export function buatMenuSamping(opsi) {
       const icon = buatIkonMenu(h.path); if (icon) a.append(icon); a.append(teks);
       a.addEventListener('click', e => { e.preventDefault(); opsi.pindah(h.path); }); links.push({ a, path: h.path }); el.append(a);
     }
-    const ruang = document.createElement('div'); Object.assign(ruang.style, { flexGrow: '1', minHeight: token.jarak.xl }); el.append(ruang);
-    const akun = document.createElement('div'), nama = document.createElement('div'), jenis = document.createElement('div');
-    Object.assign(akun.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs, padding: token.jarak.md, borderTop: `${token.ukuran.garis} solid ${token.warna.garis}` });
-    nama.textContent = pengguna.nama; Object.assign(nama.style, { fontWeight: token.huruf.berat.tebal, fontSize: token.huruf.ukuran.dasar });
-    jenis.title = pengguna.jenis_akun.join(', '); jenis.append(`${pengguna.jenis_akun[0] ?? ''}${pengguna.jenis_akun.length > 1 ? ` · +${pengguna.jenis_akun.length - 1} lainnya` : ''}`);
-    Object.assign(jenis.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
-    if (pengguna.jenis_akun.length > 1) { const detail = document.createElement('details'), summary = document.createElement('summary'), p = document.createElement('p'); detail.className = 'menu-peran'; summary.textContent = 'Lihat semua peran'; p.textContent = pengguna.jenis_akun.join(', '); detail.append(summary, p); jenis.append(detail); }
-    const keluar = tombol(MASUK.keluar, () => void opsi.keluar(), 'sekunder'); keluar.style.marginTop = token.jarak.sm; akun.append(nama, jenis, keluar); el.append(akun);
   }
   function perbarui(baru) {
     opsi = baru; if (pengguna !== baru.pengguna) { pengguna = baru.pengguna; bangun(); }

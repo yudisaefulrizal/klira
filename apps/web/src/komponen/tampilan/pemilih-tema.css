@@ -61,3 +61,30 @@
   .pemilih-tema-indikator,
   .pemilih-tema-opsi { transition: none; }
 }
+
+/* Menu pengguna di sisi kiri bilah atas (nama, peran, Keluar). */
+.menu-pengguna { position: relative; margin-right: auto; }
+.menu-pengguna-pemicu {
+  display: inline-flex; align-items: center; gap: 10px; max-width: 320px; min-height: 40px; padding: 2px 10px 2px 4px;
+  border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--warna-teks); font: inherit; cursor: pointer;
+}
+.menu-pengguna-pemicu:hover, .menu-pengguna-pemicu[aria-expanded='true'] { border-color: var(--warna-garis); background: var(--warna-latar); }
+.menu-pengguna-avatar {
+  display: inline-flex; flex: none; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%;
+  background: var(--warna-utama-latar); color: var(--warna-utama-gelap); font-size: var(--huruf-kecil); font-weight: 700;
+}
+.menu-pengguna-teks { display: flex; flex-direction: column; min-width: 0; text-align: left; line-height: 1.25; }
+.menu-pengguna-teks strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--huruf-dasar); font-weight: 600; }
+.menu-pengguna-teks small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--warna-teks-redup); font-size: var(--huruf-kecil); }
+.menu-pengguna-daftar {
+  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; display: flex; flex-direction: column; gap: 4px; min-width: 240px; padding: 8px;
+  border: 1px solid var(--warna-garis); border-radius: 12px; background: var(--warna-permukaan); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.menu-pengguna-daftar[hidden] { display: none; }
+.menu-pengguna-kepala { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; border-bottom: 1px solid var(--warna-garis-halus); }
+.menu-pengguna-kepala small { color: var(--warna-teks-redup); font-size: var(--huruf-kecil); }
+.menu-pengguna-keluar {
+  width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--warna-teks); font: inherit; text-align: left; cursor: pointer;
+}
+.menu-pengguna-keluar:hover, .menu-pengguna-keluar:focus-visible { background: var(--warna-utama-latar); color: var(--warna-utama-gelap); outline: none; }
+@media (max-width: 560px) { .menu-pengguna-teks { display: none; } .menu-pengguna-pemicu { padding-right: 6px; } }
