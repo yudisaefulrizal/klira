@@ -83,6 +83,8 @@ export class RepositoriPasienMysql {
                 status_identitas: p.status_identitas,
                 // Nama desa/kelurahan dari kode wilayah, untuk membedakan pasien bernama sama di hasil pencarian.
                 desa_nama: p.kode_wilayah ? ambilWilayah(p.kode_wilayah)?.nama ?? null : null,
+                // Nomor kartu JKN (bila ada) agar petugas langsung tahu pasien berpeserta JKN atau tidak.
+                jkn_nomor_kartu: p.jkn_nomor_kartu ?? null,
                 kunjungan,
             };
         });
