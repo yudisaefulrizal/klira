@@ -48,6 +48,11 @@ export class RepositoriPasienMysql {
             lokasiIds.length ? db.daftarLokasiUntukPetakan(lokasiIds, fasyankesId) : [],
             penggunaIds.length ? db.daftarPenggunaUntukRiwayat(penggunaIds, fasyankesId) : [],
         ]);
+        // Poli yang masih memegang pasien (dipanggil/dilayani) hari ini: aksi Panggil untuk antrean lain di poli itu ditahan.
+        const sibukPoli = new Map();
+        for (const a of await db.daftarAntreanSibukUntukPetakan(fasyankesId, lokasiIds, tglDb(tanggalWib(new Date()))))
+            if (!sibukPoli.has(a.lokasi_id))
+                sibukPoli.set(a.lokasi_id, a);
         const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
         const lab = kunjunganIds.length
             ? await db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi')
@@ -75,6 +80,7 @@ export class RepositoriPasienMysql {
                 dpjp_nama: k.peserta[0] ? namaDpjp.get(k.peserta[0].pengguna_id) ?? null : null,
                 mulai: iso(k.mulai),
                 antrean: k.antrean ? { id: k.antrean.id, kode: kodeAntrean(k.antrean.nomor), status: k.antrean.status } : null,
+                poli_sibuk: k.antrean && ['menunggu', 'dipanggil'].includes(k.antrean.status) && sibukPoli.get(k.lokasi_id) && sibukPoli.get(k.lokasi_id).id !== k.antrean.id ? { kode: kodeAntrean(sibukPoli.get(k.lokasi_id).nomor) } : null,
                 lab: hitungLab(k.id),
                 ada_resep: resepAda.has(k.id),
             };

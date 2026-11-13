@@ -67,6 +67,12 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         expect(await l.aksiAntrean(saya, 8, 'mulai')).toMatchObject({ ok: false, kode: 'konflik' });
         expect(await l.aksiAntrean({ id: 3, fasyankes_id: 2 }, 8, 'panggil')).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });
+    it('panggil ditolak bila poli masih melayani pasien lain atau tidak operasional', async () => {
+        const sibuk = jest.fn(async () => ({ galat: 'poli_sibuk', poli: 'Poli Umum 1', kode: 'A-006' }));
+        expect(await buat({ ubahAntrean: sibuk }).aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('Poli Umum 1 sedang melayani A-006') });
+        const tutup = jest.fn(async () => ({ galat: 'poli_tidak_operasional', poli: 'Poli Gigi' }));
+        expect(await buat({ ubahAntrean: tutup }).aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('Poli Gigi sedang tidak operasional') });
+    });
     it('daftar antrean memakai hari ini menurut Asia/Jakarta bila tanggal kosong', async () => {
         const daftarAntrean = jest.fn(async () => ({ total: 0, baris: [] }));
         await buat({ daftarAntrean }).daftarAntrean(saya, { halaman: 1, ukuran: 50 });

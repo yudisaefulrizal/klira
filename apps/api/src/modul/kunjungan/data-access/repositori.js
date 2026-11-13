@@ -96,8 +96,17 @@ export class RepositoriKunjunganMysql {
     async ubahAntrean(fasyankesId, id, aksi, dari, ke, waktu) {
         const hasil = await db.transaksi(async (tx) => {
             // Serialisasi panggilan per fasilitas agar urutan ID event mengikuti urutan commit.
-            if (aksi === 'panggil')
+            if (aksi === 'panggil') {
                 await db.kunciFasyankes(fasyankesId, tx);
+                // Satu poli melayani satu pasien sekali waktu: tolak panggilan bila poli tidak operasional atau masih memegang pasien lain.
+                const a0 = await db.wajibAntreanUntukUbahAntrean(id, tx);
+                const poli0 = await db.wajibLokasiUntukUbahAntrean(a0.lokasi_id, fasyankesId, tx);
+                if (poli0.status_operasional !== 'O')
+                    return { galat: 'poli_tidak_operasional', poli: poli0.nama };
+                const sibuk = await db.cariAntreanSibukUntukPanggil(fasyankesId, a0.lokasi_id, a0.tanggal, id, tx);
+                if (sibuk)
+                    return { galat: 'poli_sibuk', poli: poli0.nama, kode: kodeAntrean(sibuk.nomor) };
+            }
             const n = await db.ubahAntreanUntukUbahAntrean(ke, (aksi === 'panggil') ? (waktu) : (undefined), ((!(aksi === 'panggil')) && (aksi === 'mulai')) ? (waktu) : (undefined), ((!(aksi === 'panggil')) && (!(aksi === 'mulai'))) ? (waktu) : (undefined), id, fasyankesId, [...dari], tx);
             if (n.count !== 1)
                 return false;
@@ -115,6 +124,8 @@ export class RepositoriKunjunganMysql {
         });
         if (!hasil)
             return null;
+        if (hasil.galat)
+            return hasil;
         return (await this.petakanAntrean(fasyankesId, { id }))[0] ?? null;
     }
     async daftarAntrean(fasyankesId, f) {

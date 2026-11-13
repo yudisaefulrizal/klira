@@ -81,3 +81,15 @@ export async function daftarAntreanUntukPetakanAntrean(id, fasyankes_id, tanggal
     const hasil = petakt0(baris);
     return hasil;
 }
+
+/** Antrean yang sedang memegang poli: dipanggil atau dilayani dan kunjungannya masih di tahap skrining/pemeriksaan; di luar antrean `kecuali_id`. */
+export async function cariAntreanSibukUntukPanggil(fasyankes_id, lokasi_id, tanggal, kecuali_id, koneksi = pool) {
+    const baris = await baca("SELECT a.`id`, a.`nomor`, a.`status` FROM `antrean` a JOIN `kunjungan` k ON k.`id` = a.`kunjungan_id` WHERE a.`fasyankes_id` = ? AND a.`lokasi_id` = ? AND a.`tanggal` = ? AND a.`status` IN ('dipanggil', 'dilayani') AND k.`tahap_layanan` IN ('menunggu_skrining', 'pemeriksaan') AND a.`id` <> ? ORDER BY a.`nomor` ASC LIMIT 1", [fasyankes_id, lokasi_id, tanggal, kecuali_id], koneksi);
+    return baris[0] ?? null;
+}
+/** Antrean yang sedang memegang poli (satu per poli bila aturan panggil dijaga), untuk daftar poli pada satu hari. */
+export async function daftarAntreanSibukUntukPetakan(fasyankes_id, lokasi_ids, tanggal, koneksi = pool) {
+    if (!lokasi_ids.length)
+        return [];
+    return baca("SELECT a.`id`, a.`lokasi_id`, a.`nomor`, a.`status` FROM `antrean` a JOIN `kunjungan` k ON k.`id` = a.`kunjungan_id` WHERE a.`fasyankes_id` = ? AND a.`lokasi_id` IN (?) AND a.`tanggal` = ? AND a.`status` IN ('dipanggil', 'dilayani') AND k.`tahap_layanan` IN ('menunggu_skrining', 'pemeriksaan') ORDER BY a.`nomor` ASC", [fasyankes_id, lokasi_ids, tanggal], koneksi);
+}

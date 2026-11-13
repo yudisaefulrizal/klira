@@ -10,7 +10,9 @@ jest.unstable_mockModule('@klira/db', () => {
     const wajibLokasiUntukUbahAntrean = jest.fn();
     const tambahEventPanggilanUntukUbahAntrean = jest.fn();
     const kunci = jest.fn();
+    const cariAntreanSibukUntukPanggil = jest.fn();
     return { ...kliraActual0,
+        cariAntreanSibukUntukPanggil: cariAntreanSibukUntukPanggil,
         pool: {},
         daftarAntreanUntukPetakanAntrean: daftarAntreanUntukPetakanAntrean,
         daftarPasienUntukPetakanAntrean: daftarPasienUntukPetakanAntrean,
@@ -35,9 +37,10 @@ const waktu = new Date('2026-10-29T03:00:00Z'), tanggal = new Date('2026-10-29T0
 
 function siapkan() {
     const tx = {};
+    jest.mocked(db.cariAntreanSibukUntukPanggil).mockImplementation(jest.fn().mockResolvedValue(null));
     jest.mocked(db.ubahAntreanUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ count: 1 }));
     jest.mocked(db.wajibAntreanUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ lokasi_id: 9, nomor: 23, tanggal }));
-    jest.mocked(db.wajibLokasiUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ nama: 'Poli Umum' }));
+    jest.mocked(db.wajibLokasiUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ nama: 'Poli Umum', status_operasional: 'O' }));
     jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ id: 43 }));
     jest.mocked(db.transaksi).mockImplementation(async (fn) => fn(tx));
     return { tx, repo: new RepositoriKunjunganMysql() };
@@ -60,6 +63,18 @@ test('konflik perubahan status tidak menghasilkan event', async () => {
     jest.mocked(db.ubahAntreanUntukUbahAntrean).mockResolvedValue({ count: 0 });
     expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toBeNull();
     expect(db.tambahEventPanggilanUntukUbahAntrean).not.toHaveBeenCalled();
+});
+
+test('panggil ditolak tanpa event bila poli masih memegang pasien lain atau tidak operasional', async () => {
+    const { repo } = siapkan();
+    jest.mocked(db.cariAntreanSibukUntukPanggil).mockResolvedValue({ id: 3, nomor: 6, status: 'dilayani' });
+    expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_sibuk', poli: 'Poli Umum', kode: 'A-006' });
+    expect(db.ubahAntreanUntukUbahAntrean).not.toHaveBeenCalled();
+    expect(db.tambahEventPanggilanUntukUbahAntrean).not.toHaveBeenCalled();
+    jest.mocked(db.cariAntreanSibukUntukPanggil).mockResolvedValue(null);
+    jest.mocked(db.wajibLokasiUntukUbahAntrean).mockResolvedValue({ nama: 'Poli Umum', status_operasional: 'U' });
+    expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_tidak_operasional', poli: 'Poli Umum' });
+    expect(db.ubahAntreanUntukUbahAntrean).not.toHaveBeenCalled();
 });
 
 test('gagal menulis event menggagalkan transaksi dan tidak membaca DTO sukses', async () => {

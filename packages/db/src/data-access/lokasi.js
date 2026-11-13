@@ -154,7 +154,7 @@ export async function daftarLokasiUntukOpsi2(fasyankes_id, jenis, status_operasi
     return baris;
 }
 export async function wajibLokasiUntukUbahAntrean(id, fasyankes_id, koneksi = pool) {
-    const baris = await baca("SELECT t.`nama` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+    const baris = await baca("SELECT t.`nama`, t.`status_operasional` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris lokasi tidak ditemukan.');
     return baris[0];

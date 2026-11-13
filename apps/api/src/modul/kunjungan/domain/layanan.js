@@ -62,6 +62,10 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
             const hasil = await repo.ubahAntrean(p.fasyankes_id, id, aksi, t.dari, t.ke, sekarang());
             if (!hasil)
                 return gagal('konflik', REGISTRASI.galat.antreanTidakSah);
+            if (hasil.galat === 'poli_sibuk')
+                return gagal('konflik', REGISTRASI.galat.poliSibuk(hasil.poli, hasil.kode));
+            if (hasil.galat === 'poli_tidak_operasional')
+                return gagal('konflik', REGISTRASI.galat.poliTidakOperasional(hasil.poli));
             kabarkanLayarPanggilan(p.fasyankes_id);
             await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'antrean', entitas_id: id, keterangan: `Antrean ${hasil.kode}: ${aksi} (${status} menjadi ${t.ke})`, alamat });
             return { ok: true, data: hasil };
