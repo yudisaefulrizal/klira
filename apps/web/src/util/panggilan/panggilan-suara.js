@@ -1,7 +1,7 @@
 const digit = ['nol', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan'];
 export function teksPanggilan(panggilan) {
     const nomor = panggilan.kode.replace(/-/g, ' ').replace(/\d/g, n => ` ${digit[Number(n)]} `).replace(/\s+/g, ' ').trim();
-    return `Nomor antrean ${nomor}. Silakan menuju ${panggilan.poli_nama}.`;
+    return `Perhatian! Nomor antrean ${nomor}! Silakan menuju ${panggilan.poli_nama}. Terima kasih!`;
 }
 /** ID event mencegah replay saat reconnect; waktu menjadi pembanding untuk tampilan awal tanpa event. */
 export class PemilihPanggilanSuara {

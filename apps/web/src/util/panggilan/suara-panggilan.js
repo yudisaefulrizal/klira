@@ -1,5 +1,11 @@
 import { PemilihPanggilanSuara, teksPanggilan } from './panggilan-suara.js';
 import { bacaPreferensiSuara, simpanPreferensiSuara } from './preferensi-suara.js';
+/** Suara Indonesia; utamakan suara neural/online yang lebih natural, lalu suara berkesan perempuan. */
+export function pilihSuara(daftar) {
+    const id = daftar.filter(v => /^id(?:-|$)/i.test(v.lang));
+    const skor = v => (/natural|neural|online|google/i.test(v.name) ? 2 : 0) + (/female|perempuan|gadis|damayanti|andika|indah/i.test(v.name) && !/\bmale\b/i.test(v.name) ? 1 : 0);
+    return id.sort((a, b) => skor(b) - skor(a))[0];
+}
 export function buatSuaraPanggilan(fasilitas, berubah) {
     let data = null, hariIni;
     let ditutup = false;
@@ -33,9 +39,11 @@ export function buatSuaraPanggilan(fasilitas, berubah) {
         try {
             const ucapan = new SpeechSynthesisUtterance(teks);
             ucapan.lang = 'id-ID';
-            ucapan.rate = 0.9;
+            // Nada sedikit tinggi dan tempo agak cepat agar terdengar ramah dan bersemangat, tetap jelas untuk nomor.
+            ucapan.rate = 1.02;
+            ucapan.pitch = 1.25;
             ucapan.volume = 1;
-            const suara = window.speechSynthesis.getVoices().find(v => /^id(?:-|$)/i.test(v.lang));
+            const suara = pilihSuara(window.speechSynthesis.getVoices());
             if (suara)
                 ucapan.voice = suara;
             ucapan.onstart = () => {
@@ -89,7 +97,7 @@ export function buatSuaraPanggilan(fasilitas, berubah) {
         // Beberapa mesin tidak mengirim galat saat autoplay diblokir; jangan tampilkan status aktif palsu.
         k.batasMulai = setTimeout(() => gagal(versi, true), 8000);
         if (!bacakan(true))
-            ucap(otomatis ? 'Suara panggilan siap.' : 'Suara panggilan diaktifkan. Silakan menunggu nomor antrean Anda.');
+            ucap(otomatis ? 'Suara panggilan siap!' : 'Suara panggilan aktif! Silakan menunggu nomor antrean Anda.');
         berubah(status);
     }
     function ubahSuara() {
