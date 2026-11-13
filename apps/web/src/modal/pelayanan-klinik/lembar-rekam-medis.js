@@ -1,8 +1,9 @@
 import { h, Fragment } from '../../util/h.js';
                                        
-import { CARA_PEMBAYARAN, KLINIS, LABEL_NARASI, TANDA_VITAL } from '@klira/shared';
+import { CARA_PEMBAYARAN, KLINIS, LABEL_NARASI, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
                                                                       
 import { tanggalPendek, tanggalWaktuPendek } from '../../util/format.js';
+import { bagianRawatInap } from './data-rawat-inap.js';
 import { keperawatanDariIsi, ringkasanKeperawatan } from './keadaan-keperawatan.js';
 import { barisPemeriksaanFisik, keadaanDariServer, ringkasanIsi } from './keadaan-pemeriksaan.js';
 const C = KLINIS.cetak;
@@ -60,7 +61,8 @@ function Blok({
 
 /** Rekam medis rawat jalan satu kunjungan (P8) dalam tata letak A4 formulir klinik; dicetak lewat dialog cetak peramban. */
 export function Lembar({
-  d
+  d,
+  inap = null
 }   
                         
  ) {
@@ -158,7 +160,7 @@ export function Lembar({
     pengesah: sah(C.peran.perawat, 'keperawatan', 'tanda_vital'),
     sel: [{
       label: C.jenisKunjungan,
-      nilai: C.rawatJalan
+      nilai: inap ? RAWAT_INAP.judul : C.rawatJalan
     }, ...tv, ...keperawatan]
   }), h(Blok, {
     judul: C.blok.anamnesa,
@@ -220,7 +222,19 @@ export function Lembar({
       label: KLINIS.langkah.tindakLanjut,
       nilai: KLINIS.tindakLanjut.jenisOpsi.find(o => o.nilai === tl.jenis)?.label ?? '-'
     }]
-  }), h("footer", {
+  }), ...(inap ? blokRawatInap(inap) : []), h("footer", {
     className: "crm-kaki"
   }, h("span", null, C.dicetak(d.dicetak_oleh, tanggalWaktuPendek(d.dicetak_pada))), h("span", null, C.tandaTebal)));
+}
+/** Blok formulir khusus rawat inap: admisi/penempatan/DPJP, CPPT, dan pemulangan (urut seperti perjalanan pasien). */
+function blokRawatInap(inap) {
+  const [admisi, cppt, pulang] = bagianRawatInap(inap), m = inap.detail.pemulangan;
+  const sel = (b, tebal) => b.baris.map((r) => ({ label: r.label, nilai: r.nilai, tebal }));
+  const terakhirCppt = [...inap.cppt].sort((a, b) => b.waktu.localeCompare(a.waktu))[0];
+  const dokter = (nama, waktu) => ({ peran: C.peran.dokter, nama: nama ?? null, waktu: waktu ?? null });
+  return [
+    h(Blok, { judul: admisi.judul, sel: sel(admisi), kolom: 2, pengesah: dokter(inap.detail.dpjp_riwayat?.find((x) => x.tipe === 'ATND')?.nama ?? null, inap.detail.kunjungan.mulai) }),
+    h(Blok, { judul: cppt.judul, sel: sel(cppt), kolom: 1, pengesah: dokter(terakhirCppt?.pengesahan?.pengguna_nama ?? terakhirCppt?.dibuat_oleh_nama, terakhirCppt?.waktu) }),
+    ...(pulang ? [h(Blok, { judul: pulang.judul, sel: sel(pulang), kolom: 2, pengesah: dokter(m.dibuat_oleh_nama, m.waktu) })] : []),
+  ];
 }

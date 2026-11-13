@@ -12,14 +12,21 @@ export class GalatRi extends Error {
 }
 const tahapBerjalan = [...TAHAP_BERJALAN];
 const kunci = (tx, tabel, fasyankesId, id) => tabel === 'pasien' ? db.kunciPasienRawatInap(id, fasyankesId, tx) : tabel === 'lokasi' ? db.kunciLokasiRawatInap(id, fasyankesId, tx) : db.kunciKunjunganRawatInap(id, fasyankesId, tx);
+/** Profesi yang boleh menjadi DPJP, dicocokkan dari awal nama profesi (mis. "Dokter Umum", "Dokter Gigi", "Bidan"). */
+const PROFESI_DPJP = { has: (profesi) => /^(dokter|bidan)\b/i.test(profesi ?? '') };
 /** Akses data Rawat inap: papan bed, admisi, penempatan, DPJP, catatan harian (CPPT), pemulangan. Hanya INSERT dan penutupan periode; tidak ada hapus. */
 export class RepositoriRawatInapMysql {
     async pasienAda(fasyankesId, id) {
         return (await db.hitungPasienUntukPasienAda(id, fasyankesId)) > 0;
     }
+    /** Praktisi aktif yang boleh menjadi DPJP (dokter, dokter gigi, bidan); perawat, apoteker, dan profesi lain tidak. */
+    async praktisiDpjp(fasyankesId) {
+        const praktisi = await db.daftarPenggunaUntukOpsi3(fasyankesId, true, 500, 1);
+        return praktisi.filter((p) => PROFESI_DPJP.has(p.profil_profesi[0]?.profesi));
+    }
     async dpjpSah(fasyankesId, ids) {
-        const n = await db.hitungPenggunaUntukDpjpSah2(ids, fasyankesId, true);
-        return n === new Set(ids).size;
+        const sah = new Set((await this.praktisiDpjp(fasyankesId)).map((p) => p.id));
+        return [...new Set(ids)].every((id) => sah.has(id));
     }
     async tarifKamarSah(fasyankesId, id) {
         return (await db.hitungTarifLayananUntukTarifKamarSah(id, fasyankesId, 'kamar', true)) > 0;
@@ -33,7 +40,7 @@ export class RepositoriRawatInapMysql {
         const [bed, tarif, praktisi] = await Promise.all([
             this.bedSemua(fasyankesId),
             db.daftarTarifLayananUntukOpsi(fasyankesId, 'kamar', true, 200),
-            db.daftarPenggunaUntukOpsi3(fasyankesId, true, 500, 1),
+            this.praktisiDpjp(fasyankesId),
         ]);
         return {
             bed_kosong: bed.filter((b) => b.status === 'kosong').map((b) => ({ id: b.id, nama: b.nama, ruang_nama: b.ruang_nama })),
@@ -146,7 +153,7 @@ export class RepositoriRawatInapMysql {
             return null;
         const [pen, peserta, pulang] = await Promise.all([
             db.daftarPenempatanUntukDetail(k.id),
-            db.daftarPesertaKunjunganUntukDetail(k.id, null),
+            db.daftarPesertaKunjunganUntukDetail(k.id),
             db.ambilPemulanganUntukDetail(k.id),
         ]);
         const bed = new Map((await db.daftarLokasiUntukDetail(pen.map((x) => x.lokasi_id))).map((l) => [l.id, l]));
@@ -159,7 +166,9 @@ export class RepositoriRawatInapMysql {
                 id: x.id, bed_id: x.lokasi_id, bed_nama: bed.get(x.lokasi_id)?.nama ?? null, ruang_nama: ruang.get(bed.get(x.lokasi_id)?.induk_id ?? 0) ?? null, kelas: x.kelas, indikator: x.indikator,
                 tarif_id: x.tarif_id, tarif_nama: x.tarif_id ? tarif.get(x.tarif_id) ?? null : null, mulai: x.mulai.toISOString(), selesai: x.selesai?.toISOString() ?? null,
             })),
-            dpjp: peserta.map((x) => ({ id: x.pengguna_id, nama: orang.get(x.pengguna_id) ?? '-', tipe: x.tipe })),
+            dpjp: peserta.filter((x) => !x.selesai).map((x) => ({ id: x.pengguna_id, nama: orang.get(x.pengguna_id) ?? '-', tipe: x.tipe })),
+            // Riwayat lengkap termasuk DPJP yang periodenya sudah ditutup (mis. setelah pemulangan), untuk rekam medis.
+            dpjp_riwayat: peserta.map((x) => ({ id: x.pengguna_id, nama: orang.get(x.pengguna_id) ?? '-', tipe: x.tipe, mulai: x.mulai?.toISOString() ?? null, selesai: x.selesai?.toISOString() ?? null })),
             pemulangan: pulang && { disposisi: pulang.disposisi, kondisi_pulang: pulang.kondisi_pulang, diagnosis_akhir: pulang.diagnosis_akhir, ringkasan: pulang.ringkasan, tindak_lanjut: pulang.tindak_lanjut, waktu: pulang.waktu.toISOString(), dibuat_oleh_nama: orang.get(pulang.dibuat_oleh) ?? null },
         };
     }

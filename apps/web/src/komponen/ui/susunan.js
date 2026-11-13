@@ -66,7 +66,7 @@ export function PasanganRingkasan({ label, nilai }) {
   const el = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd');
   el.style.display = 'contents';
   dt.style.color = token.warna.teksRedup;
-  Object.assign(dd.style, { margin: '0', fontWeight: token.huruf.berat.sedang, overflowWrap: 'anywhere' });
+  Object.assign(dd.style, { margin: '0', fontWeight: token.huruf.berat.sedang, overflowWrap: 'anywhere', whiteSpace: 'pre-line' });
   isi(dt, label); isi(dd, nilai); el.append(dt, dd);
   return el;
 }
