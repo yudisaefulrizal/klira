@@ -1,5 +1,5 @@
 import { REGISTRASI, statusIdentitasDari } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { NikKembarError, WaliTidakSahError } from '../data-access/repositori.js';
 const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
 /** Masukan registrasi tervalidasi menjadi data simpan: string kosong menjadi null, identitas khusus dikosongkan sesuai jalur. */

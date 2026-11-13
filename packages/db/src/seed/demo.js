@@ -1,6 +1,6 @@
 import { pathToFileURL as kliraFileUrl } from 'node:url';
 import * as db from '../data-access/index.js';
-import { hashKataSandi } from '../kata-sandi.js';
+import { hashKataSandi } from '../keamanan/kata-sandi.js';
 import { jalankanSeed } from './seed.js';
 import { AKUN_DEMO } from '@klira/shared';
 export async function seedDemo(env = process.env) {

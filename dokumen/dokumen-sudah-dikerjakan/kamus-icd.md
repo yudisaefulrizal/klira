@@ -12,16 +12,16 @@ Salinan resmi ICD-10 dan ICD-9-CM yang ditautkan SATUSEHAT telah disimpan dalam 
 
 ## JSON statis untuk aplikasi
 
-- `apps/api/src/modul/klinis/data/icd10-2010.json`: 18.542 kode.
-- `apps/api/src/modul/klinis/data/icd9cm-2010.json`: 4.626 kode.
+- `apps/api/data/icd10-2010.json`: 18.542 kode.
+- `apps/api/data/icd9cm-2010.json`: 4.626 kode.
 - `apps/api/src/modul/klinis/terminologi-icd.ts`: pemuatan sekali, penjelajahan/paginasi, serta pencarian kode/nama tanpa database untuk kedua sistem ICD.
 
 JSON memuat versi, tautan sumber, nama berkas primer, checksum SHA-256 berkas primer, jumlah kode, dan pasangan kode/nama. Nama dipertahankan sesuai sumber bahasa Inggris; tidak ada terjemahan atau definisi tambahan buatan. Kode termasuk kategori dan rincian sebagaimana tercantum dalam berkas sumber; penyimpanan sebagai string mempertahankan titik dan nol di depan.
 
-Untuk memperbarui JSON dari salinan primer yang sudah diverifikasi, jalankan `python3 skrip/buat-json-icd.py` (memerlukan `openpyxl`). Skrip menolak sumber dengan checksum yang berbeda dari manifest, memeriksa kolom/versi/keunikan, lalu menulis JSON berurutan menurut kode. `resolveJsonModule` memastikan `tsc` mengemas salinan JSON ke `apps/api/dist/modul/klinis/data`; aplikasi tidak memerlukan XLSX atau Python saat berjalan. API tetap dipakai untuk izin dan pengiriman halaman; berkas lengkap tidak dimuat ke browser.
+Untuk memperbarui JSON dari salinan primer yang sudah diverifikasi, jalankan `python3 skrip/data-referensi/buat-json-icd.py` (memerlukan `openpyxl`). Skrip menolak sumber dengan checksum yang berbeda dari manifest, memeriksa kolom/versi/keunikan, lalu menulis JSON berurutan menurut kode. `resolveJsonModule` memastikan `tsc` mengemas salinan JSON ke `apps/api/dist/modul/klinis/data`; aplikasi tidak memerlukan XLSX atau Python saat berjalan. API tetap dipakai untuk izin dan pengiriman halaman; berkas lengkap tidak dimuat ke browser.
 
 Perubahan ini tidak memigrasikan atau menghapus data rekam medis maupun tabel terminologi. Pembaruan versi referensi dilakukan lewat penggantian sumber primer/manifest secara sengaja dan regenerasi JSON.
 
 ## Nama tindakan Indonesia ICD-9-CM
 
-Kamus dan pencarian ICD-9-CM kini menyertakan nama tindakan terkait dari pemetaan KPTL resmi SATUSEHAT untuk 2.363 kode yang cocok kode dan nama Inggrisnya dengan primer 2010. UI memberi label **Nama tindakan KPTL**, mempertahankan nama ICD Inggris sebagai nama utama. Ini pemetaan, bukan terjemahan harfiah. Hasil pilihan tetap menyimpan kode/nama ICD asli. Semua pemetaan satu-ke-banyak dipertahankan; sepuluh baris yang tidak cocok disisihkan. Lihat [asal sumber, checksum dan batas pemakaian](<../referensi tambahan/icd9cm-kptl/README.md>). Regenerasi: `python3 skrip/buat-padanan-icd9cm.py`.
+Kamus dan pencarian ICD-9-CM kini menyertakan nama tindakan terkait dari pemetaan KPTL resmi SATUSEHAT untuk 2.363 kode yang cocok kode dan nama Inggrisnya dengan primer 2010. UI memberi label **Nama tindakan KPTL**, mempertahankan nama ICD Inggris sebagai nama utama. Ini pemetaan, bukan terjemahan harfiah. Hasil pilihan tetap menyimpan kode/nama ICD asli. Semua pemetaan satu-ke-banyak dipertahankan; sepuluh baris yang tidak cocok disisihkan. Lihat [asal sumber, checksum dan batas pemakaian](<../referensi tambahan/icd9cm-kptl/README.md>). Regenerasi: `python3 skrip/data-referensi/buat-padanan-icd9cm.py`.

@@ -1,11 +1,11 @@
 export * from './data-access/index.js';
-export * from './enkripsi.js';
+export * from './keamanan/enkripsi.js';
 export * from './validasi.js';
-export * from './kata-sandi.js';
+export * from './keamanan/kata-sandi.js';
 export { IZIN_AWAL, JENIS_AKUN_AWAL } from '@klira/shared';
 export { bacaCsvWilayah, imporWilayahCsv, seedWilayahContoh, WILAYAH_CONTOH } from './seed/wilayah.js';
 export { seedTeksPersetujuan, TEKS_GENERAL_CONSENT_V1, TEKS_PERSETUJUAN_TINDAKAN_V1 } from './seed/seed.js';
 export { bacaCsvTerminologi, imporTerminologiCsv, seedTerminologiContoh, TERMINOLOGI_CONTOH } from './seed/terminologi.js';
-export * from './retensi-whatsapp.js';
-export * from './retensi-instagram.js';
+export * from './retensi/retensi-whatsapp.js';
+export * from './retensi/retensi-instagram.js';
 export * from './cadangan/index.js';

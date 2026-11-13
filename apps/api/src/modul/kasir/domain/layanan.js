@@ -1,5 +1,5 @@
 import { GALAT } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 /** Tagihan dasar (4.5): baca tagihan kunjungan. Item ditambah oleh modul asalnya (mis. order lab) lewat `tambahItemTagihanDalam`; kasir lengkap menyusul. */
 export function buatLayananTagihan({ repo, audit }) {
     return {

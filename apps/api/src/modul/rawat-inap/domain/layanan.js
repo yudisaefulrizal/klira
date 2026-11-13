@@ -1,6 +1,6 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { RAWAT_INAP } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { keDto } from '../../rekam-medis/domain/layanan.js';
 import { GalatRi } from '../data-access/repositori.js';
 const G = RAWAT_INAP.galat;

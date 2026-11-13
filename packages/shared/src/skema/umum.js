@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GALAT, GANTI_KREDENSIAL } from '../teks.js';
+import { GALAT, GANTI_KREDENSIAL } from '../umum/teks.js';
 export const NIK_REGEX = /^\d{16}$/;
 export const TANGGAL_MINIMAL = new Date('2014-06-03T00:00:00.000Z');
 export const nik = z.string().regex(NIK_REGEX, GALAT.nik);

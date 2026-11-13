@@ -3,7 +3,7 @@ import { GALAT, idParam } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { kirimHasil } from '../../hasil.js';
+import { kirimHasil } from '../../../umum/hasil.js';
 /** GET /api/kunjungan/:id/addendum (izin lihat klinis, rekam medis, atau penunjang). Tidak ada rute ubah atau hapus. */
 export function buatRuteAddendum(layananAkses, layananIzin, layanan) {
     const rute = Router();

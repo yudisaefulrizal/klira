@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { IZIN } from '../teks.js';
-import { JENIS_PERINGATAN } from '../izin.js';
+import { IZIN } from '../umum/teks.js';
+import { JENIS_PERINGATAN } from '../administrasi/izin.js';
 import { aksiIzin, cakupanIzin, tipeIzinAkun } from './entitas.js';
 import { alasan, idPositif, paginasi, tanggal, teksOpsional, teksWajib } from './umum.js';
 /** Konfirmasi pimpinan atas peringatan izin (2.2): alasan wajib; opsi Terima untuk akun ini. */

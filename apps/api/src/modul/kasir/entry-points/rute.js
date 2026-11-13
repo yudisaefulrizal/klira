@@ -3,7 +3,7 @@ import { GALAT, idParam } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { kirimHasil } from '../../hasil.js';
+import { kirimHasil } from '../../../umum/hasil.js';
 /** GET /api/kunjungan/:id/tagihan (izin lihat kasir, klinis, atau rekam medis). */
 export function buatRuteKasir(layananAkses, layananIzin, layanan) {
     const rute = Router();

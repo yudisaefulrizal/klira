@@ -3,7 +3,7 @@ import { filterLaporan, filterPembukaan, filterPenyampaian, GALAT, idParam, kepu
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /**
  * Rute dokumen Rekam medis (4.2, 4.4): resume dan surat (izin `klinis`), pembukaan dan penyampaian (izin `rekam-medis`; keputusan butuh aksi perbaikan),
  * laporan (lihat `rekam-medis`, ekspor CSV lewat `?format=csv`). Dibatasi pada fasyankes akun; tidak ada rute hapus.

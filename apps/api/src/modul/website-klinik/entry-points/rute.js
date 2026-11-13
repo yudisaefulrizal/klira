@@ -4,7 +4,7 @@ import { websiteKlinikMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { alamatDari, PenampungAuditMysql } from '../../../middleware/audit.js';
-import { galatValidasi } from '../../hasil.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 import { bacaKlinikPublik, pengaturanWebsite } from '../data-access/data.js';
 export function buatRuteWebsitePublik() {
     const r = Router();

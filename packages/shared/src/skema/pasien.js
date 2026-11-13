@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { nomorWhatsapp } from '../whatsapp.js';
-import { GALAT, REGISTRASI } from '../teks.js';
+import { nomorWhatsapp } from '../pesan/whatsapp.js';
+import { GALAT, REGISTRASI } from '../umum/teks.js';
 import { jenisKelamin, waliKeluargaMasukan } from './entitas.js';
 import { idPositif, nik, teksOpsional, teksWajib } from './umum.js';
 export const JALUR_IDENTITAS = ['nik', 'paspor', 'kitas', 'tanpa_identitas'];

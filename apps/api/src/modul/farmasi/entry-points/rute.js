@@ -3,7 +3,7 @@ import { filterKfa, filterMasterObat, filterRiwayatObat, GALAT, idParam, masterO
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /**
  * Rute Farmasi (3.1, 3.3, 4.3): master obat tertaut KFA, stok sederhana, resep dari dokter (izin `resep`), telaah dan siapkan oleh apoteker (izin `farmasi`).
  * Semua dibatasi pada fasyankes akun; tidak ada rute hapus (obat dinonaktifkan, mutasi hanya ditambah).

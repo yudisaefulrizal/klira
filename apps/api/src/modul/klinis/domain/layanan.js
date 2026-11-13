@@ -1,6 +1,6 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { BAGIAN_NARASI, BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { keDto } from '../../rekam-medis/domain/layanan.js';
 import { BentrokVersiError } from '../data-access/repositori.js';
 /** Tahap yang masih menerima catatan klinis; setelah kasir, perubahan lewat perbaikan catatan (Rekam medis). */

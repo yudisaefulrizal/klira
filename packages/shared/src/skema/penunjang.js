@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { GALAT, PENUNJANG } from '../teks.js';
-import { PRIORITAS_ORDER, INTERPRETASI_HASIL, STATUS_ORDER_PENUNJANG } from '../status.js';
+import { GALAT, PENUNJANG } from '../umum/teks.js';
+import { PRIORITAS_ORDER, INTERPRETASI_HASIL, STATUS_ORDER_PENUNJANG } from '../umum/status.js';
 import { idPositif, tanggal, teksWajib } from './umum.js';
 const kosongJadiNull = (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? null : v);
 const teksNull = (maks) => z.preprocess(kosongJadiNull, z.string().trim().max(maks).nullable());

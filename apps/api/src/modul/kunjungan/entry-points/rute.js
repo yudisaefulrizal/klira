@@ -3,7 +3,7 @@ import { aksiAntrean, filterAntrean, idParam, kunjunganMasukan, ubahTahapMasukan
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /** Rute kunjungan dan antrean: input = pendaftaran, perbaikan = ubah tahap dan status antrean, lihat = daftar antrean (fitur `kunjungan`). */
 export function buatRuteKunjungan(layananAkses, layananIzin, layanan) {
     const rute = Router();

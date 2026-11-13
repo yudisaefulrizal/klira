@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GALAT, GANTI_KREDENSIAL, IZIN } from '../teks.js';
+import { GALAT, GANTI_KREDENSIAL, IZIN } from '../umum/teks.js';
 import { tipeIzinAkun } from './entitas.js';
 import { konfirmasiPeringatan } from './akses.js';
 import { alasan, idPositif, nik, tanggal, teksOpsional, teksWajib } from './umum.js';

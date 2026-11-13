@@ -3,7 +3,7 @@ import { dpiaMasukan, filterHak, filterPersetujuanPdp, filterUmumPdp, GALAT, hak
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /** Rute Pelindungan data (3.1, 4.7): lihat (izin pdp lihat), catat dan buat (input), proses dan ubah (perbaikan). Dibatasi pada fasyankes akun; tidak ada rute hapus. */
 export function buatRutePdp(layananAkses, layananIzin, layanan) {
     const rute = Router();

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { REKAM_MEDIS } from '../teks.js';
+import { REKAM_MEDIS } from '../umum/teks.js';
 import { teksOpsional, teksWajib } from './umum.js';
 const R = REKAM_MEDIS;
 const kosongJadiTiada = (v) => (v === '' || v === null ? undefined : v);

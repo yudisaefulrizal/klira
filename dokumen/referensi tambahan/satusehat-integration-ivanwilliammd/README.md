@@ -37,7 +37,7 @@ Diambil dari commit `e4c3667924f707002ae4671e73d79667f6fcb084`, tanpa diubah (su
 |---|---|
 | `kfa_obat.csv` | `873936bd9cb5981c77a7996acb46ce207b81419d387761c752d5f4c6319492ef` |
 
-`python3 skrip/buat-json-kfa.py` memverifikasi checksum, lalu menulis **`apps/api/data/kfa.json`** (katalog statis, dimuat sekali oleh API, dicari di memori seperti `wilayah.json`; bukan tabel database) dan `perlu-ditinjau.json`.
+`python3 skrip/data-referensi/buat-json-kfa.py` memverifikasi checksum, lalu menulis **`apps/api/data/kfa.json`** (katalog statis, dimuat sekali oleh API, dicari di memori seperti `wilayah.json`; bukan tabel database) dan `perlu-ditinjau.json`.
 
 Hasil: **15.691 produk tingkat 93**, 63 di antaranya `nonaktif` karena nama bertanda "tidak dipakai". Nama panjang (terpanjang 637 karakter) ikut masuk. **2 baris disisihkan**: kode ganda `93022066` untuk dua produk berbeda (Hevit-C 500 dan 1000).
 
@@ -45,17 +45,17 @@ Pemetaan: `kfa_code`→`kode`, `display_name`→`nama`, `medication_form`→`ben
 
 Tambahan dan ubahan klinik disimpan di tabel `kfa_lokal` (per klinik). Pencarian menggabungkan katalog JSON dengan tabel ini; baris `kfa_lokal` menimpa produk katalog berkode sama. `master_obat` menyalin kode, nama, dan bentuk sediaan KFA saat obat ditambahkan, jadi riwayat tidak berubah bila katalog diperbarui.
 
-Memperbarui katalog: ambil berkas baru dari sumber, perbarui commit dan checksum di `skrip/buat-json-kfa.py` dan README ini, lalu jalankan skrip. Tidak ada impor ke database.
+Memperbarui katalog: ambil berkas baru dari sumber, perbarui commit dan checksum di `skrip/data-referensi/buat-json-kfa.py` dan README ini, lalu jalankan skrip. Tidak ada impor ke database.
 
 ## LOINC yang dipakai Klira (10 November 2026)
 
 Sumber: `loinc.csv.stub` dari commit `e4c3667924f707002ae4671e73d79667f6fcb084`, disimpan terkompresi sebagai `loinc.csv.gz` (isi tak berubah). SHA-256 berkas mentah: `443f94d9960f94358a016f8bae7f9cefa3ff8bcc938cf03423fb3c1b518e13a4`. Versi LOINC tertinggi di dalamnya: 2.74.
 
-`python3 skrip/buat-json-loinc.py` memverifikasi checksum, lalu menulis **`apps/api/data/loinc.json`** (dimuat sekali oleh API dan dicari di memori; bukan tabel database). Isi: **56.732 kode** dengan `CLASSTYPE` = 1 (laboratorium) dan `STATUS` = ACTIVE, kolom `kode`, `nama` (LONG_COMMON_NAME bahasa Inggris), `kelas`, dan `urut`. Tidak dimuat: kode non-laboratorium (39.717), tidak aktif (3.228: trial, deprecated, discouraged), dan 10 baris yang memuat pemberitahuan hak cipta pihak ketiga.
+`python3 skrip/data-referensi/buat-json-loinc.py` memverifikasi checksum, lalu menulis **`apps/api/data/loinc.json`** (dimuat sekali oleh API dan dicari di memori; bukan tabel database). Isi: **56.732 kode** dengan `CLASSTYPE` = 1 (laboratorium) dan `STATUS` = ACTIVE, kolom `kode`, `nama` (LONG_COMMON_NAME bahasa Inggris), `kelas`, dan `urut`. Tidak dimuat: kode non-laboratorium (39.717), tidak aktif (3.228: trial, deprecated, discouraged), dan 10 baris yang memuat pemberitahuan hak cipta pihak ketiga.
 
 Dipakai di kolom "Kode LOINC" pada master pemeriksaan lab: ketik nama (bahasa Inggris) atau kode, pilih dari 10 saran teratas. Kode yang diisi manual tetap diterima bila polanya sah (mis. 718-7), sehingga kode yang lebih baru dari snapshot ini tetap bisa dipakai. Kueri berbentuk kode (angka dan tanda hubung) dicocokkan sebagai awalan kode. Urutan saran: kode persis, kolom `urut` (0 = konsentrasi kuantitatif umum di darah atau serum/plasma, sampai 4 = lainnya; dihitung skrip dari skala, properti, spesimen, dan metode karena sumber tidak memuat peringkat kelaziman tes), nama diawali kata kunci, lalu nama yang lebih pendek. Keterbatasan: pencarian hanya dalam bahasa Inggris (mis. "glucose", bukan "glukosa").
 
 **Hak cipta dan lisensi LOINC.** LOINC® adalah hak cipta Regenstrief Institute, Inc. dan LOINC Committee, tersedia tanpa biaya di bawah lisensi di https://loinc.org/license . Pemberitahuan lengkap ada di kolom `hak_cipta` pada `loinc.json`, dan UI menampilkan sumbernya di bawah daftar saran. Pertahankan pemberitahuan itu bila data diperbarui atau dibagikan. Verifikasi syarat lisensi terbaru ke loinc.org sebelum rilis produksi.
 
-Memperbarui: ganti `loinc.csv.gz` dengan snapshot baru, perbarui commit dan checksum di `skrip/buat-json-loinc.py`, lalu jalankan skripnya.
+Memperbarui: ganti `loinc.csv.gz` dengan snapshot baru, perbarui commit dan checksum di `skrip/data-referensi/buat-json-loinc.py`, lalu jalankan skripnya.
 

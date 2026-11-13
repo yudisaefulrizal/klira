@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { KLAIM } from '../teks.js';
-import { AKSI_KLAIM, BERKAS_KLAIM } from '../klaim.js';
+import { KLAIM } from '../umum/teks.js';
+import { AKSI_KLAIM, BERKAS_KLAIM } from '../administrasi/klaim.js';
 import { idPositif } from './umum.js';
 const G = KLAIM.galat;
 const kosongJadiTiada = (v) => (v === '' || v === null ? undefined : v);

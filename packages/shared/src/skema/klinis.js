@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { GALAT, KLINIS } from '../teks.js';
-import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL, } from '../klinis.js';
-import { BIDANG_TEKS_PEMERIKSAAN } from '../default-klinis.js';
+import { GALAT, KLINIS } from '../umum/teks.js';
+import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL, } from '../klinis/klinis.js';
+import { BIDANG_TEKS_PEMERIKSAAN } from '../klinis/default-klinis.js';
 import { idPositif, tanggal, teksWajib } from './umum.js';
 const kosongJadiNull = (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? null : v);
 /** Teks opsional yang dinormalkan: kosong menjadi null (isi kanonik untuk hash harus stabil). */

@@ -3,7 +3,7 @@ import { filterKlaim, GALAT, idParam, siapkanKlaimMasukan, ubahBerkasKlaimMasuka
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /** Rute Klaim JKN/BPJS (3.1, 4.5): lihat (izin klaim lihat), siapkan (input), ubah berkas dan status (perbaikan). Dibatasi pada fasyankes akun; tidak ada rute hapus. */
 export function buatRuteKlaim(layananAkses, layananIzin, layanan) {
     const rute = Router();

@@ -1,5 +1,5 @@
 import { butirKurang, hakTerlambat, laporanKeCsv, PDP, sisaJamPdp, tahapHakBerikut, tahapMusnahBerikut, waktuDariIsian } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { awalHariWib, GalatPdp } from '../data-access/repositori.js';
 const G = PDP.galat;
 const iso = (d) => d?.toISOString() ?? null;

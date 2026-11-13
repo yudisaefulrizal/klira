@@ -1,5 +1,5 @@
 import { GALAT } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { keDto as keDtoPengesahan } from './layanan.js';
 /** Entitas pengesahan untuk isi addendum; penyedia isinya mendeteksi perubahan setelah disahkan. */
 export const ENTITAS_PENGESAHAN_ADDENDUM = 'addendum';

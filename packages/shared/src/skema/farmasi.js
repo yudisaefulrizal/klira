@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FARMASI } from '../teks.js';
+import { FARMASI } from '../umum/teks.js';
 import { idPositif, teksOpsional, teksWajib } from './umum.js';
 const kosongJadiTiada = (v) => (v === '' || v === null ? undefined : v);
 const tglIso = z.preprocess(kosongJadiTiada, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, FARMASI.galat.tanggal).optional());

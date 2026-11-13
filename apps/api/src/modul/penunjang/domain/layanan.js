@@ -1,5 +1,5 @@
 import { ADDENDUM_TEKS, bolehAksiOrder, hasilJadiAddendum, PENUNJANG, ringkasPerubahanHarga } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { cariKatalogLoinc } from '../data-access/katalog-loinc.js';
 import { keDto as keDtoPengesahan } from '../../rekam-medis/domain/layanan.js';
 import { susunIsiHasil } from './isi.js';

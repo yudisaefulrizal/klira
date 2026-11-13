@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { AKSI_IZIN, CAKUPAN_IZIN } from '../izin.js';
+import { AKSI_IZIN, CAKUPAN_IZIN } from '../administrasi/izin.js';
 import { alasan, idPositif, jejak, nik, tanggal, teksOpsional, teksWajib } from './umum.js';
 export const jenisFasyankes = z.enum(['klinik_pratama_rawat_jalan', 'klinik_pratama_rawat_inap']);
 export const environmentSatusehat = z.enum(['sandbox', 'produksi']);

@@ -1,6 +1,6 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { KASIR } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { hariWib } from '../data-access/repositori-kasir.js';
 const G = KASIR.galat;
 const rp = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);

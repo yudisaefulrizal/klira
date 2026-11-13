@@ -4,7 +4,7 @@ import { perbaikanPasienMasukan, cekDuplikatMasukan, filterPasien, idParam, regi
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /**
  * Rute pasien (3.1, 3.3). Melihat daftar dan data: fitur `pasien` atau `rekam-medis` (lihat); registrasi dan cek duplikat:
  * `pasien` input. Semua dibatasi pada fasyankes akun; pembukaan isi pasien dicatat audit `lihat`.

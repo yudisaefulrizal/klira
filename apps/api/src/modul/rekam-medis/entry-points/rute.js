@@ -4,7 +4,7 @@ import { KLINIS, idPositif } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 const param = z.object({ entitas: z.string().min(1).max(50), id: z.coerce.number().pipe(idPositif) });
 /** API verifikasi pengesahan generik: GET /api/pengesahan/:entitas/:id (izin lihat klinis atau rekam medis). */
 export function buatRutePengesahan(layananAkses, layananIzin, layanan) {

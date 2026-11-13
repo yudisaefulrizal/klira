@@ -4,7 +4,7 @@ import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasuk
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 const idSumber = z.object({ id: z.coerce.number().int().positive(), sumber_id: z.coerce.number().int().positive() });
 const idAnak = z.object({ id: z.coerce.number().int().positive(), anak_id: z.coerce.number().int().positive() });
 const queryRiwayat = z.object({ kecuali: z.coerce.number().int().positive().optional() });

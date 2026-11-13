@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /** Rute Rawat inap (3.1, 3.3): papan bed dan data (izin klinis lihat), admisi, penempatan, catatan harian, dan pemulangan (izin klinis input). Tidak ada rute hapus. */
 export function buatRuteRawatInap(layananAkses, layananIzin, layanan) {
     const rute = Router();

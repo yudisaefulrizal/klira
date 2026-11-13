@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { PDP } from '../teks.js';
-import { BUTIR_PERJANJIAN, DASAR_PEMROSESAN, DASAR_PEMUSNAHAN, HUBUNGAN_PEMOHON, JENIS_HAK, SALURAN_HAK } from '../pdp.js';
+import { PDP } from '../umum/teks.js';
+import { BUTIR_PERJANJIAN, DASAR_PEMROSESAN, DASAR_PEMUSNAHAN, HUBUNGAN_PEMOHON, JENIS_HAK, SALURAN_HAK } from '../administrasi/pdp.js';
 import { idPositif, teksWajib } from './umum.js';
 const G = PDP.galat;
 const kosongJadiTiada = (v) => (v === '' || v === null ? undefined : v);

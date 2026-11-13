@@ -1,5 +1,5 @@
 import { PERSETUJUAN_TINDAKAN } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 const G = PERSETUJUAN_TINDAKAN.galat;
 /**
  * Persetujuan tindakan (4.4): memakai tabel `persetujuan` jenis `tindakan` dengan teks persetujuan berversi. Tidak ada ubah atau hapus

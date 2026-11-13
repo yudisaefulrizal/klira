@@ -3,7 +3,7 @@ import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHa
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /**
  * Rute kasir (3.1, 3.3, 4.5): shift dan rekap, pembayaran, tutup kunjungan. Izin fitur `kasir` (lihat, input, perbaikan);
  * shift dimiliki akun yang membuka. Semua dibatasi pada fasyankes akun; satu-satunya hapus adalah item tambahan kasir sebelum tutup.

@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { BAGIAN_KLINIS } from '../klinis.js';
-import { REKAM_MEDIS } from '../teks.js';
+import { BAGIAN_KLINIS } from '../klinis/klinis.js';
+import { REKAM_MEDIS } from '../umum/teks.js';
 import { teksOpsional, teksWajib } from './umum.js';
 const kosongJadiTiada = (v) => (v === '' || v === null ? undefined : v);
 const tglIso = z.preprocess(kosongJadiTiada, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, REKAM_MEDIS.galat.tanggal).optional());

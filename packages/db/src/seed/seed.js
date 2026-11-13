@@ -1,7 +1,7 @@
 import { pathToFileURL as kliraFileUrl } from 'node:url';
 import * as db from '../data-access/index.js';
 import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
-import { hashKataSandi } from '../kata-sandi.js';
+import { hashKataSandi } from '../keamanan/kata-sandi.js';
 import { seedTerminologiContoh } from './terminologi.js';
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
 export async function jalankanSeed(koneksi, env = process.env) {

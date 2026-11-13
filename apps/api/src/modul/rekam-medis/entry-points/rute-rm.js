@@ -3,7 +3,7 @@ import { filterBerkas, filterPerbaikan, GALAT, idParam, keputusanPerbaikanMasuka
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /**
  * Rute Rekam medis (3.1, 4.2): perbaikan catatan (pemohon: izin `klinis` perbaikan; peninjau: `rekam-medis` perbaikan),
  * daftar berkas (lihat `rekam-medis` atau `klinis`). Dibatasi pada fasyankes akun; tidak ada rute hapus.

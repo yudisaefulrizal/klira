@@ -1,5 +1,5 @@
 import { REKAM_MEDIS, SKEMA_BAGIAN } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { bolehPerbaikiSendiri } from './pengesahan.js';
 const G = REKAM_MEDIS.galat;
 /**

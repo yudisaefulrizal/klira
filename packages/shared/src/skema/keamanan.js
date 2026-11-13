@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { KEAMANAN } from '../teks.js';
+import { KEAMANAN } from '../umum/teks.js';
 import { paginasi } from './umum.js';
 /** Batas dan nilai bawaan pengaturan keamanan (4.9); bawaan dipakai bila fasyankes belum menyimpan pengaturan. */
 export const BATAS_KEAMANAN = {

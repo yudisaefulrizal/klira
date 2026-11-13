@@ -1,5 +1,5 @@
 import { FARMASI, KASIR, ringkasPerubahanHarga, rupiahTeks } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 const G = FARMASI.galat;
 export function buatLayananFarmasi({ repo, audit }) {
     const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });

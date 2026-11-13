@@ -1,5 +1,5 @@
 import { KLINIS } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { bolehPerbaikiSendiri, hashIsi, pilihJenisAkun } from './pengesahan.js';
 export const keDto = (p) => ({
     versi: p.versi, pengguna_id: p.pengguna_id, pengguna_nama: p.pengguna_nama, jenis_akun: p.jenis_akun_nama, waktu: p.waktu.toISOString(), hash: p.hash,

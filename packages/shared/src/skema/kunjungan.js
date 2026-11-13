@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { REGISTRASI } from '../teks.js';
-import { AKSI_ANTREAN } from '../alur.js';
+import { REGISTRASI } from '../umum/teks.js';
+import { AKSI_ANTREAN } from '../umum/alur.js';
 import { idPositif, teksOpsional } from './umum.js';
 export const NILAI_JENIS_KUNJUNGAN = ['AMB', 'IMP'];
 export const NILAI_CARA_PEMBAYARAN = ['umum', 'jkn', 'asuransi'];

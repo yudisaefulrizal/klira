@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { RAWAT_INAP } from '../teks.js';
-import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT } from '../status.js';
+import { RAWAT_INAP } from '../umum/teks.js';
+import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT } from '../umum/status.js';
 import { tandaVitalIsi } from './klinis.js';
 import { NILAI_CARA_PEMBAYARAN } from './kunjungan.js';
 import { idPositif, teksOpsional, teksWajib } from './umum.js';

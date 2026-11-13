@@ -3,7 +3,7 @@ import { GALAT, idParam, persetujuanTindakanMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-import { galatValidasi, kirimHasil } from '../../hasil.js';
+import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 /** Rute persetujuan tindakan (izin `persetujuan`; lihat boleh juga lewat klinis atau rekam medis). Tidak ada rute ubah atau hapus. */
 export function buatRutePersetujuan(layananAkses, layananIzin, layanan) {
     const rute = Router();

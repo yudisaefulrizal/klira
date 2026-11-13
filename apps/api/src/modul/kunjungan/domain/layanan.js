@@ -1,6 +1,6 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { REGISTRASI, bolehAksiAntrean, bolehPindahTahap, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { KunjunganBerjalanError } from '../data-access/repositori.js';
 const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
 export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() }) {

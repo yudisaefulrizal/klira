@@ -8,10 +8,10 @@ import { navigasi } from './util/navigasi/navigasi.js';
 import { putuskanRute } from './util/sesi/penjaga-rute.js';
 import { pasangTemaTampilan } from './komponen/tampilan/tema-tampilan.js';
 import { pasangTataLetak } from './komponen/tampilan/tata-letak.js';
-import { pasangLogAudit } from './halaman/log-audit.js';
-import { pasangStatistik } from './halaman/statistik.js';
-import { pasangBerandaTugas } from './halaman/beranda-tugas.js';
-import { pasangPelindunganData } from './halaman/pelindungan-data.js';
+import { pasangLogAudit } from './halaman/log-audit/log-audit.js';
+import { pasangStatistik } from './halaman/statistik/statistik.js';
+import { pasangBerandaTugas } from './halaman/beranda-tugas/beranda-tugas.js';
+import { pasangPelindunganData } from './halaman/pelindungan-data/pelindungan-data.js';
 
 const halaman = {
   [HALAMAN_AWAL.daftarPasien]: ['daftar-pasien', 'HalamanDaftarPasien'],
@@ -48,11 +48,11 @@ export async function pasangAplikasiInternal(wadah) {
       } });
       else if (halaman[path]) {
         const [file, ekspor] = halaman[path];
-        const modul = await import(`./halaman/${file}.js`);
+        const modul = await import(`./halaman/${file}/${file}.js`);
         if (!aktif || versi !== generasi) { isi.remove(); return; }
         const el = modul[ekspor](); isi.append(el); tutupHalaman = () => { el.tutup?.(); isi.remove(); }; if (el.perbaruiAlamat) controller = { perbaruiAlamat: el.perbaruiAlamat, tutup: tutupHalaman };
       } else {
-        const { HalamanSementara } = await import('./halaman/placeholder.js'); isi.append(HalamanSementara({ judul: HALAMAN_MENU.find(h => h.path === path)?.label ?? '' })); tutupHalaman = () => isi.remove();
+        const { HalamanSementara } = await import('./halaman/placeholder/placeholder.js'); isi.append(HalamanSementara({ judul: HALAMAN_MENU.find(h => h.path === path)?.label ?? '' })); tutupHalaman = () => isi.remove();
       }
       if (controller) { const courant = controller; tutupHalaman = () => { courant.tutup(); isi.remove(); }; }
     } finally { if (versi === generasi) memasang = false; }

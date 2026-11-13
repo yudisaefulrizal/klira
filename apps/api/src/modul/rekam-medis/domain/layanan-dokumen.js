@@ -1,5 +1,5 @@
 import { REKAM_MEDIS } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { keDto } from './layanan.js';
 const G = REKAM_MEDIS.galat;
 /**

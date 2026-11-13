@@ -1,5 +1,5 @@
 import { batasAjukanUlang, batasPengajuan, berkasKurang, KLAIM, kodeKlaimBeda, sisaHariBatas, STATUS_KLAIM, statusAwalKlaim, statusKlaimEfektif, TRANSISI_KLAIM, unikPerKode, } from '@klira/shared';
-import { gagal } from '../../hasil.js';
+import { gagal } from '../../../umum/hasil.js';
 import { GalatKlaim } from '../data-access/repositori.js';
 const G = KLAIM.galat;
 const tglDb = (t) => new Date(`${t}T00:00:00.000+07:00`);

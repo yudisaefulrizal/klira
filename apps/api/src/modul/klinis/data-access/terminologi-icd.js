@@ -1,7 +1,7 @@
-import icd10 from '../data/icd10-2010.json' with { type: 'json' };
-import icd9cm from '../data/icd9cm-2010.json' with { type: 'json' };
-import indonesia from '../data/icd10-padanan-id.json' with { type: 'json' };
-import kptl from '../data/icd9cm-kptl-id.json' with { type: 'json' };
+import icd10 from '../../../../data/icd10-2010.json' with { type: 'json' };
+import icd9cm from '../../../../data/icd9cm-2010.json' with { type: 'json' };
+import indonesia from '../../../../data/icd10-padanan-id.json' with { type: 'json' };
+import kptl from '../../../../data/icd9cm-kptl-id.json' with { type: 'json' };
 export const sistemIcd = (sistem) => sistem === 'icd10' || sistem === 'icd9cm';
 // JSON ikut disalin oleh tsc ke dist; dimuat sekali, tanpa query DB atau unduhan saat digunakan.
 const padanan = indonesia.sha256_berkas_primer === icd10.sha256_primer ? indonesia.padanan : {};

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { PERSETUJUAN_TINDAKAN } from '../teks.js';
+import { PERSETUJUAN_TINDAKAN } from '../umum/teks.js';
 import { BENTUK_PERSETUJUAN, PENANDATANGAN_PERSETUJUAN } from './pasien.js';
-import { POLA_ICD9CM } from '../klinis.js';
+import { POLA_ICD9CM } from '../klinis/klinis.js';
 import { idPositif, teksWajib } from './umum.js';
 const kosongJadiNull = (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? null : v);
 /**
