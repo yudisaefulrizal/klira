@@ -50,14 +50,13 @@ const proyek = ['packages/shared', 'packages/db', 'apps/api', 'apps/whatsapp'];
 const kompilasi = (nama) => ['node_modules/typescript/bin/tsc', '-p', nama, '--noCheck', '--incremental', '--tsBuildInfoFile', `${nama}/dist/.dev.tsbuildinfo`];
 
 try {
-  await siapkan('Menyiapkan Prisma', ['node_modules/prisma/build/index.js', 'generate', '--schema', 'packages/db/prisma/schema.prisma']);
   for (const nama of proyek) await siapkan(`Menyiapkan ${nama}`, kompilasi(nama));
   console.log('[dev] Menjalankan API, engine WhatsApp, dan frontend. Tekan Ctrl+C untuk berhenti.');
   // Batasi Node ke output backend; file sementara Vite dapat memicu loop jika semua import dipantau.
   const perintah = [
     ...proyek.map((nama) => [...kompilasi(nama), '--watch', '--preserveWatchOutput']),
     ['--watch-path=apps/api/dist', '--watch-path=packages/shared/dist', '--watch-path=packages/db/dist', 'apps/api/dist/main.js'],
-    ['--watch-path=apps/whatsapp/dist', '--watch-path=packages/shared/dist', '--watch-path=packages/db/dist', 'apps/whatsapp/dist/main.js'],
+    ['--watch-path=apps/whatsapp/dist', '--watch-path=packages/shared/dist', '--watch-path=packages/db/dist', 'apps/whatsapp/dist/entry-points/main.js'],
   ];
   for (const argumen of perintah) {
     const anak = jalankan(argumen);

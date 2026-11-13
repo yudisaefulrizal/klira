@@ -1,92 +1,92 @@
 import { readFile } from 'node:fs/promises';
-import { bacaKlinikPublik } from './modul/website-klinik/data';
-import { htmlKlinikPublik } from './modul/website-klinik/html';
-import { buatRuteWebsitePublik, buatRuteWebsitePengaturan } from './modul/website-klinik/rute';
-import { buatRuteLayarPanggilan } from './modul/layar-panggilan/rute';
-import { GalatMeta } from './modul/instagram/meta';
-import { buatRuteInstagram } from './modul/instagram/rute';
-import { buatRuteInstagramPublik } from './modul/instagram/publik';
-import { buatRuteStatistik } from './modul/statistik/rute';
+import { bacaKlinikPublik } from './modul/website-klinik/data-access/data';
+import { htmlKlinikPublik } from './modul/website-klinik/domain/html';
+import { buatRuteWebsitePublik, buatRuteWebsitePengaturan } from './modul/website-klinik/entry-points/rute';
+import { buatRuteLayarPanggilan } from './modul/layar-panggilan/entry-points/rute';
+import { GalatMeta } from './modul/instagram/domain/meta';
+import { buatRuteInstagram } from './modul/instagram/entry-points/rute';
+import { buatRuteInstagramPublik } from './modul/instagram/entry-points/publik';
+import { buatRuteStatistik } from './modul/statistik/entry-points/rute';
 import path from 'path';
 import express from 'express';
 import type { ErrorRequestHandler, RequestHandler } from 'express';
 import { GALAT } from '@klira/shared';
 import type { ResponsGalat } from '@klira/shared';
 import { blokirSelamaWajibGanti } from './middleware/auth';
-import { PenampungAuditPrisma } from './middleware/audit';
-import { buatLayananAkses } from './modul/akses/layanan';
-import type { LayananAkses } from './modul/akses/layanan';
-import { PembatasPercobaan } from './modul/akses/pembatas';
-import { RepositoriAksesPrisma } from './modul/akses/repositori';
-import { buatRuteAkses } from './modul/akses/rute';
-import { buatLayananIzin } from './modul/akses/layanan-izin';
-import type { LayananIzin } from './modul/akses/layanan-izin';
-import { RepositoriIzinPrisma } from './modul/akses/repositori-izin';
-import { buatRuteIzin } from './modul/akses/rute-izin';
-import { bacaPengaturanKeamanan, buatLayananKeamanan } from './modul/keamanan/layanan';
-import { RepositoriKeamananPrisma } from './modul/keamanan/repositori';
-import { buatRuteKeamanan } from './modul/keamanan/rute';
-import { buatLayananAudit } from './modul/audit/layanan';
-import { RepositoriAuditPrisma } from './modul/audit/repositori';
-import { buatRuteAudit } from './modul/audit/rute';
-import { buatLayananMaster } from './modul/master/layanan';
-import { RepositoriMasterPrisma } from './modul/master/repositori';
-import { buatRuteMaster } from './modul/master/rute';
-import { buatLayananFasyankes } from './modul/fasyankes/layanan';
-import { RepositoriFasyankesPrisma } from './modul/fasyankes/repositori';
-import { buatRuteFasyankes } from './modul/fasyankes/rute';
-import { buatLayananPasien } from './modul/pasien/layanan';
-import { RepositoriPasienPrisma } from './modul/pasien/repositori';
-import { buatRutePasien } from './modul/pasien/rute';
-import { buatLayananKunjungan } from './modul/kunjungan/layanan';
-import { RepositoriKunjunganPrisma } from './modul/kunjungan/repositori';
-import { buatRuteKunjungan } from './modul/kunjungan/rute';
-import { buatLayananPengesahan } from './modul/rekam-medis/layanan';
-import { RepositoriPengesahanPrisma } from './modul/rekam-medis/repositori';
-import { buatRutePengesahan } from './modul/rekam-medis/rute';
-import { buatLayananKlinis } from './modul/klinis/layanan';
-import { buatLayananRm } from './modul/rekam-medis/layanan-rm';
-import { RepositoriRmPrisma } from './modul/rekam-medis/repositori-rm';
-import { buatRuteRm } from './modul/rekam-medis/rute-rm';
-import { buatLayananDokumen } from './modul/rekam-medis/layanan-dokumen';
-import { RepositoriDokumenPrisma } from './modul/rekam-medis/repositori-dokumen';
-import { buatRuteDokumen } from './modul/rekam-medis/rute-dokumen';
-import { buatLayananPdp } from './modul/pdp/layanan';
-import { RepositoriPdpPrisma } from './modul/pdp/repositori';
-import { buatRutePdp } from './modul/pdp/rute';
-import { buatLayananKlaim } from './modul/klaim/layanan';
-import { RepositoriKlaimPrisma } from './modul/klaim/repositori';
-import { buatRuteKlaim } from './modul/klaim/rute';
-import { buatLayananRawatInap } from './modul/rawat-inap/layanan';
-import { RepositoriRawatInapPrisma } from './modul/rawat-inap/repositori';
-import { buatRuteRawatInap } from './modul/rawat-inap/rute';
-import { RepositoriKlinisPrisma } from './modul/klinis/repositori';
-import { buatRuteKlinis } from './modul/klinis/rute';
-import { buatLayananAddendum } from './modul/rekam-medis/layanan-addendum';
-import { RepositoriAddendumPrisma } from './modul/rekam-medis/repositori-addendum';
-import { buatRuteAddendum } from './modul/rekam-medis/rute-addendum';
-import { buatLayananTagihan } from './modul/kasir/layanan';
-import { RepositoriTagihanPrisma } from './modul/kasir/repositori';
-import { buatRuteKasir } from './modul/kasir/rute';
-import { buatLayananFarmasi } from './modul/farmasi/layanan';
-import { RepositoriFarmasiPrisma } from './modul/farmasi/repositori';
-import { buatRuteFarmasi } from './modul/farmasi/rute';
-import { buatLayananKasir } from './modul/kasir/layanan-kasir';
-import { RepositoriKasirPrisma } from './modul/kasir/repositori-kasir';
-import { buatRuteKasirLengkap } from './modul/kasir/rute-kasir';
-import { buatLayananPenunjang } from './modul/penunjang/layanan';
-import { RepositoriPenunjangPrisma } from './modul/penunjang/repositori';
-import { buatRutePenunjang } from './modul/penunjang/rute';
-import { buatLayananPersetujuan } from './modul/persetujuan/layanan';
-import { RepositoriPersetujuanPrisma } from './modul/persetujuan/repositori';
-import { buatRutePersetujuan } from './modul/persetujuan/rute';
-import { buatLayananPengguna } from './modul/pengguna/layanan';
-import { RepositoriPenggunaPrisma } from './modul/pengguna/repositori';
-import { buatLayananPembuatanAkun } from './modul/pengguna/pembuatan';
-import { RepositoriAkunBaruPrisma } from './modul/pengguna/repositori-baru';
-import { buatRutePengguna } from './modul/pengguna/rute';
+import { PenampungAuditMysql } from './middleware/audit';
+import { buatLayananAkses } from './modul/akses/domain/layanan';
+import type { LayananAkses } from './modul/akses/domain/layanan';
+import { PembatasPercobaan } from './modul/akses/domain/pembatas';
+import { RepositoriAksesMysql } from './modul/akses/data-access/repositori';
+import { buatRuteAkses } from './modul/akses/entry-points/rute';
+import { buatLayananIzin } from './modul/akses/domain/layanan-izin';
+import type { LayananIzin } from './modul/akses/domain/layanan-izin';
+import { RepositoriIzinMysql } from './modul/akses/data-access/repositori-izin';
+import { buatRuteIzin } from './modul/akses/entry-points/rute-izin';
+import { bacaPengaturanKeamanan, buatLayananKeamanan } from './modul/keamanan/domain/layanan';
+import { RepositoriKeamananMysql } from './modul/keamanan/data-access/repositori';
+import { buatRuteKeamanan } from './modul/keamanan/entry-points/rute';
+import { buatLayananAudit } from './modul/audit/domain/layanan';
+import { RepositoriAuditMysql } from './modul/audit/data-access/repositori';
+import { buatRuteAudit } from './modul/audit/entry-points/rute';
+import { buatLayananMaster } from './modul/master/domain/layanan';
+import { RepositoriMasterMysql } from './modul/master/data-access/repositori';
+import { buatRuteMaster } from './modul/master/entry-points/rute';
+import { buatLayananFasyankes } from './modul/fasyankes/domain/layanan';
+import { RepositoriFasyankesMysql } from './modul/fasyankes/data-access/repositori';
+import { buatRuteFasyankes } from './modul/fasyankes/entry-points/rute';
+import { buatLayananPasien } from './modul/pasien/domain/layanan';
+import { RepositoriPasienMysql } from './modul/pasien/data-access/repositori';
+import { buatRutePasien } from './modul/pasien/entry-points/rute';
+import { buatLayananKunjungan } from './modul/kunjungan/domain/layanan';
+import { RepositoriKunjunganMysql } from './modul/kunjungan/data-access/repositori';
+import { buatRuteKunjungan } from './modul/kunjungan/entry-points/rute';
+import { buatLayananPengesahan } from './modul/rekam-medis/domain/layanan';
+import { RepositoriPengesahanMysql } from './modul/rekam-medis/data-access/repositori';
+import { buatRutePengesahan } from './modul/rekam-medis/entry-points/rute';
+import { buatLayananKlinis } from './modul/klinis/domain/layanan';
+import { buatLayananRm } from './modul/rekam-medis/domain/layanan-rm';
+import { RepositoriRmMysql } from './modul/rekam-medis/data-access/repositori-rm';
+import { buatRuteRm } from './modul/rekam-medis/entry-points/rute-rm';
+import { buatLayananDokumen } from './modul/rekam-medis/domain/layanan-dokumen';
+import { RepositoriDokumenMysql } from './modul/rekam-medis/data-access/repositori-dokumen';
+import { buatRuteDokumen } from './modul/rekam-medis/entry-points/rute-dokumen';
+import { buatLayananPdp } from './modul/pdp/domain/layanan';
+import { RepositoriPdpMysql } from './modul/pdp/data-access/repositori';
+import { buatRutePdp } from './modul/pdp/entry-points/rute';
+import { buatLayananKlaim } from './modul/klaim/domain/layanan';
+import { RepositoriKlaimMysql } from './modul/klaim/data-access/repositori';
+import { buatRuteKlaim } from './modul/klaim/entry-points/rute';
+import { buatLayananRawatInap } from './modul/rawat-inap/domain/layanan';
+import { RepositoriRawatInapMysql } from './modul/rawat-inap/data-access/repositori';
+import { buatRuteRawatInap } from './modul/rawat-inap/entry-points/rute';
+import { RepositoriKlinisMysql } from './modul/klinis/data-access/repositori';
+import { buatRuteKlinis } from './modul/klinis/entry-points/rute';
+import { buatLayananAddendum } from './modul/rekam-medis/domain/layanan-addendum';
+import { RepositoriAddendumMysql } from './modul/rekam-medis/data-access/repositori-addendum';
+import { buatRuteAddendum } from './modul/rekam-medis/entry-points/rute-addendum';
+import { buatLayananTagihan } from './modul/kasir/domain/layanan';
+import { RepositoriTagihanMysql } from './modul/kasir/data-access/repositori';
+import { buatRuteKasir } from './modul/kasir/entry-points/rute';
+import { buatLayananFarmasi } from './modul/farmasi/domain/layanan';
+import { RepositoriFarmasiMysql } from './modul/farmasi/data-access/repositori';
+import { buatRuteFarmasi } from './modul/farmasi/entry-points/rute';
+import { buatLayananKasir } from './modul/kasir/domain/layanan-kasir';
+import { RepositoriKasirMysql } from './modul/kasir/data-access/repositori-kasir';
+import { buatRuteKasirLengkap } from './modul/kasir/entry-points/rute-kasir';
+import { buatLayananPenunjang } from './modul/penunjang/domain/layanan';
+import { RepositoriPenunjangMysql } from './modul/penunjang/data-access/repositori';
+import { buatRutePenunjang } from './modul/penunjang/entry-points/rute';
+import { buatLayananPersetujuan } from './modul/persetujuan/domain/layanan';
+import { RepositoriPersetujuanMysql } from './modul/persetujuan/data-access/repositori';
+import { buatRutePersetujuan } from './modul/persetujuan/entry-points/rute';
+import { buatLayananPengguna } from './modul/pengguna/domain/layanan';
+import { RepositoriPenggunaMysql } from './modul/pengguna/data-access/repositori';
+import { buatLayananPembuatanAkun } from './modul/pengguna/domain/pembuatan';
+import { RepositoriAkunBaruMysql } from './modul/pengguna/data-access/repositori-baru';
+import { buatRutePengguna } from './modul/pengguna/entry-points/rute';
 
-import { buatRuteWhatsapp } from './modul/whatsapp/rute';
+import { buatRuteWhatsapp } from './modul/whatsapp/entry-points/rute';
 
 const direktoriWebBawaan = path.resolve(__dirname, '../../web/dist');
 
@@ -97,19 +97,19 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.set('trust proxy', true);
   app.use('/api/instagram', express.json({ limit: '12mb' }));
   app.use('/api/whatsapp', express.json({ limit: '12mb' }));
-  const repoKeamanan = new RepositoriKeamananPrisma();
+  const repoKeamanan = new RepositoriKeamananMysql();
   const layananAkses =
     opsi.layananAkses ??
     buatLayananAkses({
-      repo: new RepositoriAksesPrisma(),
-      audit: new PenampungAuditPrisma(),
+      repo: new RepositoriAksesMysql(),
+      audit: new PenampungAuditMysql(),
       pembatas: new PembatasPercobaan(),
       bacaPengaturan: (fasyankesId) => bacaPengaturanKeamanan(repoKeamanan, fasyankesId),
     });
   app.locals.layananAkses = layananAkses;
   app.use(buatRuteInstagramPublik(layananAkses));
   app.use(express.json({ limit: '100kb' }));
-  const layananIzin = opsi.layananIzin ?? buatLayananIzin({ repo: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() });
+  const layananIzin = opsi.layananIzin ?? buatLayananIzin({ repo: new RepositoriIzinMysql(), audit: new PenampungAuditMysql() });
   app.get('/api/kesehatan', (_req, res) => {
     res.json({ status: 'ok' });
   });
@@ -123,49 +123,49 @@ export function buatApp(direktoriWeb: string = direktoriWebBawaan, opsi: OpsiApp
   app.use('/api', buatRuteWhatsapp(layananAkses, layananIzin));
   app.use('/api', buatRuteInstagram(layananAkses, layananIzin));
   app.use('/api', buatRuteIzin(layananAkses, layananIzin));
-  app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterPrisma(), audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesPrisma(), audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienPrisma(), audit: new PenampungAuditPrisma() })));
-  const layananKunjungan = buatLayananKunjungan({ repo: new RepositoriKunjunganPrisma(), audit: new PenampungAuditPrisma() });
+  app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditMysql() })));
+  app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterMysql(), audit: new PenampungAuditMysql() })));
+  app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesMysql(), audit: new PenampungAuditMysql() })));
+  app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienMysql(), audit: new PenampungAuditMysql() })));
+  const layananKunjungan = buatLayananKunjungan({ repo: new RepositoriKunjunganMysql(), audit: new PenampungAuditMysql() });
   app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
   // Pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab nanti) dan modul klinis yang mendaftarkan penyedia isinya.
-  const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanPrisma(), audit: new PenampungAuditPrisma() });
-  const repoKlinis = new RepositoriKlinisPrisma();
-  const layananKlinis = buatLayananKlinis({ repo: repoKlinis, audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, kunjungan: layananKunjungan });
+  const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanMysql(), audit: new PenampungAuditMysql() });
+  const repoKlinis = new RepositoriKlinisMysql();
+  const layananKlinis = buatLayananKlinis({ repo: repoKlinis, audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, kunjungan: layananKunjungan });
   app.use('/api', buatRuteKlinis(layananAkses, layananIzin, layananKlinis));
-  const repoRm = new RepositoriRmPrisma();
+  const repoRm = new RepositoriRmMysql();
   app.use('/api', buatRuteRm(layananAkses, layananIzin, buatLayananRm({
-    repo: repoRm, pengesahanRepo: new RepositoriPengesahanPrisma(), klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+    repo: repoRm, pengesahanRepo: new RepositoriPengesahanMysql(), klinis: layananKlinis, baca: repoKlinis, audit: new PenampungAuditMysql(),
   })));
-  const repoDokumen = new RepositoriDokumenPrisma();
-  const layananDokumen = buatLayananDokumen({ repo: repoDokumen, repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditPrisma() });
+  const repoDokumen = new RepositoriDokumenMysql();
+  const layananDokumen = buatLayananDokumen({ repo: repoDokumen, repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditMysql() });
   app.use('/api', buatRuteDokumen(layananAkses, layananIzin, layananDokumen));
-  app.use('/api', buatRutePdp(layananAkses, layananIzin, buatLayananPdp({ repo: new RepositoriPdpPrisma(), audit: new PenampungAuditPrisma() })));
+  app.use('/api', buatRutePdp(layananAkses, layananIzin, buatLayananPdp({ repo: new RepositoriPdpMysql(), audit: new PenampungAuditMysql() })));
   app.use('/api', buatRuteKlaim(layananAkses, layananIzin, buatLayananKlaim({
-    repo: new RepositoriKlaimPrisma(), rm: { resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditPrisma(),
+    repo: new RepositoriKlaimMysql(), rm: { resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditMysql(),
   })));
   app.use('/api', buatRuteRawatInap(layananAkses, layananIzin, buatLayananRawatInap({
-    repo: new RepositoriRawatInapPrisma(), pengesahan: layananPengesahan, audit: new PenampungAuditPrisma(), simpanResume: layananDokumen.simpanResume,
+    repo: new RepositoriRawatInapMysql(), pengesahan: layananPengesahan, audit: new PenampungAuditMysql(), simpanResume: layananDokumen.simpanResume,
   })));
   // Addendum generik, penunjang (order, spesimen, hasil), persetujuan tindakan, dan tagihan dasar.
-  const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan });
+  const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan });
   app.use('/api', buatRuteAddendum(layananAkses, layananIzin, layananAddendum));
   app.use('/api', buatRutePenunjang(layananAkses, layananIzin, buatLayananPenunjang({
-    repo: new RepositoriPenunjangPrisma(), audit: new PenampungAuditPrisma(), pengesahan: layananPengesahan, addendum: layananAddendum,
+    repo: new RepositoriPenunjangMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, addendum: layananAddendum,
   })));
   app.use('/api', buatRutePersetujuan(layananAkses, layananIzin, buatLayananPersetujuan({
-    repo: new RepositoriPersetujuanPrisma(), audit: new PenampungAuditPrisma(),
+    repo: new RepositoriPersetujuanMysql(), audit: new PenampungAuditMysql(),
     tindakanKunjungan: async (fas, id) => ((await repoKlinis.bacaBagian(fas, id, 'tindakan'))?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama })),
   })));
-  app.use('/api', buatRuteFarmasi(layananAkses, layananIzin, buatLayananFarmasi({ repo: new RepositoriFarmasiPrisma(), audit: new PenampungAuditPrisma() })));
-  const repoFarmasi = new RepositoriFarmasiPrisma();
-  app.use('/api', buatRuteKasirLengkap(layananAkses, layananIzin, buatLayananKasir({ repo: new RepositoriKasirPrisma(), farmasi: repoFarmasi, audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanPrisma(), audit: new PenampungAuditPrisma() })));
+  app.use('/api', buatRuteFarmasi(layananAkses, layananIzin, buatLayananFarmasi({ repo: new RepositoriFarmasiMysql(), audit: new PenampungAuditMysql() })));
+  const repoFarmasi = new RepositoriFarmasiMysql();
+  app.use('/api', buatRuteKasirLengkap(layananAkses, layananIzin, buatLayananKasir({ repo: new RepositoriKasirMysql(), farmasi: repoFarmasi, audit: new PenampungAuditMysql() })));
+  app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanMysql(), audit: new PenampungAuditMysql() })));
   app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
-  app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditPrisma(), audit: new PenampungAuditPrisma() })));
-  app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaPrisma(), audit: new PenampungAuditPrisma() }),
-    buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruPrisma(), repoIzin: new RepositoriIzinPrisma(), audit: new PenampungAuditPrisma() })));
+  app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditMysql(), audit: new PenampungAuditMysql() })));
+  app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaMysql(), audit: new PenampungAuditMysql() }),
+    buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruMysql(), repoIzin: new RepositoriIzinMysql(), audit: new PenampungAuditMysql() })));
   app.use('/api', (_req, res) => {
     res.status(404).json({ galat: 'Rute tidak ditemukan' });
   });

@@ -1,5 +1,5 @@
+import * as db from '../data-access';
 import { readFileSync } from 'node:fs';
-import { PrismaClient } from '@prisma/client';
 import { tingkatWilayah } from '@klira/shared';
 import type { z } from '@klira/shared';
 
@@ -57,24 +57,24 @@ export function bacaCsvWilayah(teks: string): { baris: BarisWilayah[]; galat: st
 }
 
 /** Upsert per kode (idempoten). `contoh` menandai baris contoh agar tidak tertukar dengan data resmi. */
-export async function simpanWilayah(prisma: PrismaClient, baris: readonly BarisWilayah[], contoh: boolean): Promise<number> {
+export async function simpanWilayah(koneksi: db.Koneksi, baris: readonly BarisWilayah[], contoh: boolean): Promise<number> {
   for (const b of baris) {
-    await prisma.wilayah.upsert({ where: { kode: b.kode }, update: { nama: b.nama, tingkat: b.tingkat, induk_kode: b.induk_kode, contoh }, create: { ...b, contoh } });
+    await db.simpanWilayahUntukSimpanWilayah((b)?.kode, (b)?.nama, (b)?.tingkat, (b)?.induk_kode, contoh, b.nama, b.tingkat, b.induk_kode, koneksi);
   }
   return baris.length;
 }
 
-export const seedWilayahContoh = (prisma: PrismaClient) => simpanWilayah(prisma, WILAYAH_CONTOH, true);
+export const seedWilayahContoh = (koneksi: db.Koneksi) => simpanWilayah(koneksi, WILAYAH_CONTOH, true);
 
-export async function imporWilayahCsv(prisma: PrismaClient, teks: string): Promise<{ diimpor: number; galat: string[] }> {
+export async function imporWilayahCsv(koneksi: db.Koneksi, teks: string): Promise<{ diimpor: number; galat: string[] }> {
   const { baris, galat } = bacaCsvWilayah(teks);
-  return { diimpor: await simpanWilayah(prisma, baris, false), galat };
+  return { diimpor: await simpanWilayah(koneksi, baris, false), galat };
 }
 
 if (require.main === module) {
-  const prisma = new PrismaClient();
+  const koneksi = db.pool;
   const berkas = process.argv[2];
-  (berkas ? imporWilayahCsv(prisma, readFileSync(berkas, 'utf8')) : seedWilayahContoh(prisma).then((n) => ({ diimpor: n, galat: [] as string[] })))
-    .then((h) => { console.log(`Wilayah: ${h.diimpor} baris${berkas ? ' diimpor' : ' contoh'}; ${h.galat.length} baris dilewati`); return prisma.$disconnect(); })
-    .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1); });
+  (berkas ? imporWilayahCsv(koneksi, readFileSync(berkas, 'utf8')) : seedWilayahContoh(koneksi).then((n) => ({ diimpor: n, galat: [] as string[] })))
+    .then((h) => { console.log(`Wilayah: ${h.diimpor} baris${berkas ? ' diimpor' : ' contoh'}; ${h.galat.length} baris dilewati`); return db.tutupPool(); })
+    .catch(async (e) => { console.error(e); await db.tutupPool(); process.exit(1); });
 }

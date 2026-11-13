@@ -262,9 +262,9 @@ export type IndikatorKelas = keyof typeof INDIKATOR_KELAS.peta;
 export const DISPOSISI_PULANG = buat({
   home: { label: 'Pulang ke rumah', warna: 'hijau' },
   aadvice: { label: 'Pulang atas permintaan sendiri', warna: 'kuning' },
-  other_hcf: { label: 'Dirujuk ke fasilitas lain', warna: 'biru' },
-  exp_lt48h: { label: 'Meninggal kurang dari 48 jam', warna: 'merah' },
-  exp_gt48h: { label: 'Meninggal lebih dari 48 jam', warna: 'merah' },
+  'other-hcf': { label: 'Dirujuk ke fasilitas lain', warna: 'biru' },
+  'exp-lt48h': { label: 'Meninggal kurang dari 48 jam', warna: 'merah' },
+  'exp-gt48h': { label: 'Meninggal lebih dari 48 jam', warna: 'merah' },
   oth: { label: 'Lainnya', warna: 'abu' },
 });
 export type DisposisiPulang = keyof typeof DISPOSISI_PULANG.peta;

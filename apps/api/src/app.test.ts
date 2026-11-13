@@ -1,10 +1,10 @@
-jest.mock('./modul/website-klinik/data', () => ({ bacaKlinikPublik: jest.fn().mockResolvedValue(null), pengaturanWebsite: jest.fn() }));
+jest.mock('./modul/website-klinik/data-access/data', () => ({ bacaKlinikPublik: jest.fn().mockResolvedValue(null), pengaturanWebsite: jest.fn() }));
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import type { AddressInfo } from 'net';
 import { buatApp } from './app';
-import { bacaKlinikPublik } from './modul/website-klinik/data';
+import { bacaKlinikPublik } from './modul/website-klinik/data-access/data';
 
 describe('app', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'klira-web-'));

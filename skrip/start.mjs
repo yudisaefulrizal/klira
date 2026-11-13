@@ -10,7 +10,7 @@ function stop(code = 0) {
   process.exitCode = code;
   for (const child of children) child.kill('SIGTERM');
 }
-for (const file of ['apps/api/dist/main.js', 'apps/whatsapp/dist/main.js']) {
+for (const file of ['apps/api/dist/main.js', 'apps/whatsapp/dist/entry-points/main.js']) {
   const child = spawn(process.execPath, [file], { cwd, stdio: 'inherit' });
   children.push(child);
   child.on('error', (error) => {

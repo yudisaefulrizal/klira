@@ -1,10 +1,10 @@
-import { pasangWebsocketLayarPanggilan } from './modul/layar-panggilan/websocket';
-import { perbaruiTokenInstagram } from './modul/instagram/token';
-import { pulihkanPengirimanInstagram } from './modul/instagram/pemulihan';
-import { pasangWebsocketInstagram } from './modul/instagram/websocket';
+import { pasangWebsocketLayarPanggilan } from './modul/layar-panggilan/entry-points/websocket';
+import { perbaruiTokenInstagram } from './modul/instagram/domain/token';
+import { pulihkanPengirimanInstagram } from './modul/instagram/domain/pemulihan';
+import { pasangWebsocketInstagram } from './modul/instagram/entry-points/websocket';
 import { createServer } from 'node:http';
 import path from 'node:path';
-import { pasangWebsocketWhatsapp } from './modul/whatsapp/websocket';
+import { pasangWebsocketWhatsapp } from './modul/whatsapp/entry-points/websocket';
 import { buatApp } from './app';
 import { bacaKonfigurasi } from './config/lingkungan';
 

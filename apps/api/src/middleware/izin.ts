@@ -1,8 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { GALAT, punyaIzin } from '@klira/shared';
 import type { AksiIzin, PenggunaSaya, ResponsGalat } from '@klira/shared';
-import type { LayananIzin } from '../modul/akses/layanan-izin';
-import type { KonteksTindakan } from '../modul/akses/mesin-izin';
+import type { LayananIzin } from '../modul/akses/domain/layanan-izin';
+import type { KonteksTindakan } from '../modul/akses/domain/mesin-izin';
 
 export type SyaratIzin = [fitur: string, aksi: AksiIzin];
 export type OpsiWajibIzin = { konteks?: (req: Request) => KonteksTindakan };

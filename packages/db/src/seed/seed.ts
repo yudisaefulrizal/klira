@@ -1,44 +1,31 @@
-import { PrismaClient } from '@prisma/client';
+import * as db from '../data-access';
 import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
 import { hashKataSandi } from '../kata-sandi';
 import { seedTerminologiContoh } from './terminologi';
 
 /** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
-export async function jalankanSeed(prisma: PrismaClient, env: NodeJS.ProcessEnv = process.env): Promise<void> {
+export async function jalankanSeed(koneksi: db.Koneksi, env: NodeJS.ProcessEnv = process.env): Promise<void> {
   for (const izin of IZIN_AWAL) {
-    await prisma.izin.upsert({
-      where: { fitur_aksi_cakupan: izin },
-      update: {},
-      create: izin,
-    });
+    await db.simpanIzinUntukJalankanSeed((izin)?.fitur, (izin)?.aksi, (izin)?.cakupan, koneksi);
   }
-  let fas = await prisma.fasyankes.findUnique({ where: { kode_registrasi: 'KLINIK-CONTOH' } });
+  let fas = await db.ambilFasyankesUntukJalankanSeed('KLINIK-CONTOH', koneksi);
   if (!fas) {
-    const baru = await prisma.fasyankes.create({
-      data: { fasyankes_id: 0, nama: 'Klinik Contoh', jenis: 'klinik_pratama_rawat_jalan', kode_registrasi: 'KLINIK-CONTOH' },
-    });
-    fas = await prisma.fasyankes.update({ where: { id: baru.id }, data: { fasyankes_id: baru.id } });
+    const baru = await db.transaksi(async koneksiBaru => { const _hasil = await db.tambahFasyankesUntukJalankanSeed(0, 'Klinik Contoh', 'klinik_pratama_rawat_jalan', 'KLINIK-CONTOH', koneksiBaru); return db.tambahFasyankesUntukJalankanSeedHasil(_hasil.id, koneksiBaru); });
+    fas = await db.transaksi(async koneksiBaru => { (await db.ubahFasyankesUntukJalankanSeed(baru.id, koneksiBaru)); return db.tambahFasyankesUntukJalankanSeedHasil(baru.id, koneksiBaru); });
   }
   for (const j of JENIS_AKUN_AWAL) {
-    const jenis = await prisma.jenisAkun.upsert({
-      where: { fasyankes_id_nama: { fasyankes_id: fas.id, nama: j.nama } },
-      update: {},
-      create: { fasyankes_id: fas.id, nama: j.nama, syarat_profesi: j.syarat_profesi },
-    });
+    const jenis = await db.transaksi(async koneksiBaru => { (await db.simpanJenisAkunUntukJalankanSeed(fas.id, j.nama, j.syarat_profesi, koneksiBaru)); return db.simpanJenisAkunUntukJalankanSeedHasil(fas.id, j.nama, koneksiBaru); });
     const daftar = [
-      ...(await prisma.izin.findMany({ where: { fitur: { in: j.fitur } } })),
-      ...(j.lihat_saja?.length ? await prisma.izin.findMany({ where: { fitur: { in: j.lihat_saja }, aksi: 'lihat' } }) : []),
+      ...(await db.daftarIzinUntukJalankanSeed(j.fitur, koneksi)),
+      ...(j.lihat_saja?.length ? await db.daftarIzinUntukJalankanSeed2(j.lihat_saja, 'lihat', koneksi) : []),
     ];
-    await prisma.izinJenisAkun.createMany({
-      data: daftar.map((i) => ({ fasyankes_id: fas.id, jenis_akun_id: jenis.id, izin_id: i.id })),
-      skipDuplicates: true,
-    });
+    await db.tambahBanyakIzinJenisAkunUntukUbahJenisAkun(daftar.map((i) => ({ fasyankes_id: fas.id, jenis_akun_id: jenis.id, izin_id: i.id })), koneksi);
   }
-  await seedTeksPersetujuan(prisma);
-  await seedPimpinanPertama(prisma, fas.id, env);
+  await seedTeksPersetujuan(koneksi);
+  await seedPimpinanPertama(koneksi, fas.id, env);
   // Wilayah contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
   // Terminologi contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
-  if ((await prisma.kodeTerminologi.count()) === 0) await seedTerminologiContoh(prisma);
+  if ((await db.hitungKodeTerminologiUntukJalankanSeed(koneksi)) === 0) await seedTerminologiContoh(koneksi);
 }
 
 /** Teks general consent bawaan (versi 1, semua klinik); klinik dapat menambah versi sendiri. Idempoten. */
@@ -69,43 +56,28 @@ export const TEKS_PERSETUJUAN_TINDAKAN_V1 = {
   ].join('\n'),
 };
 
-export async function seedTeksPersetujuan(prisma: PrismaClient): Promise<void> {
+export async function seedTeksPersetujuan(koneksi: db.Koneksi): Promise<void> {
   for (const t of [TEKS_GENERAL_CONSENT_V1, TEKS_PERSETUJUAN_TINDAKAN_V1]) {
-    const ada = await prisma.teksPersetujuan.findFirst({ where: { fasyankes_id: null, jenis: t.jenis, versi: t.versi } });
-    if (!ada) await prisma.teksPersetujuan.create({ data: { ...t, aktif: true } });
+    const ada = await db.cariTeksPersetujuanUntukSeedTeksPersetujuan(null, t.jenis, t.versi, koneksi);
+    if (!ada) await db.tambahTeksPersetujuanUntukSeedTeksPersetujuan((t)?.jenis, (t)?.versi, (t)?.judul, (t)?.tujuan, (t)?.isi, true, koneksi);
   }
 }
 
 /** Akun Pimpinan pertama dengan kredensial awal statis; idempoten (tidak menimpa akun yang sudah ada). */
-async function seedPimpinanPertama(prisma: PrismaClient, fasyankesId: number, env: NodeJS.ProcessEnv): Promise<void> {
+async function seedPimpinanPertama(koneksi: db.Koneksi, fasyankesId: number, env: NodeJS.ProcessEnv): Promise<void> {
   // Kredensial awal statis yang sama untuk semua klinik (2.4); wajib diganti saat masuk pertama.
   const { username, kataSandi } = kredensialAwal(env);
   // Bila klinik sudah punya akun (termasuk setelah kredensial awal diganti), tidak membuat ulang kredensial awal.
-  if ((await prisma.pengguna.count({ where: { fasyankes_id: fasyankesId } })) > 0) return;
-  const pengguna = await prisma.pengguna.create({
-    data: {
-      fasyankes_id: fasyankesId,
-      nama: 'Pimpinan Pertama',
-      nik: '0000000000000000',
-      username,
-      kata_sandi_hash: await hashKataSandi(kataSandi),
-      wajib_ganti_kredensial: true,
-    },
-  });
-  const jenis = await prisma.jenisAkun.findUniqueOrThrow({
-    where: { fasyankes_id_nama: { fasyankes_id: fasyankesId, nama: 'Pimpinan fasyankes' } },
-  });
-  await prisma.penugasanJenis.create({
-    data: { fasyankes_id: fasyankesId, pengguna_id: pengguna.id, jenis_akun_id: jenis.id, mulai: new Date() },
-  });
-  await prisma.logAudit.create({
-    data: { fasyankes_id: fasyankesId, pengguna_id: pengguna.id, aksi: 'input', entitas: 'pengguna', entitas_id: pengguna.id, keterangan: 'Akun Pimpinan pertama dibuat (seed)' },
-  });
+  if ((await db.hitungPenggunaUntukSeedPimpinanPertama(fasyankesId, koneksi)) > 0) return;
+  const pengguna = await db.transaksi(async koneksiBaru => { const _hasil = await db.tambahPenggunaUntukSeedPimpinanPertama(fasyankesId, 'Pimpinan Pertama', '0000000000000000', username, await hashKataSandi(kataSandi), true, koneksiBaru); return db.tambahPenggunaUntukBuatAkunHasil(_hasil.id, koneksiBaru); });
+  const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(fasyankesId, 'Pimpinan fasyankes', koneksi);
+  await db.tambahPenugasanJenisUntukSeedPimpinanPertama(fasyankesId, pengguna.id, jenis.id, new Date(), koneksi);
+  await db.tambahLogAuditUntukSeedPimpinanPertama(fasyankesId, pengguna.id, 'input', 'pengguna', 'Akun Pimpinan pertama dibuat (seed)', koneksi);
 }
 
 if (require.main === module) {
-  const prisma = new PrismaClient();
-  jalankanSeed(prisma)
-    .then(() => prisma.$disconnect())
-    .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1); });
+  const koneksi = db.pool;
+  jalankanSeed(koneksi)
+    .then(() => db.tutupPool())
+    .catch(async (e) => { console.error(e); await db.tutupPool(); process.exit(1); });
 }

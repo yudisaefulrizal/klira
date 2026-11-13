@@ -424,7 +424,7 @@ c. API: Express
 d. Web: React dengan Vite
 e. Validasi: Zod
 f. Basis data: MySQL
-g. Akses data: Prisma
+g. Akses data: mysql2, SQL berparameter di packages/db
 h. Antrean kerja: BullMQ dengan Redis
 i. Uji: Jest
 
@@ -493,7 +493,7 @@ src/
 d. packages
 ```
 shared/src/            skema/, izin.ts, status.ts, tipe.ts
-db/                    prisma/schema.prisma, prisma/migrations/, seed/
+db/                    migrasi/*.sql, src/data-access/, src/seed/
 integrasi/src/         satusehat/, bpjs/, umum/
 ```
 

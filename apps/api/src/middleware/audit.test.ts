@@ -2,10 +2,10 @@ import type { AddressInfo } from 'net';
 import fs from 'fs';
 import path from 'path';
 import express from 'express';
-import { buatFasilitasAudit, idDariParam, PenampungAuditPrisma } from './audit';
+import { buatFasilitasAudit, idDariParam, PenampungAuditMysql } from './audit';
 import type { EntriAudit, PenampungAudit } from './audit';
-import type { RepositoriAudit } from '../modul/audit/repositori';
-import { selCsv } from '../modul/audit/csv';
+import type { RepositoriAudit } from '../modul/audit/data-access/repositori';
+import { selCsv } from '../modul/audit/domain/csv';
 
 function pasang(penampung: PenampungAudit) {
   const f = buatFasilitasAudit(penampung);
@@ -66,7 +66,7 @@ describe('penampung audit', () => {
   it('kegagalan tulis dicatat ke log aplikasi dan dilempar (tidak diam-diam)', async () => {
     const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const repo = { tambah: async () => { throw new Error('putus'); } } as unknown as RepositoriAudit;
-    await expect(new PenampungAuditPrisma(repo).catat({ aksi: 'masuk', entitas: 'sesi' })).rejects.toThrow('Gagal menulis log audit');
+    await expect(new PenampungAuditMysql(repo).catat({ aksi: 'masuk', entitas: 'sesi' })).rejects.toThrow('Gagal menulis log audit');
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
   });
@@ -74,7 +74,7 @@ describe('penampung audit', () => {
   it('memotong keterangan dan alamat serta mengisi waktu', async () => {
     const simpan: unknown[] = [];
     const repo = { tambah: async (c: unknown) => void simpan.push(c) } as unknown as RepositoriAudit;
-    await new PenampungAuditPrisma(repo).catat({ aksi: 'lihat', entitas: 'pasien', keterangan: 'x'.repeat(500), alamat: 'a'.repeat(100) });
+    await new PenampungAuditMysql(repo).catat({ aksi: 'lihat', entitas: 'pasien', keterangan: 'x'.repeat(500), alamat: 'a'.repeat(100) });
     const c = simpan[0] as { keterangan: string; alamat: string; waktu: Date };
     expect(c.keterangan).toHaveLength(255);
     expect(c.alamat).toHaveLength(64);
@@ -83,7 +83,7 @@ describe('penampung audit', () => {
 });
 
 describe('log hanya-tambah', () => {
-  it('tidak ada update/delete/upsert pada logAudit di kode non-uji', () => {
+  it('log audit hanya ditulis melalui repositori audit', () => {
     const akar = path.resolve(__dirname, '..');
     const berkas: string[] = [];
     const jelajah = (d: string) => {
@@ -94,9 +94,9 @@ describe('log hanya-tambah', () => {
       }
     };
     jelajah(akar);
-    for (const b of berkas) expect(fs.readFileSync(b, 'utf8')).not.toMatch(/logAudit\.(update|updateMany|delete|deleteMany|upsert)/);
+    for (const b of berkas) expect(fs.readFileSync(b, 'utf8')).not.toMatch(/db\.(ubah|hapus|simpan)LogAudit/);
     // satu-satunya penulis log_audit adalah repositori audit
-    const penulis = berkas.filter((b) => /logAudit\.create/.test(fs.readFileSync(b, 'utf8')));
+    const penulis = berkas.filter((b) => /db\.tambahLogAuditUntukTambah/.test(fs.readFileSync(b, 'utf8')));
     expect(penulis.map((p) => path.basename(p))).toEqual(['repositori.ts']);
   });
 });

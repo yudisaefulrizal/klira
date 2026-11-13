@@ -4,24 +4,26 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
-    "typecheck": "prisma generate && tsc --noEmit",
-    "build": "prisma generate && tsc",
-    "generate": "prisma generate",
-    "validate": "prisma validate",
-    "migrasi:dev": "node ../../skrip/dengan-env.mjs node ../../node_modules/prisma/build/index.js migrate dev",
-    "migrasi:terapkan": "node ../../skrip/dengan-env.mjs node ../../node_modules/prisma/build/index.js migrate deploy",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
     "seed": "node ../../skrip/dengan-env.mjs node dist/seed/seed.js",
     "seed:wilayah": "node ../../skrip/dengan-env.mjs node dist/seed/wilayah.js",
-    "seed:terminologi": "node ../../skrip/dengan-env.mjs node dist/seed/terminologi.js"
+    "seed:terminologi": "node ../../skrip/dengan-env.mjs node dist/seed/terminologi.js",
+    "migrasi": "node ../../skrip/dengan-env.mjs node dist/migrasi/entry-points/cli.js",
+    "seed:demo": "node ../../skrip/dengan-env.mjs node dist/seed/demo.js"
   },
   "dependencies": {
     "@klira/shared": "*",
-    "@prisma/client": "^6.19.3"
+    "mysql2": "^3.24.6"
   },
-  "devDependencies": {
-    "prisma": "^6.19.3"
-  },
-  "prisma": {
-    "schema": "prisma/schema.prisma"
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./uji": {
+      "types": "./dist/uji/index.d.ts",
+      "default": "./dist/uji/index.js"
+    }
   }
 }

@@ -1,8 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import { GALAT, GANTI_KREDENSIAL } from '@klira/shared';
 import type { ResponsGalat } from '@klira/shared';
-import type { LayananAkses } from '../modul/akses/layanan';
-import { NAMA_COOKIE_SESI } from '../modul/akses/skema';
+import type { LayananAkses } from '../modul/akses/domain/layanan';
+import { NAMA_COOKIE_SESI } from '../modul/akses/domain/skema';
 
 export function bacaCookie(header: string | undefined, nama: string): string | undefined {
   if (!header) return undefined;

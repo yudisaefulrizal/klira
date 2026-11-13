@@ -1,5 +1,5 @@
+import * as db from '../data-access';
 import { readFileSync } from 'node:fs';
-import { PrismaClient } from '@prisma/client';
 import { SISTEM_TERMINOLOGI } from '@klira/shared';
 import type { SistemTerminologi } from '@klira/shared';
 import { pecahBaris } from './wilayah';
@@ -66,28 +66,24 @@ export function bacaCsvTerminologi(teks: string): { baris: BarisTerminologi[]; g
 }
 
 /** Upsert per (sistem, kode); idempoten. `contoh` menandai baris contoh agar tidak tertukar dengan data resmi. */
-export async function simpanTerminologi(prisma: PrismaClient, baris: readonly BarisTerminologi[], contoh: boolean): Promise<number> {
+export async function simpanTerminologi(koneksi: db.Koneksi, baris: readonly BarisTerminologi[], contoh: boolean): Promise<number> {
   for (const b of baris) {
-    await prisma.kodeTerminologi.upsert({
-      where: { sistem_kode: { sistem: b.sistem, kode: b.kode } },
-      update: { nama: b.nama, aktif: b.aktif, contoh },
-      create: { ...b, contoh },
-    });
+    await db.simpanKodeTerminologiUntukSimpanTerminologi((b)?.sistem, (b)?.kode, (b)?.nama, (b)?.aktif, contoh, b.nama, b.aktif, koneksi);
   }
   return baris.length;
 }
 
-export const seedTerminologiContoh = (prisma: PrismaClient) => simpanTerminologi(prisma, TERMINOLOGI_CONTOH, true);
+export const seedTerminologiContoh = (koneksi: db.Koneksi) => simpanTerminologi(koneksi, TERMINOLOGI_CONTOH, true);
 
-export async function imporTerminologiCsv(prisma: PrismaClient, teks: string): Promise<{ diimpor: number; galat: string[] }> {
+export async function imporTerminologiCsv(koneksi: db.Koneksi, teks: string): Promise<{ diimpor: number; galat: string[] }> {
   const { baris, galat } = bacaCsvTerminologi(teks);
-  return { diimpor: await simpanTerminologi(prisma, baris, false), galat };
+  return { diimpor: await simpanTerminologi(koneksi, baris, false), galat };
 }
 
 if (require.main === module) {
-  const prisma = new PrismaClient();
+  const koneksi = db.pool;
   const berkas = process.argv[2];
-  (berkas ? imporTerminologiCsv(prisma, readFileSync(berkas, 'utf8')) : seedTerminologiContoh(prisma).then((n) => ({ diimpor: n, galat: [] as string[] })))
-    .then((h) => { console.log(`Terminologi: ${h.diimpor} baris${berkas ? ' diimpor' : ' contoh'}; ${h.galat.length} baris dilewati`); return prisma.$disconnect(); })
-    .catch(async (e) => { console.error(e); await prisma.$disconnect(); process.exit(1); });
+  (berkas ? imporTerminologiCsv(koneksi, readFileSync(berkas, 'utf8')) : seedTerminologiContoh(koneksi).then((n) => ({ diimpor: n, galat: [] as string[] })))
+    .then((h) => { console.log(`Terminologi: ${h.diimpor} baris${berkas ? ' diimpor' : ' contoh'}; ${h.galat.length} baris dilewati`); return db.tutupPool(); })
+    .catch(async (e) => { console.error(e); await db.tutupPool(); process.exit(1); });
 }

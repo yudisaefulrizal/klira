@@ -16,10 +16,6 @@ if (existsSync(berkas)) {
 }
 const url = (nama) => `mysql://${encodeURIComponent(env.DB_USER)}:${encodeURIComponent(env.DB_PASSWORD ?? '')}@${env.DB_HOST || '127.0.0.1'}:${env.DB_PORT || '3306'}/${nama}`;
 if (env.DB_USER && env.DB_NAME && !env.DATABASE_URL) env.DATABASE_URL = url(env.DB_NAME);
-// Proyek memakai satu database. Tes database destruktif tetap dilewati.
-delete env.DB_NAME_UJI;
-delete env.DATABASE_URL_UJI;
-
 const [perintah, ...argumen] = process.argv.slice(2);
 const anak = spawn(perintah, argumen, { stdio: 'inherit', env });
 anak.on('exit', (kode, sinyal) => process.exit(kode ?? (sinyal ? 1 : 0)));

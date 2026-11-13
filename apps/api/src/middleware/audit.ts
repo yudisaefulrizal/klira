@@ -1,8 +1,8 @@
 import type { Request, RequestHandler, Response } from 'express';
 import { GALAT } from '@klira/shared';
 import type { AksiAudit, PenggunaSaya, ResponsGalat } from '@klira/shared';
-import { RepositoriAuditPrisma } from '../modul/audit/repositori';
-import type { RepositoriAudit } from '../modul/audit/repositori';
+import { RepositoriAuditMysql } from '../modul/audit/data-access/repositori';
+import type { RepositoriAudit } from '../modul/audit/data-access/repositori';
 
 export type EntriAudit = {
   fasyankes_id?: number | null;
@@ -31,8 +31,8 @@ export class GalatAudit extends Error {
 export const alamatDari = (req: Request): string => req.ip ?? 'tidak-diketahui';
 
 /** Penampung bawaan: menulis hanya-tambah lewat repositori audit. Kegagalan dicatat ke log aplikasi lalu dilempar. */
-export class PenampungAuditPrisma implements PenampungAudit {
-  constructor(private readonly repo: RepositoriAudit = new RepositoriAuditPrisma()) {}
+export class PenampungAuditMysql implements PenampungAudit {
+  constructor(private readonly repo: RepositoriAudit = new RepositoriAuditMysql()) {}
 
   async catat(entri: EntriAudit): Promise<void> {
     try {
@@ -53,7 +53,7 @@ export class PenampungAuditPrisma implements PenampungAudit {
   }
 }
 
-const penampungBawaan = new PenampungAuditPrisma();
+const penampungBawaan = new PenampungAuditMysql();
 /** Layanan pencatatan audit (jalur tunggal). */
 export const catatAudit = (entri: EntriAudit, penampung: PenampungAudit = penampungBawaan): Promise<void> => penampung.catat(entri);
 

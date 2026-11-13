@@ -1,1 +1,0 @@
-ALTER TABLE `pasien` ADD COLUMN `nomor_hp` VARCHAR(20) NULL;

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import * as uji from '@klira/db/uji';
 import { WILAYAH_CONTOH, bacaCsvWilayah, imporWilayahCsv, seedWilayahContoh } from './wilayah';
 
 describe('CSV wilayah', () => {
@@ -23,21 +23,21 @@ describe('CSV wilayah', () => {
   });
 });
 
-const url = process.env.DATABASE_URL_UJI;
-(url ? describe : describe.skip)('wilayah di klira_uji', () => {
-  const prisma = new PrismaClient({ datasourceUrl: url });
+const url = (process.env.KLIRA_UJI_DB === '1' ? process.env.DATABASE_URL : undefined);
+(url ? describe : describe.skip)('wilayah di database pengujian', () => {
+
   afterAll(async () => {
-    await prisma.wilayah.deleteMany({ where: { kode: { in: ['97', '97.01', ...WILAYAH_CONTOH.map((w) => w.kode)] } } });
-    await prisma.$disconnect();
+    await uji.hapusWilayahUntukSeedWilayahTest(['97', '97.01', ...WILAYAH_CONTOH.map((w) => w.kode)]);
+    await uji.tutupPool();
   });
 
   it('impor idempoten, contoh ditandai, impor resmi menimpa penanda', async () => {
-    await seedWilayahContoh(prisma);
-    await seedWilayahContoh(prisma);
-    expect(await prisma.wilayah.count({ where: { kode: { startsWith: '99' } } })).toBe(WILAYAH_CONTOH.length);
-    expect((await prisma.wilayah.findUniqueOrThrow({ where: { kode: '99' } })).contoh).toBe(true);
-    const h = await imporWilayahCsv(prisma, '97,Uji Impor\n97.01,Uji Kab');
+    await seedWilayahContoh(uji.pool);
+    await seedWilayahContoh(uji.pool);
+    expect(await uji.hitungWilayahUntukSeedWilayahTest('99')).toBe(WILAYAH_CONTOH.length);
+    expect((await uji.wajibWilayahUntukSeedWilayahTest('99')).contoh).toBe(true);
+    const h = await imporWilayahCsv(uji.pool, '97,Uji Impor\n97.01,Uji Kab');
     expect(h).toEqual({ diimpor: 2, galat: [] });
-    expect((await prisma.wilayah.findUniqueOrThrow({ where: { kode: '97.01' } })).contoh).toBe(false);
+    expect((await uji.wajibWilayahUntukSeedWilayahTest('97.01')).contoh).toBe(false);
   });
 });

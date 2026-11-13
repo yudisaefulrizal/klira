@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import * as uji from '@klira/db/uji';
 import { TANDA_VITAL } from '@klira/shared';
 import { TERMINOLOGI_CONTOH, bacaCsvTerminologi, imporTerminologiCsv, seedTerminologiContoh } from './terminologi';
 
@@ -26,22 +26,22 @@ describe('CSV terminologi', () => {
   });
 });
 
-const url = process.env.DATABASE_URL_UJI;
-(url ? describe : describe.skip)('terminologi di klira_uji', () => {
-  const prisma = new PrismaClient({ datasourceUrl: url });
+const url = (process.env.KLIRA_UJI_DB === '1' ? process.env.DATABASE_URL : undefined);
+(url ? describe : describe.skip)('terminologi di database pengujian', () => {
+
   afterAll(async () => {
-    await prisma.kodeTerminologi.deleteMany({ where: { kode: { in: ['ZZ9.9', ...TERMINOLOGI_CONTOH.map((c) => c.kode)] } } });
-    await prisma.$disconnect();
+    await uji.hapusKodeTerminologiUntukSeedTerminologiTest(['ZZ9.9', ...TERMINOLOGI_CONTOH.map((c) => c.kode)]);
+    await uji.tutupPool();
   });
 
   it('seed contoh idempoten dan bertanda contoh; impor CSV menimpa tanpa tanda contoh', async () => {
-    await seedTerminologiContoh(prisma);
-    await seedTerminologiContoh(prisma);
-    const i10 = await prisma.kodeTerminologi.findMany({ where: { sistem: 'icd10', kode: 'I10' } });
+    await seedTerminologiContoh(uji.pool);
+    await seedTerminologiContoh(uji.pool);
+    const i10 = await uji.daftarKodeTerminologiUntukSeedTerminologiTest('icd10', 'I10');
     expect(i10).toHaveLength(1);
     expect(i10[0].contoh).toBe(true);
-    const h = await imporTerminologiCsv(prisma, 'icd10,ZZ9.9,Kode uji impor');
+    const h = await imporTerminologiCsv(uji.pool, 'icd10,ZZ9.9,Kode uji impor');
     expect(h).toEqual({ diimpor: 1, galat: [] });
-    expect((await prisma.kodeTerminologi.findFirstOrThrow({ where: { sistem: 'icd10', kode: 'ZZ9.9' } })).contoh).toBe(false);
+    expect((await uji.wajibKodeTerminologiUntukSeedTerminologiTest('icd10', 'ZZ9.9')).contoh).toBe(false);
   });
 });
