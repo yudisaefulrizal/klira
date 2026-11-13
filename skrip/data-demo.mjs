@@ -242,6 +242,8 @@ const PASIEN = [
   ['3273010707550112', 'Darmawan Hadi', 'laki_laki', '1955-07-07', 'Cirebon', 'Pensiunan', 'Islam', '081234560112', 'jkn'],
 ];
 
+// Desa/kelurahan (kode wilayah Kota Bandung) agar pencarian pasien menampilkan nama desa.
+const DESA_DEMO = ['32.73.01.1001', '32.73.08.1003', '32.73.15.1003', '32.73.23.1003'];
 async function siapkanPasien() {
   console.log('\n[5] Registrasi pasien (petugas pendaftaran)');
   const teks = (await api('daftar', 'GET', '/pasien/teks-persetujuan')).data;
@@ -253,6 +255,7 @@ async function siapkanPasien() {
       jalur_identitas: 'nik', nik, nama, nomor_hp, tanggal_lahir, jenis_kelamin, tempat_lahir, pekerjaan, agama,
       ibu_kandung: 'Ibu ' + nama.split(' ')[0], bahasa: 'Indonesia', status_kawin: 'Kawin', pendidikan: 'SMA',
       alamat: `Jl. Contoh No. ${id.length + 1}, Bandung (alamat fiktif)`,
+      kode_wilayah: DESA_DEMO[id.length % DESA_DEMO.length],
       jkn_nomor_kartu: bayar === 'jkn' ? `000${nik.slice(-10)}` : null,
       asuransi_nama: bayar === 'asuransi' ? 'Asuransi Demo Sehat (fiktif)' : null,
       asuransi_nomor_polis: bayar === 'asuransi' ? `POL-${nik.slice(-6)}` : null,
@@ -265,7 +268,7 @@ async function siapkanPasien() {
   if (!anak.length) {
     const p = await wajib('pasien anak Kevin Pratama (dengan wali)', 'daftar', 'POST', '/pasien', {
       jalur_identitas: 'nik', nik: '3273010505200113', nama: 'Kevin Pratama', tanggal_lahir: '2020-05-05', jenis_kelamin: 'laki_laki', tempat_lahir: 'Bandung',
-      alamat: 'Jl. Contoh No. 99, Bandung (alamat fiktif)', tidak_cakap: true,
+      alamat: 'Jl. Contoh No. 99, Bandung (alamat fiktif)', kode_wilayah: DESA_DEMO[0], tidak_cakap: true,
       wali: [{ hubungan: 'Ibu', nama: 'Siti Aminah', kontak: '081234560101' }],
       persetujuan: { teks_persetujuan_id: teks.id, bentuk: 'tertulis', penandatangan: 'wali', wali_ke: 0, setuju: true },
     });

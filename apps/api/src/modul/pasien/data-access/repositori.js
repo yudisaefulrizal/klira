@@ -1,4 +1,5 @@
 import * as db from '@klira/db';
+import { ambilWilayah } from '../../wilayah/data-access/data.js';
 import { TAHAP_BERJALAN, rentangHariWib, tanggalWib, formatNomorRm, kodeAntrean, umurTahun } from '@klira/shared';
 export class WaliTidakSahError extends Error {
 }
@@ -79,7 +80,10 @@ export class RepositoriPasienMysql {
             };
             return {
                 id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, jenis_kelamin: p.jenis_kelamin, umur_tahun: umurTahun(tgl(p.tanggal_lahir)),
-                status_identitas: p.status_identitas, kunjungan,
+                status_identitas: p.status_identitas,
+                // Nama desa/kelurahan dari kode wilayah, untuk membedakan pasien bernama sama di hasil pencarian.
+                desa_nama: p.kode_wilayah ? ambilWilayah(p.kode_wilayah)?.nama ?? null : null,
+                kunjungan,
             };
         });
     }
