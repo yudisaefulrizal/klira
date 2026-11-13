@@ -1,7 +1,7 @@
-import { TombolPesan as TombolWa, PanelPesan as PanelWa } from './komponen/pesan/pesan.js';
-import { TombolPesan as TombolIg, PanelPesan as PanelIg } from './komponen/instagram/pesan.js';
-import { sesiPesan as whatsapp } from './komponen/pesan/konteks-pesan.js';
-import { sesiPesan as instagram } from './komponen/instagram/konteks-pesan.js';
+import { TombolPesan as TombolWa, PanelPesan as PanelWa } from './halaman/pesan/whatsapp/panel-pesan.js';
+import { TombolPesan as TombolIg, PanelPesan as PanelIg } from './halaman/pesan/instagram/panel-pesan.js';
+import { sesiPesan as whatsapp } from './halaman/pesan/whatsapp/konteks-pesan.js';
+import { sesiPesan as instagram } from './halaman/pesan/instagram/konteks-pesan.js';
 import { HALAMAN_AWAL, HALAMAN_MENU } from '@klira/shared';
 import { sesiPengguna, penggunaSaatIni } from './util/sesi/konteks-pengguna.js';
 import { navigasi } from './util/navigasi/navigasi.js';

@@ -1,10 +1,10 @@
 import { punyaIzin } from '@klira/shared';
-import { BersihkanPesan } from './bersihkan-pesan.js';
+import { BersihkanPesan } from '../bersama/bersihkan-pesan.js';
 import { sesiPesan } from './konteks-pesan.js';
-import { aksiKoneksiWa, koneksiWa } from '../../api-klien/whatsapp.js';
-import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
-import { token } from '../../gaya/token.js';
-import { tombol, peringatan } from '../ui/primitif.js';
+import { aksiKoneksiWa, koneksiWa } from '../../../api-klien/whatsapp.js';
+import { penggunaSaatIni } from '../../../util/sesi/konteks-pengguna.js';
+import { token } from '../../../gaya/token.js';
+import { tombol, peringatan } from '../../../komponen/ui/primitif.js';
 export function KoneksiWhatsapp() {
   const { pengguna } = penggunaSaatIni(), boleh = !!pengguna && punyaIzin(pengguna, 'whatsapp', 'lihat'), el = document.createElement('div'), compte = document.createElement('div'), etat = document.createElement('span'), point = document.createElement('i'), label = document.createElement('span'), nom = document.createElement('strong'), desc = document.createElement('small'), status = document.createElement('div'), qr = document.createElement('div');
   let connexion = null, galat = '', sibuk = false, actif = true, version = 0, revision = sesiPesan.potret().revisi;

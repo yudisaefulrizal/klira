@@ -1,4 +1,4 @@
-import { token } from '../../gaya/token.js';
+import { token } from '../../../gaya/token.js';
 const bentuk = {
     plus: 'M12 5v14M5 12h14',
     cari: 'M20 20l-5-5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z',

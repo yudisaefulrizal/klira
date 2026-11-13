@@ -2,8 +2,8 @@ import { punyaIzin } from '@klira/shared';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { tab } from '../../komponen/ui/primitif.js';
-import { HalamanPesanWhatsapp } from './pesan-whatsapp.js';
-import { HalamanPesanInstagram } from './pesan-instagram.js';
+import { HalamanPesanWhatsapp } from './whatsapp/tab-whatsapp.js';
+import { HalamanPesanInstagram } from './instagram/tab-instagram.js';
 export function HalamanPesan() {
   const { pengguna } = penggunaSaatIni(), { search, ganti } = navigasiSaatIni(), daftar = [{ id: 'whatsapp', label: 'WhatsApp' }, { id: 'instagram', label: 'Instagram' }].filter(v => pengguna && punyaIzin(pengguna, v.id, 'lihat')), el = document.createElement('div'), panel = document.createElement('div');
   let actif, page; Object.assign(el.style, { display: 'flex', flexDirection: 'column', flex: '1', minHeight: '0' }); Object.assign(panel.style, { display: 'flex', flexDirection: 'column', flex: '1', minHeight: '0' }); panel.setAttribute('role', 'tabpanel'); const tabs = daftar.length ? tab(daftar, '', 'Kanal pesan', id => ganti(`/pesan?kanal=${id}`)) : null; if (tabs) el.append(tabs.el); el.append(panel);

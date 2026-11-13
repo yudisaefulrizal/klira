@@ -1,7 +1,7 @@
-import { panggilApi } from '../../api-klien/klien.js';
-import { bukaKonfirmasi } from '../modal-1/modal-1.js';
-import { tombol, peringatan } from '../ui/primitif.js';
-import { token } from '../../gaya/token.js';
+import { panggilApi } from '../../../api-klien/klien.js';
+import { bukaKonfirmasi } from '../../../komponen/modal-1/modal-1.js';
+import { tombol, peringatan } from '../../../komponen/ui/primitif.js';
+import { token } from '../../../gaya/token.js';
 export function BersihkanPesan({ kanal, onSelesai }) {
   let sibuk = false, konfirmasi, aktif = true;
   const nama = kanal === 'whatsapp' ? 'WhatsApp' : 'Instagram', el = document.createElement('div'), baris = document.createElement('div'), pesan = document.createElement('div');

@@ -1,9 +1,9 @@
 import { punyaIzin } from '@klira/shared';
-import { daftarPasien } from '../../api-klien/pasien.js';
-import { infoKontakWa, ubahWa } from '../../api-klien/whatsapp.js';
-import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
+import { daftarPasien } from '../../../api-klien/pasien.js';
+import { infoKontakWa, ubahWa } from '../../../api-klien/whatsapp.js';
+import { penggunaSaatIni } from '../../../util/sesi/konteks-pengguna.js';
 import { sesiPesan } from './konteks-pesan.js';
-import { tombol, bidang, peringatan } from '../ui/primitif.js';
+import { tombol, bidang, peringatan } from '../../../komponen/ui/primitif.js';
 import { IkonPesan } from './ikon-svg.js';
 export function InfoKontakPesan({ kontak, onTutup }) {
   const { pengguna } = penggunaSaatIni(), avant = document.activeElement, mobile = !window.matchMedia('(min-width: 1280px)').matches, el = document.createElement('aside'), header = document.createElement('header'), profile = document.createElement('div'), status = document.createElement('div'), traitement = document.createElement('section'), patient = document.createElement('section');
