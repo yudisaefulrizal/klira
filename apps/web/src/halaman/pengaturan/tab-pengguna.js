@@ -3,7 +3,7 @@ import { daftarPengguna, ubahAktifPengguna } from '../../api-klien/pengguna.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { baris, sel, tombol, lencana, bidang } from '../../komponen/ui/primitif.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaAturIzin } from '../../modal/akun-pengaturan/atur-izin.js';
 import { bukaPembuatanAkun } from '../../modal/akun-pengaturan/pembuatan-akun.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';

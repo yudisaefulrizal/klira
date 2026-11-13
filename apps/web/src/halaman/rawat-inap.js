@@ -1,11 +1,11 @@
 import { KELAS_RAWAT, RAWAT_INAP, STATUS_BED } from '@klira/shared';
-import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
+import { KelolaMasterTab } from '../komponen/master/kelola-master-tab.js';
 import { tab, kartu, tombol, lencana, peringatan } from '../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../util/tab/ingatan-tab.js';
 import { navigasiSaatIni } from '../util/navigasi/navigasi.js';
 import { ambilPapan } from '../api-klien/rawat-inap.js';
 import { GalatApi } from '../api-klien/klien.js';
-import { izinSaatIni } from '../komponen/izin-saja.js';
+import { izinSaatIni } from '../komponen/izin/izin-saja.js';
 import { token } from '../gaya/token.js';
 import { bukaAdmisiRawatInap } from '../modal/rawat-inap/admisi-rawat-inap.js';
 import { bukaCatatanHarian } from '../modal/rawat-inap/catatan-harian.js';

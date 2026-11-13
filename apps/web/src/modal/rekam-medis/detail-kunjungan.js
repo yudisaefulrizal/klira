@@ -1,7 +1,7 @@
 import { BAGIAN_KLINIS, KLINIS } from '@klira/shared';
 import { ambilKlinis } from '../../api-klien/klinis.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan.js';
+import { InfoPengesahan } from '../../komponen/klinis/info-pengesahan.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';

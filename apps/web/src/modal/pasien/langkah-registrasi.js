@@ -1,5 +1,5 @@
 import { h, Fragment, lokal } from '../../util/h.js';
-import { PencarianWilayah, tampilkanNamaWilayah } from '../../komponen/pencarian-wilayah.js';
+import { PencarianWilayah, tampilkanNamaWilayah } from '../../komponen/pencarian/pencarian-wilayah.js';
 import { DAFTAR_PASIEN, GALAT, REGISTRASI, STATUS_IDENTITAS, statusIdentitasDari } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { Isian } from '../../komponen/ui/isian.js';

@@ -1,4 +1,4 @@
-import { PencarianWilayah } from '../../komponen/pencarian-wilayah.js';
+import { PencarianWilayah } from '../../komponen/pencarian/pencarian-wilayah.js';
 import { perbaikanPasienMasukan, punyaIzin, REGISTRASI } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { detailPasien, perbaikiPasien } from '../../api-klien/pasien.js';

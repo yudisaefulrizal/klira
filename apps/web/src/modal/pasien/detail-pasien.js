@@ -4,7 +4,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
 import { tombol, peringatan, lencana } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
-import { tampilkanNamaWilayah } from '../../komponen/pencarian-wilayah.js';
+import { tampilkanNamaWilayah } from '../../komponen/pencarian/pencarian-wilayah.js';
 const strip = (v) => (v && v.trim() ? v : '-');
 /** Bagian ringkasan dari isi data pasien (fungsi murni untuk panel dan uji). */
 export function bagianDetailPasien(p, namaWilayah) {

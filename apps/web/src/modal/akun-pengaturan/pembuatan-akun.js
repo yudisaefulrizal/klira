@@ -2,7 +2,7 @@ import { AKUN_BARU, MODAL } from '@klira/shared';
 import { buatPengguna } from '../../api-klien/pengguna.js';
 import { daftarIzin, daftarJenisAkun } from '../../api-klien/izin.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { FormPeringatan, dariIsian, isianPeringatanAwal, isianPeringatanSiap } from '../../komponen/peringatan/peringatan-izin.js';
+import { FormPeringatan, dariIsian, isianPeringatanAwal, isianPeringatanSiap } from '../../komponen/izin/peringatan-izin.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { peringatan as kotak, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';

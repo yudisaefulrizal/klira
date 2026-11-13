@@ -3,7 +3,7 @@ import { admisiRawatInap, ambilAsalAdmisi, ambilOpsiRawatInap } from '../../api-
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
-import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
+import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';

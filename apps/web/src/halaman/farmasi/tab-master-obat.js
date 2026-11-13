@@ -1,7 +1,7 @@
 import { FARMASI, STATUS_STOK } from '@klira/shared';
 import { daftarMasterObat, ubahMasterObat } from '../../api-klien/farmasi.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { bukaMasterObat } from '../../modal/farmasi/master-obat.js';

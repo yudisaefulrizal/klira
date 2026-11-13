@@ -2,7 +2,7 @@ import { h, Fragment } from '../../util/h.js';
 import { INTERPRETASI_HASIL, PENUNJANG, PRIORITAS_ORDER, STATUS_ORDER_PENUNJANG, STATUS_PENGESAHAN } from '@klira/shared';
                                                        
 import { token } from '../../gaya/token.js';
-import { TampilanAddendum } from '../../komponen/addendum/tampilan-addendum.js';
+import { TampilanAddendum } from '../../komponen/klinis/tampilan-addendum.js';
 import { Bingkai } from '../../komponen/ui/kartu.js';
 import { Lencana } from '../../komponen/ui/lencana.js';
 import { Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan.js';

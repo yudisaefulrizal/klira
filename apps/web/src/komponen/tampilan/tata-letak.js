@@ -1,6 +1,6 @@
-import { token } from '../gaya/token.js';
-import { tombol } from './ui/primitif.js';
-import { buatMenuSamping } from './menu-samping.js';
+import { token } from '../../gaya/token.js';
+import { tombol } from '../ui/primitif.js';
+import { buatMenuSamping } from '../menu/menu-samping.js';
 
 /** Kerangka DOM; slot isi dan tombol pesan dapat dipakai konsumen native atau portal React sementara. */
 export function pasangTataLetak(wadah, opsi) {

@@ -1,13 +1,13 @@
 import { DEFINISI_MASTER, MASTER, STATUS_AKUN, STATUS_FILTER_MASTER, STATUS_OPERASIONAL, teksSelMaster } from '@klira/shared';
-import { daftarMaster, ubahAktifMaster } from '../api-klien/master.js';
-import { GalatApi } from '../api-klien/klien.js';
-import { izinSaatIni } from './izin-saja.js';
-import { bukaKonfirmasi } from './modal-1/modal-1.js';
-import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, tab, paginasi } from './ui/primitif.js';
-import { token } from '../gaya/token.js';
-import { bukaModalMasterProfil } from '../modal/akun-pengaturan/master-profil.js';
-import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../util/tab/penyaring-tab.js';
-import { jenisMasterDiHalaman } from '../util/lokasi-master.js';
+import { daftarMaster, ubahAktifMaster } from '../../api-klien/master.js';
+import { GalatApi } from '../../api-klien/klien.js';
+import { izinSaatIni } from '../izin/izin-saja.js';
+import { bukaKonfirmasi } from '../modal-1/modal-1.js';
+import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, tab, paginasi } from '../ui/primitif.js';
+import { token } from '../../gaya/token.js';
+import { bukaModalMasterProfil } from '../../modal/akun-pengaturan/master-profil.js';
+import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../../util/tab/penyaring-tab.js';
+import { jenisMasterDiHalaman } from '../../util/lokasi-master.js';
 
 export function DaftarMaster({ search, ubahAlamat, jenisDaftar }) {
   const bawaan = { ...BAWAAN_MASTER, jenis: jenisDaftar[0] ?? 'poli' }, boleh = izinSaatIni(), el = document.createElement('section');

@@ -1,7 +1,7 @@
-import { ambilWilayah, cariWilayah, ingatWilayah } from '../api-klien/wilayah.js';
-import { GalatApi } from '../api-klien/klien.js';
-import { token } from '../gaya/token.js';
-import { bidang } from './ui/primitif.js';
+import { ambilWilayah, cariWilayah, ingatWilayah } from '../../api-klien/wilayah.js';
+import { GalatApi } from '../../api-klien/klien.js';
+import { token } from '../../gaya/token.js';
+import { bidang } from '../ui/primitif.js';
 export function tampilkanNamaWilayah(kode, berubah) {
   let aktif = true; berubah(kode ? 'Memuat wilayah…' : '-');
   if (kode) ambilWilayah(kode).then(w => { if (aktif) berubah(w.label); }).catch(() => { if (aktif) berubah('Wilayah tersimpan belum dapat ditampilkan'); });

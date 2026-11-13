@@ -1,7 +1,7 @@
 import { PROFIL_KLINIK as P } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { ambilProfilKlinik, daftarRiwayatProfil, simpanProfilKlinik } from '../../api-klien/master.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { kartu, bidang, tombol, peringatan, baris, sel, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';

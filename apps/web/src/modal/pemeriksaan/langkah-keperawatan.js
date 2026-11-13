@@ -2,9 +2,9 @@ import { h, Fragment } from '../../util/h.js';
 import { hasilRisikoGizi, JENIS_KUNJUNGAN, KLINIS, SKALA_NYERI_MAKS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, STATUS_SKRINING_VISUAL } from '@klira/shared';
                                                                       
 import { token } from '../../gaya/token.js';
-import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan.js';
-import { HanyaDenganIzin } from '../../komponen/izin-saja.js';
-import { KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal.js';
+import { InfoPengesahan } from '../../komponen/klinis/info-pengesahan.js';
+import { HanyaDenganIzin } from '../../komponen/izin/izin-saja.js';
+import { KelompokNormal } from '../../komponen/klinis/kelompok-normal.js';
 import { AreaTeks } from '../../komponen/ui/area-teks.js';
 import { Isian } from '../../komponen/ui/isian.js';
 import { Lencana } from '../../komponen/ui/lencana.js';

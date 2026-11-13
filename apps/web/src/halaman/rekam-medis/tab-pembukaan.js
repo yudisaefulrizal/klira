@@ -1,7 +1,7 @@
 import { REKAM_MEDIS, STATUS_PERBAIKAN } from '@klira/shared';
 import { daftarPembukaan } from '../../api-klien/dokumen-rm.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';

@@ -1,7 +1,7 @@
 import { PENUNJANG } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { daftarMasterPemeriksaan } from '../../api-klien/penunjang.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { peringatan } from '../../komponen/ui/primitif.js';
 import { FormOrderLab } from './form-order-lab.js';
 export function LangkahPenunjang(awal) {

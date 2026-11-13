@@ -1,5 +1,5 @@
 import { token } from '../../gaya/token.js';
-import { bukaPanel } from '../panel/panel.js';
+import { bukaPanel } from './panel.js';
 export function bukaPanelDetail({ judul, onTutup, bagian, children }) {
   const panel = bukaPanel({ judul, onTutup });
   function perbarui(bagianBaru, isiTambahan) {

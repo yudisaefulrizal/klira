@@ -1,9 +1,9 @@
 import { JENIS_AKUN, STATUS_AKUN } from '@klira/shared';
 import { daftarJenisAkun, riwayatJenisAkun, ubahJenisAkun } from '../../api-klien/izin.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
-import { bukaPanelDetail } from '../../komponen/panel-detail/panel-detail.js';
+import { bukaPanelDetail } from '../../komponen/panel/panel-detail.js';
 import { baris, sel, tombol, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { barisRiwayat } from '../../modal/akun-pengaturan/keadaan-jenis-akun.js';

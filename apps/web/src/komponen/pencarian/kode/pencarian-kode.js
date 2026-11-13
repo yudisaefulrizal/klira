@@ -1,7 +1,7 @@
 import { KLINIS, NAVIGASI, TOMBOL } from '@klira/shared';
-import { token } from '../../gaya/token.js';
-import { buatNilaiTertunda } from '../../util/tunda.js';
-import { bidang, tombol, peringatan } from '../ui/primitif.js';
+import { token } from '../../../gaya/token.js';
+import { buatNilaiTertunda } from '../../../util/tunda.js';
+import { bidang, tombol, peringatan } from '../../ui/primitif.js';
 import { bukaKamusKode } from './kamus-kode.js';
 import { daftarHasilKode } from './hasil-kode.js';
 export function PencarianKode(props) {

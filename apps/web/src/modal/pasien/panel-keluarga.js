@@ -3,7 +3,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { ambilFolderKeluarga, tautkanKeluarga, ubahKeluarga } from '../../api-klien/klinis.js';
 import { daftarPasien } from '../../api-klien/pasien.js';
 import { token } from '../../gaya/token.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
 import { bidang, tombol, lencana, peringatan } from '../../komponen/ui/primitif.js';
 export function bukaPanelKeluarga({ pasienId, nama, onTutup }) {

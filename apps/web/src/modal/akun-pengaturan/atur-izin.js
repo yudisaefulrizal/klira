@@ -3,8 +3,8 @@ import { akhiriIzinAkun, akhiriPenugasan, aksesEfektif, beriIzinAkun, daftarIzin
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
-import { bukaPanelDetail } from '../../komponen/panel-detail/panel-detail.js';
-import { bukaDialogPeringatan } from '../../komponen/peringatan/peringatan-izin.js';
+import { bukaPanelDetail } from '../../komponen/panel/panel-detail.js';
+import { bukaDialogPeringatan } from '../../komponen/izin/peringatan-izin.js';
 import { peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { jalankanAksi } from './alur-atur-izin.js';
 import { BagianIzin, BagianPenugasan, TeksMemuat } from './bagian-atur-izin.js';

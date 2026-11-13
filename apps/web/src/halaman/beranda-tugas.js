@@ -2,7 +2,7 @@ import { BERANDA, punyaIzin } from '@klira/shared';
 import { ambilRingkasanPdp } from '../api-klien/beranda.js';
 import { GalatApi } from '../api-klien/klien.js';
 import { tugasPdp } from '../util/tugas-beranda.js';
-import { pasangKesiapan, lencanaBeranda } from '../komponen/kesiapan-klinik.js';
+import { pasangKesiapan, lencanaBeranda } from '../komponen/klinis/kesiapan-klinik.js';
 import { teksHtml as aman } from '../util/teks-html.js';
 
 export function pasangBerandaTugas(wadah, pengguna, ganti) {

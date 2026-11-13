@@ -1,7 +1,7 @@
 import { h, Fragment } from '../../util/h.js';
 import { FARMASI } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { AreaTeks } from '../../komponen/ui/area-teks.js';
 import { Peringatan } from '../../komponen/ui/peringatan.js';
 import { Kolom } from '../../komponen/ui/susunan.js';

@@ -1,7 +1,7 @@
 import { KEAMANAN } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { ambilPengaturanKeamanan, simpanPengaturanKeamanan } from '../../api-klien/keamanan.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { BATAS_FORM, formDariPengaturan, bentukKeamanan, galatKeamanan, keamananBerubah } from './keadaan-keamanan.js';

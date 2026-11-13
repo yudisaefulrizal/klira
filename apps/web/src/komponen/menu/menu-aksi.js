@@ -1,4 +1,4 @@
-import { token } from '../gaya/token.js';
+import { token } from '../../gaya/token.js';
 let nomor = 0;
 export function MenuAksi({ label, items }) {
   const id = `menu-aksi-${++nomor}`, button = document.createElement('button'); let daftar;

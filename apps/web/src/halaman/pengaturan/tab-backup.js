@@ -1,7 +1,7 @@
 import { KEAMANAN, STATUS_BACKUP, formatUkuranByte } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { alamatUnduhBackup, daftarRiwayatBackup, resetSistem, unggahBackup } from '../../api-klien/keamanan.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { bidang, kartu, tombol, peringatan, baris, sel, lencana, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';

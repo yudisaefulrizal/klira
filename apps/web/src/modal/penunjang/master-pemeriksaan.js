@@ -3,7 +3,7 @@ import { GalatApi } from '../../api-klien/klien.js';
 import { buatMasterPemeriksaan, ubahMasterPemeriksaan } from '../../api-klien/penunjang.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
-import { PencarianLoinc } from '../../komponen/pencarian-loinc.js';
+import { PencarianLoinc } from '../../komponen/pencarian/pencarian-loinc.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahan } from '../../util/draf/draf.js';

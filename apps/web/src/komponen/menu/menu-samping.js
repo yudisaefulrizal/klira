@@ -1,6 +1,6 @@
 import { HALAMAN_AWAL, MASUK, NAVIGASI, halamanMenuDiizinkan } from '@klira/shared';
-import { token } from '../gaya/token.js';
-import { tombol } from './ui/primitif.js';
+import { token } from '../../gaya/token.js';
+import { tombol } from '../ui/primitif.js';
 import { buatIkonMenu } from './ikon-menu.js';
 
 export function buatMenuSamping(opsi) {

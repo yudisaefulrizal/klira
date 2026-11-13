@@ -1,10 +1,10 @@
 import { h, Fragment, lokal } from '../../util/h.js';
 import { DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, LABEL_NARASI, KLINIS, MAKS_NARASI, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL, bidangKelompok, isianDiubah, labelBidangPemeriksaan, samaDenganDefault } from '@klira/shared';
-import { KelompokNormal } from '../../komponen/kelompok-normal/kelompok-normal.js';
+import { KelompokNormal } from '../../komponen/klinis/kelompok-normal.js';
 import { cariTerminologi, cariTindakanKlinik } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
-import { InfoPengesahan } from '../../komponen/info-pengesahan/info-pengesahan.js';
-import { PencarianKode } from '../../komponen/pencarian-kode/pencarian-kode.js';
+import { InfoPengesahan } from '../../komponen/klinis/info-pengesahan.js';
+import { PencarianKode } from '../../komponen/pencarian/kode/pencarian-kode.js';
 import { AreaTeks } from '../../komponen/ui/area-teks.js';
 import { Isian } from '../../komponen/ui/isian.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';

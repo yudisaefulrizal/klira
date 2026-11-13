@@ -1,7 +1,7 @@
 import { h, Fragment, lokal } from '../../util/h.js';
 import { ATUR_IZIN, NAVIGASI, STATUS_PERIODE } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { HanyaDenganIzin } from '../../komponen/izin-saja.js';
+import { HanyaDenganIzin } from '../../komponen/izin/izin-saja.js';
 import { AreaTeks } from '../../komponen/ui/area-teks.js';
 import { Isian, PesanGalat } from '../../komponen/ui/isian.js';
 import { Lencana } from '../../komponen/ui/lencana.js';

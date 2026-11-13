@@ -2,7 +2,7 @@ import { GALAT, GANTI_KREDENSIAL, MASUK, gantiKredensial as skemaGanti } from '@
 import { ambilSaya, masuk, gantiKredensial, keluar } from '../api-klien/akses.js';
 import { hapusSemuaDraf } from '../util/draf/draf.js';
 import { putuskanRute, RUTE_GANTI_KREDENSIAL } from '../util/sesi/penjaga-rute.js';
-import { pasangTemaTampilan } from '../komponen/tema-tampilan.js';
+import { pasangTemaTampilan } from '../komponen/tampilan/tema-tampilan.js';
 import { teksHtml as aman } from '../util/teks-html.js';
 
 function bidang(id, label, type = 'text', autocomplete = 'username', fokus = false) {

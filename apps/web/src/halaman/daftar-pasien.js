@@ -1,10 +1,10 @@
-import { izinSaatIni } from '../komponen/izin-saja.js';
-import { MenuAksi } from '../komponen/menu-aksi.js';
+import { izinSaatIni } from '../komponen/izin/izin-saja.js';
+import { MenuAksi } from '../komponen/menu/menu-aksi.js';
 import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab } from '../komponen/ui/primitif.js';
-import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
+import { KelolaMasterTab } from '../komponen/master/kelola-master-tab.js';
 import { pilihTab } from '../util/tab/ingatan-tab.js';
-import { IkonPasien, TombolIkonPasien } from '../komponen/ikon-pasien.js';
-import { pasangKesiapan } from '../komponen/kesiapan-klinik.js';
+import { IkonPasien, TombolIkonPasien } from '../komponen/klinis/ikon-pasien.js';
+import { pasangKesiapan } from '../komponen/klinis/kesiapan-klinik.js';
 import { pesanSaatIni } from '../komponen/pesan/konteks-pesan.js';
 import { tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS, } from '@klira/shared';
 import { aksiAntrean } from '../api-klien/kunjungan.js';

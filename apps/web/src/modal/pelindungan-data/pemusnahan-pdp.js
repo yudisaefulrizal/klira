@@ -2,7 +2,7 @@ import { PDP, TOMBOL } from '@klira/shared';
 import { opsiProsesor, prosesPemusnahan, rencanaPemusnahan } from '../../api-klien/pdp.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
-import { PemilihPasien } from '../../komponen/pemilih-pasien.js';
+import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf/draf.js';

@@ -1,4 +1,4 @@
-import { TombolIkonPasien } from '../../komponen/ikon-pasien.js';
+import { TombolIkonPasien } from '../../komponen/klinis/ikon-pasien.js';
 import { BAGIAN_KLINIS, GALAT, KLINIS, TAHAP_LAYANAN } from '@klira/shared';
 import { buatOrderLab } from '../../api-klien/penunjang.js';
 import { awalOrderLab, bentukOrderLab, galatOrderLab } from '../penunjang/keadaan-order-lab.js';
@@ -8,7 +8,7 @@ import { adaIsianResep, awalResep, bentukResep, galatResep } from '../farmasi/ke
 import { buatResep, resepKunjungan } from '../../api-klien/farmasi.js';
 import { ambilKlinis, ambilKonteksKlinis, daftarFavorit, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { Lencana } from '../../komponen/ui/lencana.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { Peringatan } from '../../komponen/ui/peringatan.js';

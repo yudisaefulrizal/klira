@@ -1,8 +1,8 @@
 import { KASIR, METODE_BAYAR } from '@klira/shared';
-import { KelolaMasterTab } from '../komponen/kelola-master-tab.js';
+import { KelolaMasterTab } from '../komponen/master/kelola-master-tab.js';
 import { rekapHarian, shiftSaya } from '../api-klien/kasir.js';
 import { GalatApi } from '../api-klien/klien.js';
-import { izinSaatIni } from '../komponen/izin-saja.js';
+import { izinSaatIni } from '../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab } from '../komponen/ui/primitif.js';
 import { token } from '../gaya/token.js';
 import { TabKlaim } from './kasir-klaim/tab-klaim.js';

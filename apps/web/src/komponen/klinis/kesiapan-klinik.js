@@ -1,6 +1,6 @@
 import { BERANDA, punyaIzin } from '@klira/shared';
-import { ambilKesiapan } from '../api-klien/beranda.js';
-import { teksHtml as aman } from '../util/teks-html.js';
+import { ambilKesiapan } from '../../api-klien/beranda.js';
+import { teksHtml as aman } from '../../util/teks-html.js';
 const K = BERANDA.kesiapan;
 const TUJUAN = { poli: '/pasien?tab=poli', praktisi: '/pasien?tab=praktisi', jadwal: '/pasien?tab=jadwal', tarif: '/kasir-klaim?tab=tarif', obat: '/farmasi', pemeriksaan: '/penunjang?tab=master', pemeriksaan_tanpa_tarif: '/penunjang?tab=master', sip_kedaluwarsa: '/pasien?tab=praktisi' };
 export function lencanaBeranda(teks, warna) {

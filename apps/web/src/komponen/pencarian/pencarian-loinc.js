@@ -1,9 +1,9 @@
 import { NAVIGASI, PENUNJANG } from '@klira/shared';
-import { cariLoinc } from '../api-klien/penunjang.js';
-import { token } from '../gaya/token.js';
-import { buatNilaiTertunda } from '../util/tunda.js';
-import { bidang, tombol } from './ui/primitif.js';
-import { InfoBantuan } from './ui/info-bantuan.js';
+import { cariLoinc } from '../../api-klien/penunjang.js';
+import { token } from '../../gaya/token.js';
+import { buatNilaiTertunda } from '../../util/tunda.js';
+import { bidang, tombol } from '../ui/primitif.js';
+import { InfoBantuan } from '../ui/info-bantuan.js';
 const M = PENUNJANG.master;
 export function PencarianLoinc(awal) {
   let props = awal, hasil = null, terbuka = false, memuat = false, galatCari = null, nama = null, versi = 0, aktif = true;

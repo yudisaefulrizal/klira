@@ -1,7 +1,7 @@
 import { AMBANG_BATAS_DEKAT_HARI, aksiKlaimTersedia, KLAIM, STATUS_KLAIM } from '@klira/shared';
 import { daftarKlaim } from '../../api-klien/klaim.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { bukaPenyiapanKlaim } from '../../modal/kasir-klaim/penyiapan-klaim.js';

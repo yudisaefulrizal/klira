@@ -2,7 +2,7 @@ import { MASTER } from '@klira/shared';
 import { cariTerminologi } from '../../api-klien/klinis.js';
 import { buatMaster, opsiMaster, ubahMaster } from '../../api-klien/master.js';
 import { GalatApi } from '../../api-klien/klien.js';
-import { PencarianKode } from '../../komponen/pencarian-kode/pencarian-kode.js';
+import { PencarianKode } from '../../komponen/pencarian/kode/pencarian-kode.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';

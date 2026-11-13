@@ -1,6 +1,6 @@
 import { websiteKlinikMasukan } from '@klira/shared';
 import { panggilApi } from '../../api-klien/klien.js';
-import { izinSaatIni } from '../../komponen/izin-saja.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { kartu, bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 export function PengaturanWebsiteKlinik({ onSelesai }) {
