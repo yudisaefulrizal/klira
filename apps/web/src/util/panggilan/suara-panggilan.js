@@ -39,9 +39,9 @@ export function buatSuaraPanggilan(fasilitas, berubah) {
         try {
             const ucapan = new SpeechSynthesisUtterance(teks);
             ucapan.lang = 'id-ID';
-            // Nada sedikit tinggi dan tempo agak cepat agar terdengar ramah dan bersemangat, tetap jelas untuk nomor.
-            ucapan.rate = 1.02;
-            ucapan.pitch = 1.25;
+            // Nada normal dan tempo agak cepat agar terdengar tegas dan bersemangat, tetap jelas untuk nomor.
+            ucapan.rate = 1.1;
+            ucapan.pitch = 1;
             ucapan.volume = 1;
             const suara = pilihSuara(window.speechSynthesis.getVoices());
             if (suara)
