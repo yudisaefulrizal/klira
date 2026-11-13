@@ -90,9 +90,9 @@ describe('tindakan per baris', () => {
         expect(jenis(baris(kunj('selesai')))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
         expect(jenis(baris(kunj(null)))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
     });
-    it('Skrining hanya pada tahap menunggu skrining, Periksa hanya pada tahap pemeriksaan, keduanya butuh izin klinis input', () => {
+    it('Skrining aktif hanya pada tahap menunggu skrining, Periksa aktif hanya pada tahap pemeriksaan, keduanya butuh izin klinis input', () => {
         const tahap = (t) => ({ ...kunj(null), tahap_layanan: t });
-        const nama = (t, boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => j === 'skrining' || j === 'periksa');
+        const nama = (t, boleh = semua) => aksiBaris(baris(tahap(t)), boleh).filter((a) => !a.ubah).map((a) => a.jenis).filter((j) => j === 'skrining' || j === 'periksa'); // aksi tahap terlewati (ubah) diuji terpisah
         expect(nama('menunggu_skrining')).toEqual(['skrining']);
         expect(nama('pemeriksaan')).toEqual(['periksa']);
         expect(nama('resep')).toEqual([]);
@@ -113,7 +113,7 @@ describe('tindakan per baris', () => {
     });
     it('Telaah resep hanya pada tahap resep dan untuk pemegang izin farmasi input', () => {
         const tahap = (t) => ({ ...kunj(null), tahap_layanan: t });
-        const telaah = (t, boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => j === 'telaah');
+        const telaah = (t, boleh = semua) => aksiBaris(baris(tahap(t)), boleh).filter((a) => !a.ubah).map((a) => a.jenis).filter((j) => j === 'telaah');
         expect(telaah('resep')).toEqual(['telaah']);
         expect(telaah('pemeriksaan')).toEqual([]);
         expect(telaah('kasir')).toEqual([]);

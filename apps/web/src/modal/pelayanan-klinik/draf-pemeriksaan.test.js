@@ -4,7 +4,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { adaptorDrafServer } from '../../api-klien/draf-klinis.js';
-const sumber = readFileSync(join(__dirname, 'pemeriksaan-klinis.tsx'), 'utf8');
+const sumber = readFileSync(join(__dirname, 'pemeriksaan-klinis.js'), 'utf8');
 describe('modal Pemeriksaan klinis tidak memakai penyimpanan lokal', () => {
     it('tidak mengimpor atau memanggil penyimpan lokal, hanya adaptor server', () => {
         for (const larangan of ['localStorage', 'sessionStorage', 'adaptorLokal', 'simpanDraf', 'bacaDraf', 'kunciDraf', 'saringSensitif']) {

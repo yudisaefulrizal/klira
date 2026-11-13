@@ -41,13 +41,21 @@ describe('app', () => {
         }
     });
     it('rute masuk dan modul native tersedia langsung dari source', async () => {
-        const halaman = await fetch(url('/masuk'));
-        expect(halaman.status).toBe(200);
-        expect(await halaman.text()).toContain('src="/src/main.js"');
-        const modul = await fetch(url('/src/main.js'));
-        expect(modul.status).toBe(200);
-        expect(modul.headers.get('content-type')).toMatch(/javascript/);
-        expect(await modul.text()).toContain('pasangKlinikPublik');
+        // Memakai direktori web asli (bukan folder sementara) karena source dilayani dari apps/web/src.
+        const asli = buatApp().listen(0);
+        try {
+            const alamat = (p) => `http://127.0.0.1:${asli.address().port}${p}`;
+            const halaman = await fetch(alamat('/masuk'));
+            expect(halaman.status).toBe(200);
+            expect(await halaman.text()).toContain('src="/src/main.js"');
+            const modul = await fetch(alamat('/src/main.js'));
+            expect(modul.status).toBe(200);
+            expect(modul.headers.get('content-type')).toMatch(/javascript/);
+            expect(await modul.text()).toContain('pasangKlinikPublik');
+        }
+        finally {
+            asli.close();
+        }
     });
     it('kanonisasi rute autentikasi mempertahankan query', async () => {
         const res = await fetch(url('/masuk/?asal=uji'), { redirect: 'manual' });

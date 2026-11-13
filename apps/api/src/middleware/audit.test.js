@@ -82,14 +82,14 @@ describe('penampung audit', () => {
 
 describe('log hanya-tambah', () => {
     it('log audit hanya ditulis melalui repositori audit', () => {
-        const akar = path.resolve(__dirname, '..');
+        const akar = path.resolve(__dirname, '..', '..', 'src');
         const berkas = [];
         const jelajah = (d) => {
             for (const n of fs.readdirSync(d, { withFileTypes: true })) {
                 const p = path.join(d, n.name);
                 if (n.isDirectory())
                     jelajah(p);
-                else if (p.endsWith('.ts') && !p.endsWith('.test.ts'))
+                else if (p.endsWith('.js') && !p.endsWith('.test.js'))
                     berkas.push(p);
             }
         };
@@ -98,7 +98,7 @@ describe('log hanya-tambah', () => {
             expect(fs.readFileSync(b, 'utf8')).not.toMatch(/db\.(ubah|hapus|simpan)LogAudit/);
         // satu-satunya penulis log_audit adalah repositori audit
         const penulis = berkas.filter((b) => /db\.tambahLogAuditUntukTambah/.test(fs.readFileSync(b, 'utf8')));
-        expect(penulis.map((p) => path.basename(p))).toEqual(['repositori.ts']);
+        expect(penulis.map((p) => path.basename(p))).toEqual(['repositori.js']);
     });
 });
 

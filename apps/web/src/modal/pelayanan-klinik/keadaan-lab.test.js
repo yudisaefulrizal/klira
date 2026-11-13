@@ -109,9 +109,9 @@ describe('Hasil lab (Hasil, Interpretasi, Validasi)', () => {
 describe('Master pemeriksaan', () => {
     it('isian awal dari data dan galat dari skema bersama', () => {
         const k = awalMasterPemeriksaan(master(1, { kode: 'HB', nama: 'Hemoglobin', rujukan_min: 12, rujukan_maks: 16, satuan: 'g/dL', tarif: { id: 4, kode: 'T', nama: 'T', harga_umum: 1, harga_jkn: null } }));
-        expect(k).toMatchObject({ kode: 'HB', rujukan_min: '12', rujukan_maks: '16', tarif_layanan_id: '4', aktif: true });
+        expect(k).toMatchObject({ kode: 'HB', rujukan_min: '12', rujukan_maks: '16', aktif: true });
         expect(galatMasterPemeriksaan(k)).toEqual({});
-        expect(Object.keys(galatMasterPemeriksaan(awalMasterPemeriksaan())).sort()).toEqual(['kode', 'nama']);
+        expect(Object.keys(galatMasterPemeriksaan(awalMasterPemeriksaan())).sort()).toEqual(['harga_umum', 'kode', 'nama']);
         expect(galatMasterPemeriksaan({ ...k, kode_loinc: 'salah' }).kode_loinc).toBeDefined();
         expect(galatMasterPemeriksaan({ ...k, rujukan_min: '20' }).rujukan_maks).toBeDefined();
     });
