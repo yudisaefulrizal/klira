@@ -14,7 +14,9 @@
 .pasien-tabel th { padding-top: 13px !important; padding-bottom: 13px !important; white-space: nowrap; }
 .pasien-tabel td { vertical-align: middle !important; line-height: 1.65; }
 .pasien-tabel tbody tr:hover { background: var(--warna-kepala-tabel); }
-.pasien-tabel td:last-child { min-width: 240px; }
+/* Kolom Tindakan menyusut mengikuti isi (jumlah tombol terbanyak di halaman), bukan lebar tetap. */
+.pasien-tabel th:last-child, .pasien-tabel td:last-child { width: 1%; white-space: nowrap; }
+.pasien-tabel td:last-child > div { flex-wrap: nowrap !important; align-items: center !important; }
 .pasien-tabel td:last-child button { height: 32px !important; padding: 0 8px !important; }
 .pasien-catatan { margin: -8px 0 0; max-width: 760px; color: var(--warna-teks-redup); font-size: 12px; line-height: 1.7; }
 .menu-klinik { min-height: calc(100dvh - 54px); }
@@ -82,7 +84,6 @@
 .pasien-isian-ikon input { padding-left: 42px !important; }
 .pasien-tanggal { width: 190px; }
 .pasien-tanggal input { box-sizing: border-box; width: 100%; }
-.pasien-tabel td:last-child { min-width: 180px; max-width: 320px; }
 .pasien-tooltip {
   position: fixed;
   z-index: 2147483647;
