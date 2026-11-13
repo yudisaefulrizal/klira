@@ -120,7 +120,7 @@ export function HalamanDaftarPasien() {
     }
     function view() {
         const tanggalAktif = keadaan.tanggal ?? tanggalWib(sekarang), hariIni = tanggalWib(sekarang), kemarin = tanggalWib(new Date(sekarang.getTime() - 86400000));
-        const pasienDari = b => ({ id: b.id, nama: b.nama, nomor_rm: b.nomor_rm });
+        const pasienDari = b => ({ id: b.id, nama: b.nama, nomor_rm: b.nomor_rm, jkn_nomor_kartu: b.jkn_nomor_kartu ?? null });
         function klikAksi(b, { jenis }) {
             const k = b.kunjungan, pasien = pasienDari(b);
             if (jenis === 'buka') return setTerbuka({ jenis: 'detail', pasien });
