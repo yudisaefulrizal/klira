@@ -516,6 +516,8 @@ export const DAFTAR_PASIEN = {
     jamMenit: (j, m) => `${j} j ${m} mnt`,
     sebelumnya: 'Sebelumnya',
     berikutnya: 'Berikutnya',
+    labSpesimen: 'Lab: spesimen',
+    labHasil: 'Lab: hasil',
     poliSibuk: (poli, kode) => `${poli} sedang melayani ${kode}`,
     aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', bayar: 'Pembayaran', serah_obat: 'Serahkan obat', tutup_kunjungan: 'Tutup kunjungan', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
     aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',

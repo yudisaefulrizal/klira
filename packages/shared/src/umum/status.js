@@ -88,6 +88,30 @@ export const STATUS_ANTREAN = buat({
     selesai: { label: 'Selesai', warna: 'hijau' },
     batal: { label: 'Batal', warna: 'merah' },
 });
+/** Status layanan gabungan untuk satu kunjungan (antrean + tahap), dipakai kolom status Daftar pasien. */
+export const STATUS_LAYANAN = buat({
+    menunggu: { label: 'Menunggu', warna: 'abu' },
+    dipanggil: { label: 'Dipanggil', warna: 'kuning' },
+    skrining: { label: 'Skrining', warna: 'biru' },
+    diperiksa: { label: 'Diperiksa', warna: 'biru' },
+    menunggu_obat: { label: 'Menunggu obat', warna: 'ungu' },
+    pembayaran: { label: 'Pembayaran', warna: 'kuning' },
+    selesai: { label: 'Selesai', warna: 'hijau' },
+    batal: { label: 'Batal', warna: 'merah' },
+});
+/** Kunci STATUS_LAYANAN untuk kunjungan berbentuk { tahap_layanan, antrean: { status } | null }. */
+export function statusLayananDari(kunjungan) {
+    const antrean = kunjungan?.antrean?.status;
+    if (antrean === 'batal')
+        return 'batal';
+    switch (kunjungan?.tahap_layanan) {
+        case 'ditutup': return 'selesai';
+        case 'kasir': return 'pembayaran';
+        case 'resep': return 'menunggu_obat';
+        case 'pemeriksaan': return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'menunggu' ? 'menunggu' : 'diperiksa';
+        default: return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'dilayani' ? 'skrining' : 'menunggu';
+    }
+}
 export const STATUS_AKUN = buat({
     aktif: { label: 'Aktif', warna: 'hijau' },
     nonaktif: { label: 'Dinonaktifkan', warna: 'abu' },

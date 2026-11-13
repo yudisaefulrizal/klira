@@ -6,7 +6,7 @@ import { pilihTab } from '../../util/tab/ingatan-tab.js';
 import { IkonPasien, TombolIkonPasien } from '../../komponen/klinis/ikon-pasien.js';
 import { pasangKesiapan } from '../../komponen/klinis/kesiapan-klinik.js';
 import { pesanSaatIni } from '../pesan/whatsapp/konteks-pesan.js';
-import { tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_ANTREAN, STATUS_IDENTITAS, } from '@klira/shared';
+import { tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_LAYANAN, statusLayananDari, STATUS_IDENTITAS, } from '@klira/shared';
 import { aksiAntrean } from '../../api-klien/kunjungan.js';
 import { daftarPasien } from '../../api-klien/pasien.js';
 import { GalatApi } from '../../api-klien/klien.js';
@@ -149,7 +149,7 @@ export function HalamanDaftarPasien() {
         const box=kartu({style:{padding:'0',overflow:'hidden'}});box.classList.add('pasien-tabel');const title=document.createElement('div'),h=document.createElement('h2'),count=document.createElement('span');title.className='pasien-tabel-judul';h.textContent=DAFTAR_PASIEN.judul;count.setAttribute('role','status');count.textContent=hasil?`${hasil.total} pasien`:'Memuat pasien…';title.append(h,count);box.append(title);
         const table=tabel(KOLOM,DAFTAR_PASIEN.judul);box.append(table.el);
         for(const b of hasil?.data??[]){const k=b.kunjungan,tunggu=k&&k.tahap_layanan!=='ditutup'&&k.antrean?.status!=='batal'?lamaMenunggu(k.mulai,sekarang):null,{utama,lainnya}=kelompokAksi(b,aksiBaris(b,boleh));
-            const queue=sel();queue.style.fontWeight=token.huruf.berat.tebal;if(k?.antrean)queue.append(k.antrean.kode,' ',lencana(STATUS_ANTREAN.label(k.antrean.status),STATUS_ANTREAN.warna(k.antrean.status)));else queue.append(DAFTAR_PASIEN.tanpaAntrean);
+            const queue=sel();queue.style.fontWeight=token.huruf.berat.tebal;if(k){const st=statusLayananDari(k);queue.append(k.antrean?k.antrean.kode:DAFTAR_PASIEN.tanpaAntrean,' ',lencana(STATUS_LAYANAN.label(st),STATUS_LAYANAN.warna(st)));const lab=k.lab?.perlu_spesimen?DAFTAR_PASIEN.labSpesimen:k.lab?.perlu_hasil?DAFTAR_PASIEN.labHasil:null;if(lab)queue.append(' ',lencana(lab,'abu'));}else queue.append(DAFTAR_PASIEN.tanpaAntrean);
             // Lama menunggu ditampilkan di sel Antrean, setelah status.
             if(tunggu){const lama=document.createElement('small');Object.assign(lama.style,{color:token.warna.teksRedup,fontWeight:token.huruf.berat.biasa});lama.textContent=` ${tunggu.jam?DAFTAR_PASIEN.jamMenit(tunggu.jam,tunggu.menit):DAFTAR_PASIEN.menit(tunggu.menit)}`;queue.append(lama);}
             const patient=sel(),name=tombol(b.nama,()=>setTerbuka({jenis:'edit-pasien',pasien:pasienDari(b)}),'teks');name.setAttribute('aria-label',`Buka data pasien ${b.nama}`);Object.assign(name.style,{fontWeight:token.huruf.berat.tebal,padding:'0'});const meta=document.createElement('span');Object.assign(meta.style,{fontSize:token.huruf.ukuran.kecil,color:token.warna.teksRedup});meta.textContent=` (${DAFTAR_PASIEN.jenisKelaminSingkat[b.jenis_kelamin]}, ${DAFTAR_PASIEN.umur(b.umur_tahun)})`;if(b.status_identitas==='sementara')meta.append(' ',lencana(STATUS_IDENTITAS.label('sementara'),STATUS_IDENTITAS.warna('sementara')));patient.append(name,meta);
