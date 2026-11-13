@@ -3,14 +3,14 @@ import { jest } from '@jest/globals';
 const kliraActual0 = await import("@klira/db");
 jest.unstable_mockModule('@klira/db', () => {
     const ambilFasyankesUntukBuatRuteLayarPanggilan = jest.fn();
-    const daftarLokasiUntukBacaKlinikPublik = jest.fn();
+    const daftarPoliUntukJenis = jest.fn();
     const daftarAntreanUntukBuatRuteLayarPanggilan = jest.fn();
     const daftarEventPanggilanUntukBuatRuteLayarPanggilan = jest.fn();
     const cariEventPanggilanUntukBuatRuteLayarPanggilan = jest.fn();
     return { ...kliraActual0,
         pool: {},
         ambilFasyankesUntukBuatRuteLayarPanggilan: ambilFasyankesUntukBuatRuteLayarPanggilan,
-        daftarLokasiUntukBacaKlinikPublik: daftarLokasiUntukBacaKlinikPublik,
+        daftarPoliUntukJenis: daftarPoliUntukJenis,
         daftarAntreanUntukBuatRuteLayarPanggilan: daftarAntreanUntukBuatRuteLayarPanggilan,
         daftarEventPanggilanUntukBuatRuteLayarPanggilan: daftarEventPanggilanUntukBuatRuteLayarPanggilan,
         cariEventPanggilanUntukBuatRuteLayarPanggilan: cariEventPanggilanUntukBuatRuteLayarPanggilan,
@@ -58,12 +58,17 @@ test('fasilitas tidak ada menghasilkan 404', async () => {
 
 test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa identitas pasien', async () => {
     jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mockResolvedValue({ nama: 'Klinik Uji', website_klinik: { logo_url: '/asset/brand/bhakti-rahayu.png' } });
-    jest.mocked(db.daftarLokasiUntukBacaKlinikPublik).mockResolvedValue([{ id: 9, nama: 'Poli Umum' }, { id: 10, nama: 'Poli Gigi' }]);
+    jest.mocked(db.daftarPoliUntukJenis).mockResolvedValue([
+        { id: 9, nama: 'Poli Umum 1', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
+        { id: 10, nama: 'Poli Umum 2', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
+        { id: 11, nama: 'Poli Gigi', jenis_poli: 'Gigi', awalan_antrean: 'G', status_operasional: 'O' },
+        { id: 12, nama: 'Poli Tutup', jenis_poli: 'Mata', awalan_antrean: 'M', status_operasional: 'U' },
+    ]);
     jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mockResolvedValue([
-        { id: 4, lokasi_id: 9, nomor: 23, status: 'dipanggil', waktu_panggil: new Date('2026-10-29T03:00:00Z') },
-        { id: 5, lokasi_id: 9, nomor: 25, status: 'menunggu', waktu_panggil: null },
-        { id: 3, lokasi_id: 9, nomor: 24, status: 'menunggu', waktu_panggil: null },
-        { id: 2, lokasi_id: 10, nomor: 12, status: 'dilayani', waktu_panggil: new Date('2026-10-29T02:00:00Z') },
+        { id: 4, lokasi_id: 9, jenis_poli: 'Umum', awalan: 'U', nomor: 23, status: 'dipanggil', waktu_panggil: new Date('2026-10-29T03:00:00Z') },
+        { id: 5, lokasi_id: null, jenis_poli: 'Umum', awalan: 'U', nomor: 25, status: 'menunggu', waktu_panggil: null },
+        { id: 3, lokasi_id: null, jenis_poli: 'Umum', awalan: 'U', nomor: 24, status: 'menunggu', waktu_panggil: null },
+        { id: 2, lokasi_id: 11, jenis_poli: 'Gigi', awalan: 'G', nomor: 12, status: 'dilayani', waktu_panggil: new Date('2026-10-29T02:00:00Z') },
     ]);
     const res = await ambil('7');
     expect(res.status).toBe(200);
@@ -71,23 +76,28 @@ test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa ide
     const { data } = await res.json();
     expect(data.fasyankes_logo_url).toBe('/asset/brand/bhakti-rahayu.png');
     expect(jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7 })]));
-    expect(data.panggilan).toEqual({ kode: 'A-023', poli_id: 9, poli_nama: 'Poli Umum', waktu_panggil: '2026-10-29T03:00:00.000Z' });
+    expect(data.panggilan).toEqual({ kode: 'U-023', poli_id: 9, poli_nama: 'Poli Umum 1', waktu_panggil: '2026-10-29T03:00:00.000Z' });
     expect(data.panggilan_aktif).toEqual([data.panggilan]);
-    expect(data.poli[0].berikutnya).toBe('A-024');
-    expect(data.poli[1].sekarang).toEqual({ kode: 'A-012', status: 'dilayani' });
-    expect(jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: new Date(`${tanggalWib(new Date())}T00:00:00Z`), 2: [9, 10] })]));
+    // Poli tidak operasional tidak tampil; antrean menunggu dibagi per jenis poli (satu nomor berikutnya untuk poli sejenis).
+    expect(data.poli.map((p) => p.nama)).toEqual(['Poli Umum 1', 'Poli Umum 2', 'Poli Gigi']);
+    expect(data.poli[0].sekarang).toEqual({ kode: 'U-023', status: 'dipanggil' });
+    expect(data.poli[1].sekarang).toBeNull();
+    expect(data.poli[2].sekarang).toEqual({ kode: 'G-012', status: 'dilayani' });
+    expect(data.jenis).toEqual([{ nama: 'Gigi', berikutnya: null, menunggu: 0 }, { nama: 'Umum', berikutnya: 'U-024', menunggu: 2 }]);
+    expect(jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: new Date(`${tanggalWib(new Date())}T00:00:00Z`), 2: [9, 10, 11] })]));
     expect(JSON.stringify(data)).not.toMatch(/pasien|nomor_rm|kunjungan_id/);
 });
 
 test('antrean kosong tetap mengembalikan poli dan status kosong', async () => {
     jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mockResolvedValue({ nama: 'Klinik Uji' });
-    jest.mocked(db.daftarLokasiUntukBacaKlinikPublik).mockResolvedValue([{ id: 9, nama: 'Poli Umum' }]);
+    jest.mocked(db.daftarPoliUntukJenis).mockResolvedValue([{ id: 9, nama: 'Poli Umum', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' }]);
     jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mockResolvedValue([]);
     const { data } = await (await ambil('7')).json();
     expect(data.fasyankes_logo_url).toBeNull();
     expect(data.panggilan).toBeNull();
     expect(data.panggilan_aktif).toEqual([]);
-    expect(data.poli).toEqual([{ id: 9, nama: 'Poli Umum', sekarang: null, berikutnya: null }]);
+    expect(data.poli).toEqual([{ id: 9, nama: 'Poli Umum', jenis_poli: 'Umum', sekarang: null }]);
+    expect(data.jenis).toEqual([{ nama: 'Umum', berikutnya: null, menunggu: 0 }]);
 });
 
 test('kursor tidak sah ditolak sebelum database dibaca', async () => {

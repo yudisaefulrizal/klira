@@ -11,15 +11,15 @@ export const kunjunganMasukan = z
     .object({
     pasien_id: idPositif,
     jenis: z.enum(NILAI_JENIS_KUNJUNGAN),
-    lokasi_id: idPositif.nullish(),
+    jenis_poli: teksOpsional(60),
     dpjp_id: idPositif.nullish(),
     cara_pembayaran: z.enum(NILAI_CARA_PEMBAYARAN).default('umum'),
     nomor_sep: teksOpsional(50),
     keluhan_singkat: teksOpsional(500),
 })
     .superRefine((d, ctx) => {
-    if (d.jenis === 'AMB' && !d.lokasi_id)
-        ctx.addIssue({ code: 'custom', path: ['lokasi_id'], message: REGISTRASI.galat.poliWajib });
+    if (d.jenis === 'AMB' && !d.jenis_poli?.trim())
+        ctx.addIssue({ code: 'custom', path: ['jenis_poli'], message: REGISTRASI.galat.poliWajib });
     if (d.cara_pembayaran !== 'jkn' && d.nomor_sep?.trim())
         ctx.addIssue({ code: 'custom', path: ['nomor_sep'], message: REGISTRASI.galat.sepHanyaJkn });
 });

@@ -12,18 +12,22 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
         async daftarkan(p, m, alamat) {
             if (!(await repo.pasienAda(p.fasyankes_id, m.pasien_id)))
                 return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
-            if (m.lokasi_id && m.jenis === 'AMB' && !(await repo.poliOperasional(p.fasyankes_id, m.lokasi_id)))
-                return gagal('tidak_valid', REGISTRASI.galat.poliTidakSah, 'lokasi_id');
+            let jenisPoli = null;
+            if (m.jenis === 'AMB') {
+                jenisPoli = await repo.jenisPoliOperasional(p.fasyankes_id, m.jenis_poli);
+                if (!jenisPoli)
+                    return gagal('tidak_valid', REGISTRASI.galat.poliTidakSah, 'jenis_poli');
+            }
             if (m.dpjp_id && !(await repo.dpjpSah(p.fasyankes_id, m.dpjp_id)))
                 return gagal('tidak_valid', REGISTRASI.galat.dpjpTidakSah, 'dpjp_id');
-            if (m.dpjp_id && m.jenis === 'AMB' && m.lokasi_id && !(await repo.dokterDiPoli(p.fasyankes_id, m.dpjp_id, m.lokasi_id))) {
+            if (m.dpjp_id && jenisPoli && !(await repo.dokterDiJenis(p.fasyankes_id, m.dpjp_id, jenisPoli.jenis_poli))) {
                 return gagal('tidak_valid', REGISTRASI.galat.dokterBukanPoli, 'dpjp_id');
             }
             if (await repo.kunjunganBerjalan(p.fasyankes_id, m.pasien_id))
                 return gagal('konflik', REGISTRASI.galat.kunjunganBerjalan);
             let k;
             try {
-                k = await repo.daftarkan(p.fasyankes_id, p.id, { ...m, nomor_sep: kosongJadiNull(m.nomor_sep), keluhan_singkat: kosongJadiNull(m.keluhan_singkat) }, sekarang());
+                k = await repo.daftarkan(p.fasyankes_id, p.id, { ...m, ...(jenisPoli ?? {}), nomor_sep: kosongJadiNull(m.nomor_sep), keluhan_singkat: kosongJadiNull(m.keluhan_singkat) }, sekarang());
             }
             catch (e) {
                 if (e instanceof KunjunganBerjalanError)
@@ -52,18 +56,24 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
             return { ok: true, data: k };
         },
         /** Panggil, mulai, selesai, atau batalkan antrean sesuai perpindahan status yang sah. */
-        async aksiAntrean(p, id, aksi, alamat) {
+        async aksiAntrean(p, id, aksi, alamat, lokasiPilihan) {
             const status = await repo.statusAntrean(p.fasyankes_id, id);
             if (!status)
                 return gagal('tidak_ditemukan', REGISTRASI.galat.antreanTidakAda);
             if (!bolehAksiAntrean(status, aksi))
                 return gagal('konflik', REGISTRASI.galat.antreanTidakSah);
             const t = TRANSISI_ANTREAN[aksi];
-            const hasil = await repo.ubahAntrean(p.fasyankes_id, id, aksi, t.dari, t.ke, sekarang());
+            const hasil = await repo.ubahAntrean(p.fasyankes_id, id, aksi, t.dari, t.ke, sekarang(), lokasiPilihan);
             if (!hasil)
                 return gagal('konflik', REGISTRASI.galat.antreanTidakSah);
             if (hasil.galat === 'poli_sibuk')
                 return gagal('konflik', REGISTRASI.galat.poliSibuk(hasil.poli, hasil.kode));
+            if (hasil.galat === 'jenis_sibuk')
+                return gagal('konflik', REGISTRASI.galat.poliSibukJenis(hasil.jenis));
+            if (hasil.galat === 'dokter_poli_sibuk')
+                return gagal('konflik', REGISTRASI.galat.dokterTanpaPoliKosong(hasil.jenis));
+            if (hasil.galat === 'poli_pilihan_tidak_tersedia')
+                return gagal('konflik', REGISTRASI.galat.poliBukanJenis);
             if (hasil.galat === 'poli_tidak_operasional')
                 return gagal('konflik', REGISTRASI.galat.poliTidakOperasional(hasil.poli));
             kabarkanLayarPanggilan(p.fasyankes_id);

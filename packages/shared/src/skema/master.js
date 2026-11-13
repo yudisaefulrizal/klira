@@ -12,13 +12,15 @@ export const jenisTarif = z.enum(['konsultasi', 'tindakan', 'lab', 'kamar', 'oba
 export const tingkatWilayah = z.enum(['provinsi', 'kabupaten_kota', 'kecamatan', 'kelurahan_desa']);
 const jam = z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, MASTER.galat.waktu);
 const harga = z.number({ error: MASTER.galat.angka }).int(MASTER.galat.angka).min(0, MASTER.galat.angka).max(2_000_000_000, MASTER.galat.angka);
-export const poliMasukan = z.object({
+const lokasiDasar = z.object({
     nama: teksWajib(200),
     ihs_location_id: teksOpsional(100),
     status_operasional: statusOperasional.default('O'),
 });
-export const ruangMasukan = poliMasukan.extend({ induk_id: idPositif.nullish() });
-export const bedMasukan = poliMasukan.extend({
+/** Poli punya jenis (mis. Umum, Gigi); poli sejenis berbagi satu antrean dan awalan nomor. */
+export const poliMasukan = lokasiDasar.extend({ jenis_poli: teksWajib(60) });
+export const ruangMasukan = lokasiDasar.extend({ induk_id: idPositif.nullish() });
+export const bedMasukan = lokasiDasar.extend({
     induk_id: z.number({ error: MASTER.galat.indukBed }).int(MASTER.galat.indukBed).positive(MASTER.galat.indukBed),
 });
 export const praktisiMasukan = profilProfesiMasukan.extend({ pengguna_id: idPositif });
@@ -102,8 +104,8 @@ const bidangLokasi = (induk) => [
 ];
 export const DEFINISI_MASTER = {
     poli: {
-        bidang: bidangLokasi([]),
-        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'ihs_location_id', label: K.ihs }],
+        bidang: bidangLokasi([{ kunci: 'jenis_poli', label: B.jenis_poli, tipe: 'teks', wajib: true, maks: 60, petunjuk: P.jenis_poli }]),
+        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'jenis_poli', label: K.jenisPoli }, { kunci: 'awalan_antrean', label: K.awalanAntrean }, { kunci: 'ihs_location_id', label: K.ihs }],
         punyaStatus: true,
     },
     ruang: {

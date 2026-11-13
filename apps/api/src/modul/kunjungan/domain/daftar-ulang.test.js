@@ -27,7 +27,7 @@ const repo = new RepositoriKunjunganMysql();
 
 const waktu = new Date('2026-10-29T02:00:00Z');
 
-const data = { pasien_id: 10, jenis: 'AMB', lokasi_id: 3, cara_pembayaran: 'umum', nomor_sep: null, keluhan_singkat: null };
+const data = { pasien_id: 10, jenis: 'AMB', jenis_poli: 'Umum', awalan: 'U', cara_pembayaran: 'umum', nomor_sep: null, keluhan_singkat: null };
 
 const baru = { id: 22, pasien_id: 10, jenis: 'AMB', status: 'arrived', tahap_layanan: 'menunggu_skrining', cara_pembayaran: 'umum', nomor_sep: null, lokasi_id: 3, keluhan_singkat: null, mulai: waktu, peserta: [], antrean: { id: 32, nomor: 1, status: 'menunggu' } };
 
@@ -50,7 +50,7 @@ test('pendaftaran ulang memeriksa kembali dalam transaksi dan membuat kunjungan 
     const hasil = await repo.daftarkan(7, 4, data, waktu);
     expect(jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mock.calls[0].slice(0, 4)).toEqual([7, 10, ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'], 'batal']);
     expect(jest.mocked(db.tambahKunjunganUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 1: 10, 9: waktu })]));
-    expect(jest.mocked(db.tambahAntreanUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 1: 22, 3: new Date('2026-10-29T00:00:00Z'), 4: 1 })]));
+    expect(jest.mocked(db.tambahAntreanUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 1: 22, 2: 'Umum', 3: 'U', 4: new Date('2026-10-29T00:00:00Z'), 5: 1 })]));
     expect(hasil).toMatchObject({ id: 22, pasien_id: 10, antrean: { status: 'menunggu' } });
 });
 

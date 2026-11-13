@@ -10,9 +10,9 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
     const kunjungan = { id: 5, antrean: { id: 8, nomor: 1, kode: 'A-001', status: 'menunggu' } };
     const dasarRepo = {
         pasienAda: async (f, id) => f === 1 && id === 10,
-        poliOperasional: async (f, id) => f === 1 && id === 20,
+        jenisPoliOperasional: async (f, jenis) => (f === 1 && String(jenis).toLowerCase() === 'umum' ? { jenis_poli: 'Umum', awalan: 'U' } : null),
         dpjpSah: async (f, id) => f === 1 && (id === 30 || id === 32),
-        dokterDiPoli: async (f, id, lokasi) => f === 1 && id === 30 && lokasi === 20,
+        dokterDiJenis: async (f, id, jenis) => f === 1 && id === 30 && jenis === 'Umum',
         kunjunganBerjalan: async () => false,
         daftarkan: jest.fn(async () => kunjungan),
         tahapSekarang: async (f, id) => (f === 1 && id === 5 ? 'pemeriksaan' : null),
@@ -25,25 +25,25 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         catatan.length = 0;
         jest.clearAllMocks();
     });
-    const masukan = { pasien_id: 10, jenis: 'AMB', lokasi_id: 20, dpjp_id: 30, cara_pembayaran: 'jkn', nomor_sep: ' ', keluhan_singkat: ' batuk ' };
+    const masukan = { pasien_id: 10, jenis: 'AMB', jenis_poli: 'umum', dpjp_id: 30, cara_pembayaran: 'jkn', nomor_sep: ' ', keluhan_singkat: ' batuk ' };
     it('mendaftarkan dengan nilai dinormalkan dan mencatat audit input', async () => {
         const h = await buat().daftarkan(saya, masukan);
         expect(h).toMatchObject({ ok: true });
-        expect(dasarRepo.daftarkan).toHaveBeenCalledWith(1, 3, expect.objectContaining({ nomor_sep: null, keluhan_singkat: 'batuk' }), new Date('2026-10-25T01:00:00Z'));
+        expect(dasarRepo.daftarkan).toHaveBeenCalledWith(1, 3, expect.objectContaining({ nomor_sep: null, keluhan_singkat: 'batuk', jenis_poli: 'Umum', awalan: 'U' }), new Date('2026-10-25T01:00:00Z'));
         expect(catatan).toEqual([expect.objectContaining({ aksi: 'input', entitas: 'kunjungan' })]);
     });
-    it('menolak dokter yang tidak bertugas di poli terpilih; dokter boleh kosong', async () => {
+    it('menolak dokter yang tidak bertugas di poli jenis terpilih; dokter boleh kosong', async () => {
         const l = buat();
         expect(await l.daftarkan(saya, { ...masukan, dpjp_id: 32 })).toMatchObject({ ok: false, kode: 'tidak_valid', pesan: REGISTRASI.galat.dokterBukanPoli });
         expect(dasarRepo.daftarkan).not.toHaveBeenCalled();
         expect(await l.daftarkan(saya, { ...masukan, dpjp_id: undefined })).toMatchObject({ ok: true });
         // Rawat inap langsung tanpa poli: tidak ada pemeriksaan poli dokter.
-        expect(await l.daftarkan(saya, { ...masukan, jenis: 'IMP', lokasi_id: undefined, dpjp_id: 32 })).toMatchObject({ ok: true });
+        expect(await l.daftarkan(saya, { ...masukan, jenis: 'IMP', jenis_poli: undefined, dpjp_id: 32 })).toMatchObject({ ok: true });
     });
     it('menolak pasien, poli, atau DPJP di luar fasyankes dan kunjungan berjalan tanpa menyimpan', async () => {
         const l = buat();
         expect(await l.daftarkan({ id: 3, fasyankes_id: 2 }, masukan)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
-        expect(await l.daftarkan(saya, { ...masukan, lokasi_id: 21 })).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(await l.daftarkan(saya, { ...masukan, jenis_poli: 'Bedah' })).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(await l.daftarkan(saya, { ...masukan, dpjp_id: 31 })).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(await buat({ kunjunganBerjalan: async () => true }).daftarkan(saya, masukan)).toMatchObject({ ok: false, kode: 'konflik' });
         expect(dasarRepo.daftarkan).not.toHaveBeenCalled();
@@ -63,7 +63,7 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
     it('antrean: aksi sesuai status; mulai dari menunggu ditolak', async () => {
         const l = buat();
         expect(await l.aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: true });
-        expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', expect.any(Date));
+        expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', expect.any(Date), undefined);
         expect(await l.aksiAntrean(saya, 8, 'mulai')).toMatchObject({ ok: false, kode: 'konflik' });
         expect(await l.aksiAntrean({ id: 3, fasyankes_id: 2 }, 8, 'panggil')).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });

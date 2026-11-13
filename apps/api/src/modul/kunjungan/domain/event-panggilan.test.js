@@ -11,8 +11,16 @@ jest.unstable_mockModule('@klira/db', () => {
     const tambahEventPanggilanUntukUbahAntrean = jest.fn();
     const kunci = jest.fn();
     const cariAntreanSibukUntukPanggil = jest.fn();
+    const daftarPoliUntukJenis = jest.fn();
+    const daftarPoliBebasUntukPanggil = jest.fn();
+    const ubahAntreanUntukTetapkanPoli = jest.fn();
+    const wajibKunjunganUntukAmbilKunjungan = jest.fn();
     return { ...kliraActual0,
         cariAntreanSibukUntukPanggil: cariAntreanSibukUntukPanggil,
+        daftarPoliUntukJenis: daftarPoliUntukJenis,
+        daftarPoliBebasUntukPanggil: daftarPoliBebasUntukPanggil,
+        ubahAntreanUntukTetapkanPoli: ubahAntreanUntukTetapkanPoli,
+        wajibKunjunganUntukAmbilKunjungan: wajibKunjunganUntukAmbilKunjungan,
         pool: {},
         daftarAntreanUntukPetakanAntrean: daftarAntreanUntukPetakanAntrean,
         daftarPasienUntukPetakanAntrean: daftarPasienUntukPetakanAntrean,
@@ -88,4 +96,43 @@ test('aksi batal tidak membuat event suara', async () => {
     const { repo } = siapkan();
     await repo.ubahAntrean(7, 11, 'batal', ['menunggu'], 'batal', waktu);
     expect(db.tambahEventPanggilanUntukUbahAntrean).not.toHaveBeenCalled();
+});
+
+describe('poli ditetapkan saat pertama dipanggil (antrean per jenis poli)', () => {
+    const poliUmum = [
+        { id: 9, nama: 'Poli Umum 1', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
+        { id: 10, nama: 'Poli Umum 2', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
+    ];
+    function siapkanBelumDipanggil({ dpjp = null, semua = poliUmum, bebas = poliUmum } = {}) {
+        const { repo } = siapkan();
+        jest.mocked(db.wajibAntreanUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ lokasi_id: null, nomor: 5, awalan: 'U', jenis_poli: 'Umum', kunjungan_id: 40, tanggal }));
+        jest.mocked(db.wajibKunjunganUntukAmbilKunjungan).mockImplementation(jest.fn().mockResolvedValue({ peserta: dpjp ? [{ pengguna_id: dpjp }] : [] }));
+        jest.mocked(db.daftarPoliUntukJenis).mockImplementation(jest.fn().mockResolvedValue(semua));
+        jest.mocked(db.daftarPoliBebasUntukPanggil).mockImplementation(jest.fn().mockResolvedValue(bebas));
+        return repo;
+    }
+    test('memilih poli sejenis pertama yang bebas, menetapkannya, dan menyuarakan nama poli beserta kode berawalan jenis', async () => {
+        const repo = siapkanBelumDipanggil({ bebas: [poliUmum[1]] });
+        await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu);
+        expect(db.ubahAntreanUntukTetapkanPoli).toHaveBeenCalledWith(11, 10, expect.anything());
+        expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 4)).toEqual([7, 10, 'Poli Umum 2', 'U-005']);
+    });
+    test('dokter pilihan membatasi poli: dikirim ke pencarian poli bebas; tidak ada poli bebas menolak tanpa mengubah antrean', async () => {
+        const repo = siapkanBelumDipanggil({ dpjp: 2, bebas: [] });
+        expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'dokter_poli_sibuk', jenis: 'Umum' });
+        expect(jest.mocked(db.daftarPoliBebasUntukPanggil).mock.calls[0].slice(0, 4)).toEqual([7, 'Umum', tanggal, 2]);
+        expect(db.ubahAntreanUntukTetapkanPoli).not.toHaveBeenCalled();
+        expect(db.ubahAntreanUntukUbahAntrean).not.toHaveBeenCalled();
+    });
+    test('semua poli sejenis sibuk atau tidak operasional ditolak dengan galat berbeda', async () => {
+        expect(await siapkanBelumDipanggil({ bebas: [] }).ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'jenis_sibuk', jenis: 'Umum' });
+        const tutup = siapkanBelumDipanggil({ semua: [{ ...poliUmum[0], status_operasional: 'U' }], bebas: [] });
+        expect(await tutup.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toMatchObject({ galat: 'poli_tidak_operasional' });
+    });
+    test('poli pilihan harus termasuk poli bebas; poli yang tidak bebas ditolak', async () => {
+        const repo = siapkanBelumDipanggil({ bebas: [poliUmum[1]] });
+        expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu, 9)).toEqual({ galat: 'poli_pilihan_tidak_tersedia', jenis: 'Umum' });
+        await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu, 10);
+        expect(db.ubahAntreanUntukTetapkanPoli).toHaveBeenCalledWith(11, 10, expect.anything());
+    });
 });

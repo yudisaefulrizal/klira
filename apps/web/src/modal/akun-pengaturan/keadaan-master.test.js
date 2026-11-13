@@ -32,11 +32,11 @@ describe('bentuk generik master', () => {
     it('bentuk masukan mengubah tipe: angka, id, hari; kosong opsional tidak dikirim', () => {
         const m = bentukMasukan('jadwal', { pengguna_id: '3', lokasi_id: '4', hari: '2', jam_mulai: '08:00', jam_selesai: '12:00', kuota: '15', berlaku_dari: '2026-01-01', berlaku_sampai: '' }, false);
         expect(m).toEqual({ pengguna_id: 3, lokasi_id: 4, hari: 2, jam_mulai: '08:00', jam_selesai: '12:00', kuota: 15, berlaku_dari: '2026-01-01' });
-        expect(bentukMasukan('poli', { nama: ' Umum ', status_operasional: 'O', ihs_location_id: ' ' }, false)).toEqual({ nama: 'Umum', status_operasional: 'O' });
+        expect(bentukMasukan('poli', { nama: ' Poli Umum 1 ', jenis_poli: ' Umum ', status_operasional: 'O', ihs_location_id: ' ' }, false)).toEqual({ nama: 'Poli Umum 1', jenis_poli: 'Umum', status_operasional: 'O' });
     });
     it('validasi memakai skema bersama dengan pesan Indonesia', () => {
-        expect(galatMaster('poli', awalMaster('poli'), false)).toEqual({ nama: MASTER.galat.wajib });
-        expect(galatMaster('poli', { ...awalMaster('poli'), nama: 'Umum' }, false)).toEqual({});
+        expect(galatMaster('poli', awalMaster('poli'), false)).toEqual({ nama: MASTER.galat.wajib, jenis_poli: MASTER.galat.wajib });
+        expect(galatMaster('poli', { ...awalMaster('poli'), nama: 'Poli Umum 1', jenis_poli: 'Umum' }, false)).toEqual({});
         expect(galatMaster('bed', { ...awalMaster('bed'), nama: 'B1' }, false)).toEqual({ induk_id: MASTER.galat.indukBed });
         const jadwal = { pengguna_id: '1', lokasi_id: '1', hari: '1', jam_mulai: '10:00', jam_selesai: '09:00', kuota: '0', berlaku_dari: '', berlaku_sampai: '' };
         const g = galatMaster('jadwal', jadwal, false);

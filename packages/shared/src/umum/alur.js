@@ -11,7 +11,13 @@ export const bolehAksiAntrean = (status, aksi) => TRANSISI_ANTREAN[aksi].dari.in
 export const aksiAntreanTersedia = (status) => AKSI_ANTREAN.filter((a) => bolehAksiAntrean(status, a));
 export const AWALAN_ANTREAN = 'A';
 /** Nomor antrean tampil, mis. 1 menjadi A-001. */
-export const kodeAntrean = (nomor) => `${AWALAN_ANTREAN}-${String(nomor).padStart(3, '0')}`;
+export const kodeAntrean = (nomor, awalan = AWALAN_ANTREAN) => `${awalan}-${String(nomor).padStart(3, '0')}`;
+/** Awalan nomor antrean untuk jenis poli: huruf pertama nama jenis; bila sudah dipakai jenis lain, huruf berikutnya dari nama, lalu A sampai Z. `terpakai` adalah awalan jenis lain. */
+export function awalanUntukJenis(jenis, terpakai) {
+    const pakai = new Set(terpakai);
+    const kandidat = [...String(jenis).toUpperCase().replace(/[^A-Z]/g, ''), ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'];
+    return kandidat.find((h) => !pakai.has(h)) ?? 'A';
+}
 /** Tahap tujuan yang sah dari tahap sekarang. Penutupan kunjungan (ditutup) memiliki peristiwa sendiri (7), bukan ubah tahap biasa. */
 export const TAHAP_TUJUAN = {
     menunggu_skrining: ['pemeriksaan'],

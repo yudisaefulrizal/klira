@@ -93,12 +93,18 @@ async function masterAda(jenis, nama, badan) {
 
 async function siapkanMaster(id) {
   console.log('\n[2] Master data (poli, ruang, bed, tarif, jadwal)');
-  const poliUmum = await cariMaster('poli', 'umum');
-  if (poliUmum) await wajib('ubah nama poli umum', 'admin', 'PATCH', `/master/poli/${poliUmum.id}`, { nama: 'Poli Umum', status_operasional: 'O' });
+  // Poli punya jenis; Poli Umum 1 dan 2 sejenis (Umum) dan berbagi satu antrean, sehingga dua pasien umum dapat dilayani bersamaan.
+  const poliUmum = (await cariMaster('poli', 'Poli Umum 1')) ?? (await cariMaster('poli', 'Poli Umum')) ?? (await cariMaster('poli', 'umum'));
+  const poliJenis = async (nama, jenis_poli, ada) => {
+    const id = ada?.id ?? (await masterAda('poli', nama, { nama, jenis_poli }));
+    if (id) await wajib(`poli ${nama} (jenis ${jenis_poli})`, 'admin', 'PATCH', `/master/poli/${id}`, { nama, jenis_poli, status_operasional: 'O' });
+    return id;
+  };
   const poli = {
-    umum: poliUmum?.id ?? await masterAda('poli', 'Poli Umum', { nama: 'Poli Umum' }),
-    gigi: await masterAda('poli', 'Poli Gigi', { nama: 'Poli Gigi' }),
-    kia: await masterAda('poli', 'Poli KIA', { nama: 'Poli KIA' }),
+    umum: await poliJenis('Poli Umum 1', 'Umum', poliUmum),
+    umum2: await poliJenis('Poli Umum 2', 'Umum'),
+    gigi: await poliJenis('Poli Gigi', 'Gigi', await cariMaster('poli', 'Poli Gigi')),
+    kia: await poliJenis('Poli KIA', 'KIA', await cariMaster('poli', 'Poli KIA')),
   };
   const ruang = await masterAda('ruang', 'Ruang Observasi', { nama: 'Ruang Observasi', induk_id: poli.umum });
   for (const b of ['Bed 1', 'Bed 2', 'Bed 3']) await masterAda('bed', b, { nama: b, induk_id: ruang });
@@ -127,7 +133,7 @@ async function siapkanMaster(id) {
   const jadwalAda = (await api('admin', 'GET', '/master/jadwal?ukuran=100')).data?.total ?? 0;
   if (!jadwalAda) {
     const jadwal = [
-      [id.dokter, poli.umum, '08:00', '14:00', 30], [id.dokter, poli.umum, '16:00', '21:00', 20],
+      [id.dokter, poli.umum, '08:00', '14:00', 30], [id.dokter, poli.umum, '16:00', '21:00', 20], [id.dokter, poli.umum2, '08:00', '14:00', 30],
       [id.drg, poli.gigi, '09:00', '15:00', 12], [id.bidan, poli.kia, '08:00', '13:00', 15],
     ];
     for (const [pengguna_id, lokasi_id, jam_mulai, jam_selesai, kuota] of jadwal) {
@@ -328,7 +334,7 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
     const kasus = KASUS[i % KASUS.length];
     console.log(`  — ${p.nama} → ${target}`);
     const k = await wajib('daftar kunjungan', 'daftar', 'POST', '/kunjungan', {
-      pasien_id: p.id, jenis: 'AMB', lokasi_id: poli.umum, dpjp_id: idDokter, cara_pembayaran: p.bayar,
+      pasien_id: p.id, jenis: 'AMB', jenis_poli: 'Umum', dpjp_id: idDokter, cara_pembayaran: p.bayar,
       nomor_sep: p.bayar === 'jkn' ? `0301R00111${String(26000 + i)}V00${i}` : null, keluhan_singkat: kasus.keluhan,
     });
     if (!k || target === 'antre') continue;

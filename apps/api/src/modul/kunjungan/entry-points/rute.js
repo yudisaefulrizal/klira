@@ -41,7 +41,9 @@ export function buatRuteKunjungan(layananAkses, layananIzin, layanan) {
         const aksi = aksiAntrean.safeParse(req.params.aksi);
         if (!id.success || !aksi.success)
             return tidakAda(res);
-        kirimHasil(res, await layanan.aksiAntrean(pengguna(res), id.data.id, aksi.data, alamatDari(req)));
+        // `lokasi_id` (opsional): poli yang memanggil; bila kosong, sistem memilih poli sejenis yang bebas.
+        const pilihan = Number.isInteger(req.body?.lokasi_id) && req.body.lokasi_id > 0 ? req.body.lokasi_id : undefined;
+        kirimHasil(res, await layanan.aksiAntrean(pengguna(res), id.data.id, aksi.data, alamatDari(req), pilihan));
     }));
     return rute;
 }

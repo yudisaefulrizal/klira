@@ -48,11 +48,24 @@ export class RepositoriPasienMysql {
             lokasiIds.length ? db.daftarLokasiUntukPetakan(lokasiIds, fasyankesId) : [],
             penggunaIds.length ? db.daftarPenggunaUntukRiwayat(penggunaIds, fasyankesId) : [],
         ]);
-        // Poli yang masih memegang pasien (dipanggil/dilayani) hari ini: aksi Panggil untuk antrean lain di poli itu ditahan.
+        // Aksi Panggil ditahan bila poli yang memegang antrean ini masih melayani pasien lain (panggil ulang), atau bila antrean
+        // belum punya poli dan semua poli sejenis (atau poli dokter pilihan) sedang melayani.
+        const hariIni = tglDb(tanggalWib(new Date()));
         const sibukPoli = new Map();
-        for (const a of await db.daftarAntreanSibukUntukPetakan(fasyankesId, lokasiIds, tglDb(tanggalWib(new Date()))))
+        for (const a of await db.daftarAntreanSibukUntukPetakan(fasyankesId, lokasiIds, hariIni))
             if (!sibukPoli.has(a.lokasi_id))
                 sibukPoli.set(a.lokasi_id, a);
+        const jenisSibuk = new Map();
+        const jenisPenuh = async (jenis, dpjp) => {
+            const kunci = `${jenis}|${dpjp ?? ''}`;
+            if (!jenisSibuk.has(kunci))
+                jenisSibuk.set(kunci, (await db.daftarPoliBebasUntukPanggil(fasyankesId, jenis, hariIni, dpjp ?? undefined)).length === 0);
+            return jenisSibuk.get(kunci);
+        };
+        const penuh = new Map();
+        for (const { kunjungan: k } of isi)
+            if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && await jenisPenuh(k.antrean.jenis_poli, k.peserta[0]?.pengguna_id))
+                penuh.set(k.id, k.antrean.jenis_poli);
         const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
         const lab = kunjunganIds.length
             ? await db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi')
@@ -79,8 +92,11 @@ export class RepositoriPasienMysql {
                 poli_nama: k.lokasi_id ? namaPoli.get(k.lokasi_id) ?? null : null,
                 dpjp_nama: k.peserta[0] ? namaDpjp.get(k.peserta[0].pengguna_id) ?? null : null,
                 mulai: iso(k.mulai),
-                antrean: k.antrean ? { id: k.antrean.id, kode: kodeAntrean(k.antrean.nomor), status: k.antrean.status } : null,
-                poli_sibuk: k.antrean && ['menunggu', 'dipanggil'].includes(k.antrean.status) && sibukPoli.get(k.lokasi_id) && sibukPoli.get(k.lokasi_id).id !== k.antrean.id ? { kode: kodeAntrean(sibukPoli.get(k.lokasi_id).nomor) } : null,
+                jenis_poli: k.antrean?.jenis_poli || null,
+                antrean: k.antrean ? { id: k.antrean.id, kode: kodeAntrean(k.antrean.nomor, k.antrean.awalan), status: k.antrean.status } : null,
+                poli_sibuk: penuh.has(k.id)
+                    ? { jenis_poli: penuh.get(k.id), kode: null }
+                    : k.antrean && ['menunggu', 'dipanggil'].includes(k.antrean.status) && k.lokasi_id && sibukPoli.get(k.lokasi_id) && sibukPoli.get(k.lokasi_id).id !== k.antrean.id ? { jenis_poli: k.antrean.jenis_poli, kode: kodeAntrean(sibukPoli.get(k.lokasi_id).nomor, sibukPoli.get(k.lokasi_id).awalan) } : null,
                 lab: hitungLab(k.id),
                 ada_resep: resepAda.has(k.id),
             };

@@ -1,12 +1,13 @@
 import { jest } from '@jest/globals';
 
-const { aksiAntreanTersedia, bolehAksiAntrean, CARA_PEMBAYARAN, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan, statusIdentitasDari, tanggalWib, umurTahun } = await import("../index.js");
+const { awalanUntukJenis, aksiAntreanTersedia, bolehAksiAntrean, CARA_PEMBAYARAN, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan, statusIdentitasDari, tanggalWib, umurTahun } = await import("../index.js");
 
 describe('antrean', () => {
     it('kode nomor A-001 dan seterusnya', () => {
         expect(kodeAntrean(1)).toBe('A-001');
         expect(kodeAntrean(42)).toBe('A-042');
         expect(kodeAntrean(1234)).toBe('A-1234');
+        expect(kodeAntrean(5, 'G')).toBe('G-005');
     });
     it('perpindahan status yang sah', () => {
         expect(aksiAntreanTersedia('menunggu')).toEqual(['panggil', 'batal']);
@@ -79,16 +80,16 @@ describe('skema registrasi pasien', () => {
 describe('skema kunjungan dan penyaring', () => {
     it('rawat jalan wajib poli; SEP hanya untuk JKN', () => {
         expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB' }).success).toBe(false);
-        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2 }).success).toBe(true);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', jenis_poli: 'Umum' }).success).toBe(true);
         expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'IMP' }).success).toBe(true);
         expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'IMP', nomor_sep: 'X' }).success).toBe(false);
         const jkn = kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'IMP', cara_pembayaran: 'jkn', nomor_sep: '' });
         expect(jkn.success).toBe(true);
     });
     it('cara bayar asuransi lain diterima tanpa SEP; data penjamin pasien opsional dengan batas panjang', () => {
-        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2, cara_pembayaran: 'asuransi' }).success).toBe(true);
-        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2, cara_pembayaran: 'asuransi', nomor_sep: 'X' }).success).toBe(false);
-        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', lokasi_id: 2, cara_pembayaran: 'lain' }).success).toBe(false);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', jenis_poli: 'Umum', cara_pembayaran: 'asuransi' }).success).toBe(true);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', jenis_poli: 'Umum', cara_pembayaran: 'asuransi', nomor_sep: 'X' }).success).toBe(false);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', jenis_poli: 'Umum', cara_pembayaran: 'lain' }).success).toBe(false);
         expect(CARA_PEMBAYARAN.label('asuransi')).toBe('Asuransi lain');
         const r = registrasiPasienMasukan.shape;
         expect(r.asuransi_nama.safeParse('x'.repeat(100)).success).toBe(true);
@@ -101,5 +102,15 @@ describe('skema kunjungan dan penyaring', () => {
         expect(filterPasien.parse({ cari: '', tahap: '' }).tahap).toBe('semua');
         expect(filterPasien.safeParse({ tahap: 'lain' }).success).toBe(false);
         expect(cekDuplikatMasukan.parse({ nik: '', nama: ' ' })).toEqual({});
+    });
+});
+
+describe('awalan antrean per jenis poli', () => {
+    it('huruf pertama jenis; bila terpakai jenis lain, huruf berikutnya lalu A sampai Z', () => {
+        expect(awalanUntukJenis('Umum', [])).toBe('U');
+        expect(awalanUntukJenis('Gigi', ['U'])).toBe('G');
+        expect(awalanUntukJenis('Ugd', ['U'])).toBe('G');
+        expect(awalanUntukJenis('UU', ['U'])).toBe('A');
+        expect(awalanUntukJenis('KIA', ['K', 'I'])).toBe('A');
     });
 });

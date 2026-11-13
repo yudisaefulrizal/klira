@@ -63,13 +63,13 @@ export function pasangLayarPanggilan(wadah) {
       // Jumlah poli menentukan pembagian tinggi layar (daftar pelayanan dan ubin antrean berikutnya).
       const n = Math.max(1, tampilan?.poli.length ?? 1);
       elemen('.lp-isi').style.setProperty('--n', String(n));
-      elemen('.lp-isi').style.setProperty('--r', String(Math.ceil(n / 3)));
+      elemen('.lp-isi').style.setProperty('--r', String(Math.max(1, Math.ceil((tampilan?.jenis?.length ?? 1) / 3))));
       elemen('.lp-nomor').textContent = panggilan?.kode ?? '—';
       elemen('.lp-tujuan p').textContent = panggilan ? 'Silakan menuju' : !data && !galat ? 'Memuat antrean…' : 'Silakan menunggu';
       elemen('.lp-tujuan h2').textContent = panggilan?.poli_nama ?? 'Belum ada panggilan';
       elemen('.lp-status').textContent = galat ? 'Data belum diperbarui' : panggilan ? 'Panggilan berlangsung' : 'Antrean akan tampil di sini';
       elemen('.lp-daftar').innerHTML = tampilan?.poli.length ? tampilan.poli.map(p => `<div class="lp-poli"><span class="lp-titik ${p.sekarang ? '' : 'lp-diam'}"></span><div><h3>${aman(p.nama)}</h3><p>${p.sekarang?.status === 'dipanggil' ? 'Sedang dipanggil' : p.sekarang ? 'Sedang dilayani' : 'Menunggu panggilan'}</p></div><strong>${aman(p.sekarang?.kode ?? '—')}</strong></div>`).join('') : `<p class="lp-kosong">${!data && !galat ? 'Memuat pelayanan…' : 'Belum ada pelayanan aktif.'}</p>`;
-      elemen('.lp-ubin').innerHTML = tampilan?.poli.map(p => `<div><strong>${aman(p.berikutnya ?? '—')}</strong><span>${aman(p.nama)}</span></div>`).join('') ?? '';
+      elemen('.lp-ubin').innerHTML = tampilan?.jenis?.map(j => `<div><strong>${aman(j.berikutnya ?? '—')}</strong><span>${aman(j.nama)}</span></div>`).join('') ?? '';
     }
     elemen('.lp-koneksi').classList.toggle('lp-gagal', !!galat || !sah);
     elemen('.lp-koneksi > span').textContent = !sah ? 'Fasilitas belum dipilih' : galat ? 'Menghubungkan kembali' : data ? mode === 'websocket' ? 'Terhubung langsung' : mode === 'polling' ? 'Terhubung · Mode cadangan' : 'Menghubungkan langsung…' : 'Menghubungkan…';

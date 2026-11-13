@@ -48,7 +48,7 @@ export function hitungStatistik(kunjungan, aktif, riwayat, poli, awal, akhir, se
         if (!r || !t || r.tahap !== t.kode)
             return [];
         const n = Math.floor(menit(r.masuk, sekarang));
-        return n > t.target ? [{ id: k.id, nomor: k.antrean ? `A-${String(k.antrean.nomor).padStart(3, '0')}` : `K-${k.id}`, poli: poli.find(p => p.id === k.lokasi_id)?.nama ?? '—', tahap: t.nama, menit: n, target: t.target }] : [];
+        return n > t.target ? [{ id: k.id, nomor: k.antrean ? (k.antrean.kode ?? `${k.antrean.awalan ?? 'A'}-${String(k.antrean.nomor).padStart(3, '0')}`) : `K-${k.id}`, poli: poli.find(p => p.id === k.lokasi_id)?.nama ?? '—', tahap: t.nama, menit: n, target: t.target }] : [];
     }).sort((a, b) => b.menit - a.menit);
     const jumlahTahap = new Map();
     const tindakLanjut = terlambat.filter(r => { const n = jumlahTahap.get(r.tahap) ?? 0; jumlahTahap.set(r.tahap, n + 1); return n < 20; });

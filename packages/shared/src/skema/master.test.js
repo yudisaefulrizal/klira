@@ -3,9 +3,10 @@ import { jest } from '@jest/globals';
 const { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, kodeTindakanBerikut, profilKlinikMasukan, teksSelMaster } = await import("../index.js");
 
 describe('skema master', () => {
-    it('poli: nama wajib, status bawaan operasional', () => {
-        expect(SKEMA_MASTER.poli.safeParse({ nama: '' }).success).toBe(false);
-        expect(SKEMA_MASTER.poli.parse({ nama: 'Umum' }).status_operasional).toBe('O');
+    it('poli: nama dan jenis wajib, status bawaan operasional', () => {
+        expect(SKEMA_MASTER.poli.safeParse({ nama: '', jenis_poli: 'Umum' }).success).toBe(false);
+        expect(SKEMA_MASTER.poli.safeParse({ nama: 'Poli Umum 1' }).success).toBe(false);
+        expect(SKEMA_MASTER.poli.parse({ nama: 'Poli Umum 1', jenis_poli: 'Umum' }).status_operasional).toBe('O');
     });
     it('bed wajib induk; ruang induk opsional', () => {
         expect(SKEMA_MASTER.bed.safeParse({ nama: 'B' }).success).toBe(false);

@@ -94,42 +94,39 @@ describe('bentuk registrasi dan bantuan isian', () => {
     });
 });
 describe('pendaftaran kunjungan', () => {
-    it('rawat jalan wajib poli; IMP tidak membawa poli; SEP hanya JKN', () => {
+    it('rawat jalan wajib jenis poli; IMP tidak membawa jenis poli; SEP hanya JKN', () => {
         const k = awalKunjungan(7);
         expect(bentukKunjungan(k)).not.toHaveProperty('dpjp_id');
-        expect(galatKunjungan(k)).toEqual({ lokasi_id: expect.any(String) });
-        expect(galatKunjungan({ ...k, lokasi_id: '3' })).toEqual({});
+        expect(galatKunjungan(k)).toEqual({ jenis_poli: expect.any(String) });
+        expect(galatKunjungan({ ...k, jenis_poli: 'Umum' })).toEqual({});
         expect(galatKunjungan(awalKunjungan())).toHaveProperty('pasien_id');
-        expect(bentukKunjungan({ ...k, jenis: 'IMP', lokasi_id: '3', nomor_sep: 'X' })).toMatchObject({ lokasi_id: undefined, nomor_sep: undefined });
-        expect(bentukKunjungan({ ...k, lokasi_id: '3', cara_pembayaran: 'jkn', nomor_sep: ' S1 ' })).toMatchObject({ pasien_id: 7, lokasi_id: 3, nomor_sep: ' S1 ' });
+        expect(bentukKunjungan({ ...k, jenis: 'IMP', jenis_poli: 'Umum', nomor_sep: 'X' })).toMatchObject({ jenis_poli: undefined, nomor_sep: undefined });
+        expect(bentukKunjungan({ ...k, jenis_poli: 'Umum', cara_pembayaran: 'jkn', nomor_sep: ' S1 ' })).toMatchObject({ pasien_id: 7, jenis_poli: 'Umum', nomor_sep: ' S1 ' });
         expect(galatKunjungan({ ...k, jenis: 'IMP' })).toEqual({});
     });
     it('ubah membersihkan isian yang tidak berlaku', () => {
-        const k = { ...awalKunjungan(1), lokasi_id: '3', cara_pembayaran: 'jkn', nomor_sep: 'S' };
+        const k = { ...awalKunjungan(1), jenis_poli: 'Umum', cara_pembayaran: 'jkn', nomor_sep: 'S' };
         expect(ubahKunjungan(k, { cara_pembayaran: 'umum' }).nomor_sep).toBe('');
-        expect(ubahKunjungan(k, { jenis: 'IMP' }).lokasi_id).toBe('');
+        expect(ubahKunjungan(k, { jenis: 'IMP' }).jenis_poli).toBe('');
     });
-    it('dokter terfilter poli: dikosongkan bila bukan dokter poli baru, terpilih otomatis bila poli hanya punya satu dokter', () => {
+    it('dokter terfilter jenis poli: dikosongkan bila bukan dokter jenis baru; dokter opsional dan tidak terpilih otomatis', () => {
         const dpjp = [
-            { id: 1, nama: 'dr. A', profesi: 'Dokter umum', poli_ids: [3, 4] },
-            { id: 2, nama: 'dr. B', profesi: 'Dokter umum', poli_ids: [3] },
-            { id: 5, nama: 'drg. C', profesi: 'Dokter gigi', poli_ids: [6] },
+            { id: 1, nama: 'dr. A', profesi: 'Dokter umum', jenis_poli: ['Umum', 'KIA'] },
+            { id: 2, nama: 'dr. B', profesi: 'Dokter umum', jenis_poli: ['Umum'] },
+            { id: 5, nama: 'drg. C', profesi: 'Dokter gigi', jenis_poli: ['Gigi'] },
         ];
-        expect(dokterPoli(dpjp, '3').map((d) => d.id)).toEqual([1, 2]);
+        expect(dokterPoli(dpjp, 'Umum').map((d) => d.id)).toEqual([1, 2]);
+        expect(dokterPoli(dpjp, 'umum').map((d) => d.id)).toEqual([1, 2]);
         expect(dokterPoli(dpjp, '')).toEqual([]);
         const k = awalKunjungan(1);
-        const di3 = ubahKunjungan(k, { lokasi_id: '3' }, dpjp);
-        expect(di3.dpjp_id).toBe('');
-        const pilihB = ubahKunjungan(di3, { dpjp_id: '2' }, dpjp);
-        expect(ubahKunjungan(pilihB, { lokasi_id: '4' }, dpjp).dpjp_id).toBe('1');
-        expect(ubahKunjungan({ ...pilihB, dpjp_id: '1' }, { lokasi_id: '4' }, dpjp).dpjp_id).toBe('1');
-        expect(ubahKunjungan(pilihB, { lokasi_id: '6' }, dpjp).dpjp_id).toBe('5');
-        expect(ubahKunjungan(pilihB, { lokasi_id: '9' }, dpjp).dpjp_id).toBe('');
+        const diUmum = ubahKunjungan(k, { jenis_poli: 'Umum' }, dpjp);
+        expect(diUmum.dpjp_id).toBe('');
+        const pilihB = ubahKunjungan(diUmum, { dpjp_id: '2' }, dpjp);
+        expect(ubahKunjungan(pilihB, { jenis_poli: 'KIA' }, dpjp).dpjp_id).toBe('');
+        expect(ubahKunjungan({ ...pilihB, dpjp_id: '1' }, { jenis_poli: 'KIA' }, dpjp).dpjp_id).toBe('1');
+        expect(ubahKunjungan(pilihB, { jenis_poli: 'Gigi' }, dpjp).dpjp_id).toBe('');
         expect(ubahKunjungan(pilihB, { jenis: 'IMP' }, dpjp).dpjp_id).toBe('');
-        // Memilih "Belum ditentukan" pada poli satu dokter tidak diisi ulang otomatis.
-        const di6 = ubahKunjungan(k, { lokasi_id: '6' }, dpjp);
-        expect(ubahKunjungan(di6, { dpjp_id: '' }, dpjp).dpjp_id).toBe('');
-        expect(bentukKunjungan({ ...pilihB, cara_pembayaran: 'asuransi' })).toMatchObject({ lokasi_id: 3, dpjp_id: 2, cara_pembayaran: 'asuransi' });
+        expect(bentukKunjungan({ ...pilihB, cara_pembayaran: 'asuransi' })).toMatchObject({ jenis_poli: 'Umum', dpjp_id: 2, cara_pembayaran: 'asuransi' });
         expect(galatKunjungan({ ...pilihB, cara_pembayaran: 'asuransi' })).toEqual({});
     });
     it('asuransi lain: keterangan dari data pasien, null bila belum diisi; SEP hanya JKN', () => {
