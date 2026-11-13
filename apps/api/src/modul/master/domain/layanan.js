@@ -22,6 +22,9 @@ export function ringkasanSip(sebelum, sesudah) {
 export function buatLayananMaster({ repo, audit }) {
     /** Rujukan harus milik fasyankes yang sama (lintas klinik ditolak). */
     async function periksaRujukan(f, jenis, d, id) {
+        // Poli dipanggil lewat suara dan layar dengan namanya, jadi nama harus membedakan poli (mis. Poli Umum 1, Poli Umum 2).
+        if (jenis === 'poli' && d.nama && (await repo.namaLokasiAda(f, 'poli', d.nama, id)))
+            return { ok: false, kode: 'konflik', pesan: MASTER.galat.namaPoliKembar };
         if (jenis === 'ruang' && d.induk_id && !(await repo.lokasiAda(f, d.induk_id, 'poli')))
             return tidakValid('induk_id', MASTER.galat.bukanMilikKlinik);
         if (jenis === 'bed' && !(await repo.lokasiAda(f, d.induk_id, 'ruang')))

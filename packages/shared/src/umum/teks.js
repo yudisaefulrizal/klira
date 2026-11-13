@@ -429,6 +429,7 @@ export const MASTER = {
         indukJenis: 'Induk tidak sesuai dengan jenis lokasi.',
         penggunaSudahPunyaProfil: 'Pengguna ini sudah punya profil profesi; ubah profil yang ada.',
         kodeKembar: 'Kode sudah dipakai tarif lain.',
+        namaPoliKembar: 'Nama poli sudah dipakai. Bedakan namanya, misalnya Poli Umum 1 dan Poli Umum 2.',
         kodeWajib: 'Kode wajib diisi (kosongkan hanya untuk tindakan agar dibuat otomatis).',
         hargaWajib: 'Harga umum wajib diisi untuk jenis selain tindakan.',
         icd9Wajib: 'Pilih kode ICD-9-CM untuk tindakan.',

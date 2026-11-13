@@ -128,6 +128,11 @@ export async function daftarLokasiUntukOpsi(fasyankes_id, jenis, status_operasio
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `lokasi` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND ((? OR t.`jenis` <=> ?)) AND ((? OR t.`status_operasional` <=> ?)) AND ((? OR t.`nama` LIKE ? ESCAPE '!')) ORDER BY t.`nama` ASC LIMIT ? OFFSET ?", [fasyankes_id === undefined, fasyankes_id ?? null, jenis === undefined, jenis ?? null, status_operasional === undefined, status_operasional ?? null, nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', batas ?? 2147483647, 0], koneksi);
     return baris;
 }
+/** Jumlah lokasi sejenis dengan nama sama (tanpa beda huruf besar/kecil), di luar lokasi yang sedang diubah. */
+export async function hitungLokasiUntukNamaAda(fasyankes_id, jenis, nama, kecuali_id, koneksi = pool) {
+    const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `lokasi` t WHERE t.`fasyankes_id` = ? AND t.`jenis` = ? AND LOWER(TRIM(t.`nama`)) = LOWER(TRIM(?)) AND (? OR t.`id` <> ?)", [fasyankes_id, jenis, nama, kecuali_id === undefined, kecuali_id ?? null], koneksi);
+    return Number(baris.jumlah);
+}
 export async function hitungLokasiUntukLokasiAda(id, fasyankes_id, jenis, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) AND ((? OR t.`jenis` <=> ?))", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null, jenis === undefined, jenis ?? null], koneksi);
     return Number(baris.jumlah);

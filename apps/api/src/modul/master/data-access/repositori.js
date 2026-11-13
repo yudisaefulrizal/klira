@@ -144,6 +144,9 @@ export class RepositoriMasterMysql {
     async lokasiAda(fasyankesId, id, jenis) {
         return (await db.hitungLokasiUntukLokasiAda(id, fasyankesId, jenis)) > 0;
     }
+    async namaLokasiAda(fasyankesId, jenis, nama, kecualiId) {
+        return (await db.hitungLokasiUntukNamaAda(fasyankesId, jenis, nama, kecualiId)) > 0;
+    }
     async penggunaAda(fasyankesId, id) {
         return (await db.hitungPenggunaUntukPenggunaAda(id, fasyankesId)) > 0;
     }

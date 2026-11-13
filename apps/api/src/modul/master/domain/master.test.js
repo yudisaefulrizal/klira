@@ -40,6 +40,7 @@ describe('layanan master dengan repositori tiruan', () => {
         penggunaAda: async () => true,
         punyaProfil: async () => true,
         tarifKodeAda: async () => false,
+        namaLokasiAda: async (f, jenis, nama, kecuali) => jenis === 'poli' && nama === 'Poli Umum' && kecuali !== 1,
         ambil: async () => null,
         buat: async () => ({ id: 5, aktif: true }),
     };
@@ -53,6 +54,12 @@ describe('layanan master dengan repositori tiruan', () => {
         const h = await layanan.buat({ id: 1, fasyankes_id: 1 }, 'ruang', { nama: 'R', induk_id: 10, status_operasional: 'O' });
         expect(h.ok).toBe(true);
         expect(catatan[0]).toMatchObject({ aksi: 'input', entitas: 'lokasi', entitas_id: 5 });
+    });
+    it('nama poli kembar ditolak (tambah dan ubah), nama berbeda atau milik poli itu sendiri sah', async () => {
+        const p = { id: 1, fasyankes_id: 1 };
+        expect(await layanan.buat(p, 'poli', { nama: 'Poli Umum', status_operasional: 'O' })).toMatchObject({ ok: false, kode: 'konflik' });
+        expect((await layanan.buat(p, 'poli', { nama: 'Poli Umum 2', status_operasional: 'O' })).ok).toBe(true);
+        expect(catatan.at(-1)).toMatchObject({ aksi: 'input' });
     });
     it('ubah baris yang tidak ada: tidak ditemukan', async () => {
         expect(await layanan.ubah({ id: 1, fasyankes_id: 1 }, 'poli', 99, { nama: 'x' })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
