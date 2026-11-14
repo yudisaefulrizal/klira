@@ -10,6 +10,8 @@ export const TRANSISI_ANTREAN = {
 export const bolehAksiAntrean = (status, aksi) => TRANSISI_ANTREAN[aksi].dari.includes(status);
 export const aksiAntreanTersedia = (status) => AKSI_ANTREAN.filter((a) => bolehAksiAntrean(status, a));
 export const AWALAN_ANTREAN = 'A';
+/** Antrean penunjang saja (tes lab tanpa poli): jenis dan awalan nomor tetap. */
+export const ANTREAN_LAB = { jenis_poli: 'Laboratorium', awalan: 'L' };
 /** Nomor antrean tampil, mis. 1 menjadi A-001. */
 export const kodeAntrean = (nomor, awalan = AWALAN_ANTREAN) => `${awalan}-${String(nomor).padStart(3, '0')}`;
 /** Awalan nomor antrean untuk jenis poli: huruf pertama nama jenis; bila sudah dipakai jenis lain, huruf berikutnya dari nama, lalu A sampai Z. `terpakai` adalah awalan jenis lain. */
@@ -30,7 +32,7 @@ export const bolehPindahTahap = (dari, ke) => TAHAP_TUJUAN[dari].includes(ke);
 /** Tahap kunjungan yang masih berjalan (belum ditutup). */
 export const TAHAP_BERJALAN = ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'];
 /** Rawat jalan wajib poli; rawat inap langsung tidak memakai poli dan antrean poli. */
-export const jenisPakaiAntrean = (jenis) => jenis === 'AMB';
+export const jenisPakaiAntrean = (jenis) => jenis === 'AMB' || jenis === 'LAB';
 /** Nomor RM berurutan per fasyankes: 7 digit dikelompokkan 2-2-3, mis. 12345 menjadi 00-01-234 (dari 0012345). */
 export function formatNomorRm(urutan) {
     const d = String(urutan).padStart(7, '0');

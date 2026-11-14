@@ -48,3 +48,19 @@ describe('status layanan gabungan kunjungan', () => {
             expect(s.STATUS_LAYANAN.nilai).toContain(harapan);
     });
 });
+
+
+describe('penunjang saja: status hasil lab dan status layanan', () => {
+    it('status hasil lab dari ringkasan order: menunggu, belum diserahkan, sudah diserahkan, null tanpa order', () => {
+        expect(s.statusHasilLabDari({ total: 0, divalidasi: 0 })).toBeNull();
+        expect(s.statusHasilLabDari({ total: 2, divalidasi: 1, diserahkan_pada: null })).toBe('menunggu');
+        expect(s.statusHasilLabDari({ total: '2', divalidasi: '2', diserahkan_pada: null })).toBe('belum_diserahkan');
+        expect(s.statusHasilLabDari({ total: 2, divalidasi: 2, diserahkan_pada: new Date() })).toBe('diserahkan');
+        expect(s.STATUS_HASIL_LAB.nilai).toEqual(['menunggu', 'belum_diserahkan', 'diserahkan']);
+    });
+    it('kunjungan LAB di tahap pemeriksaan berstatus spesimen, bukan diperiksa', () => {
+        expect(s.statusLayananDari({ jenis: 'LAB', tahap_layanan: 'pemeriksaan', antrean: { status: 'dilayani' } })).toBe('spesimen');
+        expect(s.statusLayananDari({ jenis: 'AMB', tahap_layanan: 'pemeriksaan', antrean: { status: 'dilayani' } })).toBe('diperiksa');
+        expect(s.statusLayananDari({ jenis: 'LAB', tahap_layanan: 'kasir', antrean: { status: 'selesai' } })).toBe('pembayaran');
+    });
+});

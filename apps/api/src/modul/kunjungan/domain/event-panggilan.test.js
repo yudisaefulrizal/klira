@@ -136,3 +136,14 @@ describe('poli ditetapkan saat pertama dipanggil (antrean per jenis poli)', () =
         expect(db.ubahAntreanUntukTetapkanPoli).toHaveBeenCalledWith(11, 10, expect.anything());
     });
 });
+
+
+test('antrean penunjang saja dipanggil tanpa memilih poli dan tanpa aturan satu pasien per poli', async () => {
+    const { repo } = siapkan();
+    jest.mocked(db.wajibAntreanUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ lokasi_id: null, nomor: 3, awalan: 'L', jenis_poli: 'Laboratorium', kunjungan_id: 40, tanggal }));
+    await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu);
+    expect(db.daftarPoliBebasUntukPanggil).not.toHaveBeenCalled();
+    expect(db.cariAntreanSibukUntukPanggil).not.toHaveBeenCalled();
+    expect(db.ubahAntreanUntukTetapkanPoli).not.toHaveBeenCalled();
+    expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 4)).toEqual([7, null, 'Laboratorium', 'L-003']);
+});

@@ -519,12 +519,13 @@ export const DAFTAR_PASIEN = {
     berikutnya: 'Berikutnya',
     penyaringTahap: 'Saring menurut tahap layanan',
     tahap: { semua: 'Semua', menunggu_skrining: 'Skrining', pemeriksaan: 'Pemeriksaan', resep: 'Resep', kasir: 'Kasir', ditutup: 'Selesai', batal: 'Batal' },
+    hasilLab: 'Hasil',
     labSpesimen: 'Lab: spesimen',
     labHasil: 'Lab: hasil',
     jenisSibuk: (jenis) => `Semua poli ${jenis} sedang melayani`,
     poliSaatDipanggil: 'Poli ditentukan saat pasien dipanggil: poli sejenis yang bebas.',
     poliSibuk: (poli, kode) => `${poli} sedang melayani ${kode}`,
-    aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', bayar: 'Pembayaran', serah_obat: 'Serahkan obat', tutup_kunjungan: 'Tutup kunjungan', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
+    aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', bayar: 'Pembayaran', serah_obat: 'Serahkan obat', tutup_kunjungan: 'Tutup kunjungan', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', serah_hasil: 'Serahkan hasil', panggil: 'Panggil', panggilUlang: 'Panggil ulang', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
     aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',
     batalJudul: 'Batalkan antrean?',
     batalPesan: (kode, nama) => `Antrean ${kode} atas nama ${nama} akan dibatalkan.`,
@@ -632,6 +633,8 @@ export const REGISTRASI = {
         dataGanda: 'Ada kemungkinan data ganda. Tinjau di langkah Identitas lalu nyatakan pasien ini berbeda.',
         teksTidakSah: 'Teks persetujuan tidak ditemukan atau tidak aktif.',
         poliWajib: 'Jenis poli wajib dipilih untuk rawat jalan.',
+        pemeriksaanWajib: 'Pilih minimal satu pemeriksaan lab.',
+        pemeriksaanTidakSah: 'Ada pemeriksaan lab yang tidak ditemukan atau tidak aktif.',
         poliSibukJenis: (jenis) => `Semua poli ${jenis} sedang melayani pasien. Tunggu salah satunya selesai atau batalkan antrean yang ditahan.`,
         dokterTanpaPoliKosong: (jenis) => `Poli tempat dokter yang dipilih bertugas (${jenis}) sedang melayani pasien lain.`,
         poliBukanJenis: 'Poli yang dipilih tidak tersedia: bukan poli untuk jenis ini, sedang melayani, atau dokter tidak bertugas di sana.',
@@ -657,7 +660,12 @@ export const KUNJUNGAN = {
     mencari: 'Mencari...',
     pasienTidakAda: 'Tidak ada pasien yang cocok.',
     layanan: 'Layanan',
-    layananOpsi: [{ nilai: 'AMB', label: 'Rawat jalan' }, { nilai: 'IMP', label: 'Rawat inap langsung' }],
+    layananOpsi: [{ nilai: 'AMB', label: 'Rawat jalan' }, { nilai: 'IMP', label: 'Rawat inap langsung' }, { nilai: 'LAB', label: 'Penunjang saja (tes lab)' }],
+    perujuk: 'Perujuk (opsional)',
+    perujukPetunjuk: 'Nama dokter atau klinik pengirim bila ada surat rujukan.',
+    pemeriksaanLab: 'Pemeriksaan lab',
+    pemeriksaanPetunjuk: 'Pilih satu atau lebih tes. Tagihan dibuat dari tarif tes.',
+    pemeriksaanKosong: 'Belum ada pemeriksaan lab aktif di Penunjang.',
     poli: 'Jenis poli',
     dpjp: 'DPJP',
     tanpaDpjp: 'Belum ditentukan',
@@ -975,6 +983,12 @@ export const FARMASI = {
     },
 };
 export const KASIR = {
+    /** Penyerahan hasil lab kunjungan penunjang saja: langkah di kasir, terpisah dari pembayaran. */
+    serahHasil: {
+        judul: 'Serahkan hasil lab', penerima: 'Nama penerima', hubungan: 'Hubungan dengan pasien (opsional)', petunjuk: 'Catat siapa yang menerima hasil. Pembayaran tidak diperlukan lagi bila sudah lunas.',
+        serahkan: 'Serahkan hasil', menyerahkan: 'Menyimpan...', berhasil: 'Penyerahan hasil tercatat.', menunggu: 'Hasil belum semua divalidasi. Penyerahan bisa dicatat setelah hasil siap.',
+        daftarJudul: 'Hasil lab belum diserahkan', daftarKosong: 'Tidak ada hasil lab yang menunggu diserahkan.', diserahkanPada: (tgl, penerima) => `Diserahkan ${tgl} kepada ${penerima}`,
+    },
     /** Melengkapi harga item tagihan yang belum berharga, langsung dari dialog pembayaran dan tutup kunjungan. */
     lengkapi: {
         judul: 'Item belum punya harga',
@@ -1030,6 +1044,7 @@ export const KASIR = {
         itemTidakAda: 'Item tagihan tidak ditemukan.', hargaSudahAda: 'Harga item ini sudah terisi dan tidak dapat diubah dari sini.', tagihanTerkunci: 'Tagihan kunjungan yang sudah ditutup tidak dapat diubah.',
         kunjunganTidakAda: 'Kunjungan tidak ditemukan.', tahapSalah: 'Kunjungan belum di tahap kasir atau sudah ditutup.', tagihanBelumLengkap: 'Tagihan belum lengkap: ada item tanpa harga.', tagihanKosong: 'Belum ada tagihan pada kunjungan ini.', sudahLunas: 'Tagihan sudah lunas.',
         jumlahLebih: 'Jumlah melebihi sisa tagihan.', tanpaShift: 'Buka shift kasir terlebih dahulu.', shiftSudahAda: 'Anda sudah memiliki shift terbuka.', shiftTidakAda: 'Tidak ada shift terbuka.', resepBelumSiap: 'Ada resep yang belum siap di farmasi.', tidakAdaResep: 'Tidak ada resep yang perlu diserahkan.',
+        hasilBelumSiap: 'Hasil lab belum semua divalidasi, belum bisa diserahkan.', belumLunasSerah: 'Tagihan belum lunas. Selesaikan pembayaran dahulu sebelum menyerahkan hasil.', sudahDiserahkan: 'Hasil kunjungan ini sudah diserahkan.', bukanPenunjang: 'Penyerahan hasil hanya untuk kunjungan penunjang saja.',
         stokKurang: 'Stok tercatat kurang untuk sebagian obat. Setujui dengan alasan bila stok fisik tersedia.', resepBelumDiserahkan: 'Masih ada resep yang belum diserahkan.', belumLunasAlasan: 'Tagihan belum lunas: isi alasan untuk tetap menutup.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
     },
 };

@@ -183,3 +183,26 @@ describe('penyaring tahap', () => {
         expect(ubahKeadaanPasien(k, { tahap: 'resep' })).toMatchObject({ tahap: 'resep', halaman: 1 });
     });
 });
+
+
+describe('aksi baris kunjungan penunjang saja', () => {
+    const izin = (...d) => (f, a) => d.some(([x, y]) => x === f && y === a);
+    const lab = (tahap, ekstra = {}) => ({ id: 1, nama: 'P', kunjungan: { id: 9, jenis: 'LAB', tahap_layanan: tahap, antrean: { status: 'selesai' }, lab: { perlu_spesimen: 0, perlu_hasil: 0 }, ada_resep: false, ...ekstra } });
+    it('tanpa skrining, periksa, dan telaah; spesimen tersedia untuk akun penunjang', () => {
+        const j = aksiBaris(lab('pemeriksaan', { antrean: { status: 'dilayani' } }), izin(['klinis', 'input'], ['farmasi', 'input'], ['penunjang', 'input'])).map((a) => a.jenis);
+        expect(j).not.toContain('skrining');
+        expect(j).not.toContain('periksa');
+        expect(j).not.toContain('telaah');
+        expect(j).toContain('spesimen');
+    });
+    it('hasil yang sudah divalidasi diserahkan di kasir; pengisian hasil tetap ada setelah kunjungan selesai', () => {
+        const baris = lab('ditutup', { hasil_lab: 'belum_diserahkan' });
+        const j = aksiBaris(baris, izin(['kasir', 'input'], ['penunjang', 'input'])).map((a) => a.jenis);
+        expect(j).toContain('serah_hasil');
+        expect(j).toContain('hasil_lab');
+        expect(kelompokAksi(baris, aksiBaris(baris, izin(['kasir', 'input']))).utama.map((a) => a.jenis)).toContain('serah_hasil');
+        expect(aksiBaris(lab('ditutup', { hasil_lab: 'diserahkan' }), izin(['kasir', 'input'])).map((a) => a.jenis)).not.toContain('serah_hasil');
+        expect(aksiBaris(lab('ditutup', { hasil_lab: 'menunggu' }), izin(['kasir', 'input'])).map((a) => a.jenis)).not.toContain('serah_hasil');
+        expect(aksiBaris(lab('ditutup', { hasil_lab: 'belum_diserahkan' }), izin(['pasien', 'lihat'])).map((a) => a.jenis)).not.toContain('serah_hasil');
+    });
+});

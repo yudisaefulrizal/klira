@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHargaMasukan, tambahItemTarifMasukan, tutupKunjunganMasukan, tutupShiftMasukan, ubahHargaMasukan } from '@klira/shared';
+import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHargaMasukan, serahHasilMasukan, tambahItemTarifMasukan, tutupKunjunganMasukan, tutupShiftMasukan, ubahHargaMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -41,6 +41,18 @@ export function buatRuteKasirLengkap(layananAkses, layananIzin, layanan) {
         if (!id.success)
             return tidakAda(res);
         kirimHasil(res, await layanan.kunjungan(pengguna(res), id.data.id, alamatDari(req)));
+    }));
+    rute.get('/kasir/hasil-belum-diserahkan', masuk, wajibIzin('kasir', 'lihat'), bungkus(async (_req, res) => {
+        kirimHasil(res, await layanan.hasilBelumDiserahkan(pengguna(res)));
+    }));
+    rute.post('/kunjungan/:id/serah-hasil', masuk, wajibIzin('kasir', 'input'), bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        const m = serahHasilMasukan.safeParse(req.body ?? {});
+        if (!m.success)
+            return galatValidasi(res, m.error);
+        kirimHasil(res, await layanan.serahHasil(pengguna(res), id.data.id, m.data, alamatDari(req)), 201);
     }));
     rute.post('/kunjungan/:id/pembayaran', masuk, wajibIzin('kasir', 'input'), bungkus(async (req, res) => {
         const id = idParam.safeParse(req.params);

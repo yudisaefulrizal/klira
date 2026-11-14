@@ -1,3 +1,4 @@
+import { mulaiAntreanDalam, selesaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
 import * as db from '@klira/db';
 import { BAGIAN_KLINIS, hargaTarif, rentangHariWib, teksRujukan } from '@klira/shared';
 import { tambahItemTagihanDalam, totalTagihan } from '../../kasir/data-access/repositori.js';
@@ -98,6 +99,17 @@ export class RepositoriPenunjangMysql {
             if (u.count === 0)
                 return false;
             await db.tambahSpesimenUntukCatatSpesimen(d.fasyankesId, d.orderId, d.asal, d.waktuAmbil, d.petugasId, d.oleh, tx);
+            // Penunjang saja: spesimen pertama memulai antrean; setelah semua spesimen diambil kunjungan maju ke kasir dan antrean selesai.
+            if (d.kunjunganId) {
+                const k = await db.cariKunjunganUntukKunjungan5(d.kunjunganId, d.fasyankesId, tx);
+                if (k?.jenis === 'LAB') {
+                    await mulaiAntreanDalam(tx, d.fasyankesId, d.kunjunganId, d.waktuAmbil);
+                    if ((await db.hitungOrderBelumSpesimenUntukKunjungan(d.fasyankesId, d.kunjunganId, tx)) === 0) {
+                        await db.ubahKunjunganUntukUbahTahap('kasir', d.kunjunganId, d.fasyankesId, 'pemeriksaan', tx);
+                        await selesaiAntreanDalam(tx, d.fasyankesId, d.kunjunganId, d.waktuAmbil);
+                    }
+                }
+            }
             return true;
         });
     }

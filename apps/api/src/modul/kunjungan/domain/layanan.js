@@ -1,9 +1,9 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
-import { REGISTRASI, bolehAksiAntrean, bolehPindahTahap, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
+import { ANTREAN_LAB, REGISTRASI, bolehAksiAntrean, bolehPindahTahap, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { KunjunganBerjalanError } from '../data-access/repositori.js';
 const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
-export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() }) {
+export function buatLayananKunjungan({ repo, audit, orderLab, sekarang = () => new Date() }) {
     return {
         opsi(p) {
             return repo.opsi(p.fasyankes_id);
@@ -13,6 +13,14 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
             if (!(await repo.pasienAda(p.fasyankes_id, m.pasien_id)))
                 return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
             let jenisPoli = null;
+            if (m.jenis === 'LAB') {
+                // Penunjang saja: tanpa poli dan dokter; antrean jenis Laboratorium (awalan L); pemeriksaan wajib dan harus sah.
+                const ids = [...new Set(m.pemeriksaan_ids ?? [])];
+                if (!ids.length || (await repo.pemeriksaanLabAktif(p.fasyankes_id, ids)) !== ids.length)
+                    return gagal('tidak_valid', REGISTRASI.galat.pemeriksaanTidakSah, 'pemeriksaan_ids');
+                m = { ...m, pemeriksaan_ids: ids, dpjp_id: undefined };
+                jenisPoli = { jenis_poli: ANTREAN_LAB.jenis_poli, awalan: ANTREAN_LAB.awalan };
+            }
             if (m.jenis === 'AMB') {
                 jenisPoli = await repo.jenisPoliOperasional(p.fasyankes_id, m.jenis_poli);
                 if (!jenisPoli)
@@ -33,6 +41,12 @@ export function buatLayananKunjungan({ repo, audit, sekarang = () => new Date() 
                 if (e instanceof KunjunganBerjalanError)
                     return gagal('konflik', REGISTRASI.galat.kunjunganBerjalan);
                 throw e;
+            }
+            if (m.jenis === 'LAB') {
+                // Order lab dan item tagihannya dibuat dari tarif tes; pemeriksaan sudah divalidasi di atas.
+                const o = await orderLab(p, k.id, { pemeriksaan_ids: m.pemeriksaan_ids, prioritas: 'rutin', catatan: null }, alamat);
+                if (!o.ok)
+                    return o;
             }
             kabarkanLayarPanggilan(p.fasyankes_id);
             await audit.catat({

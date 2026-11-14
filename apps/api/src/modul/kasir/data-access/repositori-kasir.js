@@ -1,12 +1,48 @@
 import * as db from '@klira/db';
 import { selesaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
-import { hargaTarif, rincianBayar, tanggalRetensi } from '@klira/shared';
+import { hargaTarif, rincianBayar, statusHasilLabDari, tanggalRetensi } from '@klira/shared';
 import { totalTagihan, keItemDto, statusTagihanDari } from './repositori.js';
 const rentangWib = (tanggal) => {
     const dari = new Date(`${tanggal}T00:00:00.000+07:00`);
     return { dari, sampai: new Date(dari.getTime() + 86_400_000) };
 };
+const keHasilLab = (r) => ({ status: statusHasilLabDari(r), total: Number(r.total), divalidasi: Number(r.divalidasi), diserahkan_pada: r.diserahkan_pada?.toISOString?.() ?? null, penerima_nama: r.penerima_nama ?? null });
 export class RepositoriKasirMysql {
+    /** Ringkasan hasil lab kunjungan penunjang saja; null untuk jenis kunjungan lain. */
+    async hasilLab(fasyankesId, kunjunganId) {
+        if ((await db.cariJenisKunjunganUntukSerahHasil(fasyankesId, kunjunganId)) !== 'LAB')
+            return null;
+        const [r] = await db.ringkasanHasilLabUntukKunjungan(fasyankesId, [kunjunganId]);
+        return r ? keHasilLab(r) : null;
+    }
+    /** Catat penyerahan hasil: hanya penunjang saja, semua order divalidasi, dan belum pernah diserahkan (dicek ulang dalam transaksi). */
+    async serahHasil(fasyankesId, petugasId, kunjunganId, m) {
+        return db.transaksi(async (tx) => {
+            if ((await db.cariJenisKunjunganUntukSerahHasil(fasyankesId, kunjunganId, tx)) !== 'LAB')
+                return { ok: false, sebab: 'bukan_penunjang' };
+            const [r] = await db.ringkasanHasilLabUntukKunjungan(fasyankesId, [kunjunganId], tx);
+            if (r?.diserahkan_pada)
+                return { ok: false, sebab: 'sudah' };
+            if (!r || !Number(r.total) || Number(r.divalidasi) < Number(r.total))
+                return { ok: false, sebab: 'belum_siap' };
+            try {
+                await db.tambahPenyerahanHasil(fasyankesId, kunjunganId, m.penerima_nama, m.hubungan ?? null, petugasId, tx);
+            }
+            catch (e) {
+                if (db.bentrokUnik(e))
+                    return { ok: false, sebab: 'sudah' };
+                throw e;
+            }
+            return { ok: true };
+        });
+    }
+    /** Kunjungan penunjang saja yang hasilnya belum diserahkan, lintas tanggal. */
+    async daftarHasilBelumDiserahkan(fasyankesId) {
+        return (await db.daftarHasilLabBelumDiserahkan(fasyankesId)).map((r) => ({
+            kunjungan_id: r.kunjungan_id, pasien_id: r.pasien_id, pasien_nama: r.pasien_nama, pasien_nomor_rm: r.nomor_rm, mulai: r.mulai.toISOString(), perujuk: r.perujuk ?? null,
+            total: Number(r.total), divalidasi: Number(r.divalidasi), status: statusHasilLabDari({ total: r.total, divalidasi: r.divalidasi, diserahkan_pada: null }) ?? 'menunggu',
+        }));
+    }
     async kunjungan(fasyankesId, id) {
         const k = await db.cariKunjunganUntukKunjungan2(id, fasyankesId);
         return k && { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran };

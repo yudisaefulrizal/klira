@@ -14,13 +14,15 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         dpjpSah: async (f, id) => f === 1 && (id === 30 || id === 32),
         dokterDiJenis: async (f, id, jenis) => f === 1 && id === 30 && jenis === 'Umum',
         kunjunganBerjalan: async () => false,
+        pemeriksaanLabAktif: async (f, ids) => ids.filter((id) => id < 100).length,
         daftarkan: jest.fn(async () => kunjungan),
         tahapSekarang: async (f, id) => (f === 1 && id === 5 ? 'pemeriksaan' : null),
         ubahTahap: jest.fn(async () => kunjungan),
         statusAntrean: async (f, id) => (f === 1 && id === 8 ? 'menunggu' : null),
         ubahAntrean: jest.fn(async () => ({ id: 8, kode: 'A-001' })),
     };
-    const buat = (sisa = {}) => buatLayananKunjungan({ repo: { ...dasarRepo, ...sisa }, audit: { catat: async (e) => void catatan.push(e) }, sekarang: () => new Date('2026-10-25T01:00:00Z') });
+    const orderLab = jest.fn(async () => ({ ok: true, data: {} }));
+    const buat = (sisa = {}) => buatLayananKunjungan({ repo: { ...dasarRepo, ...sisa }, orderLab, audit: { catat: async (e) => void catatan.push(e) }, sekarang: () => new Date('2026-10-25T01:00:00Z') });
     beforeEach(() => {
         catatan.length = 0;
         jest.clearAllMocks();
@@ -72,6 +74,20 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         expect(await buat({ ubahAntrean: sibuk }).aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('Poli Umum 1 sedang melayani A-006') });
         const tutup = jest.fn(async () => ({ galat: 'poli_tidak_operasional', poli: 'Poli Gigi' }));
         expect(await buat({ ubahAntrean: tutup }).aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('Poli Gigi sedang tidak operasional') });
+    });
+    it('penunjang saja: antrean Laboratorium berawalan L tanpa dokter, order lab dibuat dari pemeriksaan yang sah', async () => {
+        const l = buat();
+        const h = await l.daftarkan(saya, { pasien_id: 10, jenis: 'LAB', pemeriksaan_ids: [1, 2, 2], dpjp_id: 30, perujuk: 'dr. Sinta', cara_pembayaran: 'umum' });
+        expect(h).toMatchObject({ ok: true });
+        expect(dasarRepo.daftarkan).toHaveBeenCalledWith(1, 3, expect.objectContaining({ jenis_poli: 'Laboratorium', awalan: 'L', pemeriksaan_ids: [1, 2], dpjp_id: undefined, perujuk: 'dr. Sinta' }), expect.any(Date));
+        expect(orderLab).toHaveBeenCalledWith(saya, 5, { pemeriksaan_ids: [1, 2], prioritas: 'rutin', catatan: null }, undefined);
+    });
+    it('penunjang saja ditolak tanpa menyimpan bila pemeriksaan kosong atau ada yang tidak sah', async () => {
+        const l = buat();
+        expect(await l.daftarkan(saya, { pasien_id: 10, jenis: 'LAB', pemeriksaan_ids: [], cara_pembayaran: 'umum' })).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(await l.daftarkan(saya, { pasien_id: 10, jenis: 'LAB', pemeriksaan_ids: [1, 500], cara_pembayaran: 'umum' })).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(dasarRepo.daftarkan).not.toHaveBeenCalled();
+        expect(orderLab).not.toHaveBeenCalled();
     });
     it('daftar antrean memakai hari ini menurut Asia/Jakarta bila tanggal kosong', async () => {
         const daftarAntrean = jest.fn(async () => ({ total: 0, baris: [] }));

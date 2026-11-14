@@ -1,5 +1,7 @@
-import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, MODAL, TOMBOL } from '@klira/shared';
+import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, MODAL, STATUS_HASIL_LAB, TOMBOL } from '@klira/shared';
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan } from '../../api-klien/kasir.js';
+import { bukaSerahHasil } from './serah-hasil.js';
+import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
@@ -16,9 +18,9 @@ import { buatSerahObat } from '../farmasi/serah-terima-obat.js';
 
 export function bukaPembayaran({ kunjunganId, pasien, kasir, farmasi, onTutup, onSelesai }) {
   const B = KASIR.bayar;
-  let g = null, indeks = 0, bayar = awalBayar(), galat = null, info = null, dicoba = false, memproses = false, berubah = false, aktif = true, anak = [], modalHarga;
+  let g = null, indeks = 0, bayar = awalBayar(), galat = null, info = null, dicoba = false, memproses = false, berubah = false, aktif = true, anak = [], modalHarga, modalSerah;
   const opsiMetode = ['tunai', 'transfer', 'qris'].map(m => ({ nilai: m, label: METODE_BAYAR.label(m) }));
-  function selesaiTutup() { if (memproses || serah.memproses) return; aktif = false; bersih(); modalHarga?.tutup(); serah.tutup(); modal.tutup(); (berubah || serah.berubah ? onSelesai : onTutup)(); }
+  function selesaiTutup() { if (memproses || serah.memproses) return; aktif = false; bersih(); modalHarga?.tutup(); modalSerah?.tutup(); serah.tutup(); modal.tutup(); (berubah || serah.berubah ? onSelesai : onTutup)(); }
   const modal = bukaModal1({ judul: kasir ? B.judul : B.serahJudul, lebar: 'modalBesar', onTutup: selesaiTutup });
   const root = modal.isi.parentElement; root.style.height = token.ukuran.tinggiModal;
   modal.isi.className = 'modal-langkah-layout'; Object.assign(modal.isi.style, { flexDirection: 'row', gap: '0', padding: '0', flexGrow: '1', minHeight: '0', overflow: 'hidden' });
@@ -64,7 +66,19 @@ export function bukaPembayaran({ kunjunganId, pasien, kasir, farmasi, onTutup, o
       const sub = sel(i.harga === null ? '-' : rupiah(i.harga * i.jumlah)); sub.style.textAlign = 'right'; table.tbody.append(baris(nama, sel(i.jumlah), harga, sub));
     }
     el.append(table.el, resume([{ label: B.total, nilai: rupiah(t.total) }, { label: B.dibayar, nilai: rupiah(t.dibayar) }, { label: B.sisa, nilai: t.sisa === 0 ? B.lunas : g.syarat.ditanggung_jkn ? `${rupiah(t.sisa)} (${KASIR.jkn.ditanggung})` : rupiah(t.sisa) }]));
-    const tambah = TambahItemTarif({ kunjunganId, gambaran: g, onUbah: appliquer }); anak.push(tambah); el.append(tambah); return el;
+    const tambah = TambahItemTarif({ kunjunganId, gambaran: g, onUbah: appliquer }); anak.push(tambah); el.append(tambah);
+    // Penunjang saja: status hasil lab dan penyerahan hasil, terpisah dari pembayaran (bayar saja, atau bayar dan serahkan bila hasil sudah siap).
+    if (g.hasil_lab?.status) {
+      const hl = g.hasil_lab, blok = colonne(), judul = document.createElement('h3'); judul.textContent = KASIR.serahHasil.judul; judul.style.margin = '0';
+      const baris1 = document.createElement('div'); Object.assign(baris1.style, { display: 'flex', gap: token.jarak.md, alignItems: 'center', flexWrap: 'wrap' });
+      baris1.append(lencana(STATUS_HASIL_LAB.label(hl.status), STATUS_HASIL_LAB.warna(hl.status)), texte(`${hl.divalidasi}/${hl.total}`, true));
+      if (hl.status === 'diserahkan') baris1.append(texte(KASIR.serahHasil.diserahkanPada(formatWaktu(hl.diserahkan_pada), hl.penerima_nama ?? '-'), true));
+      if (hl.status === 'belum_diserahkan' && izinSaatIni()('kasir', 'input')) { const b = tombol(KASIR.serahHasil.serahkan, () => { modalSerah = bukaSerahHasil({ kunjunganId, pasienNama: pasien?.nama, onTutup() { modalSerah = undefined; }, onSelesai(h) { modalSerah = undefined; appliquer(h); } }); }, 'sekunder'); b.disabled = memproses || (g.tagihan.sisa > 0 && !g.syarat.ditanggung_jkn); baris1.append(b); }
+      if (hl.status === 'belum_diserahkan' && g.tagihan.sisa > 0 && !g.syarat.ditanggung_jkn) baris1.append(texte(KASIR.bayar.sisa + ': ' + rupiah(g.tagihan.sisa), true));
+      if (hl.status === 'menunggu') blok.append(texte(KASIR.serahHasil.menunggu, true));
+      blok.prepend(judul, baris1); el.append(blok);
+    }
+    return el;
   }
   function paiement() {
     const el = colonne(); if (!g) { el.append(KASIR.memuat); return el; } const t = g.tagihan; jkn(el);

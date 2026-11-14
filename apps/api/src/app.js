@@ -120,10 +120,15 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienMysql(), audit: new PenampungAuditMysql() })));
-    const layananKunjungan = buatLayananKunjungan({ repo: new RepositoriKunjunganMysql(), audit: new PenampungAuditMysql() });
-    app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
-    // Pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab nanti) dan modul klinis yang mendaftarkan penyedia isinya.
+    // Pengesahan, addendum, dan penunjang dibangun lebih dulu: pendaftaran penunjang saja membuat order lab lewat layanan penunjang.
     const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanMysql(), audit: new PenampungAuditMysql() });
+    const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan });
+    const layananPenunjang = buatLayananPenunjang({
+        repo: new RepositoriPenunjangMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, addendum: layananAddendum,
+    });
+    const layananKunjungan = buatLayananKunjungan({ repo: new RepositoriKunjunganMysql(), audit: new PenampungAuditMysql(), orderLab: (p, id, m, alamat) => layananPenunjang.buatOrder(p, id, m, alamat) });
+    app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
+    // Modul klinis mendaftarkan penyedia isi pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab).
     const repoKlinis = new RepositoriKlinisMysql();
     const layananKlinis = buatLayananKlinis({ repo: repoKlinis, audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, kunjungan: layananKunjungan });
     app.use('/api', buatRuteKlinis(layananAkses, layananIzin, layananKlinis));
@@ -142,11 +147,8 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
         repo: new RepositoriRawatInapMysql(), pengesahan: layananPengesahan, audit: new PenampungAuditMysql(), simpanResume: layananDokumen.simpanResume,
     })));
     // Addendum generik, penunjang (order, spesimen, hasil), persetujuan tindakan, dan tagihan dasar.
-    const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan });
     app.use('/api', buatRuteAddendum(layananAkses, layananIzin, layananAddendum));
-    app.use('/api', buatRutePenunjang(layananAkses, layananIzin, buatLayananPenunjang({
-        repo: new RepositoriPenunjangMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, addendum: layananAddendum,
-    })));
+    app.use('/api', buatRutePenunjang(layananAkses, layananIzin, layananPenunjang));
     app.use('/api', buatRutePersetujuan(layananAkses, layananIzin, buatLayananPersetujuan({
         repo: new RepositoriPersetujuanMysql(), audit: new PenampungAuditMysql(),
         tindakanKunjungan: async (fas, id) => ((await repoKlinis.bacaBagian(fas, id, 'tindakan'))?.item ?? []).map((t) => ({ kode: t.kode, nama: t.nama })),

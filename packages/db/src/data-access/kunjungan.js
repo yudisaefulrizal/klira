@@ -645,7 +645,7 @@ export async function ubahKunjunganUntukPulangkan(status, tahap_layanan, selesai
     return { count: hasil.affectedRows };
 }
 export async function cariKunjunganUntukKunjungan5(id, fasyankes_id, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`tahap_layanan`, t.`cara_pembayaran` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+    const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`tahap_layanan`, t.`cara_pembayaran` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function wajibKunjunganUntukTandaiSiap(id, koneksi = pool) {
@@ -663,4 +663,10 @@ export async function daftarKunjunganSiapKlaim(fasyankesId, batas, koneksi = poo
 }
 export function kunciKunjunganRawatInap(id, fasyankesId, koneksi) {
     return baca('SELECT id FROM kunjungan WHERE id = ? AND fasyankes_id = ? FOR UPDATE', [id, fasyankesId], koneksi);
+}
+
+/** Perujuk (dokter atau klinik pengirim) kunjungan penunjang saja. */
+export async function ubahKunjunganUntukPerujuk(id, fasyankes_id, perujuk, koneksi = pool) {
+    const hasil = await tulis("UPDATE `kunjungan` t SET t.`perujuk` = ? WHERE t.`id` = ? AND t.`fasyankes_id` = ?", [perujuk ?? null, id, fasyankes_id], koneksi);
+    return { count: hasil.affectedRows };
 }

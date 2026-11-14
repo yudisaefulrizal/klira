@@ -105,6 +105,15 @@ describe('skema kunjungan dan penyaring', () => {
     });
 });
 
+describe('kunjungan penunjang saja (LAB)', () => {
+    it('wajib pemeriksaan lab, tanpa jenis poli; perujuk opsional', () => {
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'LAB' }).success).toBe(false);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'LAB', pemeriksaan_ids: [] }).success).toBe(false);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'LAB', pemeriksaan_ids: [3, 4], perujuk: 'dr. Sinta' }).success).toBe(true);
+        expect(kunjunganMasukan.safeParse({ pasien_id: 1, jenis: 'AMB', jenis_poli: 'Umum' }).success).toBe(true);
+    });
+});
+
 describe('awalan antrean per jenis poli', () => {
     it('huruf pertama jenis; bila terpakai jenis lain, huruf berikutnya lalu A sampai Z', () => {
         expect(awalanUntukJenis('Umum', [])).toBe('U');

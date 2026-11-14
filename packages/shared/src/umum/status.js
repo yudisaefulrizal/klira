@@ -93,6 +93,7 @@ export const STATUS_LAYANAN = buat({
     menunggu: { label: 'Menunggu', warna: 'abu' },
     dipanggil: { label: 'Dipanggil', warna: 'kuning' },
     skrining: { label: 'Skrining', warna: 'biru' },
+    spesimen: { label: 'Spesimen', warna: 'biru' },
     diperiksa: { label: 'Diperiksa', warna: 'biru' },
     menunggu_obat: { label: 'Menunggu obat', warna: 'ungu' },
     pembayaran: { label: 'Pembayaran', warna: 'kuning' },
@@ -108,9 +109,18 @@ export function statusLayananDari(kunjungan) {
         case 'ditutup': return 'selesai';
         case 'kasir': return 'pembayaran';
         case 'resep': return 'menunggu_obat';
-        case 'pemeriksaan': return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'menunggu' ? 'menunggu' : 'diperiksa';
+        case 'pemeriksaan': return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'menunggu' ? 'menunggu' : kunjungan.jenis === 'LAB' ? 'spesimen' : 'diperiksa';
         default: return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'dilayani' ? 'skrining' : 'menunggu';
     }
+}
+/** Kunci STATUS_HASIL_LAB dari ringkasan { total, divalidasi, diserahkan_pada }; null bila tidak ada order lab. */
+export function statusHasilLabDari(r) {
+    const total = Number(r?.total ?? 0);
+    if (!total)
+        return null;
+    if (r.diserahkan_pada)
+        return 'diserahkan';
+    return Number(r.divalidasi) >= total ? 'belum_diserahkan' : 'menunggu';
 }
 export const STATUS_AKUN = buat({
     aktif: { label: 'Aktif', warna: 'hijau' },
@@ -140,6 +150,13 @@ export const STATUS_IDENTITAS = buat({
 export const JENIS_KUNJUNGAN = buat({
     AMB: { label: 'Rawat jalan', warna: 'biru' },
     IMP: { label: 'Rawat inap', warna: 'ungu' },
+    LAB: { label: 'Penunjang saja', warna: 'kuning' },
+});
+/** Status hasil lab kunjungan penunjang saja, terpisah dari status kunjungan: menunggu hasil, belum diserahkan, atau sudah diserahkan. */
+export const STATUS_HASIL_LAB = buat({
+    menunggu: { label: 'Menunggu hasil', warna: 'abu' },
+    belum_diserahkan: { label: 'Belum diserahkan', warna: 'kuning' },
+    diserahkan: { label: 'Sudah diserahkan', warna: 'hijau' },
 });
 /** Cara pembayaran kunjungan. */
 export const CARA_PEMBAYARAN = buat({

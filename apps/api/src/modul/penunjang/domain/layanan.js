@@ -1,5 +1,6 @@
 import { ADDENDUM_TEKS, bolehAksiOrder, hasilJadiAddendum, PENUNJANG, ringkasPerubahanHarga } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
+import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { cariKatalogLoinc } from '../data-access/katalog-loinc.js';
 import { keDto as keDtoPengesahan } from '../../rekam-medis/domain/layanan.js';
 import { susunIsiHasil } from './isi.js';
@@ -80,8 +81,9 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
             const petugasId = m.petugas_id ?? p.id;
             if (!(await repo.penggunaAda(p.fasyankes_id, petugasId)))
                 return gagal('tidak_valid', PENUNJANG.galat.petugasTidakSah, 'petugas_id');
-            if (!(await repo.catatSpesimen({ fasyankesId: p.fasyankes_id, orderId, asal: m.asal, waktuAmbil: new Date(m.waktu_ambil), petugasId, oleh: p.id })))
+            if (!(await repo.catatSpesimen({ fasyankesId: p.fasyankes_id, orderId, asal: m.asal, waktuAmbil: new Date(m.waktu_ambil), petugasId, oleh: p.id, kunjunganId: o.data.kunjungan_id })))
                 return gagal('konflik', PENUNJANG.galat.statusTidakSah);
+            kabarkanLayarPanggilan(p.fasyankes_id);
             await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'spesimen', entitas_id: orderId, keterangan: 'Spesimen diambil', alamat });
             return { ok: true, data: (await ordersDto(p.fasyankes_id, [(await repo.order(p.fasyankes_id, orderId))]))[0] };
         },

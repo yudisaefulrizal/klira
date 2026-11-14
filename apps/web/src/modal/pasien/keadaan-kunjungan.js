@@ -1,12 +1,13 @@
 import { kunjunganMasukan } from '@klira/shared';
 export const awalKunjungan = (pasienId) => ({
-    pasien_id: pasienId ? String(pasienId) : '', jenis: 'AMB', jenis_poli: '', dpjp_id: '', cara_pembayaran: 'umum', nomor_sep: '', keluhan_singkat: '',
+    pasien_id: pasienId ? String(pasienId) : '', jenis: 'AMB', jenis_poli: '', pemeriksaan_ids: [], perujuk: '', dpjp_id: '', cara_pembayaran: 'umum', nomor_sep: '', keluhan_singkat: '',
 });
 export function bentukKunjungan(k) {
     return {
         pasien_id: Number(k.pasien_id) || 0,
         jenis: k.jenis,
         jenis_poli: k.jenis === 'AMB' ? (k.jenis_poli || undefined) : undefined,
+        ...(k.jenis === 'LAB' ? { pemeriksaan_ids: k.pemeriksaan_ids ?? [], ...(k.perujuk?.trim() ? { perujuk: k.perujuk } : {}) } : {}),
         ...(k.jenis === 'AMB' && k.dpjp_id ? { dpjp_id: Number(k.dpjp_id) } : {}),
         cara_pembayaran: k.cara_pembayaran,
         nomor_sep: k.cara_pembayaran === 'jkn' ? k.nomor_sep : undefined,
@@ -37,6 +38,10 @@ export function ubahKunjungan(k, p, dpjp = []) {
         baru.nomor_sep = '';
     if (baru.jenis !== 'AMB')
         baru.jenis_poli = '';
+    if (baru.jenis !== 'LAB') {
+        baru.pemeriksaan_ids = [];
+        baru.perujuk = '';
+    }
     if (baru.jenis_poli !== k.jenis_poli || baru.jenis !== 'AMB') {
         const calon = dokterPoli(dpjp, baru.jenis_poli);
         if (!calon.some((d) => String(d.id) === baru.dpjp_id))

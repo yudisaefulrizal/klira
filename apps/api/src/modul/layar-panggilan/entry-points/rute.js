@@ -1,6 +1,6 @@
 import * as db from '@klira/db';
 import { Router } from 'express';
-import { kodeAntrean, tanggalWib } from '@klira/shared';
+import { ANTREAN_LAB, kodeAntrean, tanggalWib } from '@klira/shared';
 export function buatRuteLayarPanggilan() {
     const rute = Router();
     rute.get('/publik/layar-panggilan/:id', async (req, res, next) => {
@@ -22,8 +22,11 @@ export function buatRuteLayarPanggilan() {
                     return null;
                 const tanggal = tanggalWib(new Date());
                 const poliSemua = await db.daftarPoliUntukJenis(id, tx);
-                const poli = poliSemua.filter(p => p.status_operasional === 'O').map(p => ({ id: p.id, nama: p.nama, jenis_poli: p.jenis_poli ?? '' }));
-                const antrean = await db.daftarAntreanUntukBuatRuteLayarPanggilan(id, new Date(`${tanggal}T00:00:00Z`), poli.map(p => p.id), ['menunggu', 'dipanggil', 'dilayani'], tx);
+                const poliOperasional = poliSemua.filter(p => p.status_operasional === 'O').map(p => ({ id: p.id, nama: p.nama, jenis_poli: p.jenis_poli ?? '' }));
+                const antrean = await db.daftarAntreanUntukBuatRuteLayarPanggilan(id, new Date(`${tanggal}T00:00:00Z`), poliOperasional.map(p => p.id), ['menunggu', 'dipanggil', 'dilayani'], tx);
+                // Penunjang saja (tes lab tanpa poli) tampil sebagai pelayanan "Laboratorium" bila hari ini ada antreannya.
+                const adaLab = antrean.some(a => a.jenis_poli === ANTREAN_LAB.jenis_poli);
+                const poli = adaLab ? [...poliOperasional, { id: 0, nama: ANTREAN_LAB.jenis_poli, jenis_poli: ANTREAN_LAB.jenis_poli }] : poliOperasional;
                 const event = setelah === undefined ? [] : await db.daftarEventPanggilanUntukBuatRuteLayarPanggilan(id, new Date(`${tanggal}T00:00:00Z`), setelah, 101, tx);
                 const terbaru = setelah === undefined ? await db.cariEventPanggilanUntukBuatRuteLayarPanggilan(id, new Date(`${tanggal}T00:00:00Z`), tx) : null;
                 const halamanEvent = event.slice(0, 100);
@@ -33,12 +36,12 @@ export function buatRuteLayarPanggilan() {
                     kursor: halamanEvent.at(-1)?.id ?? setelah ?? terbaru?.id ?? 0,
                     ada_lanjutan: event.length > 100,
                     event_panggilan: halamanEvent.map(e => ({ event_id: e.id, kode: e.kode, poli_id: e.poli_id, poli_nama: e.poli_nama, waktu_panggil: e.waktu_panggil.toISOString() })),
-                    panggilan: terakhir ? { kode: kodeAntrean(terakhir.nomor, terakhir.awalan), waktu_panggil: terakhir.waktu_panggil.toISOString(), poli_id: terakhir.lokasi_id, poli_nama: poli.find(p => p.id === terakhir.lokasi_id).nama } : null,
+                    panggilan: terakhir ? { kode: kodeAntrean(terakhir.nomor, terakhir.awalan), waktu_panggil: terakhir.waktu_panggil.toISOString(), poli_id: terakhir.lokasi_id, poli_nama: poli.find(p => p.id === terakhir.lokasi_id)?.nama ?? terakhir.jenis_poli } : null,
                     panggilan_aktif: antrean.filter(a => a.status === 'dipanggil' && a.waktu_panggil).map(a => ({
-                        kode: kodeAntrean(a.nomor, a.awalan), waktu_panggil: a.waktu_panggil.toISOString(), poli_id: a.lokasi_id, poli_nama: poli.find(p => p.id === a.lokasi_id)?.nama ?? '',
+                        kode: kodeAntrean(a.nomor, a.awalan), waktu_panggil: a.waktu_panggil.toISOString(), poli_id: a.lokasi_id, poli_nama: poli.find(p => p.id === a.lokasi_id)?.nama ?? a.jenis_poli,
                     })),
                     poli: poli.map(p => {
-                        const baris = antrean.filter(a => a.lokasi_id === p.id);
+                        const baris = antrean.filter(a => (p.id === 0 ? a.jenis_poli === ANTREAN_LAB.jenis_poli : a.lokasi_id === p.id));
                         const aktif = baris.find(a => a.status === 'dipanggil') ?? baris.find(a => a.status === 'dilayani');
                         return { ...p, sekarang: aktif ? { kode: kodeAntrean(aktif.nomor, aktif.awalan), status: aktif.status } : null };
                     }),

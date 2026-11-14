@@ -6,6 +6,10 @@ export const rekapHarian = (tanggal) => panggilApi('GET', `/kasir/rekap${tanggal
 export const kasirKunjungan = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/kasir`);
 /** Satu tagihan dibayar 1-3 metode dalam satu permintaan (satu transaksi di server). */
 export const catatPembayaran = (kunjunganId, m) => panggilApi('POST', `/kunjungan/${kunjunganId}/pembayaran`, m);
+/** Penyerahan hasil lab kunjungan penunjang saja; mengembalikan gambaran kasir yang diperbarui. */
+export const serahHasil = (kunjunganId, m) => panggilApi('POST', `/kunjungan/${kunjunganId}/serah-hasil`, m);
+/** Kunjungan penunjang saja yang hasilnya belum diserahkan, lintas tanggal. */
+export const hasilBelumDiserahkan = () => panggilApi('GET', '/kasir/hasil-belum-diserahkan');
 export const tutupKunjungan = (kunjunganId, m = {}) => panggilApi('POST', `/kunjungan/${kunjunganId}/tutup`, m);
 export const tambahItemTagihan = (kunjunganId, tarif_id, jumlah) => panggilApi('POST', `/kunjungan/${kunjunganId}/tagihan/item`, { tarif_id, jumlah });
 export const hapusItemTagihan = (kunjunganId, itemId) => panggilApi('DELETE', `/kunjungan/${kunjunganId}/tagihan/item/${itemId}`);

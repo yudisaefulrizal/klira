@@ -1,6 +1,6 @@
 import * as db from '@klira/db';
 import { mulaiAntreanDalam, selesaiAntreanDalam } from '../domain/antrean-otomatis.js';
-import { TAHAP_BERJALAN, kodeAntrean, tanggalWib } from '@klira/shared';
+import { ANTREAN_LAB, TAHAP_BERJALAN, kodeAntrean, tanggalWib } from '@klira/shared';
 const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);
 const MAKS_ULANG_NOMOR = 5;
 /** Pasien sudah punya kunjungan berjalan (terdeteksi di dalam transaksi, aman dari pendaftaran serempak). */
@@ -30,6 +30,10 @@ export class RepositoriKunjunganMysql {
         const p = (await db.daftarPoliUntukJenis(fasyankesId)).find((x) => x.status_operasional === 'O' && x.jenis_poli && x.jenis_poli.trim().toLowerCase() === kunci);
         return p ? { jenis_poli: p.jenis_poli, awalan: p.awalan_antrean } : null;
     }
+    /** Jumlah pemeriksaan lab aktif dari daftar id (untuk memastikan semuanya sah sebelum kunjungan dibuat). */
+    async pemeriksaanLabAktif(fasyankesId, ids) {
+        return (await db.daftarMasterPemeriksaanUntukMasterAktifDari(fasyankesId, true, 'lab', [...ids])).length;
+    }
     async dokterDiJenis(fasyankesId, penggunaId, jenis) {
         return (await db.hitungPoliDokterUntukJenis(fasyankesId, jenis, penggunaId)) > 0;
     }
@@ -40,11 +44,12 @@ export class RepositoriKunjunganMysql {
         return (await db.hitungJadwalPraktikUntukDokterDiPoli(fasyankesId, penggunaId, lokasiId, true)) > 0;
     }
     async opsi(fasyankesId) {
-        const [poli, praktisi, jadwal, poliJenis] = await Promise.all([
+        const [poli, praktisi, jadwal, poliJenis, pemeriksaanLab] = await Promise.all([
             db.daftarLokasiUntukOpsi2(fasyankesId, 'poli', 'O', 500),
             db.daftarPenggunaUntukOpsi3(fasyankesId, true, 500, 1),
             db.daftarJadwalPraktikUntukOpsi(fasyankesId, true),
             db.daftarPoliUntukJenis(fasyankesId),
+            db.daftarMasterPemeriksaanUntukMasterAktifDari(fasyankesId, true, 'lab', undefined),
         ]);
         const operasional = poliJenis.filter((p) => p.status_operasional === 'O' && p.jenis_poli);
         const jenisDariPoli = new Map(operasional.map((p) => [p.id, p.jenis_poli]));
@@ -52,6 +57,7 @@ export class RepositoriKunjunganMysql {
         return {
             poli,
             jenis_poli: jenis,
+            pemeriksaan_lab: pemeriksaanLab.map((m) => ({ id: m.id, nama: m.nama })).sort((a, b) => a.nama.localeCompare(b.nama, 'id')),
             dpjp: praktisi.map((p) => ({
                 id: p.id, nama: p.nama, profesi: p.profil_profesi[0]?.profesi ?? '',
                 poli_ids: [...new Set(jadwal.filter((j) => j.pengguna_id === p.id).map((j) => j.lokasi_id))],
@@ -70,10 +76,12 @@ export class RepositoriKunjunganMysql {
                     const berjalan = await db.hitungKunjunganUntukKunjunganBerjalan(fasyankesId, d.pasien_id, [...TAHAP_BERJALAN], 'batal', tx);
                     if (berjalan > 0)
                         throw new KunjunganBerjalanError();
-                    const k = await (async () => { const _hasil = await db.tambahKunjunganUntukDaftarkan(fasyankesId, d.pasien_id, d.jenis, 'arrived', 'menunggu_skrining', null, d.cara_pembayaran, d.nomor_sep, d.keluhan_singkat, sekarang, oleh, tx); return db.tambahKunjunganUntukDaftarkanHasil(_hasil.id, tx); })();
+                    const k = await (async () => { const _hasil = await db.tambahKunjunganUntukDaftarkan(fasyankesId, d.pasien_id, d.jenis, 'arrived', d.jenis === 'LAB' ? 'pemeriksaan' : 'menunggu_skrining', null, d.cara_pembayaran, d.nomor_sep, d.keluhan_singkat, sekarang, oleh, tx); return db.tambahKunjunganUntukDaftarkanHasil(_hasil.id, tx); })();
+                    if (d.jenis === 'LAB' && d.perujuk)
+                        await db.ubahKunjunganUntukPerujuk(k.id, fasyankesId, d.perujuk, tx);
                     if (d.dpjp_id)
                         await db.tambahPesertaKunjunganUntukDaftarkan(fasyankesId, k.id, d.dpjp_id, 'ATND', sekarang, oleh, tx);
-                    if (d.jenis === 'AMB' && d.jenis_poli) {
+                    if ((d.jenis === 'AMB' || d.jenis === 'LAB') && d.jenis_poli) {
                         // Nomor = urutan berikutnya per jenis poli (awalan) per hari; poli ditetapkan saat dipanggil.
                         const maks = await db.ringkasanAntreanUntukDaftarkan(fasyankesId, d.awalan, tanggal, tx);
                         await db.tambahAntreanUntukDaftarkan(fasyankesId, k.id, d.jenis_poli, d.awalan, tanggal, (maks._max.nomor ?? 0) + 1, 'menunggu', sekarang, oleh, tx);
@@ -117,7 +125,11 @@ export class RepositoriKunjunganMysql {
                 const a0 = await db.wajibAntreanUntukUbahAntrean(id, tx);
                 let lokasiId = a0.lokasi_id;
                 let tetapkan = false;
-                if (lokasiId) {
+                if (a0.awalan === ANTREAN_LAB.awalan && a0.jenis_poli === ANTREAN_LAB.jenis_poli) {
+                    // Antrean penunjang saja tidak memakai poli: tanpa pemilihan poli dan tanpa aturan satu pasien per poli.
+                    poliPanggil = { id: null, nama: ANTREAN_LAB.jenis_poli };
+                }
+                else if (lokasiId) {
                     const poli0 = await db.wajibLokasiUntukUbahAntrean(lokasiId, fasyankesId, tx);
                     if (poli0.status_operasional !== 'O')
                         return { galat: 'poli_tidak_operasional', poli: poli0.nama };

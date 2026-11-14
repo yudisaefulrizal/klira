@@ -63,11 +63,13 @@ export function aksiBaris(baris, boleh) {
     ];
     // Telaah resep dan Serahkan obat hanya untuk kunjungan yang punya resep.
     const perluResep = (jenis) => jenis !== 'telaah' || !!k?.ada_resep;
+    // Penunjang saja (LAB) tidak melewati skrining, pemeriksaan dokter, dan telaah resep.
+    const alurKlinis = k?.jenis !== 'LAB';
     for (const l of langkah)
-        if (k && tahap === l.idx && boleh(...l.izin) && perluResep(l.jenis))
+        if (alurKlinis && k && tahap === l.idx && boleh(...l.izin) && perluResep(l.jenis))
             hasil.push({ jenis: l.jenis });
     for (const l of langkah)
-        if (k && tahap > l.idx && boleh(...l.izin) && perluResep(l.jenis))
+        if (alurKlinis && k && tahap > l.idx && boleh(...l.izin) && perluResep(l.jenis))
             hasil.push({ jenis: l.jenis, ubah: true });
     // Serah obat menjadi langkah di modal Pembayaran; aksi tersendiri hanya untuk akun farmasi tanpa izin kasir.
     if (k?.tahap_layanan === 'kasir' && k.ada_resep && boleh('farmasi', 'input') && !boleh('kasir', 'input'))
@@ -76,6 +78,9 @@ export function aksiBaris(baris, boleh) {
         hasil.push({ jenis: 'bayar' });
     if (k?.tahap_layanan === 'kasir' && boleh('kasir', 'perbaikan'))
         hasil.push({ jenis: 'tutup_kunjungan' });
+    // Hasil lab penunjang saja yang sudah divalidasi diserahkan di kasir (terpisah dari pembayaran).
+    if (k?.jenis === 'LAB' && k.hasil_lab === 'belum_diserahkan' && boleh('kasir', 'input'))
+        hasil.push({ jenis: 'serah_hasil' });
     if (!k && boleh('kunjungan', 'input'))
         hasil.push({ jenis: 'daftarkan' });
     const berjalan = !!k && k.tahap_layanan !== 'menunggu_skrining' && k.tahap_layanan !== 'ditutup';
@@ -83,7 +88,8 @@ export function aksiBaris(baris, boleh) {
         hasil.push({ jenis: 'persetujuan' });
     if (berjalan && boleh('klinis', 'input'))
         hasil.push({ jenis: 'order_lab' });
-    if (berjalan && boleh('penunjang', 'input'))
+    // Kunjungan penunjang saja sudah Selesai sebelum hasilnya ada, jadi pengisian hasil tetap tersedia.
+    if ((berjalan || k?.jenis === 'LAB') && boleh('penunjang', 'input'))
         hasil.push({ jenis: 'spesimen' }, { jenis: 'hasil_lab' });
     if (boleh('pasien', 'lihat') || boleh('rekam-medis', 'lihat'))
         hasil.push({ jenis: 'buka' });
@@ -99,7 +105,7 @@ export function aksiBaris(baris, boleh) {
  */
 export function kelompokAksi(baris, aksi) {
     const k = baris.kunjungan;
-    const langsung = new Set(['panggil', 'daftarkan', 'skrining', 'periksa', 'telaah', 'bayar', 'serah_obat', 'tutup_kunjungan']);
+    const langsung = new Set(['panggil', 'daftarkan', 'skrining', 'periksa', 'telaah', 'bayar', 'serah_obat', 'serah_hasil', 'tutup_kunjungan']);
     const utama = [];
     const lainnya = [];
     for (const a of aksi) {

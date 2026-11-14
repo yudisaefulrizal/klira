@@ -1,6 +1,6 @@
 import * as db from '@klira/db';
 import { ambilWilayah } from '../../wilayah/data-access/data.js';
-import { TAHAP_BERJALAN, rentangHariWib, tanggalWib, formatNomorRm, kodeAntrean, umurTahun } from '@klira/shared';
+import { ANTREAN_LAB, TAHAP_BERJALAN, rentangHariWib, tanggalWib, formatNomorRm, kodeAntrean, statusHasilLabDari, umurTahun } from '@klira/shared';
 export class WaliTidakSahError extends Error {
 }
 /** NIK sudah dipakai pasien lain di fasyankes ini (pelanggaran keunikan saat menyimpan). */
@@ -64,9 +64,11 @@ export class RepositoriPasienMysql {
         };
         const penuh = new Map();
         for (const { kunjungan: k } of isi)
-            if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && await jenisPenuh(k.antrean.jenis_poli, k.peserta[0]?.pengguna_id))
+            if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && k.antrean.jenis_poli !== ANTREAN_LAB.jenis_poli && await jenisPenuh(k.antrean.jenis_poli, k.peserta[0]?.pengguna_id))
                 penuh.set(k.id, k.antrean.jenis_poli);
         const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
+        // Penunjang saja: status hasil lab (menunggu hasil, belum diserahkan, sudah diserahkan) terpisah dari status kunjungan.
+        const hasilLab = new Map((await db.ringkasanHasilLabUntukKunjungan(fasyankesId, isi.flatMap((i) => (i.kunjungan?.jenis === 'LAB' ? [i.kunjungan.id] : [])))).map((r) => [r.kunjungan_id, statusHasilLabDari(r)]));
         const lab = kunjunganIds.length
             ? await db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi')
             : [];
@@ -97,6 +99,7 @@ export class RepositoriPasienMysql {
                 poli_sibuk: penuh.has(k.id)
                     ? { jenis_poli: penuh.get(k.id), kode: null }
                     : k.antrean && ['menunggu', 'dipanggil'].includes(k.antrean.status) && k.lokasi_id && sibukPoli.get(k.lokasi_id) && sibukPoli.get(k.lokasi_id).id !== k.antrean.id ? { jenis_poli: k.antrean.jenis_poli, kode: kodeAntrean(sibukPoli.get(k.lokasi_id).nomor, sibukPoli.get(k.lokasi_id).awalan) } : null,
+                hasil_lab: hasilLab.get(k.id) ?? null,
                 lab: hitungLab(k.id),
                 ada_resep: resepAda.has(k.id),
             };

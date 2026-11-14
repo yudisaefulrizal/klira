@@ -57,6 +57,7 @@ export * from './pengesahan_catatan.js';
 export * from './pengguna.js';
 export * from './penugasan_jenis.js';
 export * from './penyampaian_rm.js';
+export * from './penyerahan_hasil.js';
 export * from './peringatan_izin.js';
 export * from './permintaan_hak.js';
 export * from './permintaan_perbaikan.js';
