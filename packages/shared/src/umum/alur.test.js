@@ -11,7 +11,10 @@ describe('antrean', () => {
     });
     it('perpindahan status yang sah', () => {
         expect(aksiAntreanTersedia('menunggu')).toEqual(['panggil', 'batal']);
-        expect(aksiAntreanTersedia('dipanggil')).toEqual(['panggil', 'mulai', 'batal']);
+        expect(aksiAntreanTersedia('dipanggil')).toEqual(['panggil', 'lewati', 'mulai', 'batal']);
+        // Pasien yang dilewati dapat dipanggil lagi atau dibatalkan, tetapi tidak langsung dimulai.
+        expect(aksiAntreanTersedia('dilewati')).toEqual(['panggil', 'batal']);
+        expect(bolehAksiAntrean('menunggu', 'lewati')).toBe(false);
         expect(aksiAntreanTersedia('dilayani')).toEqual(['selesai']);
         expect(aksiAntreanTersedia('selesai')).toEqual([]);
         expect(aksiAntreanTersedia('batal')).toEqual([]);

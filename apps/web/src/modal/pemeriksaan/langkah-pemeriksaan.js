@@ -1,5 +1,5 @@
 import { h, Fragment, lokal } from '../../util/h.js';
-import { DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, LABEL_NARASI, KLINIS, MAKS_NARASI, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL, bidangKelompok, isianDiubah, labelBidangPemeriksaan, samaDenganDefault } from '@klira/shared';
+import { KESADARAN, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, LABEL_NARASI, KLINIS, MAKS_NARASI, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL, bidangKelompok, isianDiubah, labelBidangPemeriksaan, samaDenganDefault } from '@klira/shared';
 import { KelompokNormal } from '../../komponen/klinis/kelompok-normal.js';
 import { cariTerminologi, cariTindakanKlinik } from '../../api-klien/klinis.js';
 import { token } from '../../gaya/token.js';
@@ -10,6 +10,7 @@ import { Isian } from '../../komponen/ui/isian.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { Lencana } from '../../komponen/ui/lencana.js';
 import { Peringatan } from '../../komponen/ui/peringatan.js';
+import { Pilihan } from '../../komponen/ui/pilihan.js';
 import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan.js';
 import { Tombol } from '../../komponen/ui/tombol.js';
 import { hapusDiagnosis, hapusTindakan, jadikanUtama, kunciItemTindakan, ringkasanIsi, tambahDiagnosis, tambahTindakan, ubahTindakan } from './keadaan-pemeriksaan.js';
@@ -116,7 +117,24 @@ export function LangkahTandaVital({
         [t.kunci]: e.target.value
       }
     })
-  }))));
+  })), h(Pilihan, {
+    id: "tv-kesadaran",
+    label: KLINIS.tandaVital.kesadaran,
+    value: k.tanda_vital.kesadaran,
+    opsi: [{
+      nilai: '',
+      label: KLINIS.tandaVital.pilihKesadaran
+    }, ...KESADARAN.map(n => ({
+      nilai: n,
+      label: KLINIS.tandaVital.kesadaranOpsi[n]
+    }))],
+    onChange: e => ubah({
+      tanda_vital: {
+        ...k.tanda_vital,
+        kesadaran: e.target.value
+      }
+    })
+  })));
 }
 
 /**
@@ -525,7 +543,8 @@ export function LangkahNarasi({
   ubah,
   galat,
   server,
-  keterangan
+  keterangan,
+  baris
 }) {
   return h(Kolom, {
     jarak: "sm"
@@ -538,6 +557,13 @@ export function LangkahNarasi({
     label: LABEL_NARASI[bagian],
     value: k[bagian],
     maxLength: MAKS_NARASI[bagian],
+    ...(baris ? {
+      rows: baris,
+      style: {
+        height: 'auto',
+        fontFamily: 'inherit'
+      }
+    } : {}),
     onChange: e => ubah({
       [bagian]: e.target.value
     })

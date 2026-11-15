@@ -198,3 +198,13 @@ export async function kunciPasien(pasienId, fasyankesId, koneksi = pool) {
 export function kunciPasienRawatInap(id, fasyankesId, koneksi) {
     return baca('SELECT id FROM pasien WHERE id = ? AND fasyankes_id = ? FOR UPDATE', [id, fasyankesId], koneksi);
 }
+/** Data minimum untuk mencari IHS Number: NIK dan IHS Number yang sudah tersimpan. */
+export async function ambilPasienUntukSinkronIhs(id, fasyankes_id, koneksi = pool) {
+    const baris = await baca('SELECT t.`id`, t.`nik`, t.`ihs_number` FROM `pasien` t WHERE t.`id` = ? AND t.`fasyankes_id` = ? LIMIT 1', [id, fasyankes_id], koneksi);
+    return baris[0] ?? null;
+}
+/** Isi atau hapus (null) IHS Number pasien. */
+export async function ubahPasienUntukIsiIhs(ihs_number, id, fasyankes_id, koneksi = pool) {
+    const hasil = await tulis('UPDATE `pasien` t SET t.`ihs_number` = ? WHERE t.`id` = ? AND t.`fasyankes_id` = ?', [ihs_number ?? null, id, fasyankes_id], koneksi);
+    return { count: hasil.affectedRows };
+}

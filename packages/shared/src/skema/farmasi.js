@@ -105,8 +105,14 @@ export const itemResepMasukan = z.object({
 });
 /** Daftar item resep yang disiapkan apoteker (boleh kosong saat telaah dicatat). */
 export const daftarItemResepMasukan = z.array(itemResepMasukan).max(50);
-/** Resep ditulis dokter sebagai teks bebas (termasuk merek dan racikan); item obat diisi apoteker saat telaah (P3). */
-export const resepMasukan = z.object({ teks: teksWajib(2000) });
+/**
+ * Resep dokter: obat dipilih satu per satu dari master obat klinik (jumlah dan aturan pakai ditulis dokter), ditambah satu catatan untuk seluruh
+ * resep (mis. cara membuat puyer). Apoteker menelaah dan dapat menyesuaikan item.
+ */
+export const resepMasukan = z.object({
+    item: z.array(itemResepMasukan).min(1, FARMASI.galat.obatResepWajib).max(50),
+    catatan: teksOpsional(1000),
+});
 export const filterRiwayatObat = z.object({
     status: z.preprocess(kosongJadiTiada, z.enum(['diajukan', 'ditelaah', 'siap', 'diserahkan']).optional()),
     dari: tglIso,

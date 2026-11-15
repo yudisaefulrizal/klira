@@ -1,6 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 export async function daftarAntreanUntukBuatRuteLayarPanggilan(fasyankes_id, tanggal, lokasi_id, status, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`lokasi_id`, t.`nomor`, t.`awalan`, t.`jenis_poli`, t.`status`, t.`waktu_panggil` FROM `antrean` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND ((? OR t.`tanggal` <=> ?)) AND ((? OR t.`lokasi_id` IN (?) OR t.`lokasi_id` IS NULL)) AND ((? OR t.`status` IN (?))) ORDER BY t.`waktu_panggil` DESC, t.`id` DESC", [fasyankes_id === undefined, fasyankes_id ?? null, tanggal === undefined, tanggal ?? null, lokasi_id === undefined, (lokasi_id)?.length ? (lokasi_id) : [null], status === undefined, (status)?.length ? (status) : [null]], koneksi);
+    const baris = await baca("SELECT t.`id`, t.`lokasi_id`, t.`nomor`, t.`awalan`, t.`jenis_poli`, t.`status`, t.`waktu_panggil`, (SELECT k.`tahap_layanan` FROM `kunjungan` k WHERE k.`id` = t.`kunjungan_id`) AS `tahap_layanan` FROM `antrean` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND ((? OR t.`tanggal` <=> ?)) AND ((? OR t.`lokasi_id` IN (?) OR t.`lokasi_id` IS NULL)) AND ((? OR t.`status` IN (?))) ORDER BY t.`waktu_panggil` DESC, t.`id` DESC", [fasyankes_id === undefined, fasyankes_id ?? null, tanggal === undefined, tanggal ?? null, lokasi_id === undefined, (lokasi_id)?.length ? (lokasi_id) : [null], status === undefined, (status)?.length ? (status) : [null]], koneksi);
     return baris;
 }
 export async function ubahAntreanUntukMulaiAntreanDalam(waktu_mulai, fasyankes_id, kunjungan_id, status, waktu_mulai2, koneksi = pool) {
@@ -107,4 +107,10 @@ export async function ubahAntreanUntukTetapkanPoli(id, lokasi_id, koneksi = pool
 export async function hitungPoliDokterUntukJenis(fasyankes_id, jenis_poli, dpjp_id, koneksi = pool) {
     const [b] = await baca("SELECT COUNT(DISTINCT l.`id`) AS jumlah FROM `lokasi` l JOIN `jadwal_praktik` j ON j.`lokasi_id` = l.`id` AND j.`aktif` = 1 AND j.`pengguna_id` = ? WHERE l.`fasyankes_id` = ? AND l.`jenis` = 'poli' AND l.`status_operasional` = 'O' AND LOWER(l.`jenis_poli`) = LOWER(?)", [dpjp_id, fasyankes_id, jenis_poli], koneksi);
     return Number(b.jumlah);
+}
+
+/** Tahap layanan kunjungan milik satu antrean; null bila antrean tidak ada. */
+export async function cariTahapLayananUntukTahapAntrean(id, fasyankes_id, koneksi = pool) {
+    const baris = await baca("SELECT k.`tahap_layanan` FROM `antrean` t JOIN `kunjungan` k ON k.`id` = t.`kunjungan_id` WHERE t.`id` = ? AND t.`fasyankes_id` = ? LIMIT 1", [id, fasyankes_id], koneksi);
+    return baris[0]?.tahap_layanan ?? null;
 }

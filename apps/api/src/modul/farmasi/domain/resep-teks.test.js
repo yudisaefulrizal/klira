@@ -5,11 +5,19 @@ const { samaItemResep } = await import("../data-access/repositori.js");
 const { buatLayananFarmasi } = await import("./layanan.js");
 
 describe('resep teks bebas dan item oleh farmasi (P3)', () => {
-    it('resep dokter hanya teks: wajib, dirapikan, maksimal 2000 karakter', () => {
-        expect(resepMasukan.parse({ teks: '  R/ Parasetamol 500 mg tab ½, CTM 4 mg tab ½, m.f. pulv. dtd No. X, s 3 dd pulv I  ' }).teks).toMatch(/^R\/ .* pulv I$/);
-        expect(resepMasukan.safeParse({ teks: '  ' }).success).toBe(false);
-        expect(resepMasukan.safeParse({ teks: 'x'.repeat(2001) }).success).toBe(false);
-        expect(resepMasukan.safeParse({ item: [{ master_obat_id: 1, aturan_pakai: '3 x 1', jumlah: 1 }] }).success).toBe(false);
+    it('resep dokter: minimal satu obat dengan aturan pakai dan jumlah, catatan seluruh resep opsional maksimal 1000 karakter', () => {
+        const item = [{ master_obat_id: 1, aturan_pakai: '  3 x 1 sesudah makan ', jumlah: '10' }];
+        const h = resepMasukan.parse({ item, catatan: '  Dibuat puyer  ' });
+        expect(h.item[0]).toMatchObject({ aturan_pakai: '3 x 1 sesudah makan', jumlah: 10 });
+        expect(h.catatan).toBe('Dibuat puyer');
+        expect(resepMasukan.safeParse({ item }).success).toBe(true);
+        expect(resepMasukan.safeParse({ item: [] }).success).toBe(false);
+        expect(resepMasukan.safeParse({ catatan: 'tanpa obat' }).success).toBe(false);
+        expect(resepMasukan.safeParse({ item, catatan: 'x'.repeat(1001) }).success).toBe(false);
+        expect(resepMasukan.safeParse({ item: [{ master_obat_id: 1, aturan_pakai: ' ', jumlah: 1 }] }).success).toBe(false);
+        expect(resepMasukan.safeParse({ item: [{ master_obat_id: 1, aturan_pakai: '3 x 1', jumlah: 0 }] }).success).toBe(false);
+        // Teks bebas lama tidak lagi diterima.
+        expect(resepMasukan.safeParse({ teks: 'R/ Parasetamol' }).success).toBe(false);
     });
     it('telaah membawa item: boleh tidak dikirim (tanpa default), boleh kosong, obat sama boleh dua kali, jumlah bulat minimal 1, aturan pakai wajib', () => {
         const dasar = { administratif: true, farmasetik: true, klinis: true };

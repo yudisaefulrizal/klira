@@ -184,7 +184,7 @@ export class RepositoriFarmasiMysql {
         const nama = new Map(orang.map((o) => [o.id, o.nama]));
         const ringkas = await this.ringkasStok(fasyankesId, [...new Set(baris.flatMap((b) => b.item.map((i) => i.master_obat_id)))]);
         return baris.map((r) => ({
-            id: r.id, kunjungan_id: r.kunjungan_id, nomor_resep: r.nomor_resep, teks: r.teks, status: r.status, jenis_pembiayaan: r.jenis_pembiayaan, dpjp_nama: nama.get(r.dpjp_id) ?? null,
+            id: r.id, kunjungan_id: r.kunjungan_id, nomor_resep: r.nomor_resep, catatan: r.teks, status: r.status, jenis_pembiayaan: r.jenis_pembiayaan, dpjp_nama: nama.get(r.dpjp_id) ?? null,
             dibuat_pada: r.dibuat_pada.toISOString(), waktu_siap: r.waktu_siap?.toISOString() ?? null,
             item: r.item.map((i) => ({
                 id: i.id, master_obat_id: i.master_obat_id, nama: i.master.nama_tampil, satuan: i.master.satuan, aturan_pakai: i.aturan_pakai, bentuk: i.bentuk, rute: i.rute, jumlah: i.jumlah,
@@ -201,19 +201,49 @@ export class RepositoriFarmasiMysql {
         return (await this.keResepDto(fasyankesId, [id]))[0] ?? null;
     }
     /**
-     * Resep teks dokter dibuat tanpa item dan tanpa item tagihan (P3): item obat dan tagihannya diisi apoteker saat telaah. Nomor resep berurutan
-     * per hari (R-TTTTBBHH-NNN); bila dua pengajuan serempak mendapat nomor sama, keunikan memaksa ulang.
+     * Satu resep per kunjungan: dibuat bila belum ada, selain itu catatan dan item obatnya diganti selama resep masih diajukan (belum ditelaah).
+     * Item resep dan item tagihan obat dibuat ulang dalam satu transaksi. Nomor resep berurutan per hari (R-TTTTBBHH-NNN); pembuatan serempak
+     * diserialkan per klinik supaya satu kunjungan tidak mendapat dua resep.
      */
-    async buatResep(d) {
+    async simpanResep(d) {
         for (let percobaan = 0;; percobaan++) {
             try {
                 return await db.transaksi(async (tx) => {
-                    const awal = awalHariUtc();
-                    const urut = (await db.hitungResepUntukBuatResep(d.fasyankesId, awal, tx)) + 1;
-                    const nomor = `R-${tglIso(awal).replaceAll('-', '')}-${String(urut + percobaan).padStart(3, '0')}`;
-                    const resep = await (async () => { const _hasil = await db.tambahResepUntukBuatResep(d.fasyankesId, d.kunjungan.id, d.dpjpId, nomor, d.teks, d.kunjungan.cara_pembayaran, d.oleh, tx); return db.tambahResepUntukBuatResepHasil(_hasil.id, tx); })();
+                    await db.kunciFasyankes(d.fasyankesId, tx);
+                    const semua = (await db.daftarResepUntukResepKunjungan(d.fasyankesId, d.kunjungan.id, tx)).sort((x, y) => x.id - y.id);
+                    const ada = semua.length ? (await db.kunciResep(semua[0].id, d.fasyankesId, tx))[0] : null;
+                    // Dokter boleh mengubah resep sampai apoteker mulai menelaahnya (status berubah atau catatan telaah sudah ada).
+                    if (ada && (ada.status !== 'diajukan' || (await db.hitungTelaahUntukSimpanResep(ada.id, tx)) > 0))
+                        return 'resep_terkunci';
+                    // Tagihan yang sudah dibayar tidak boleh berubah.
+                    if (await db.hitungPembayaranUntukCatatTelaah(d.kunjungan.id, d.fasyankesId, tx))
+                        return 'tagihan_terkunci';
+                    let resepId, lama = [];
+                    if (ada) {
+                        resepId = ada.id;
+                        lama = await db.daftarItemResepUntukCatatTelaah(resepId, tx);
+                        await db.ubahCatatanUntukSimpanResep(resepId, d.fasyankesId, d.catatan ?? '', tx);
+                        if (lama.length)
+                            await db.hapusItemTagihanUntukGantiItemObatResepDalam(d.fasyankesId, lama.map((x) => x.id), tx);
+                        await db.hapusItemResepUntukCatatTelaah(resepId, tx);
+                    }
+                    else {
+                        const awal = awalHariUtc();
+                        const urut = (await db.hitungResepUntukBuatResep(d.fasyankesId, awal, tx)) + 1;
+                        const nomor = `R-${tglIso(awal).replaceAll('-', '')}-${String(urut + percobaan).padStart(3, '0')}`;
+                        // Kolom `teks` menyimpan catatan seluruh resep (boleh kosong).
+                        const resep = await (async () => { const _hasil = await db.tambahResepUntukBuatResep(d.fasyankesId, d.kunjungan.id, d.dpjpId, nomor, d.catatan ?? '', d.kunjungan.cara_pembayaran, d.oleh, tx); return db.tambahResepUntukBuatResepHasil(_hasil.id, tx); })();
+                        resepId = resep.id;
+                    }
+                    const baru = [];
+                    for (const i of d.item) {
+                        const baris = await (async () => { const _hasil = await db.tambahItemResepUntukCatatTelaah(d.fasyankesId, resepId, i.master_obat_id, i.aturan_pakai, i.bentuk, i.rute, i.jumlah, d.oleh, tx); return db.tambahItemResepUntukCatatTelaahHasil(_hasil.id, tx); })();
+                        const o = d.obat.find((x) => x.id === i.master_obat_id);
+                        baru.push({ itemResepId: baris.id, master_obat_id: o.id, nama: o.nama_tampil, harga: o.harga, jumlah: i.jumlah });
+                    }
+                    await gantiItemObatResepDalam(tx, d.fasyankesId, d.kunjungan.id, d.oleh, [], baru);
                     const t = await db.cariTagihanUntukBuatResep(d.kunjungan.id, d.fasyankesId, tx);
-                    return { resepId: resep.id, tagihan: { status_tagihan: t?.status_tagihan ?? 'lengkap', status_pembayaran: t?.status_pembayaran ?? 'belum', total: t ? totalTagihan(t.item) : 0 } };
+                    return { resepId, diubah: !!ada, tagihan: { status_tagihan: t?.status_tagihan ?? 'lengkap', status_pembayaran: t?.status_pembayaran ?? 'belum', total: t ? totalTagihan(t.item) : 0 } };
                 });
             }
             catch (e) {
@@ -285,7 +315,7 @@ export class RepositoriFarmasiMysql {
             data: baris.map((r) => ({
                 id: r.id, kunjungan_id: r.kunjungan_id, nomor_resep: r.nomor_resep, pasien_nama: r.kunjungan.pasien.nama, pasien_nomor_rm: r.kunjungan.pasien.nomor_rm, status: r.status,
                 jumlah_item: r.item.length, dibuat_pada: r.dibuat_pada.toISOString(), dpjp_nama: nama.get(r.dpjp_id) ?? null,
-                teks: r.teks, item: r.item.map((i) => ({ nama: i.master.nama_tampil, jumlah: i.jumlah, satuan: i.master.satuan })),
+                catatan: r.teks, item: r.item.map((i) => ({ nama: i.master.nama_tampil, jumlah: i.jumlah, satuan: i.master.satuan })),
             })),
             halaman: f.halaman, ukuran: f.ukuran, total,
         };

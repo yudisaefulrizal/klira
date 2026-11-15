@@ -70,12 +70,41 @@ export function pilihBatch(k, stok, batch) {
     const s = stok.find((x) => x.batch === batch);
     return { ...k, batch, kedaluwarsa: s?.kedaluwarsa ?? k.kedaluwarsa, jumlah: k.jenis === 'koreksi' && s ? String(s.jumlah) : k.jumlah };
 }
-// ---- Resep (dokter): teks bebas, P3 ----
-export const awalResep = () => '';
-/** Resep hanya diajukan bila teks berisi selain spasi. */
-export const adaIsianResep = (teks) => !!teks.trim();
-export const bentukResep = (teks) => ({ teks });
-export const galatResep = (teks) => petakan(resepMasukan.safeParse(bentukResep(teks)).error?.issues ?? []);
+// ---- Resep (dokter): obat satu per satu dari master + catatan seluruh resep ----
+/** Baris obat untuk dokter: jumlah 1 dan aturan pakai kosong (ditulis dokter); bentuk dan rute mengikuti obat. */
+export const barisResepDokter = () => ({ ...barisResepKosong(), aturan_pakai: '' });
+export const awalResep = () => ({ baris: [barisResepDokter()], catatan: '' });
+/** Resep hanya diajukan bila ada obat yang dipilih. */
+export const adaIsianResep = (r) => r.baris.some((b) => b.master_obat_id);
+export const bentukResep = (r) => ({ item: bentukItemResep(r.baris), catatan: r.catatan });
+/** Galat resep per bidang: `item` (belum ada obat), `item.n.bidang` per baris, dan `catatan`. */
+export function galatResep(r) {
+    const g = petakan(resepMasukan.safeParse(bentukResep(r)).error?.issues ?? []);
+    r.baris.forEach((x, n) => {
+        if (!x.master_obat_id)
+            g[`item.${n}.master_obat_id`] = FARMASI.galat.obatTidakAda;
+    });
+    return g;
+}
+/** Isian formulir dari resep tersimpan (item menjadi baris editor, kolom `catatan` dari server). */
+export const resepDariServer = (r) => ({ baris: r.item.length ? barisDariItem(r.item) : [barisResepDokter()], catatan: r.catatan ?? '' });
+/**
+ * Memasukkan resep ke teks Plan: blok lama (dari resep tersimpan) diganti blok baru; bila blok lama tidak ditemukan (Plan sudah diketik ulang)
+ * blok baru ditambahkan di akhir. Hasil `null` bila melebihi `maks` karakter.
+ */
+export function perbaruiPlan(plan, blokLama, blokBaru, maks) {
+    const ada = plan ?? '';
+    const hasil = blokLama && ada.includes(blokLama) ? ada.replace(blokLama, () => blokBaru) : ada.trim() ? `${ada.trimEnd()}\n\n${blokBaru}` : blokBaru;
+    return hasil.length <= maks ? hasil : null;
+}
+/** Teks resep untuk kolom Plan: satu baris per obat (R/ nama No. jumlah — aturan pakai) lalu catatan resep. */
+export function teksPlanResep(r, obat) {
+    const baris = r.baris.filter((b) => b.master_obat_id).map((b) => {
+        const o = obat.find((x) => String(x.id) === b.master_obat_id);
+        return `R/ ${o?.nama_tampil ?? `Obat #${b.master_obat_id}`} No. ${b.jumlah}${o?.satuan ? ` ${o.satuan}` : ''} — ${b.aturan_pakai.trim()}`;
+    });
+    return [...baris, ...(r.catatan.trim() ? [`Catatan: ${r.catatan.trim()}`] : [])].join('\n');
+}
 /** Baris baru langsung berisi nilai bawaan (jumlah 1, aturan pakai 3 x 1, rute Oral); apoteker menyesuaikan bila berbeda. */
 export const barisResepKosong = () => ({ master_obat_id: '', jumlah: '1', aturan_pakai: ATURAN_PAKAI_BAWAAN, bentuk: '', rute: RUTE_BAWAAN });
 export const ubahBarisResep = (b, n, p) => b.map((x, i) => (i === n ? { ...x, ...p } : x));

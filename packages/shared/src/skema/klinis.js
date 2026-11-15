@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { GALAT, KLINIS } from '../umum/teks.js';
-import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL, } from '../klinis/klinis.js';
+import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, KESADARAN, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL, } from '../klinis/klinis.js';
 import { BIDANG_TEKS_PEMERIKSAAN } from '../klinis/default-klinis.js';
 import { idPositif, tanggal, teksWajib } from './umum.js';
 const kosongJadiNull = (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? null : v);
@@ -19,7 +19,7 @@ export const anamnesisIsi = z.object({ keluhan_utama: teksWajib(1000), ...anamne
 // Tanda vital: angka per kunci (kosong = tidak diukur), minimal satu nilai.
 const angkaTandaVital = (t) => z.preprocess((v) => (typeof v === 'string' ? (v.trim() === '' ? null : Number(v.replace(',', '.'))) : kosongJadiNull(v)), z.number(KLINIS.galat.angka).min(t.min, KLINIS.galat.rentang(t.min, t.max)).max(t.max, KLINIS.galat.rentang(t.min, t.max)).nullable());
 const bentukTandaVital = Object.fromEntries(TANDA_VITAL.map((t) => [t.kunci, angkaTandaVital(t)]));
-export const tandaVitalIsi = z.object(bentukTandaVital).refine((d) => Object.values(d).some((v) => v !== null), { message: KLINIS.galat.tandaVitalKosong });
+export const tandaVitalIsi = z.object({ ...bentukTandaVital, kesadaran: z.preprocess(kosongJadiNull, z.enum(KESADARAN, KLINIS.galat.kesadaran).nullable()) }).refine((d) => Object.values(d).some((v) => v !== null), { message: KLINIS.galat.tandaVitalKosong });
 // Skrining keperawatan (P6): teks opsional, nyeri bersyarat, gizi ya/tidak (hasil dihitung, tidak disimpan).
 const yaTidak = z.preprocess((v) => (v === null || v === undefined || v === '' ? false : v), z.boolean());
 const skalaNyeri = z.preprocess((v) => (typeof v === 'string' ? (v.trim() === '' ? null : Number(v)) : kosongJadiNull(v)), z.number(KLINIS.galat.angka).int(KLINIS.galat.skalaNyeri).min(0, KLINIS.galat.skalaNyeri).max(SKALA_NYERI_MAKS, KLINIS.galat.skalaNyeri).nullable());
@@ -119,7 +119,7 @@ const narasiIsi = (b) => z.object({ isi: teksNull(MAKS_NARASI[b]) });
 export const SKEMA_NARASI = Object.fromEntries(BAGIAN_NARASI.map((b) => [b, narasiIsi(b)]));
 /** Skema isi per bagian; `alasan` wajib saat memperbaiki bagian yang sudah disahkan. */
 export const SKEMA_BAGIAN = {
-    diagnosis_banding: SKEMA_NARASI.diagnosis_banding, kie: SKEMA_NARASI.kie, obat_poli: SKEMA_NARASI.obat_poli,
+    diagnosis_banding: SKEMA_NARASI.diagnosis_banding, kie: SKEMA_NARASI.kie, obat_poli: SKEMA_NARASI.obat_poli, evaluasi: SKEMA_NARASI.evaluasi, subjek: SKEMA_NARASI.subjek, objek: SKEMA_NARASI.objek, asesmen: SKEMA_NARASI.asesmen, plan: SKEMA_NARASI.plan, instruksi: SKEMA_NARASI.instruksi,
     anamnesis: anamnesisIsi, tanda_vital: tandaVitalIsi, keperawatan: keperawatanIsi, pemeriksaan: pemeriksaanIsi, diagnosis: diagnosisIsi, tindakan: tindakanIsi, tindak_lanjut: tindakLanjutIsi,
 };
 export const simpanBagianMasukan = z.object({ isi: z.unknown(), alasan: z.string().trim().max(500).optional() });

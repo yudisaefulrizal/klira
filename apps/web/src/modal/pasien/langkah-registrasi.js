@@ -1,15 +1,15 @@
 import { h, Fragment, lokal } from '../../util/h.js';
-import { PencarianWilayah, tampilkanNamaWilayah } from '../../komponen/pencarian/pencarian-wilayah.js';
-import { DAFTAR_PASIEN, GALAT, REGISTRASI, STATUS_IDENTITAS, statusIdentitasDari } from '@klira/shared';
+import { PencarianWilayah } from '../../komponen/pencarian/pencarian-wilayah.js';
+import { GALAT, REGISTRASI, STATUS_IDENTITAS, statusIdentitasDari } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { Isian } from '../../komponen/ui/isian.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { Lencana } from '../../komponen/ui/lencana.js';
 import { Peringatan } from '../../komponen/ui/peringatan.js';
 import { Pilihan } from '../../komponen/ui/pilihan.js';
-import { Baris, Daftar, DaftarRingkasan, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan.js';
+import { Baris, Daftar, Kisi, Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan.js';
 import { Tombol } from '../../komponen/ui/tombol.js';
-import { hapusWali, ringkasanRegistrasi, ubahTidakCakap } from './keadaan-registrasi.js';
+import { hapusWali, ubahTidakCakap } from './keadaan-registrasi.js';
 import { Bingkai } from '../../komponen/ui/kartu.js';
 const teksRedup = {
   margin: 0,
@@ -121,7 +121,8 @@ function HasilDuplikat({
     })
   })));
 }
-export function LangkahIdentitas({
+/** Bagian kiri formulir: identitas utama dengan pemeriksaan data ganda, nomor HP, tempat lahir, dan jenis kelamin. */
+export function IdentitasPasien({
   kandidat,
   mencari,
   galatCari,
@@ -175,20 +176,36 @@ export function LangkahIdentitas({
     }),
     opsi: REGISTRASI.jenisKelaminOpsi,
     galat: g('jenis_kelamin')
-  })), h(PencarianWilayah, {
+  })));
+}
+/** Alamat (desa/kelurahan) pasien. */
+export function AlamatPasien({
+  keadaan: k,
+  ubah,
+  galat,
+  tampilGalat
+}) {
+  return h(PencarianWilayah, {
     id: "reg-wilayah",
     value: k.kode_wilayah,
     onChange: kode => ubah({
       kode_wilayah: kode
     }),
-    galat: g('kode_wilayah')
-  }), h(KotakCentang, {
+    galat: tampilGalat ? galat['kode_wilayah'] : undefined
+  });
+}
+/** Pasien tidak cakap hukum: penandatangan general consent menjadi wali. */
+export function TidakCakapPasien({
+  keadaan: k,
+  ubah
+}) {
+  return h(KotakCentang, {
     id: "reg-tidak-cakap",
     label: REGISTRASI.tidakCakap,
     keterangan: REGISTRASI.tidakCakapKet,
     checked: k.tidak_cakap,
     onChange: e => ubah(ubahTidakCakap(k, e.target.checked))
-  }));
+  });
 }
 export function LangkahSosial({
   keadaan: k,
@@ -257,14 +274,21 @@ export function LangkahWali({
   keadaan: k,
   ubah,
   galat,
-  tampilGalat
+  tampilGalat,
+  tampung
 }) {
+  // Isian tambah wali yang belum ditambahkan disimpan di `tampung` (milik pemanggil) supaya tidak hilang saat formulir dilukis ulang.
   return lokal({
     hubungan: '',
     nama: '',
     kontak: '',
-    coba: false
-  }, (s, set) => {
+    coba: false,
+    ...tampung
+  }, (s, set0) => {
+    const set = p => {
+      if (tampung) Object.assign(tampung, p);
+      set0(p);
+    };
     const hubungan = s.hubungan;
     const setHubungan = v => set({
       hubungan: typeof v === "function" ? v(s.hubungan) : v
@@ -361,9 +385,7 @@ export function LangkahPenjamin({
   tampilGalat
 }) {
   const g = b => tampilGalat ? galat[b] : undefined;
-  return h(Kolom, null, h("p", {
-    style: teksRedup
-  }, REGISTRASI.penjaminPetunjuk), h(Isian, {
+  return h(Kolom, null, h(Isian, {
     id: "reg-jkn-kartu",
     label: REGISTRASI.jknKartu,
     value: k.jkn_nomor_kartu,
@@ -473,19 +495,52 @@ export function LangkahConsent({
     nada: "kuning"
   }, g('persetujuan.setuju')));
 }
-export function LangkahRingkasan({
-  keadaan,
-  teks
+/**
+ * Formulir registrasi satu layar, dua kolom tanpa judul bagian: kiri identitas dan data sosial; kanan alamat, penjamin, status tidak cakap,
+ * dan wali/keluarga; di bawahnya general consent selebar penuh.
+ */
+export function FormRegistrasi({
+  kandidat,
+  mencari,
+  galatCari,
+  onCari,
+  onPakai,
+  teks,
+  memuat,
+  galatMuat,
+  tampung,
+  ...dasar
 }) {
-  const el = lokal({ wilayah: '-' }, (s) => {
-    const bagian = ringkasanRegistrasi(keadaan, teks).map(b => ({
-      ...b,
-      baris: b.baris.map(r => r.label === DAFTAR_PASIEN.detail.alamat ? { ...r, nilai: s.wilayah } : r)
-    }));
-    return h(DaftarRingkasan, { bagian });
-  });
-  tampilkanNamaWilayah(keadaan.kode_wilayah, (n) => el.set({ wilayah: n }));
-  return el;
+  return h(Kolom, {
+    jarak: "lg"
+  }, h(Kisi, {
+    kolom: "repeat(auto-fit, minmax(340px, 1fr))",
+    jarak: "lg",
+    style: {
+      alignItems: 'start',
+      columnGap: `calc(${token.jarak.lg} * 2)`
+    }
+  }, h(Kolom, null, h(IdentitasPasien, {
+    ...dasar,
+    kandidat,
+    mencari,
+    galatCari,
+    onCari,
+    onPakai
+  }), h(LangkahSosial, dasar)), h(Kolom, null, h(AlamatPasien, dasar), h(LangkahPenjamin, dasar), h(TidakCakapPasien, dasar), h(LangkahWali, {
+    ...dasar,
+    tampung
+  }))), h(Kolom, {
+    style: {
+      borderTop: `${token.ukuran.garis} solid ${token.warna.garis}`,
+      paddingTop: token.jarak.lg
+    }
+  }, h(LangkahConsent, {
+    ...dasar,
+    teks,
+    memuat,
+    galatMuat
+  })));
 }
 
 /** Ringkasan pasien yang tetap terlihat di semua langkah (kepala modal). */

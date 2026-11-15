@@ -8,6 +8,7 @@ const asetMenu = {
   '/kasir-klaim': 'kasir-klaim',
   '/rekam-medis': 'rekam-medis',
   '/satusehat': 'satusehat',
+  '/test-endpoint': 'satusehat',
   '/pelindungan-data': 'pelindungan-data',
   '/log-audit': 'rekam-medis',
   '/akses': 'pelindungan-data',

@@ -1,6 +1,6 @@
 import { h, Fragment } from '../../util/h.js';
                                        
-import { CARA_PEMBAYARAN, KLINIS, LABEL_NARASI, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
+import { BAGIAN_SOAPIE, CARA_PEMBAYARAN, KLINIS, LABEL_NARASI, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
                                                                       
 import { tanggalPendek, tanggalWaktuPendek } from '../../util/format.js';
 import { bagianRawatInap } from '../rawat-inap/data-rawat-inap.js';
@@ -76,18 +76,22 @@ export function Lembar({
       waktu: p?.waktu ?? null
     };
   };
-  const [anamnesa,, kesimpulan] = ringkasanIsi(k);
+  // Blok dicari menurut judul: urutan bergeser bila skrining keperawatan terisi (blok keperawatan ikut di depan).
+  const grup = ringkasanIsi(k), anamnesa = grup.find(g => g.judul === KLINIS.langkah.anamnesis), kesimpulan = grup.find(g => g.judul === KLINIS.langkah.kesimpulan);
   const keperawatan = b.keperawatan.isi ? ringkasanKeperawatan(keperawatanDariIsi(b.keperawatan.isi)).baris : [];
   const tv = TANDA_VITAL.filter(t => k.tanda_vital[t.kunci]).map(t => ({
     label: KLINIS.tandaVital[t.kunci],
     nilai: `${k.tanda_vital[t.kunci]} ${KLINIS.tandaVital.satuan[t.satuan] ?? t.satuan}`
-  }));
+  })).concat(k.tanda_vital.kesadaran ? [{
+    label: KLINIS.tandaVital.kesadaran,
+    nilai: KLINIS.tandaVital.kesadaranOpsi[k.tanda_vital.kesadaran] ?? k.tanda_vital.kesadaran
+  }] : []);
   const fisik = barisPemeriksaanFisik(k.pemeriksaan).map(x => ({
     ...x,
     tebal: x.nilai.includes('(!)'),
     nilai: x.nilai.replaceAll(' (!)', '')
   }));
-  const obatPulang = d.resep.map(r => [r.teks, ...r.item.map(i => `• ${i.nama} ${i.jumlah} ${i.satuan}, ${i.aturan_pakai}`)].join('\n')).join('\n\n');
+  const obatPulang = d.resep.map(r => [...r.item.map(i => `• ${i.nama} ${i.jumlah} ${i.satuan}, ${i.aturan_pakai}`), ...(r.catatan?.trim() ? [`Catatan: ${r.catatan.trim()}`] : [])].join('\n')).join('\n\n');
   const tl = k.tindak_lanjut;
   const validator = d.penunjang.find(p => p.validator);
   const p = d.pasien;
@@ -201,6 +205,13 @@ export function Lembar({
       label: KLINIS.terapi.obatPulang,
       nilai: obatPulang || '-'
     }]
+  }), BAGIAN_SOAPIE.some(x => k[x]) && h(Blok, {
+    judul: 'Catatan SOAPIE',
+    pengesah: sah(C.peran.dokter, ...BAGIAN_SOAPIE),
+    sel: BAGIAN_SOAPIE.map(x => ({
+      label: LABEL_NARASI[x],
+      nilai: k[x] || '-'
+    }))
   }), h(Blok, {
     judul: C.blok.rujukan,
     kolom: 4,

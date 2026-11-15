@@ -1,6 +1,8 @@
 import { KUNCI_TEMA, temaTersimpan, terapkanTema } from '../../util/tema.js';
 import { buatMenuPengguna } from './menu-pengguna.js';
 import { pantauStatusKoneksi } from '../../util/panggilan/status-koneksi.js';
+import { token } from '../../gaya/token.js';
+import { daftarkanSlotHeader } from './slot-header.js';
 
 const pilihanTema = [
   { nilai: 'terang', label: 'Terang', ikon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>' },
@@ -17,6 +19,13 @@ export function pasangTemaTampilan(wadah, pengguna, keluar) {
   let tema = temaTersimpan(), server = 'memeriksa', layar = { status: 'memeriksa', jumlah: null };
   const fasilitas = pengguna && !pengguna.wajib_ganti_kredensial ? pengguna.fasyankes_id : undefined;
   wadah.innerHTML = `<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:8px 16px;background:var(--warna-permukaan);border-bottom:1px solid var(--warna-garis)"><span class="pemilih-tema-label">Tampilan</span><div class="pemilih-tema" role="group" aria-label="Pilih tema tampilan"><span class="pemilih-tema-indikator" aria-hidden="true"></span>${pilihanTema.map(p => `<button type="button" class="pemilih-tema-opsi" data-tema="${p.nilai}" title="${p.nilai === 'sistem' ? 'Ikuti tema sistem' : `Tema ${p.label.toLowerCase()}`}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p.ikon}</svg><span>${p.label}</span></button>`).join('')}</div><div class="status-koneksi" role="group" aria-label="Status koneksi"><span data-server class="status-koneksi-ikon" role="img" tabindex="0"></span><${fasilitas ? 'a' : 'span'} data-layar class="status-koneksi-ikon${fasilitas ? ' status-koneksi-tautan' : ''}"></${fasilitas ? 'a' : 'span'}></div></div>`;
+  // Slot tengah bilah atas untuk tombol milik halaman (lihat slot-header.js).
+  const slotHeader = document.createElement('div'); slotHeader.dataset.slotHeader = '';
+  // Dimulai dari garis kiri isi halaman (lebar menu samping + padding isi) supaya lurus dengan kolom pencarian dan kartu di bawahnya.
+  wadah.firstElementChild.style.position = 'relative';
+  Object.assign(slotHeader.style, { position: 'absolute', top: '0', bottom: '0', left: `calc(${token.ukuran.menuSamping} + ${token.jarak.xl})`, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' });
+  wadah.firstElementChild.prepend(slotHeader);
+  const cabutSlot = daftarkanSlotHeader(slotHeader);
   // Menu pengguna mengisi sisi kiri bilah atas (hanya untuk sesi aktif yang bisa keluar).
   const menuPengguna = pengguna && keluar ? buatMenuPengguna({ pengguna, keluar }) : null;
   if (menuPengguna) wadah.firstElementChild.prepend(menuPengguna.el);
@@ -53,7 +62,7 @@ export function pasangTemaTampilan(wadah, pengguna, keluar) {
   window.addEventListener('online', periksa); window.addEventListener('offline', periksa);
   perbaruiTema(); perbaruiStatus();
   return () => {
-    menuPengguna?.tutup(); pantau.tutup(); wadah.removeEventListener('click', klik); media.removeEventListener('change', perbaruiTema); window.removeEventListener('storage', sinkronkan);
+    cabutSlot(); menuPengguna?.tutup(); pantau.tutup(); wadah.removeEventListener('click', klik); media.removeEventListener('change', perbaruiTema); window.removeEventListener('storage', sinkronkan);
     window.removeEventListener('online', periksa); window.removeEventListener('offline', periksa); wadah.replaceChildren();
   };
 }

@@ -10,6 +10,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "node skrip/dengan-env.mjs node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "service-dummy": "node dummy-intergrasi/server.mjs",
     "start": "node skrip/dengan-env.mjs node skrip/start.mjs",
     "dev": "node skrip/dengan-env.mjs node skrip/dev.mjs",
     "test:db": "node skrip/dengan-env.mjs node skrip/uji-db.mjs"

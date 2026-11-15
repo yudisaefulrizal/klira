@@ -29,7 +29,8 @@ export function queryRiwayatObat(f) {
 }
 export const riwayatObat = (f) => panggilApi('GET', `/farmasi/riwayat?${queryRiwayatObat(f)}`);
 export const resepKunjungan = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/resep`);
-export const buatResep = (kunjunganId, m) => panggilApi('POST', `/kunjungan/${kunjunganId}/resep`, m);
+/** Satu resep per kunjungan: membuat bila belum ada, selain itu mengganti selama pemeriksaan belum diselesaikan. */
+export const simpanResep = (kunjunganId, m) => panggilApi('PUT', `/kunjungan/${kunjunganId}/resep`, m);
 export const telaahResep = (resepId, m) => panggilApi('POST', `/resep/${resepId}/telaah`, m);
 export const siapkanResep = (resepId) => panggilApi('POST', `/resep/${resepId}/siap`);
 export const serahkanObat = (kunjunganId, m = {}) => panggilApi('POST', `/kunjungan/${kunjunganId}/serah-terima-obat`, m);

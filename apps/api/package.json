@@ -6,6 +6,7 @@
   "scripts": {},
   "dependencies": {
     "@klira/db": "*",
+    "@klira/integrasi": "*",
     "@klira/shared": "*",
     "express": "^5.3.0",
     "ws": "^8.22.0"

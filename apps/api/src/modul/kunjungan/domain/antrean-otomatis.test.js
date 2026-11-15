@@ -49,8 +49,15 @@ function siapkan(status = 'dipanggil', tahap = 'pemeriksaan') {
     return { tx, antrean, kunjungan };
 }
 
+test('catatan di tahap skrining tidak menjalankan antrean', async () => {
+    const w = siapkan('menunggu', 'menunggu_skrining');
+    await mulaiAntreanDalam(w.tx, 7, 11, pertama);
+    expect(w.antrean).toMatchObject({ status: 'menunggu', waktu_mulai: null });
+    expect(w.kunjungan.status).toBe('arrived');
+});
+
 test.each(['menunggu', 'dipanggil'])('catatan pertama mulai melayani dari %s tanpa perlu tombol manual', async (status) => {
-    const w = siapkan(status, 'menunggu_skrining');
+    const w = siapkan(status, 'pemeriksaan');
     await mulaiAntreanDalam(w.tx, 7, 11, pertama);
     expect(w.antrean).toMatchObject({ status: 'dilayani', waktu_mulai: pertama });
     expect(w.kunjungan.status).toBe('in-progress');

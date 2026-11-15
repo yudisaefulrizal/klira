@@ -3,6 +3,8 @@ export function queryDaftarPasien(f) {
     const q = new URLSearchParams({ halaman: String(f.halaman), ukuran: String(f.ukuran) });
     if (f.untuk_kunjungan)
         q.set('untuk_kunjungan', 'true');
+    if (f.semua)
+        q.set('semua', 'true');
     if (f.tanggal)
         q.set('tanggal', f.tanggal);
     if (f.cari?.trim())

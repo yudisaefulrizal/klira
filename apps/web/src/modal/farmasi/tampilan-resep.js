@@ -12,23 +12,23 @@ const gayaTeks = {
   fontSize: token.huruf.ukuran.dasar
 }         ;
 
-/** Teks resep dokter apa adanya (baris dan racikan dipertahankan). */
-export function TeksResepDokter({
-  teks,
-  judul = true
+/** Catatan untuk seluruh resep (mis. obat dibuat puyer); tidak tampil bila kosong. */
+export function CatatanResep({
+  catatan
 }   
-               
-                  
+                   
  ) {
+  // Fragmen kosong (bukan null): `append(null)` akan menuliskan teks "null" di halaman.
+  if (!catatan?.trim()) return document.createDocumentFragment();
   return h(Kolom, {
     jarak: "xs"
-  }, judul && h("small", {
+  }, h("small", {
     style: {
       color: token.warna.teksRedup
     }
-  }, R.teksDokter), h("pre", {
+  }, R.catatanResep), h("pre", {
     style: gayaTeks
-  }, teks.trim() || '-'));
+  }, catatan.trim()));
 }
 
 /** Item obat yang disiapkan farmasi: nama, jumlah dan satuan, aturan pakai, bentuk/rute bila ada. */
@@ -52,7 +52,7 @@ export function ItemResepFarmasi({
   }, i.nama, ": ", i.jumlah, " ", i.satuan, ", ", i.aturan_pakai, [i.bentuk, i.rute].filter(Boolean).length ? ` (${[i.bentuk, i.rute].filter(Boolean).join(', ')})` : '')));
 }
 
-/** Tampilan resep lengkap: teks dokter lalu item yang disiapkan farmasi. */
+/** Tampilan resep lengkap: obat dengan jumlah dan aturan pakai, lalu catatan seluruh resep. */
 export function TampilanResep({
   resep
 }   
@@ -60,9 +60,9 @@ export function TampilanResep({
  ) {
   return h(Kolom, {
     jarak: "sm"
-  }, h(TeksResepDokter, {
-    teks: resep.teks
-  }), h(ItemResepFarmasi, {
+  }, h(ItemResepFarmasi, {
     item: resep.item
+  }), h(CatatanResep, {
+    catatan: resep.catatan
   }));
 }

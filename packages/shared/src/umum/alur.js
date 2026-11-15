@@ -1,11 +1,15 @@
 /** Aturan alur murni pendaftaran dan antrean (bagian 7), dipakai API dan web. */
-export const AKSI_ANTREAN = ['panggil', 'mulai', 'selesai', 'batal'];
-/** Perpindahan status antrean: panggil ulang (dipanggil ke dipanggil) diizinkan untuk memanggil lagi. */
+export const AKSI_ANTREAN = ['panggil', 'lewati', 'mulai', 'selesai', 'batal'];
+/**
+ * Perpindahan status antrean: panggil ulang (dipanggil ke dipanggil) diizinkan untuk memanggil lagi. Pasien yang dipanggil tetapi tidak ada
+ * dilewati (poli langsung bebas) dan dapat dipanggil lagi atau dibatalkan.
+ */
 export const TRANSISI_ANTREAN = {
-    panggil: { dari: ['menunggu', 'dipanggil'], ke: 'dipanggil' },
+    panggil: { dari: ['menunggu', 'dipanggil', 'dilewati'], ke: 'dipanggil' },
+    lewati: { dari: ['dipanggil'], ke: 'dilewati' },
     mulai: { dari: ['dipanggil'], ke: 'dilayani' },
     selesai: { dari: ['dilayani'], ke: 'selesai' },
-    batal: { dari: ['menunggu', 'dipanggil'], ke: 'batal' },
+    batal: { dari: ['menunggu', 'dipanggil', 'dilewati'], ke: 'batal' },
 };
 export const bolehAksiAntrean = (status, aksi) => TRANSISI_ANTREAN[aksi].dari.includes(status);
 export const aksiAntreanTersedia = (status) => AKSI_ANTREAN.filter((a) => bolehAksiAntrean(status, a));

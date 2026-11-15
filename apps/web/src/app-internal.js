@@ -16,6 +16,8 @@ import { pasangPelindunganData } from './halaman/pelindungan-data/pelindungan-da
 const halaman = {
   [HALAMAN_AWAL.daftarPasien]: ['daftar-pasien', 'HalamanDaftarPasien'],
   '/pesan': ['pesan', 'HalamanPesan'], '/akses': ['pengaturan', 'HalamanAkses'], '/pengaturan-klinik': ['pengaturan', 'HalamanPengaturanKlinik'],
+  '/satusehat': ['satusehat', 'HalamanSatusehat'],
+  '/test-endpoint': ['test-endpoint', 'HalamanTestEndpoint'],
   '/penunjang': ['penunjang', 'HalamanPenunjang'], '/farmasi': ['farmasi', 'HalamanFarmasi'], '/kasir-klaim': ['kasir-klaim', 'HalamanKasirKlaim'], '/rekam-medis': ['rekam-medis', 'HalamanRekamMedis'], '/rawat-inap': ['rawat-inap', 'HalamanRawatInap'],
 };
 export async function pasangAplikasiInternal(wadah) {

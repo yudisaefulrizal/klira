@@ -6,7 +6,7 @@ export const ambilKonteksKlinis = (kunjunganId) => panggilApi('GET', `/kunjungan
 /** Simpan satu bagian = pengesahan; `alasan` wajib bila bagian itu sudah disahkan. */
 export const simpanBagian = (kunjunganId, bagian, isi, alasan) => panggilApi('PUT', `/kunjungan/${kunjunganId}/klinis/${bagian}`, { isi, ...(alasan?.trim() ? { alasan: alasan.trim() } : {}) });
 export const selesaikanPemeriksaan = (kunjunganId, tahap = 'kasir') => panggilApi('POST', `/kunjungan/${kunjunganId}/klinis/selesai`, { tahap });
-export const riwayatKunjungan = (pasienId, kecualiKunjunganId) => panggilApi('GET', `/pasien/${pasienId}/riwayat-kunjungan${kecualiKunjunganId ? `?kecuali=${kecualiKunjunganId}` : ''}`);
+export const riwayatKunjungan = (pasienId, kecualiKunjunganId, batas) => panggilApi('GET', `/pasien/${pasienId}/riwayat-kunjungan?${new URLSearchParams({ ...(kecualiKunjunganId ? { kecuali: String(kecualiKunjunganId) } : {}), ...(batas ? { batas: String(batas) } : {}) })}`);
 export const salinanKunjungan = (kunjunganId, sumberId) => panggilApi('GET', `/kunjungan/${kunjunganId}/salinan/${sumberId}`);
 export const cariTerminologi = (sistem, q, batas = 10) => panggilApi('GET', `/terminologi?${new URLSearchParams({ sistem, q, batas: String(batas) }).toString()}`);
 /** Daftar tindakan klinik (tarif tindakan aktif) untuk langkah Tindakan. */

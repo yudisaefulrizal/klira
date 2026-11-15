@@ -33,6 +33,15 @@ import { buatRuteMaster } from './modul/master/entry-points/rute.js';
 import { buatLayananFasyankes } from './modul/fasyankes/domain/layanan.js';
 import { RepositoriFasyankesMysql } from './modul/fasyankes/data-access/repositori.js';
 import { buatRuteFasyankes } from './modul/fasyankes/entry-points/rute.js';
+import { buatLayananSatusehat } from './modul/satusehat/domain/layanan.js';
+import { buatSinkronIhs } from './modul/satusehat/domain/pasien.js';
+import { RepositoriSatusehatMysql } from './modul/satusehat/data-access/repositori.js';
+import { buatRuteSatusehat } from './modul/satusehat/entry-points/rute.js';
+import { buatLayananPcare } from './modul/pcare/domain/layanan.js';
+import { RepositoriPcareMysql } from './modul/pcare/data-access/repositori.js';
+import { buatRutePcare } from './modul/pcare/entry-points/rute.js';
+import { buatLayananUjiEndpoint } from './modul/uji-endpoint/domain/layanan.js';
+import { buatRuteUjiEndpoint } from './modul/uji-endpoint/entry-points/rute.js';
 import { buatLayananPasien } from './modul/pasien/domain/layanan.js';
 import { RepositoriPasienMysql } from './modul/pasien/data-access/repositori.js';
 import { buatRutePasien } from './modul/pasien/entry-points/rute.js';
@@ -84,6 +93,11 @@ import { buatLayananPembuatanAkun } from './modul/pengguna/domain/pembuatan.js';
 import { RepositoriAkunBaruMysql } from './modul/pengguna/data-access/repositori-baru.js';
 import { buatRutePengguna } from './modul/pengguna/entry-points/rute.js';
 import { buatRuteWhatsapp } from './modul/whatsapp/entry-points/rute.js';
+import { dekripsiRahasia, enkripsiRahasia } from '@klira/db';
+import { buatLayananAntreanJkn } from './modul/antrean-jkn/domain/layanan.js';
+import { buatSinkronAntreanBpjs } from './modul/antrean-jkn/domain/sinkron-bpjs.js';
+import { RepositoriAntreanJknMysql } from './modul/antrean-jkn/data-access/repositori.js';
+import { buatRuteAntreanJkn } from './modul/antrean-jkn/entry-points/rute.js';
 const direktoriWebNative = path.resolve(__dirname, '../../web');
 const direktoriWebBawaan = direktoriWebNative;
 export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
@@ -119,15 +133,33 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditMysql() })));
     app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesMysql(), audit: new PenampungAuditMysql() })));
-    app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienMysql(), audit: new PenampungAuditMysql() })));
+    const layananSatusehat = opsi.layananSatusehat ?? buatLayananSatusehat({ repo: new RepositoriSatusehatMysql(), audit: new PenampungAuditMysql() });
+    app.locals.layananSatusehat = layananSatusehat;
+    const sinkronIhs = buatSinkronIhs({ repo: opsi.repoSatusehat ?? new RepositoriSatusehatMysql(), klienAktif: (f, o) => layananSatusehat.klienAktif(f, o), audit: new PenampungAuditMysql() });
+    app.use('/api', buatRuteSatusehat(layananAkses, layananIzin, layananSatusehat, sinkronIhs));
+    const layananPcare = opsi.layananPcare ?? buatLayananPcare({ repo: new RepositoriPcareMysql(), audit: new PenampungAuditMysql() });
+    app.locals.layananPcare = layananPcare;
+    app.use('/api', buatRutePcare(layananAkses, layananIzin, layananPcare));
+    app.use('/api', buatRuteUjiEndpoint(layananAkses, layananIzin, opsi.layananUjiEndpoint ?? buatLayananUjiEndpoint({ layananSatusehat, layananPcare, audit: new PenampungAuditMysql() })));
+    app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienMysql(), audit: new PenampungAuditMysql(), sinkronIhs })));
     // Pengesahan, addendum, dan penunjang dibangun lebih dulu: pendaftaran penunjang saja membuat order lab lewat layanan penunjang.
     const layananPengesahan = buatLayananPengesahan({ repo: new RepositoriPengesahanMysql(), audit: new PenampungAuditMysql() });
     const layananAddendum = buatLayananAddendum({ repo: new RepositoriAddendumMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan });
     const layananPenunjang = buatLayananPenunjang({
         repo: new RepositoriPenunjangMysql(), audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, addendum: layananAddendum,
     });
-    const layananKunjungan = buatLayananKunjungan({ repo: new RepositoriKunjunganMysql(), audit: new PenampungAuditMysql(), orderLab: (p, id, m, alamat) => layananPenunjang.buatOrder(p, id, m, alamat) });
+    // Antrean online BPJS: kunjungan JKN dikabarkan ke BPJS (tambah, panggil, batal); pendaftaran Mobile JKN ditarik dari PCare lewat layanan kunjungan yang sama.
+    const repoKunjungan = new RepositoriKunjunganMysql();
+    const repoAntreanJkn = new RepositoriAntreanJknMysql();
+    const antreanBpjs = buatSinkronAntreanBpjs({ repo: repoAntreanJkn, klienPcare: (f, o) => layananPcare.klienAktif(f, o), dekripsi: dekripsiRahasia });
+    const layananKunjungan = buatLayananKunjungan({ repo: repoKunjungan, audit: new PenampungAuditMysql(), sinkronIhs, antreanBpjs, orderLab: (p, id, m, alamat) => layananPenunjang.buatOrder(p, id, m, alamat) });
     app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
+    const layananAntreanJkn = opsi.layananAntreanJkn ?? buatLayananAntreanJkn({
+        repo: repoAntreanJkn, audit: new PenampungAuditMysql(), kunjungan: layananKunjungan, klienPcare: (f, o) => layananPcare.klienAktif(f, o),
+        opsiKunjungan: (f) => repoKunjungan.opsi(f), jenisPoliOperasional: (f, jenis) => repoKunjungan.jenisPoliOperasional(f, jenis), enkripsi: enkripsiRahasia,
+    });
+    app.locals.layananAntreanJkn = layananAntreanJkn;
+    app.use('/api', buatRuteAntreanJkn(layananAkses, layananIzin, layananAntreanJkn));
     // Modul klinis mendaftarkan penyedia isi pengesahan catatan generik (dipakai ulang CPPT, resume, hasil lab).
     const repoKlinis = new RepositoriKlinisMysql();
     const layananKlinis = buatLayananKlinis({ repo: repoKlinis, audit: new PenampungAuditMysql(), pengesahan: layananPengesahan, kunjungan: layananKunjungan });

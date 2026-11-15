@@ -1,18 +1,8 @@
-export const TAB_EDIT_PASIEN = [
-    { id: 'edit-identitas', label: 'Data utama' },
-    { id: 'edit-pelengkap', label: 'Pelengkap' },
-    { id: 'edit-keluarga', label: 'Keluarga' },
-    { id: 'edit-penjamin', label: 'Penjamin' },
-];
-/** Open the section containing the first invalid field, including a hidden guardian. */
+/** Wali yang harus dibuka bila isian salah ada pada data wali/keluarga (daftar wali tampil satu per satu); selain itu tidak ada yang perlu dibuka. */
 export function lokasiGalatEditPasien(jalur) {
     if (jalur === 'tidak_cakap' || jalur === 'wali' || jalur.startsWith('wali.')) {
         const indeks = Number(jalur.split('.')[1]);
-        return { tab: 'edit-keluarga', ...(Number.isInteger(indeks) && indeks >= 0 ? { wali: indeks } : {}) };
+        return Number.isInteger(indeks) && indeks >= 0 ? { wali: indeks } : {};
     }
-    if (jalur.startsWith('jkn_') || jalur.startsWith('asuransi_'))
-        return { tab: 'edit-penjamin' };
-    if (['tempat_lahir', 'ibu_kandung', 'alamat', 'kode_wilayah', 'suku', 'bahasa'].includes(jalur))
-        return { tab: 'edit-pelengkap' };
-    return { tab: 'edit-identitas' };
+    return {};
 }

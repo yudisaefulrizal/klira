@@ -170,20 +170,34 @@ d('farmasi (master obat, stok, resep, telaah) terhadap database pengujian', () =
         expect((await panggil('GET', `/farmasi/master/${ids.obat1}/stok`, 'lainApoteker')).status).toBe(404);
         expect((await mutasi(ids.obat1, { jenis: 'terima', batch: 'BX', kedaluwarsa: jauh, jumlah: 5 }, 'lainApoteker')).status).toBe(404);
     });
-    it('resep: dokter menulis teks bebas tanpa item dan tanpa tagihan, nomor berurutan, validasi dan lintas klinik ditolak', async () => {
-        const teks = 'R/ Parasetamol 500 mg tab ½, CTM 4 mg tab ½, m.f. pulv. dtd No. X, s 3 dd pulv I';
-        expect((await panggil('POST', `/kunjungan/${kunjA}/resep`, 'apoteker', { teks })).status).toBe(403);
-        expect((await panggil('POST', `/kunjungan/${kunjA}/resep`, 'dokter', { teks: '   ' })).status).toBe(400);
-        expect((await panggil('POST', `/kunjungan/${kunjA}/resep`, 'dokter', { teks: 'x'.repeat(2001) })).status).toBe(400);
-        expect((await panggil('POST', `/kunjungan/${kunjTutup}/resep`, 'dokter', { teks })).status).toBe(409);
-        expect((await panggil('POST', `/kunjungan/${kunjLain}/resep`, 'dokter', { teks })).status).toBe(404);
-        const r = await panggil('POST', `/kunjungan/${kunjA}/resep`, 'dokter', { teks: `  ${teks}  ` });
+    it('resep: satu per kunjungan, dokter memilih obat satu per satu dengan catatan, bisa diubah selama pemeriksaan belum selesai, item tagihan obat mengikuti, validasi dan lintas klinik ditolak', async () => {
+        const item = [{ master_obat_id: ids.obat1, aturan_pakai: '3 x 1 sesudah makan', jumlah: 10 }];
+        const badan = { item, catatan: 'Dibuat puyer' };
+        expect((await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'apoteker', badan)).status).toBe(403);
+        expect((await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'dokter', { item: [] })).status).toBe(400);
+        expect((await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'dokter', { teks: 'R/ Parasetamol' })).status).toBe(400); // teks bebas tidak lagi diterima
+        expect((await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'dokter', { item, catatan: 'x'.repeat(1001) })).status).toBe(400);
+        expect((await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'dokter', { item: [{ ...item[0], master_obat_id: 999999 }] })).status).toBe(400); // obat tidak ada
+        expect((await panggil('PUT', `/kunjungan/${kunjTutup}/resep`, 'dokter', badan)).status).toBe(409);
+        expect((await panggil('PUT', `/kunjungan/${kunjLain}/resep`, 'dokter', badan)).status).toBe(404);
+        expect(await uji.hitungItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null)).toBe(0);
+        const r = await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'dokter', { item: [{ ...item[0], aturan_pakai: '  3 x 1 sesudah makan  ' }], catatan: '  Dibuat puyer  ' });
         expect(r.status).toBe(201);
-        expect(r.badan.data.resep).toMatchObject({ status: 'diajukan', jenis_pembiayaan: 'umum', teks, item: [] });
+        expect(r.badan.data.resep).toMatchObject({ status: 'diajukan', jenis_pembiayaan: 'umum', catatan: 'Dibuat puyer' });
+        expect(r.badan.data.resep.item.map((i) => [i.master_obat_id, i.jumlah, i.aturan_pakai])).toEqual([[ids.obat1, 10, '3 x 1 sesudah makan']]);
         expect(r.badan.data.resep.nomor_resep).toMatch(/^R-\d{8}-\d{3}$/);
         ids.resepA = r.badan.data.resep.id;
-        expect(await uji.hitungItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null)).toBe(0);
-        const r2 = await panggil('POST', `/kunjungan/${kunjB}/resep`, 'dokter', { teks: 'R/ Parasetamol 500 mg No. X s 3 dd tab I' });
+        // Biaya obat langsung masuk tagihan kunjungan saat resep diajukan.
+        expect(await uji.hitungItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null)).toBe(1);
+        // Satu resep per kunjungan: menyimpan lagi mengganti item dan catatan (200), nomor tetap, tagihan obat mengikuti.
+        const ubah = await panggil('PUT', `/kunjungan/${kunjA}/resep`, 'dokter', { item: [{ ...item[0], jumlah: 12 }], catatan: 'Dibuat puyer, bagi 12 bungkus' });
+        expect(ubah.status).toBe(200);
+        expect(ubah.badan.data.resep).toMatchObject({ id: ids.resepA, nomor_resep: r.badan.data.resep.nomor_resep, catatan: 'Dibuat puyer, bagi 12 bungkus' });
+        expect(ubah.badan.data.resep.item.map((i) => [i.jumlah, i.aturan_pakai])).toEqual([[12, '3 x 1 sesudah makan']]);
+        expect((await panggil('GET', `/kunjungan/${kunjA}/resep`, 'dokter')).badan.data).toHaveLength(1);
+        expect(await uji.hitungItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null)).toBe(1);
+        const r2 = await panggil('PUT', `/kunjungan/${kunjB}/resep`, 'dokter', { item: [{ master_obat_id: ids.obat1, aturan_pakai: '2 x 1', jumlah: 4 }] });
+        expect(r2.badan.data.resep.catatan).toBe('');
         expect(r2.badan.data.resep.nomor_resep).not.toBe(r.badan.data.resep.nomor_resep);
         ids.resepB = r2.badan.data.resep.id;
         const daftar = await panggil('GET', `/kunjungan/${kunjA}/resep`, 'dokter');
@@ -191,13 +205,14 @@ d('farmasi (master obat, stok, resep, telaah) terhadap database pengujian', () =
         expect((await panggil('GET', `/kunjungan/${kunjA}/resep`, 'perawat')).status).toBe(200);
         expect((await panggil('GET', `/kunjungan/${kunjA}/resep`, 'lainDokter')).status).toBe(404);
     });
-    it('resep serempak mendapat nomor unik', async () => {
+    it('resep serempak pada satu kunjungan tetap menjadi satu resep', async () => {
         const k = await buatKunjungan(fas, `${kode}-S`);
-        const hasil = await Promise.all([1, 2, 3, 4].map(() => panggil('POST', `/kunjungan/${k}/resep`, 'dokter', { teks: 'R/ Parasetamol 500 mg No. I' })));
-        expect(hasil.map((h) => h.status)).toEqual([201, 201, 201, 201]);
-        expect(new Set(hasil.map((h) => h.badan.data.resep.nomor_resep)).size).toBe(4);
+        const hasil = await Promise.all([1, 2, 3, 4].map((n) => panggil('PUT', `/kunjungan/${k}/resep`, 'dokter', { item: [{ master_obat_id: ids.obat1, aturan_pakai: `${n} x 1`, jumlah: n }] })));
+        expect(hasil.map((h) => h.status).sort()).toEqual([200, 200, 200, 201]);
+        expect(new Set(hasil.map((h) => h.badan.data.resep.nomor_resep)).size).toBe(1);
+        expect((await panggil('GET', `/kunjungan/${k}/resep`, 'dokter')).badan.data).toHaveLength(1);
     });
-    it('telaah: apoteker mengisi item (obat boleh ganda), tagihan obat disinkronkan, siap butuh item dan telaah lengkap, tahap maju ke kasir saat semua resep siap', async () => {
+    it('telaah: apoteker menyesuaikan item (obat boleh ganda), tagihan obat disinkronkan, siap butuh item dan telaah lengkap, tahap maju ke kasir saat resep siap, dokter tidak bisa mengubah resep lagi', async () => {
         await uji.ubahKunjunganUntukFarmasiFarmasiIntegrasiTest('resep', kunjA);
         const item = [
             { master_obat_id: ids.obat1, aturan_pakai: '3 x 1 sesudah makan', jumlah: 10 },
@@ -209,10 +224,10 @@ d('farmasi (master obat, stok, resep, telaah) terhadap database pengujian', () =
         expect((await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, klinis: false })).status).toBe(400); // catatan wajib
         expect((await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, item: [{ ...item[0], jumlah: 0 }] })).status).toBe(400);
         expect((await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, item: [{ ...item[0], aturan_pakai: '' }] })).status).toBe(400);
-        // tanpa item: telaah boleh dicatat, tetapi belum bisa siap
+        // item dari dokter sudah ada: telaah tanpa `item` hanya mencatat telaah dan tidak mengubah item
         const kosong = await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', telaahLengkap);
-        expect(kosong.badan.data).toMatchObject({ status: 'ditelaah', item: [] });
-        expect((await panggil('POST', `/resep/${ids.resepA}/siap`, 'apoteker')).status).toBe(409);
+        expect(kosong.badan.data).toMatchObject({ status: 'ditelaah' });
+        expect(kosong.badan.data.item.map((i) => [i.jumlah, i.aturan_pakai])).toEqual([[12, '3 x 1 sesudah makan']]);
         await panggil('PATCH', `/farmasi/master/${ids.obat2}`, 'apoteker', { aktif: false });
         expect((await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, item })).status).toBe(400); // obat nonaktif
         await panggil('PATCH', `/farmasi/master/${ids.obat2}`, 'apoteker', { aktif: true });
@@ -220,21 +235,24 @@ d('farmasi (master obat, stok, resep, telaah) terhadap database pengujian', () =
         expect(sebagian.status).toBe(200);
         expect(sebagian.badan.data.status).toBe('diajukan');
         expect(sebagian.badan.data.item.map((i) => [i.nama, i.jumlah, i.harga])).toEqual([['Parasetamol 500', 10, 600], ['Amoksisilin 500', 15, 1500], ['Parasetamol 500', 5, 600]]);
+        // Item tagihan resep lain pada klinik yang sama (kunjungan B dan resep serempak) ikut ada; yang dinilai hanya milik resep A.
+        const milik = (daftar, resep) => daftar.filter((i) => resep.badan.data.item.some((x) => x.id === i.item_resep_id));
         let tagihanObat = await uji.daftarItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null);
-        expect(tagihanObat.map((i) => [i.jenis, i.jumlah, i.harga])).toEqual([['obat', 10, 600], ['obat', 15, 1500], ['obat', 5, 600]]);
+        expect(milik(tagihanObat, sebagian).map((i) => [i.jenis, i.jumlah, i.harga])).toEqual([['obat', 10, 600], ['obat', 15, 1500], ['obat', 5, 600]]);
         expect((await panggil('POST', `/resep/${ids.resepA}/siap`, 'apoteker')).status).toBe(409);
         // ubah item: tagihan obat resep itu diganti
         const lengkap = await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, item: item.slice(0, 2) });
         expect(lengkap.badan.data).toMatchObject({ status: 'ditelaah', telaah: { administratif: true, klinis: true } });
         tagihanObat = await uji.daftarItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null);
-        expect(tagihanObat.map((i) => i.item_resep_id)).toEqual(lengkap.badan.data.item.map((i) => i.id));
+        expect(milik(tagihanObat, lengkap).map((i) => i.item_resep_id)).toEqual(lengkap.badan.data.item.map((i) => i.id));
+        expect(milik(tagihanObat, sebagian)).toEqual([]); // item lama dan tagihannya sudah diganti
         // simpan ulang tanpa perubahan item tidak mengganti baris
         const ulang = await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', { ...telaahLengkap, item: item.slice(0, 2) });
         expect(ulang.badan.data.item.map((i) => i.id)).toEqual(lengkap.badan.data.item.map((i) => i.id));
         // telaah tanpa `item` hanya mencatat telaah: item resep dan tagihan obat tetap
         const tanpaItem = await panggil('POST', `/resep/${ids.resepA}/telaah`, 'apoteker', telaahLengkap);
         expect(tanpaItem.badan.data.item.map((i) => i.id)).toEqual(lengkap.badan.data.item.map((i) => i.id));
-        expect((await uji.daftarItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null)).map((i) => i.item_resep_id)).toEqual(lengkap.badan.data.item.map((i) => i.id));
+        expect(milik(await uji.daftarItemTagihanUntukFarmasiFarmasiIntegrasiTest(fas, null), lengkap).map((i) => i.item_resep_id)).toEqual(lengkap.badan.data.item.map((i) => i.id));
         expect((await panggil('POST', `/resep/${ids.resepA}/telaah`, 'lainApoteker', telaahLengkap)).status).toBe(404);
         const siap = await panggil('POST', `/resep/${ids.resepA}/siap`, 'apoteker');
         expect(siap.status).toBe(200);
@@ -248,13 +266,13 @@ d('farmasi (master obat, stok, resep, telaah) terhadap database pengujian', () =
         // dua resep pada satu kunjungan: tahap baru maju setelah semuanya siap
         await uji.ubahKunjunganUntukFarmasiFarmasiIntegrasiTest('resep', kunjB);
         const satu = [{ master_obat_id: ids.obat1, aturan_pakai: '2 x 1', jumlah: 2 }];
-        const tambahan = await panggil('POST', `/kunjungan/${kunjB}/resep`, 'dokter', { teks: 'R/ Parasetamol 500 mg No. II s 2 dd tab I' });
+        // Pemeriksaan sudah selesai (tahap resep) tetapi belum ditelaah: dokter masih dapat mengubah resep.
+        expect((await panggil('PUT', `/kunjungan/${kunjB}/resep`, 'dokter', { item: satu })).status).toBe(200);
         await panggil('POST', `/resep/${ids.resepB}/telaah`, 'apoteker', { ...telaahLengkap, item: satu });
+        // Setelah apoteker mulai menelaah, resep terkunci bagi dokter.
+        expect((await panggil('PUT', `/kunjungan/${kunjB}/resep`, 'dokter', { item: satu })).status).toBe(409);
         const s1 = await panggil('POST', `/resep/${ids.resepB}/siap`, 'apoteker');
-        expect(s1.badan.data.tahap_kunjungan).toBe('resep');
-        await panggil('POST', `/resep/${tambahan.badan.data.resep.id}/telaah`, 'apoteker', { ...telaahLengkap, item: satu });
-        const s2 = await panggil('POST', `/resep/${tambahan.badan.data.resep.id}/siap`, 'apoteker');
-        expect(s2.badan.data.tahap_kunjungan).toBe('kasir');
+        expect(s1.badan.data.tahap_kunjungan).toBe('kasir');
     });
     it('riwayat obat: filter status dan tanggal, hanya klinik sendiri, butuh izin farmasi lihat', async () => {
         expect((await panggil('GET', '/farmasi/riwayat', 'dokter')).status).toBe(403);

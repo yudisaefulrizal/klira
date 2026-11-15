@@ -9,25 +9,26 @@ import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { TampilanResep } from './tampilan-resep.js';
 
-export function buatSerahObat(kunjunganId, diizinkan = true, onUbah = () => {}) {
+/** `ringkas`: tanpa kartu resep dan keterangan (rincian obat sudah tampil di tagihan, mis. di tab Penutup); hanya peringatan stok kurang beserta persetujuannya. */
+export function buatSerahObat(kunjunganId, diizinkan = true, onUbah = () => {}, { ringkas = false } = {}) {
   const B = KASIR.bayar, isi = document.createElement('div'); Object.assign(isi.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
   let resep = null, serah = awalSerah(), kekurangan = [], galat = null, info = null, dicoba = false, memproses = false, berubah = false, aktif = true;
   const siap = () => (resep ?? []).filter(r => r.status === 'siap'), belum = () => (resep ?? []).filter(r => r.status === 'diajukan' || r.status === 'ditelaah');
   function tampil() {
     isi.replaceChildren();
     if (!resep) { isi.append(KASIR.memuat); return; }
-    if (!resep.length) isi.append(B.serahKosong);
-    for (const r of resep) { const box = kartu({ susun: 'xs', style: { padding: token.jarak.md } }), row = document.createElement('div'), nama = document.createElement('strong'); nama.textContent = r.nomor_resep; Object.assign(row.style, { display: 'flex', gap: token.jarak.sm, justifyContent: 'space-between', flexWrap: 'wrap' }); row.append(nama, lencana(STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))); box.append(row, TampilanResep({ resep: r })); isi.append(box); }
-    if (belum().length) isi.append(peringatan(B.serahBelumSiap, 'biru'));
+    if (!resep.length && !ringkas) isi.append(B.serahKosong);
+    for (const r of ringkas ? [] : resep) { const box = kartu({ susun: 'xs', style: { padding: token.jarak.md } }), row = document.createElement('div'), nama = document.createElement('strong'); nama.textContent = r.nomor_resep; Object.assign(row.style, { display: 'flex', gap: token.jarak.sm, justifyContent: 'space-between', flexWrap: 'wrap' }); row.append(nama, lencana(STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))); box.append(row, TampilanResep({ resep: r })); isi.append(box); }
+    if (belum().length && !ringkas) isi.append(peringatan(B.serahBelumSiap, 'biru'));
     if (kekurangan.length) { const box = peringatan(''), h = document.createElement('strong'); h.textContent = B.stokKurangJudul; box.append(h); for (const pesan of kekurangan) { const el = document.createElement('div'); el.textContent = pesan; box.append(el); } isi.append(box); }
     if (siap().length) {
-      const p = document.createElement('span'); p.textContent = B.serahInfo; Object.assign(p.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); isi.append(p);
+      if (!ringkas) { const p = document.createElement('span'); p.textContent = B.serahInfo; Object.assign(p.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); isi.append(p); }
       if (kekurangan.length) {
         isi.append(KotakCentang({ id: 'serah-izinkan', label: B.izinkanStokKurang, checked: serah.izinkan, onChange(e) { serah = { ...serah, izinkan: e.target.checked }; tampil(); onUbah(); } }));
         if (serah.izinkan) { const f = bidang({ id: 'serah-alasan', label: B.alasanStok, jenis: 'textarea', nilai: serah.alasan, maxLength: 300, ubah(v) { serah = { ...serah, alasan: v }; f.setGalat(dicoba ? galatSerah(serah) : undefined); } }); f.setGalat(dicoba ? galatSerah(serah) : undefined); isi.append(f.el); }
       }
     }
-    if (resep.length && !siap().length && !belum().length) isi.append(peringatan(B.serahSudah, 'biru'));
+    if (resep.length && !siap().length && !belum().length && !ringkas) isi.append(peringatan(B.serahSudah, 'biru'));
   }
   function kabari() { if (aktif) { tampil(); onUbah(); } }
   async function muat() { const hasil = await resepKunjungan(kunjunganId); if (aktif) resep = hasil; }
@@ -41,7 +42,7 @@ export function buatSerahObat(kunjunganId, diizinkan = true, onUbah = () => {}) 
   }
   tampil();
   if (diizinkan) muat().then(kabari).catch(e => { if (aktif) { galat = e instanceof GalatApi ? e.message : B.gagal; kabari(); } });
-  return { isi, serahkan, get resep() { return resep; }, get bisaSerah() { return siap().length > 0 && !belum().length; }, get selesai() { return !!resep && !siap().length && !belum().length; }, get memproses() { return memproses; }, get berubah() { return berubah; }, get galat() { return galat; }, get info() { return info; }, tutup() { aktif = false; } };
+  return { isi, serahkan, get resep() { return resep; }, get adaKekurangan() { return kekurangan.length > 0; }, get bisaSerah() { return siap().length > 0 && !belum().length; }, get selesai() { return !!resep && !siap().length && !belum().length; }, get memproses() { return memproses; }, get berubah() { return berubah; }, get galat() { return galat; }, get info() { return info; }, tutup() { aktif = false; } };
 }
 
 export function bukaSerahTerimaObat({ kunjunganId, pasien, onTutup, onSelesai }) {

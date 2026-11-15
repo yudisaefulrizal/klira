@@ -292,26 +292,26 @@ const KASUS = [
     // Tindakan klinik tanpa harga acuan: kasir melengkapi harga sebelum pembayaran.
     tindakan: [['TIN-NEBU', '93.94', 'Nebulisasi', 1]],
     // Racikan puyer: ½ tab x 10 bungkus = 5 tab per bahan (dibulatkan ke atas).
-    resep: { teks: 'R/ Parasetamol 500 mg tab ½\n    CTM 4 mg tab ½\n    m.f. pulv. dtd No. X\n    s 3 dd pulv I (bila demam)\nR/ Ambroxol 30 mg tab No. X\n    s 3 dd tab I',
+    resep: { catatan: 'Parasetamol dan CTM dibuat puyer, bagi 10 bungkus',
       item: [['Parasetamol 500 mg', 'Racikan puyer: 3 x 1 bungkus bila demam', 5, 'puyer'], ['CTM 4 mg', 'Racikan puyer: 3 x 1 bungkus bila demam', 5, 'puyer'], ['Ambroksol 30 mg', '3 x 1 tablet', 10]] } },
   { keluhan: 'Kontrol tekanan darah tinggi, pusing tengkuk', ttv: { sistolik: 160, diastolik: 100, nadi: 84, suhu: 36.6, respirasi: 18, berat_badan: 78, tinggi_badan: 168 },
     periksa: {}, kie: 'Diet rendah garam, olahraga ringan teratur, minum obat rutin setiap pagi, kontrol 1 bulan.',
     dx: [{ kode: 'I10', nama: 'Essential (primary) hypertension', peran: 'utama' }], lab: ['KOL', 'AU'],
-    resep: { teks: 'R/ Amlodipine 5 mg tab No. XXX\n    s 1 dd tab I (pagi)', item: [['Amlodipin 5 mg', '1 x 1 tablet pagi', 30]] } },
+    resep: { item: [['Amlodipin 5 mg', '1 x 1 tablet pagi', 30]] } },
   { keluhan: 'Nyeri ulu hati dan mual sejak 2 hari', ttv: { sistolik: 110, diastolik: 70, nadi: 80, suhu: 36.8, respirasi: 18, berat_badan: 55, tinggi_badan: 155 },
     periksa: { abdomen_lain: 'nyeri tekan epigastrium' }, banding: 'Dispepsia fungsional', kie: 'Makan sedikit tapi sering, hindari makanan pedas, asam, dan kopi.',
     dx: [{ kode: 'K29.7', nama: 'Gastritis, unspecified', peran: 'utama' }],
-    resep: { teks: 'R/ Omeprazole 20 mg caps No. VI\n    s 2 dd caps I a.c.\nR/ Antasida DOEN tab No. X\n    s 3 dd tab I (kunyah)', item: [['Omeprazol 20 mg', '2 x 1 kapsul sebelum makan', 6], ['Antasida DOEN', '3 x 1 tablet dikunyah', 10]] } },
+    resep: { item: [['Omeprazol 20 mg', '2 x 1 kapsul sebelum makan', 6], ['Antasida DOEN', '3 x 1 tablet dikunyah', 10]] } },
   { keluhan: 'Sering haus dan sering BAK, riwayat kencing manis', ttv: { sistolik: 130, diastolik: 85, nadi: 88, suhu: 36.7, respirasi: 18, berat_badan: 82, tinggi_badan: 165 },
     periksa: {}, kie: 'Diet rendah gula, periksa kaki setiap hari, kontrol gula darah rutin.',
     dx: [{ kode: 'E11.9', nama: 'Type 2 diabetes mellitus without complications', peran: 'utama' }], lab: ['GDS'],
-    resep: { teks: 'R/ Glucophage 500 mg tab No. LX\n    s 2 dd tab I p.c.', item: [['Metformin 500 mg', '2 x 1 tablet sesudah makan', 60]] } },
+    resep: { item: [['Metformin 500 mg', '2 x 1 tablet sesudah makan', 60]] } },
   { keluhan: 'Luka robek telapak tangan kanan terkena pisau dapur', ttv: { sistolik: 125, diastolik: 80, nadi: 84, suhu: 36.5, respirasi: 16, berat_badan: 70, tinggi_badan: 163 },
     periksa: { lokalis_bentuk: 'vulnus laceratum', lokalis_letak: 'palmar dekstra', lokalis_jumlah: '1', lokalis_warna: 'merah, perdarahan aktif minimal', lokalis_ukuran: 'panjang 3 cm' },
     kie: 'Jaga luka tetap kering, ganti balutan tiap hari, kontrol lepas jahitan hari ke-7.', obatPoli: 'Lidokain 2% infiltrasi lokal',
     dx: [{ kode: 'S61.9', nama: 'Open wound of wrist and hand part, part unspecified', peran: 'utama' }],
     tindakan: [['TIN-JAHIT-KECIL', '86.59', 'Jahit luka ≤ 5 cm', 1], ['TIN-LUKA', '93.57', 'Perawatan luka sederhana', 1]],
-    resep: { teks: 'R/ Ibuprofen 400 mg tab No. X\n    s 3 dd tab I p.c. (bila nyeri)', item: [['Ibuprofen 400 mg', '3 x 1 tablet sesudah makan', 10]] } },
+    resep: { item: [['Ibuprofen 400 mg', '3 x 1 tablet sesudah makan', 10]] } },
 ];
 
 /** Skenario per pasien: sampai tahap mana kunjungannya dibawa. */
@@ -358,6 +358,9 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
     await wajib('pemeriksaan fisik (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/pemeriksaan`, { isi: { ...DEFAULT_PEMERIKSAAN, ...kasus.periksa } });
     await wajib('diagnosis ICD-10 (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/diagnosis`, { isi: { item: kasus.dx } });
     if (kasus.banding) await wajib('diagnosa banding (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/diagnosis_banding`, { isi: { isi: kasus.banding } });
+    // Catatan SOAPIE (halaman Pasien): Subjek dan Asesmen menjadi syarat menyelesaikan pemeriksaan.
+    await wajib('subjek SOAPIE (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/subjek`, { isi: { isi: kasus.keluhan } });
+    await wajib('asesmen SOAPIE (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/asesmen`, { isi: { isi: kasus.dx.map((d) => `${d.kode} ${d.nama}`).join('; ') } });
     await wajib('KIE (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/kie`, { isi: { isi: kasus.kie } });
     if (kasus.obatPoli) await wajib('obat diberikan di poli (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/obat_poli`, { isi: { isi: kasus.obatPoli } });
     if (kasus.tindakan) {
@@ -381,8 +384,9 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
       }
       if (target === 'lab') continue;
     }
-    // Dokter menulis resep teks bebas (P3); item obat dari stok diisi apoteker saat telaah.
-    const resep = await wajib('resep teks (dokter)', 'dokter', 'POST', `/kunjungan/${kid}/resep`, { teks: kasus.resep.teks });
+    // Dokter memilih obat satu per satu dari master (jumlah dan aturan pakai) dengan catatan seluruh resep; apoteker menelaah dan dapat menyesuaikan item.
+    const itemDokter = kasus.resep.item.map(([nama, aturan_pakai, jumlah, bentuk]) => ({ master_obat_id: idObat[nama], aturan_pakai, jumlah, bentuk: bentuk ?? null })).filter((x) => x.master_obat_id);
+    const resep = await wajib('resep obat (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/resep`, { item: itemDokter, catatan: kasus.resep.catatan ?? '' });
     await wajib('tindak lanjut pulang (dokter)', 'dokter', 'PUT', `/kunjungan/${kid}/klinis/tindak_lanjut`, { isi: { jenis: 'pulang', catatan: 'Kontrol 1 minggu bila perlu' } });
     await wajib('selesai pemeriksaan → resep', 'dokter', 'POST', `/kunjungan/${kid}/klinis/selesai`, { tahap: 'resep' });
     if (antreanId) await api('perawat', 'POST', `/antrean/${antreanId}/selesai`);

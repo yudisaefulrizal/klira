@@ -1,6 +1,5 @@
-import { awalResep } from '../farmasi/keadaan-farmasi.js';
 import { awalOrderLab } from '../penunjang/keadaan-order-lab.js';
-import { BAGIAN_NARASI, LABEL_NARASI, BAGIAN_KLINIS, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL, isiDefault, isianDiubah, kunciTindakan, ringkasanPemeriksaan, } from '@klira/shared';
+import { BAGIAN_NARASI, BAGIAN_SOAPIE, LABEL_NARASI, BAGIAN_KLINIS, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, PEMERIKSAAN_BIDANG, SKEMA_BAGIAN, TANDA_VITAL, isiDefault, isianDiubah, kunciTindakan, ringkasanPemeriksaan, } from '@klira/shared';
 import { KLINIS } from '@klira/shared';
 import { defaultKeperawatan, keperawatanDariIsi, keperawatanKosong, kosongKeperawatan, ringkasanKeperawatan } from './keadaan-keperawatan.js';
 /** Atribut tarif dan jumlah tindakan dari isi server/salinan; jumlah 1 dan tanpa tarif tidak ditulis agar keadaan awal tetap sama. */
@@ -55,14 +54,14 @@ export const VERSI_DRAF = 3;
 export const awalKeadaan = () => ({
     anamnesis: { keluhan_utama: '', penyerta: '', riwayat_sekarang: '' },
     riwayat: { riwayat_pribadi: '', riwayat_keluarga: '', kajian_sosial: '' },
-    tanda_vital: kosongTeks(TANDA_VITAL.map((t) => t.kunci)),
+    tanda_vital: kosongTeks([...TANDA_VITAL.map((t) => t.kunci), 'kesadaran']),
     keperawatan: kosongKeperawatan(),
     pemeriksaan: kosongTeks(PEMERIKSAAN_BIDANG),
     diagnosis: [],
     tindakan: [],
     tindak_lanjut: { jenis: '', tujuan: '', spri: '', catatan: '' },
-    lab_dipilih: false, order_lab: awalOrderLab(), resep: awalResep(),
-    alasan: '', diagnosis_banding: '', kie: '', obat_poli: '', versi_draf: VERSI_DRAF,
+    lab_dipilih: false, order_lab: awalOrderLab(), resep: '',
+    alasan: '', diagnosis_banding: '', kie: '', obat_poli: '', evaluasi: '', subjek: '', objek: '', asesmen: '', plan: '', instruksi: '', versi_draf: VERSI_DRAF,
 });
 /** Langkah dokter mengikuti formulir rekam medis klinik (P7). */
 export const LANGKAH_PEMERIKSAAN = [
@@ -124,9 +123,11 @@ export function keadaanDariServer(b) {
     if (kp)
         k.keperawatan = keperawatanDariIsi(kp);
     const tv = b.tanda_vital.isi;
-    if (tv)
+    if (tv) {
         for (const t of TANDA_VITAL)
             k.tanda_vital[t.kunci] = tv[t.kunci] === null ? '' : String(tv[t.kunci]);
+        k.tanda_vital.kesadaran = tv.kesadaran ?? '';
+    }
     const pm = b.pemeriksaan.isi;
     if (pm)
         for (const f of PEMERIKSAAN_BIDANG)
@@ -162,7 +163,13 @@ export function isiBagian(bagian, k) {
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
-        case 'obat_poli': return { isi: k[bagian] };
+        case 'obat_poli':
+        case 'evaluasi':
+        case 'subjek':
+        case 'objek':
+        case 'asesmen':
+        case 'plan':
+        case 'instruksi': return { isi: k[bagian] };
         case 'anamnesis': return { ...k.anamnesis, ...k.riwayat };
         case 'tanda_vital': return { ...k.tanda_vital };
         case 'keperawatan': return { ...k.keperawatan };
@@ -195,7 +202,13 @@ export function bagianKosong(bagian, k) {
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
-        case 'obat_poli': return !k[bagian].trim();
+        case 'obat_poli':
+        case 'evaluasi':
+        case 'subjek':
+        case 'objek':
+        case 'asesmen':
+        case 'plan':
+        case 'instruksi': return !k[bagian].trim();
         case 'anamnesis': return kosong(k.anamnesis) && !k.riwayat.kajian_sosial.trim() && isianDiubah(k.riwayat, DEFAULT_ANAMNESIS).every((n) => !k.riwayat[n].trim());
         case 'tanda_vital': return kosong(k.tanda_vital);
         case 'keperawatan': return keperawatanKosong(k.keperawatan);
@@ -217,18 +230,16 @@ export function galatBagian(bagian, k) {
     return h.success ? null : h.error.issues[0].message;
 }
 /** Bagian yang akan disimpan (urut menurut langkah) beserta galat validasinya. */
-export function rencanaSimpan(mode, k, server, disahkan) {
-    const bagian = bagianDiModal(mode).filter((b) => perluDisimpan(b, k, server, disahkan[b]));
+export const rencanaSimpan = (mode, k, server, disahkan) => rencanaSimpanBagian(bagianDiModal(mode), k, server, disahkan);
+/** Sama seperti `rencanaSimpan`, untuk daftar bagian tertentu (formulir SOAPIE di halaman Pasien). */
+export function rencanaSimpanBagian(daftar, k, server, disahkan) {
+    const bagian = daftar.filter((b) => perluDisimpan(b, k, server, disahkan[b]));
     // Pemeriksaan fisik yang masih default ikut disimpan bersama pemeriksaan dokter lainnya, bukan sendirian (membuka form tanpa mengisi apa pun).
     const hanyaDefault = !disahkan.pemeriksaan && pemeriksaanHanyaDefault(k) && bagian.every((b) => b === 'pemeriksaan');
     return bagian.filter((b) => !(hanyaDefault && b === 'pemeriksaan')).map((b) => ({ bagian: b, galat: galatBagian(b, k) }));
 }
 /** Perbaikan butuh alasan bila ada bagian yang sudah disahkan ikut disimpan. */
 export const perluAlasan = (rencana, disahkan) => rencana.some((r) => disahkan[r.bagian]);
-/** Syarat menyelesaikan pemeriksaan: anamnesis, diagnosis, dan tindak lanjut ada (tersimpan atau ikut disimpan sekarang). */
-export function syaratSelesaiTerpenuhi(disahkan, rencana) {
-    return ['anamnesis', 'diagnosis', 'tindak_lanjut'].every((b) => disahkan[b] || rencana.some((r) => r.bagian === b));
-}
 export const disahkanDari = (b) => Object.fromEntries(BAGIAN_KLINIS.map((n) => [n, b[n]?.pengesahan != null]));
 /** Keadaan tiap bagian di ringkasan akhir. */
 export function statusRingkasan(bagian, k, server, verifikasi) {
@@ -256,6 +267,10 @@ export function ringkasTandaVital(tv) {
         bagian.push(`${s.suhu} ${angkaId(tv.suhu)}`);
     if (tv.respirasi !== null)
         bagian.push(`${s.respirasi} ${angkaId(tv.respirasi)}`);
+    if (tv.spo2 != null)
+        bagian.push(`${s.spo2} ${angkaId(tv.spo2)}`);
+    if (tv.gcs != null)
+        bagian.push(`${s.gcs} ${angkaId(tv.gcs)}`);
     return bagian.join(' · ');
 }
 // --- Diagnosis dan tindakan ---
@@ -367,6 +382,7 @@ export function ringkasanIsi(k) {
             ] },
         { judul: KLINIS.langkah.pemeriksaan, baris: [
                 ...TANDA_VITAL.filter((t) => k.tanda_vital[t.kunci]).map((t) => ({ label: KLINIS.tandaVital[t.kunci], nilai: `${k.tanda_vital[t.kunci]} ${t.satuan}` })),
+                ...(k.tanda_vital.kesadaran ? [{ label: KLINIS.tandaVital.kesadaran, nilai: KLINIS.tandaVital.kesadaranOpsi[k.tanda_vital.kesadaran] ?? k.tanda_vital.kesadaran }] : []),
                 ...barisPemeriksaanFisik(k.pemeriksaan),
             ] },
         { judul: KLINIS.langkah.kesimpulan, baris: [
@@ -382,5 +398,7 @@ export function ringkasanIsi(k) {
                 ...(k.tindak_lanjut.jenis === 'rawat_inap' ? [{ label: KLINIS.tindakLanjut.spri, nilai: text(k.tindak_lanjut.spri) }] : []),
                 { label: 'Catatan tindak lanjut', nilai: text(k.tindak_lanjut.catatan) },
             ] },
+        // Catatan SOAPIE (halaman Pasien): hanya bila ada yang terisi.
+        ...(BAGIAN_SOAPIE.some((b) => k[b].trim()) ? [{ judul: 'Catatan SOAPIE', baris: BAGIAN_SOAPIE.map(narasi) }] : []),
     ];
 }

@@ -1,0 +1,2 @@
+-- Konfigurasi SATUSEHAT per lingkungan: alamat dasar opsional (kosong = alamat resmi lingkungan), lingkungan aktif, dan hasil uji koneksi terakhir.
+ALTER TABLE `kredensial_satusehat` ADD COLUMN `base_url` VARCHAR(300) NULL, ADD COLUMN `aktif` BOOLEAN NOT NULL DEFAULT false, ADD COLUMN `diuji_pada` DATETIME(3) NULL, ADD COLUMN `hasil_uji` VARCHAR(500) NULL, ADD COLUMN `diubah_pada` DATETIME(3) NULL;

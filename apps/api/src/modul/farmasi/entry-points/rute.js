@@ -69,14 +69,16 @@ export function buatRuteFarmasi(layananAkses, layananIzin, layanan) {
             return tidakAda(res);
         kirimHasil(res, await layanan.resepKunjungan(pengguna(res), id.data.id, alamatDari(req)));
     }));
-    rute.post('/kunjungan/:id/resep', masuk, wajibIzin('resep', 'input'), bungkus(async (req, res) => {
+    // Satu resep per kunjungan: PUT membuat (201) atau mengganti (200) resep selama pemeriksaan belum diselesaikan.
+    rute.put('/kunjungan/:id/resep', masuk, wajibIzin('resep', 'input'), bungkus(async (req, res) => {
         const id = idParam.safeParse(req.params);
         if (!id.success)
             return tidakAda(res);
         const m = resepMasukan.safeParse(req.body ?? {});
         if (!m.success)
             return galatValidasi(res, m.error);
-        kirimHasil(res, await layanan.buatResep(pengguna(res), id.data.id, m.data, alamatDari(req)), 201);
+        const hasil = await layanan.simpanResep(pengguna(res), id.data.id, m.data, alamatDari(req));
+        kirimHasil(res, hasil, hasil.ok && !hasil.data.diubah ? 201 : 200);
     }));
     rute.post('/resep/:id/telaah', masuk, wajibIzin('farmasi', 'input'), bungkus(async (req, res) => {
         const id = idParam.safeParse(req.params);

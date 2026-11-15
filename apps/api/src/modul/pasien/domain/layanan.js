@@ -41,11 +41,12 @@ export function normalkanRegistrasi(m, teks) {
         },
     };
 }
-export function buatLayananPasien({ repo, audit }) {
+/** `sinkronIhs` (opsional): cari IHS Number di SATUSEHAT setelah registrasi atau perbaikan; hasilnya dilampirkan sebagai `satusehat` dan tidak pernah menggagalkan penyimpanan. */
+export function buatLayananPasien({ repo, audit, sinkronIhs }) {
     return {
         /** Daftar minimal (tanpa NIK atau isi rekam medis); tidak dicatat per baris, pembukaan isi dicatat di `detail`. */
         async cari(p, f) {
-            return repo.cari(p.fasyankes_id, { untuk_kunjungan: f.untuk_kunjungan, tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
+            return repo.cari(p.fasyankes_id, { untuk_kunjungan: f.untuk_kunjungan, semua: f.semua, tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
         },
         /** Isi data pasien: pembukaan dicatat `lihat` sebelum data dilepas (gagal catat berarti tidak dilepas). */
         async detail(p, id, alamat) {
@@ -78,6 +79,7 @@ export function buatLayananPasien({ repo, audit }) {
                 asuransi_nomor_polis: kosongJadiNull(m.asuransi_nomor_polis),
                 wali: m.wali.map((w) => ({ ...w, hubungan: w.hubungan.trim(), nama: w.nama.trim(), kontak: kosongJadiNull(w.kontak) })),
             };
+            const nikLama = sinkronIhs ? (await repo.detail(p.fasyankes_id, id))?.nik ?? null : null;
             try {
                 if (!await repo.perbaiki(p.fasyankes_id, id, p.id, data))
                     return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
@@ -91,7 +93,12 @@ export function buatLayananPasien({ repo, audit }) {
             }
             await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'pasien', entitas_id: id, keterangan: 'Memperbaiki data pasien dan kontak wali/keluarga', alamat });
             const hasil = await repo.detail(p.fasyankes_id, id);
-            return hasil ? { ok: true, data: hasil } : gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
+            if (!hasil)
+                return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
+            if (!sinkronIhs)
+                return { ok: true, data: hasil };
+            const nikBerubah = nikLama !== hasil.nik;
+            return { ok: true, data: { ...hasil, satusehat: await sinkronIhs(p, id, { nikBerubah, paksa: nikBerubah, alamat }) } };
         },
         async cekDuplikat(p, k, alamat) {
             const bisaCari = !!k.nik || (!!k.nama && !!k.tanggal_lahir && !!k.ibu_kandung);
@@ -125,7 +132,8 @@ export function buatLayananPasien({ repo, audit }) {
             const dasar = { fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', alamat };
             await audit.catat({ ...dasar, entitas: 'pasien', entitas_id: simpan.id, keterangan: `Registrasi pasien baru (${data.status_identitas})` });
             await audit.catat({ ...dasar, entitas: 'persetujuan', entitas_id: simpan.persetujuan_id, keterangan: `General consent versi ${teks.versi} diberikan` });
-            return { ok: true, data: { id: simpan.id, nomor_rm: simpan.nomor_rm, nama: simpan.nama, status_identitas: simpan.status_identitas } };
+            const satusehat = sinkronIhs ? { satusehat: await sinkronIhs(p, simpan.id, { alamat }) } : {};
+            return { ok: true, data: { id: simpan.id, nomor_rm: simpan.nomor_rm, nama: simpan.nama, status_identitas: simpan.status_identitas, ...satusehat } };
         },
     };
 }

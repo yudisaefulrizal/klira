@@ -78,9 +78,10 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.pasien-isian-ikon input { padding-left: 42px !important; }
-.pasien-tanggal { width: 190px; }
-.pasien-tanggal input { box-sizing: border-box; width: 100%; }
+.pasien-isian-ikon:not(.pasien-tanggal) input { padding-left: 42px !important; }
+/* Penyaring tanggal: tiga kolom (tanggal, bulan, tahun) dengan ikon di kiri; ikon diberi ruang lewat bantalan pembungkus, bukan bantalan tiap kolom. */
+.pasien-tanggal { width: auto; }
+.pasien-tanggal [data-tanggal-tiga] { padding-left: 38px; }
 .pasien-tooltip {
   position: fixed;
   z-index: 2147483647;
@@ -116,3 +117,80 @@
 
 .pasien-penyaring{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
 .pasien-penyaring button{height:34px;padding:0 12px;font-size:.9rem}
+
+/* Tab Pasien: identitas, riwayat kunjungan (kiri), dan catatan kunjungan terpilih (kanan). */
+.profil-redup { margin: 0; color: var(--warna-teks-redup); font-size: 13px; }
+.profil-identitas { box-shadow: none !important; }
+.profil-identitas-baris { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 36px; }
+.profil-identitas-baris h2 { margin: 0; font-size: 22px; font-weight: 700; overflow-wrap: anywhere; }
+.profil-identitas-kisi { margin: 0; display: flex; flex-wrap: wrap; gap: 8px 32px; }
+.profil-identitas-kisi dt { color: var(--warna-teks-redup); font-size: 12px; }
+.profil-identitas-kisi dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.profil-identitas-aksi { display: flex; gap: 10px; margin-left: auto; }
+.profil-identitas-aksi:empty { display: none; }
+.profil-badan { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.profil-riwayat, .profil-kanan { box-shadow: none !important; min-width: 0; }
+.profil-riwayat { position: sticky; top: 8px; max-height: calc(100dvh - 32px); overflow: hidden; }
+.profil-judul-seksi { margin: 0; font-size: 16px; font-weight: 600; }
+.profil-riwayat-daftar { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; min-height: 0; }
+.profil-riwayat-item { display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 10px 12px; text-align: left; font: inherit; color: var(--warna-teks); cursor: pointer;
+  background: var(--warna-permukaan); border: 1px solid var(--warna-garis); border-radius: 10px; }
+.profil-riwayat-item:hover { border-color: var(--warna-utama); }
+.profil-riwayat-item:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: 2px; }
+.profil-riwayat-item[aria-current='true'] { border-color: var(--warna-utama); background: var(--warna-utama-latar); box-shadow: inset 3px 0 0 var(--warna-utama); }
+.profil-riwayat-atas { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.profil-panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.profil-panel-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+.profil-panel-kepala { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-left: auto; }
+.profil-panel-kepala:empty { display: none; }
+.profil-panel-tanda { display: flex; gap: 6px; flex-wrap: wrap; }
+.profil-kolom { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.profil-kotak { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--warna-garis); border-radius: 10px; }
+.profil-kotak-kepala { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.profil-soapie { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* Kolom kanan (Alergi sampai Evaluasi, teks panjang) sedikit lebih lebar daripada kolom kiri. */
+.profil-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px 24px; align-items: stretch; }
+.profil-form-kolom { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.profil-form-baris { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 0 12px; align-items: start; }
+.profil-form-kanan > .profil-form-baris { grid-template-columns: 76px minmax(0, 1fr); gap: 0 10px; }
+.profil-form-baris > label { padding-top: 9px; text-align: right; font-size: 13px; font-weight: 600; }
+.profil-form-sisi { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.profil-form-isian { box-sizing: border-box; width: 100%; padding: 8px 12px; font: inherit; line-height: 1.5; color: var(--warna-teks); background: var(--warna-permukaan); border: 1px solid var(--warna-garis); border-radius: 10px; }
+textarea.profil-form-isian { resize: vertical; min-height: 72px; }
+/* Baris yang tumbuh (Plan): mengisi sisa tinggi kolom dan tidak lebih rendah dari satu setengah kali isian biasa. */
+.profil-form-baris.profil-form-tumbuh { flex: 1 1 auto; align-items: stretch; }
+.profil-form-tumbuh .profil-form-sisi > textarea.profil-form-isian { flex: 1 1 auto; min-height: 108px; }
+.profil-form-isian:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: 1px; }
+.profil-form-isian[readonly], .profil-form-isian:disabled { background: var(--warna-kepala-tabel); }
+.profil-form-isian[aria-invalid='true'] { border-color: var(--status-merah-teks); }
+.profil-vital { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
+.profil-vital-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 14px; }
+.profil-vital-sel { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.profil-vital-sel label { font-size: 12px; font-weight: 600; color: var(--warna-teks-redup); }
+.profil-vital-sel .profil-form-isian { padding: 7px 10px; font-variant-numeric: tabular-nums; }
+.profil-galat { color: var(--status-merah-teks); }
+.profil-soapie-aksi { position: sticky; bottom: 0; z-index: 2; display: flex; flex-direction: column; gap: 10px; padding: 12px 0 4px; background: var(--warna-permukaan); border-top: 1px solid var(--warna-garis); }
+.profil-soapie-aksi:empty { display: none; }
+.profil-soapie-tombol { display: flex; gap: 10px; flex-wrap: wrap; }
+.profil-pasien button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 1100px) { .profil-form { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .profil-form-baris, .profil-form-kanan > .profil-form-baris { grid-template-columns: minmax(0, 1fr); } .profil-form-baris > label { text-align: left; padding: 0 0 4px; } .profil-vital-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .profil-badan { grid-template-columns: minmax(0, 1fr); }
+  .profil-riwayat { position: static; max-height: 320px; }
+  .profil-identitas-aksi { margin-left: 0; }
+}
+
+.profil-form-ganda { display: flex; gap: 8px; min-width: 0; }
+.profil-form-ganda .profil-form-isian { min-width: 0; }
+.profil-form-nomor { flex: 0 0 112px; width: 112px; font-variant-numeric: tabular-nums; text-align: center; font-weight: 600; }
+.profil-penanda-sah { display: inline-flex; align-items: center; gap: 6px; }
+
+.profil-chip-baris { display: flex; flex-wrap: wrap; gap: 6px; }
+.profil-chip { height: 30px !important; padding: 0 10px !important; font-size: 12px !important; white-space: nowrap; }
+.profil-antrean-baris { display: flex; align-items: stretch; gap: 6px; }
+.profil-antrean-baris .profil-riwayat-item { flex: 1 1 auto; min-width: 0; }
+.profil-antrean-baris .profil-chip { align-self: center; flex: 0 0 auto; }
+
+/* Alergi tercatat di kepala pasien. */
+.profil-alergi-ada { color: var(--status-merah-teks); font-weight: 600; }

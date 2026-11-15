@@ -48,7 +48,8 @@ export function buatRuteLayarPanggilan() {
                     // Antrean menunggu dibagi per jenis poli: satu nomor berikutnya untuk semua poli sejenis.
                     jenis: [...new Set(poli.map(p => p.jenis_poli.toLowerCase()))].map(kunci => {
                         const nama = poli.find(p => p.jenis_poli.toLowerCase() === kunci).jenis_poli;
-                        const tunggu = antrean.filter(a => a.status === 'menunggu' && a.jenis_poli.toLowerCase() === kunci).sort((a, b) => a.nomor - b.nomor);
+                        // Pasien yang masih di skrining belum dapat dipanggil dokter, jadi belum masuk daftar berikutnya.
+                        const tunggu = antrean.filter(a => a.status === 'menunggu' && a.tahap_layanan !== 'menunggu_skrining' && a.jenis_poli.toLowerCase() === kunci).sort((a, b) => a.nomor - b.nomor);
                         return { nama, berikutnya: tunggu[0] ? kodeAntrean(tunggu[0].nomor, tunggu[0].awalan) : null, menunggu: tunggu.length };
                     }).sort((a, b) => a.nama.localeCompare(b.nama, 'id')),
                 };

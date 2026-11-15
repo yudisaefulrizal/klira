@@ -5,8 +5,8 @@ import { keDto } from '../../rekam-medis/domain/layanan.js';
 import { BentrokVersiError } from '../data-access/repositori.js';
 /** Tahap yang masih menerima catatan klinis; setelah kasir, perubahan lewat perbaikan catatan (Rekam medis). */
 export const TAHAP_BOLEH_CATAT = ['menunggu_skrining', 'pemeriksaan', 'resep'];
-/** Bagian yang wajib tersimpan sebelum pemeriksaan diselesaikan. */
-export const BAGIAN_WAJIB_SELESAI = ['anamnesis', 'diagnosis', 'tindak_lanjut'];
+/** Bagian yang wajib tersimpan sebelum pemeriksaan diselesaikan: Subjek dan Asesmen pada catatan SOAPIE, serta diagnosis ICD-10 (satu utama). */
+export const BAGIAN_WAJIB_SELESAI = ['subjek', 'asesmen', 'diagnosis'];
 const ADA_ISI = (bagian, isi) => bagian === 'diagnosis' || bagian === 'tindakan' ? (isi?.item.length ?? 0) > 0 : isi !== null;
 export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang = () => new Date() }) {
     const kedaluwarsaMs = KEDALUWARSA_DRAF_KLINIS_JAM * 3_600_000;
@@ -54,9 +54,10 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
             if (!k)
                 return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
-            // Perbaikan catatan yang sudah disahkan boleh pada kunjungan yang sudah ditutup (PMK 24/2022 P30); isian baru tidak.
-            if (!opsi.perbaikan && !TAHAP_BOLEH_CATAT.includes(k.tahap_layanan))
-                return gagal('konflik', KLINIS.galat.kunjunganTertutup);
+            // Catatan boleh diubah bebas selama kunjungan belum ditutup (tanpa alasan dan tanpa persetujuan); sesudah ditutup setiap perubahan wajib beralasan.
+            const tutup = k.tahap_layanan === 'ditutup';
+            if (tutup && !alasan?.trim())
+                return gagal('tidak_valid', KLINIS.galat.alasanPerubahanTutup, 'alasan');
             const h = SKEMA_BAGIAN[bagian].safeParse(isiMentah);
             if (!h.success) {
                 return { ok: false, kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: h.error.issues.map((i) => ({ jalur: ['isi', ...i.path].join('.'), pesan: i.message })) };
@@ -84,7 +85,8 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
                 return { ok: true, data: { bagian: await bagianDto(p.fasyankes_id, kunjunganId, bagian), kunjungan: (await repo.kunjunganDto(p.fasyankes_id, kunjunganId)), tersimpan: false } };
             }
             const rencana = await pengesahan.siapkan({
-                fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, alasan, disetujuiOleh: opsi.disetujuiOleh,
+                fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, disetujuiOleh: opsi.disetujuiOleh, lewatiBatas: true,
+                alasan: alasan?.trim() || (tutup ? undefined : KLINIS.alasanOtomatis),
                 bacaIsiSekarang: () => repo.bacaBagian(p.fasyankes_id, kunjunganId, bagian),
             });
             if (!rencana.ok)
@@ -156,9 +158,9 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
             if (!k)
                 return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
-            // Draf catatan klinis hanya selama catatan masih diterima; draf hasil lab dan persetujuan mengikuti kunjungan yang belum ditutup.
+            // Draf catatan klinis boleh pada semua tahap (catatan bisa diubah sampai dan sesudah ditutup, yang terakhir dengan alasan); draf hasil lab dan persetujuan mengikuti kunjungan yang belum ditutup.
             const alurCatatan = alur === 'pemeriksaan-klinis' || alur === 'skrining';
-            if (alurCatatan ? !TAHAP_BOLEH_CATAT.includes(k.tahap_layanan) : k.tahap_layanan === 'ditutup')
+            if (!alurCatatan && k.tahap_layanan === 'ditutup')
                 return gagal('konflik', KLINIS.galat.kunjunganTertutup);
             const d = await repo.simpanDraf({ fasyankesId: p.fasyankes_id, penggunaId: p.id, alur, kunjunganId, pasienId: k.pasien_id, langkah: m.langkah, isi: m.isi, sekarang: sekarang() });
             return { ok: true, data: { alur, kunjungan_id: kunjunganId, langkah: d.langkah, isi: d.isi, diperbarui_pada: d.diperbarui_pada.toISOString() } };
@@ -177,9 +179,9 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             await catatLihat(p, 'pasien', d.pasien.id, 'Membuka ringkasan klinis pasien', alamat);
             return { ok: true, data: d };
         },
-        /** Riwayat kunjungan sebelumnya pasien, ringkas dan dibatasi 20; dicatat `lihat`. */
-        async riwayat(p, pasienId, kecualiKunjunganId, alamat) {
-            const d = await repo.riwayatPasien(p.fasyankes_id, pasienId, kecualiKunjunganId, 20);
+        /** Riwayat kunjungan pasien, ringkas; bawaan 20 terbaru (halaman Pasien meminta lebih banyak lewat `batas`); dicatat `lihat`. */
+        async riwayat(p, pasienId, kecualiKunjunganId, alamat, batas = 20) {
+            const d = await repo.riwayatPasien(p.fasyankes_id, pasienId, kecualiKunjunganId, batas);
             if (!d)
                 return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
             await catatLihat(p, 'pasien', pasienId, 'Membuka riwayat kunjungan pasien', alamat);

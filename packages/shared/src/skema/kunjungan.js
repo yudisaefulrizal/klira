@@ -5,7 +5,7 @@ import { idPositif, teksOpsional, teksWajib } from './umum.js';
 export const NILAI_JENIS_KUNJUNGAN = ['AMB', 'IMP', 'LAB'];
 export const NILAI_CARA_PEMBAYARAN = ['umum', 'jkn', 'asuransi'];
 export const NILAI_TAHAP = ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup'];
-export const NILAI_STATUS_ANTREAN = ['menunggu', 'dipanggil', 'dilayani', 'selesai', 'batal'];
+export const NILAI_STATUS_ANTREAN = ['menunggu', 'dipanggil', 'dilewati', 'dilayani', 'selesai', 'batal'];
 /** Pendaftaran kunjungan (3.3, MODAL-1): layanan, poli dan DPJP, cara pembayaran (nomor SEP boleh menyusul), keluhan singkat. */
 export const kunjunganMasukan = z
     .object({

@@ -329,7 +329,7 @@ export async function hitungKunjunganUntukKonteks(fasyankes_id, pasien_id, id, k
     return Number(baris.jumlah);
 }
 export async function daftarKunjunganUntukRiwayatPasien(fasyankes_id, pasien_id, id, batas, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`mulai`, t.`jenis`, t.`lokasi_id` FROM `kunjungan` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND ((? OR t.`pasien_id` <=> ?)) AND ((? OR NOT (t.`id` <=> ?))) ORDER BY t.`id` DESC LIMIT ? OFFSET ?", [fasyankes_id === undefined, fasyankes_id ?? null, pasien_id === undefined, pasien_id ?? null, id === undefined, id ?? null, batas ?? 2147483647, 0], koneksi);
+    const baris = await baca("SELECT t.`id`, t.`mulai`, t.`jenis`, t.`lokasi_id`, t.`tahap_layanan`, t.`cara_pembayaran` FROM `kunjungan` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND ((? OR t.`pasien_id` <=> ?)) AND ((? OR NOT (t.`id` <=> ?))) ORDER BY t.`id` DESC LIMIT ? OFFSET ?", [fasyankes_id === undefined, fasyankes_id ?? null, pasien_id === undefined, pasien_id ?? null, id === undefined, id ?? null, batas ?? 2147483647, 0], koneksi);
     return baris;
 }
 export async function cariKunjunganUntukSalinan(id, fasyankes_id, koneksi = pool) {
@@ -669,4 +669,9 @@ export function kunciKunjunganRawatInap(id, fasyankesId, koneksi) {
 export async function ubahKunjunganUntukPerujuk(id, fasyankes_id, perujuk, koneksi = pool) {
     const hasil = await tulis("UPDATE `kunjungan` t SET t.`perujuk` = ? WHERE t.`id` = ? AND t.`fasyankes_id` = ?", [perujuk ?? null, id, fasyankes_id], koneksi);
     return { count: hasil.affectedRows };
+}
+/** Nomor urut kunjungan dalam satu fasyankes (dasar nomor dokumen): jumlah kunjungan dengan id sampai kunjungan ini. */
+export async function nomorUrutKunjungan(fasyankes_id, kunjungan_id, koneksi = pool) {
+    const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `kunjungan` t WHERE t.`fasyankes_id` = ? AND t.`id` <= ?", [fasyankes_id, kunjungan_id], koneksi);
+    return Number(baris.jumlah);
 }

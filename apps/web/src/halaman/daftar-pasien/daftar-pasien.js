@@ -6,7 +6,7 @@ import { pilihTab } from '../../util/tab/ingatan-tab.js';
 import { IkonPasien, TombolIkonPasien } from '../../komponen/klinis/ikon-pasien.js';
 import { pasangKesiapan } from '../../komponen/klinis/kesiapan-klinik.js';
 import { pesanSaatIni } from '../pesan/whatsapp/konteks-pesan.js';
-import { tanggalWib, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_HASIL_LAB, STATUS_LAYANAN, statusLayananDari, STATUS_IDENTITAS, } from '@klira/shared';
+import { tanggalWib, ANTREAN_JKN, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_KUNJUNGAN, STATUS_HASIL_LAB, STATUS_LAYANAN, statusLayananDari, STATUS_IDENTITAS, } from '@klira/shared';
 import { aksiAntrean } from '../../api-klien/kunjungan.js';
 import { daftarPasien } from '../../api-klien/pasien.js';
 import { GalatApi } from '../../api-klien/klien.js';
@@ -22,34 +22,39 @@ import { bukaDetailPasien } from '../../modal/pasien/detail-pasien.js';
 import { bukaHasilLab } from '../../modal/penunjang/hasil-lab.js';
 import { bukaOrderLab } from '../../modal/penunjang/order-lab.js';
 import { bukaPersetujuanTindakan } from '../../modal/pemeriksaan/persetujuan-tindakan.js';
-import { bukaPembayaran } from '../../modal/kasir-klaim/pembayaran.js';
-import { bukaTelaahResep } from '../../modal/farmasi/telaah-resep.js';
-import { bukaTutupKunjungan } from '../../modal/kasir-klaim/tutup-kunjungan.js';
-import { bukaSerahHasil } from '../../modal/kasir-klaim/serah-hasil.js';
 import { bukaPendaftaranKunjungan } from '../../modal/pasien/pendaftaran-kunjungan.js';
 import { bukaPanelKeluarga } from '../../modal/pasien/panel-keluarga.js';
 import { bukaPanelRiwayat } from '../../modal/pasien/panel-riwayat.js';
-import { bukaPemeriksaanKlinis } from '../../modal/pemeriksaan/pemeriksaan-klinis.js';
+import { alamatProfil } from './keadaan-profil-pasien.js';
 import { bukaRegistrasiPasien } from '../../modal/pasien/registrasi-pasien.js';
+import { TabPasien } from './tab-pasien.js';
+import { tanggalLengkapSah } from '../../util/tanggal-tiga.js';
+import { pantauSlotHeader } from '../../komponen/tampilan/slot-header.js';
 const UKURAN = 20;
 const IKON_AKSI = {
     buka: 'buka', daftarkan: 'kunjungan-baru', skrining: 'skrining', periksa: 'periksa', telaah: 'telaah',
     serah_obat: 'telaah', serah_hasil: 'telaah', bayar: 'bayar', tutup_kunjungan: 'tutup-kunjungan', persetujuan: 'persetujuan', order_lab: 'order-lab',
     spesimen: 'spesimen', hasil_lab: 'hasil-lab', riwayat: 'riwayat', keluarga: 'keluarga',
-    panggil: 'panggil', mulai: 'mulai', selesai: 'selesai', batal: 'batal',
+    panggil: 'panggil', lewati: 'berikutnya', mulai: 'mulai', selesai: 'selesai', batal: 'batal',
 };
 const ikonAksi = (jenis) => IKON_AKSI[jenis];
 const KOLOM = [
     { judul: DAFTAR_PASIEN.kolom.antrean }, { judul: DAFTAR_PASIEN.kolom.pasien }, { judul: DAFTAR_PASIEN.kolom.nomorRm }, { judul: DAFTAR_PASIEN.kolom.poliDpjp },
     { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },
 ];
-const labelAksi = (a, status) => a === 'panggil' && status === 'dipanggil' ? DAFTAR_PASIEN.aksi.panggilUlang : DAFTAR_PASIEN.aksi[a === 'batal' ? 'batal' : a];
+const labelAksi = (a, status) => a === 'panggil' && status === 'dipanggil' ? DAFTAR_PASIEN.aksi.panggilUlang : a === 'panggil' && status === 'dilewati' ? DAFTAR_PASIEN.aksi.panggilLagi : DAFTAR_PASIEN.aksi[a === 'batal' ? 'batal' : a];
 export function HalamanDaftarPasien() {
-    const { pengguna } = penggunaSaatIni(), { search: initialSearch, ganti } = navigasiSaatIni(), boleh = izinSaatIni(), pesan = pesanSaatIni();
+    const { pengguna } = penggunaSaatIni(), { search: initialSearch, ganti, pindah } = navigasiSaatIni(), boleh = izinSaatIni(), pesan = pesanSaatIni();
     let search = initialSearch, keadaan = keadaanPasienDariQuery(search), cari = keadaan.cari, hasil = null, galat = null, terbuka = null, memprosesAksi = false, sekarang = new Date(), actif = true, version = 0, timer, modal, kesiapanTutup, page;
     const kotakCari = { current: null }, el = document.createElement('div'), nav = document.createElement('div'), contenu = document.createElement('div');
     el.style.display = 'contents';
     el.append(nav, contenu);
+    // Tab (Antrean pasien, Poli, ...) menempati bilah atas (header) di layar lebar; di layar sempit kembali ke atas isi halaman.
+    const lebar = window.matchMedia('(min-width: 1100px)');
+    let slotAtas = null;
+    const tempatkanNav = () => { if (slotAtas && lebar.matches) slotAtas.append(nav); else el.prepend(nav); };
+    const lepasPantauSlot = pantauSlotHeader((s) => { slotAtas = s; tempatkanNav(); });
+    lebar.addEventListener('change', tempatkanNav);
     const setTerbuka = value => {
         modal?.tutup();
         modal = undefined;
@@ -61,18 +66,8 @@ export function HalamanDaftarPasien() {
             modal = bukaRegistrasiPasien({ ...props, onDaftarkanKunjungan(pasien) { setTerbuka({ jenis: 'kunjungan', pasien }); } });
         else if (value.jenis === 'kunjungan')
             modal = bukaPendaftaranKunjungan(props);
-        else if (value.jenis === 'pemeriksaan')
-            modal = bukaPemeriksaanKlinis(props);
         else if (value.jenis === 'persetujuan')
             modal = bukaPersetujuanTindakan(props);
-        else if (value.jenis === 'bayar' || value.jenis === 'serah_obat')
-            modal = bukaPembayaran({ ...props, kasir: value.jenis === 'bayar' && boleh('kasir', 'input'), farmasi: boleh('farmasi', 'input') });
-        else if (value.jenis === 'serah_hasil')
-            modal = bukaSerahHasil({ kunjunganId: value.kunjunganId, pasienNama: value.pasien.nama, onTutup: tutup, onSelesai: selesai });
-        else if (value.jenis === 'tutup_kunjungan')
-            modal = bukaTutupKunjungan(props);
-        else if (value.jenis === 'telaah')
-            modal = bukaTelaahResep(props);
         else if (value.jenis === 'order_lab')
             modal = bukaOrderLab(props);
         else if (value.jenis === 'spesimen')
@@ -131,9 +126,14 @@ export function HalamanDaftarPasien() {
             if (jenis === 'daftarkan') return setTerbuka({ jenis: 'kunjungan', pasien });
             if (jenis === 'batal') return setTerbuka({ jenis: 'batal-antrean', baris: b });
             if (!k) return;
-            if (jenis === 'skrining' || jenis === 'periksa') return setTerbuka({ jenis: 'pemeriksaan', mode: jenis, kunjunganId: k.id, pasien });
+            // Skrining dan Periksa sama saja: keduanya membuka halaman Pasien pada kunjungan itu (catatan, riwayat, dan berpindah pasien di satu tempat).
+            if (jenis === 'skrining' || jenis === 'periksa') return pindah(alamatProfil({ pasien: b.id, kunjungan: k.id }));
+            // Telaah resep dikerjakan di tab Resep pada halaman Pasien.
+            if (jenis === 'telaah') return pindah(alamatProfil({ pasien: b.id, kunjungan: k.id, sub: 'resep' }));
+            // Pembayaran, serah obat, serah hasil lab, dan tutup kunjungan dikerjakan di tab Penutup.
+            if (['bayar', 'serah_obat', 'serah_hasil', 'tutup_kunjungan'].includes(jenis)) return pindah(alamatProfil({ pasien: b.id, kunjungan: k.id, sub: 'penutup' }));
             if (jenis === 'order_lab') return setTerbuka({ jenis, kunjunganId: k.id, pasien, cara: k.cara_pembayaran === 'jkn' ? 'jkn' : 'umum' });
-            if (['persetujuan','spesimen','hasil_lab','telaah','bayar','serah_obat','serah_hasil','tutup_kunjungan'].includes(jenis)) return setTerbuka({ jenis, kunjunganId: k.id, pasien });
+            if (['persetujuan','spesimen','hasil_lab'].includes(jenis)) return setTerbuka({ jenis, kunjunganId: k.id, pasien });
             void jalankanAksi(b, jenis);
         }
         const texteAksi = (a, status) => a.ubah ? `${DAFTAR_PASIEN.aksi[a.jenis]} (ubah)` : labelAksi(a.jenis, status);
@@ -141,7 +141,9 @@ export function HalamanDaftarPasien() {
         section.className = 'halaman-pasien'; header.className = 'pasien-header'; toolbar.className = 'pasien-toolbar'; actions.className = 'pasien-aksi-utama';
         const searchBox = document.createElement('div'); searchBox.className = 'pasien-pencarian pasien-isian-ikon'; searchBox.title = 'Cari pasien (/)'; kotakCari.current = searchBox;
         const searchField = bidang({ id: 'cari-pasien', label: DAFTAR_PASIEN.cari, jenis: 'search', nilai: cari, autoComplete: 'off', ubah: setCari }); searchField.kontrol.placeholder = DAFTAR_PASIEN.petunjukCari; searchBox.append(IkonPasien({nama:'cari'}),searchField.el);
-        const dates = document.createElement('div'); dates.className = 'pasien-tanggal pasien-isian-ikon'; dates.append(IkonPasien({nama:'tanggal'}),bidang({id:'tanggal-pasien',label:'Tanggal kunjungan',jenis:'date',nilai:tanggalAktif,ubah(v){if(v)terapkan({tanggal:v});}}).el);
+        // Diterapkan saat pengetikan selesai (tahun empat digit, Enter, atau fokus keluar), bukan tiap kali tanggalnya kebetulan sah.
+        const tanggalFilter = bidang({id:'tanggal-pasien',label:'Tanggal kunjungan',jenis:'date',nilai:tanggalAktif}); tanggalFilter.kontrol.addEventListener('tanggal-selesai',()=>{const v=tanggalFilter.kontrol.value;if(tanggalLengkapSah(v)&&v!==(keadaan.tanggal??tanggalWib(sekarang)))terapkan({tanggal:v});});
+        const dates = document.createElement('div'); dates.className = 'pasien-tanggal pasien-isian-ikon'; dates.append(IkonPasien({nama:'tanggal'}),tanggalFilter.el);
         const disposables = [];
         function icon(props) { const b = TombolIkonPasien(props); disposables.push(b); return b; }
         toolbar.append(searchBox,dates,icon({ikon:'hari-ini',label:'Hari ini',varian:tanggalAktif===hariIni?'sekunder':'teks','aria-pressed':tanggalAktif===hariIni,onClick(){const q=new URLSearchParams(queryPasien({...keadaan,halaman:1}));q.delete('tanggal');ganti(`/pasien?${q}`);}}),icon({ikon:'tanggal',label:'Kemarin',varian:tanggalAktif===kemarin?'sekunder':'teks','aria-pressed':tanggalAktif===kemarin,onClick(){terapkan({tanggal:kemarin});}}));
@@ -156,14 +158,14 @@ export function HalamanDaftarPasien() {
         const box=kartu({style:{padding:'0',overflow:'hidden'}});box.classList.add('pasien-tabel');const title=document.createElement('div'),h=document.createElement('h2'),count=document.createElement('span');title.className='pasien-tabel-judul';h.textContent=DAFTAR_PASIEN.judul;count.setAttribute('role','status');count.textContent=hasil?`${hasil.total} pasien`:'Memuat pasien…';title.append(h,count);box.append(title);
         const table=tabel(KOLOM,DAFTAR_PASIEN.judul);box.append(table.el);
         for(const b of hasil?.data??[]){const k=b.kunjungan,tunggu=k&&k.tahap_layanan!=='ditutup'&&k.antrean?.status!=='batal'?lamaMenunggu(k.mulai,sekarang):null,{utama,lainnya}=kelompokAksi(b,aksiBaris(b,boleh));
-            const queue=sel();queue.style.fontWeight=token.huruf.berat.tebal;if(k){const st=statusLayananDari(k);queue.append(k.antrean?k.antrean.kode:DAFTAR_PASIEN.tanpaAntrean,' ',lencana(STATUS_LAYANAN.label(st),STATUS_LAYANAN.warna(st)));if(k.hasil_lab&&['kasir','ditutup'].includes(k.tahap_layanan)){queue.append(' ',lencana(`${DAFTAR_PASIEN.hasilLab}: ${STATUS_HASIL_LAB.label(k.hasil_lab)}`,STATUS_HASIL_LAB.warna(k.hasil_lab)));}const lab=k.lab?.perlu_spesimen?DAFTAR_PASIEN.labSpesimen:k.lab?.perlu_hasil?DAFTAR_PASIEN.labHasil:null;if(lab)queue.append(' ',lencana(lab,'abu'));}else queue.append(DAFTAR_PASIEN.tanpaAntrean);
+            const queue=sel();queue.style.fontWeight=token.huruf.berat.tebal;if(k){const st=statusLayananDari(k);queue.append(k.antrean?k.antrean.kode:DAFTAR_PASIEN.tanpaAntrean,' ',lencana(STATUS_LAYANAN.label(st),STATUS_LAYANAN.warna(st)));if(k.hasil_lab&&['kasir','ditutup'].includes(k.tahap_layanan)){queue.append(' ',lencana(`${DAFTAR_PASIEN.hasilLab}: ${STATUS_HASIL_LAB.label(k.hasil_lab)}`,STATUS_HASIL_LAB.warna(k.hasil_lab)));}const lab=k.lab?.perlu_spesimen?DAFTAR_PASIEN.labSpesimen:k.lab?.perlu_hasil?DAFTAR_PASIEN.labHasil:null;if(lab)queue.append(' ',lencana(lab,'abu'));if(k.antrean?.sumber==='mobile_jkn'){const jkn=lencana(ANTREAN_JKN.lencanaSumber(k.antrean.pcare_no_urut),'biru');if(k.antrean.pcare_no_urut)jkn.title=ANTREAN_JKN.lencanaPetunjuk(k.antrean.pcare_no_urut);queue.append(' ',jkn);}if(k.antrean?.bpjs_status==='gagal'){const gagalBpjs=lencana(ANTREAN_JKN.sinkron.lencanaGagal,'merah');gagalBpjs.title=ANTREAN_JKN.sinkron.gagal(k.antrean.bpjs_pesan??'');queue.append(' ',gagalBpjs);}}else queue.append(DAFTAR_PASIEN.tanpaAntrean);
             // Lama menunggu ditampilkan di sel Antrean, setelah status.
             if(tunggu){const lama=document.createElement('small');Object.assign(lama.style,{color:token.warna.teksRedup,fontWeight:token.huruf.berat.biasa});lama.textContent=` ${tunggu.jam?DAFTAR_PASIEN.jamMenit(tunggu.jam,tunggu.menit):DAFTAR_PASIEN.menit(tunggu.menit)}`;queue.append(lama);}
-            const patient=sel(),name=tombol(b.nama,()=>setTerbuka({jenis:'edit-pasien',pasien:pasienDari(b)}),'teks');name.setAttribute('aria-label',`Buka data pasien ${b.nama}`);Object.assign(name.style,{fontWeight:token.huruf.berat.tebal,padding:'0'});const meta=document.createElement('span');Object.assign(meta.style,{fontSize:token.huruf.ukuran.kecil,color:token.warna.teksRedup});meta.textContent=` (${DAFTAR_PASIEN.jenisKelaminSingkat[b.jenis_kelamin]}, ${DAFTAR_PASIEN.umur(b.umur_tahun)})`;if(b.status_identitas==='sementara')meta.append(' ',lencana(STATUS_IDENTITAS.label('sementara'),STATUS_IDENTITAS.warna('sementara')));patient.append(name,meta);
+            const patient=sel(),name=tombol(b.nama,()=>pindah(alamatProfil({pasien:b.id,kunjungan:k?.id??null})),'teks');name.setAttribute('aria-label',`Buka halaman pasien ${b.nama}`);Object.assign(name.style,{fontWeight:token.huruf.berat.tebal,padding:'0'});const meta=document.createElement('span');Object.assign(meta.style,{fontSize:token.huruf.ukuran.kecil,color:token.warna.teksRedup});meta.textContent=` (${DAFTAR_PASIEN.jenisKelaminSingkat[b.jenis_kelamin]}, ${DAFTAR_PASIEN.umur(b.umur_tahun)})`;if(b.status_identitas==='sementara')meta.append(' ',lencana(STATUS_IDENTITAS.label('sementara'),STATUS_IDENTITAS.warna('sementara')));patient.append(name,meta);
             const poli=sel();if(k){if(k.poli_nama)poli.append(k.poli_nama);else if(k.jenis_poli){const jp=document.createElement('span');jp.textContent=k.jenis_poli;jp.title=DAFTAR_PASIEN.poliSaatDipanggil;jp.style.fontStyle='italic';poli.append(jp);}else poli.append(lencana(JENIS_KUNJUNGAN.label(k.jenis),JENIS_KUNJUNGAN.warna(k.jenis)));const doctor=document.createElement('small');doctor.style.color=token.warna.teksRedup;doctor.textContent=` ${k.dpjp_nama??'-'}`;poli.append(doctor);}else poli.append(DAFTAR_PASIEN.tanpaKunjungan);
             const actionCell=sel(),row=document.createElement('div');Object.assign(row.style,{display:'inline-flex',gap:token.jarak.sm,flexWrap:'wrap',justifyContent:'flex-end',alignItems:'stretch'});actionCell.style.textAlign='right';
             if(boleh('whatsapp','lihat'))row.append(icon({ikon:'whatsapp',label:'WhatsApp',varian:'teks',onClick(){pesan.bukaPasien({id:b.id,nama:b.nama});}}));
-            for(const a of utama){const status=k?.antrean?.status??'',repeat=a.jenis==='panggil'&&status==='dipanggil';row.append(icon({ikon:repeat?'panggil-ulang':ikonAksi(a.jenis),label:texteAksi(a,status)+(a.jenis==='panggil'&&k?.poli_sibuk?` · ${k.poli_sibuk.kode?DAFTAR_PASIEN.poliSibuk(k.poli_nama??k.poli_sibuk.jenis_poli,k.poli_sibuk.kode):DAFTAR_PASIEN.jenisSibuk(k.poli_sibuk.jenis_poli)}`:''),varian:a.jenis==='skrining'||a.jenis==='periksa'?'utama':repeat||['buka','riwayat','keluarga'].includes(a.jenis)?'teks':'sekunder',disabled:a.jenis==='panggil'&&(memprosesAksi||!!k?.poli_sibuk),onClick(){klikAksi(b,a);}}));}
+            for(const a of utama){const status=k?.antrean?.status??'',repeat=a.jenis==='panggil'&&(status==='dipanggil'||status==='dilewati');row.append(icon({ikon:repeat?'panggil-ulang':ikonAksi(a.jenis),label:texteAksi(a,status)+(a.jenis==='panggil'&&k?.poli_sibuk?` · ${k.poli_sibuk.kode?DAFTAR_PASIEN.poliSibuk(k.poli_nama??k.poli_sibuk.jenis_poli,k.poli_sibuk.kode):DAFTAR_PASIEN.jenisSibuk(k.poli_sibuk.jenis_poli)}`:''),varian:a.jenis==='skrining'||a.jenis==='periksa'?'utama':repeat||['buka','riwayat','keluarga'].includes(a.jenis)?'teks':'sekunder',disabled:a.jenis==='panggil'&&(memprosesAksi||!!k?.poli_sibuk),onClick(){klikAksi(b,a);}}));}
             if(lainnya.length){const menu=MenuAksi({label:DAFTAR_PASIEN.aksiLainnya,items:lainnya.map(a=>({kunci:`${a.jenis}${a.ubah?'-ubah':''}`,label:texteAksi(a,k?.antrean?.status??''),ikon:IkonPasien({nama:a.ubah?'edit':ikonAksi(a.jenis)}),disabled:memprosesAksi&&['panggil','batal'].includes(a.jenis),onPilih(){klikAksi(b,a);}}))});disposables.push(menu);row.append(menu);}actionCell.append(row);
             table.tbody.append(baris(queue,patient,sel(b.nomor_rm),poli,sel(k?CARA_PEMBAYARAN.label(k.cara_pembayaran):'-'),actionCell));
         }
@@ -174,14 +176,22 @@ export function HalamanDaftarPasien() {
             return;
         const focus = document.activeElement, id = focus?.id, start = focus?.selectionStart, end = focus?.selectionEnd;
         kesiapanTutup?.();
-        const T = DAFTAR_PASIEN.tab, daftar = [...(FITUR_AKSES_PASIEN.some(f => boleh(f, 'lihat')) ? [{ id: 'antrean', label: T.antrean }] : []), ...(boleh('master', 'lihat') ? [{ id: 'poli', label: T.poli }, { id: 'praktisi', label: T.praktisi }, { id: 'jadwal', label: T.jadwal }] : [])], ids = daftar.map(t => t.id), tabAktif = ids.length ? pilihTab(ids, new URLSearchParams(search).get('tab'), null) : 'antrean';
+        // Satu tab untuk antrean dan pasien: tabel Antrean (pencarian mencakup semua pasien) sebagai daftar, dan halaman Pasien (?tab=pasien&pasien=...) bila satu pasien dibuka.
+        const T = DAFTAR_PASIEN.tab, bolehPasien = boleh('pasien', 'lihat') || boleh('rekam-medis', 'lihat'), params = new URLSearchParams(search);
+        const daftar = [...(FITUR_AKSES_PASIEN.some(f => boleh(f, 'lihat')) ? [{ id: 'antrean', label: T.antrean }] : []), ...(boleh('master', 'lihat') ? [{ id: 'poli', label: T.poli }, { id: 'praktisi', label: T.praktisi }, { id: 'jadwal', label: T.jadwal }] : [])], ids = daftar.map(t => t.id);
+        const halamanPasien = bolehPasien && params.get('tab') === 'pasien' && !!params.get('pasien'), tabAktif = halamanPasien ? 'antrean' : ids.length ? pilihTab(ids, params.get('tab'), null) : 'antrean';
         nav.replaceChildren();
         if (daftar.length > 1)
             nav.append(tab(daftar,tabAktif,DAFTAR_PASIEN.judul,id=>ganti(id==='antrean'?'/pasien':`/pasien?tab=${id}`)).el);
+        // Tab Pasien menyimpan isian formulir: tidak dibangun ulang saat halaman dilukis ulang, cukup diberi alamat terbaru.
+        if (halamanPasien && page?.jenisTab === 'pasien') {
+            page.perbaruiAlamat(search);
+            return;
+        }
         page?.tutup?.();
-        page = tabAktif === 'antrean' ? view() : KelolaMasterTab({ jenis: tabAktif });
+        page = halamanPasien ? TabPasien({ search, pindah, ganti }) : tabAktif === 'antrean' ? view() : KelolaMasterTab({ jenis: tabAktif });
         contenu.replaceChildren(page);
-        if (tabAktif !== 'antrean')
+        if (!halamanPasien && tabAktif !== 'antrean')
             page.perbaruiAlamat?.(search);
         if (id) {
             const f = document.getElementById(id);
@@ -194,6 +204,9 @@ export function HalamanDaftarPasien() {
         }
     }
     async function muat() {
+        // Antrean hanya dimuat saat tabnya terbuka (tab Pasien memuat datanya sendiri).
+        if (page?.jenisTab === 'pasien')
+            return;
         const saat = ++version;
         try {
             const h = await daftarPasien({ tanggal: keadaan.tanggal ?? tanggalWib(sekarang), cari: keadaan.cari, tahap: keadaan.tahap ?? tahapBawaan(boleh), halaman: keadaan.halaman, ukuran: 20 });
@@ -219,6 +232,8 @@ export function HalamanDaftarPasien() {
     el.perbaruiAlamat = alamat => { search = alamat; keadaan = keadaanPasienDariQuery(search); cari = keadaan.cari; paint(); void muat(); };
     document.addEventListener('keydown', tekan);
     const minute = setInterval(() => { sekarang = new Date(); paint(); }, 60000);
+    // Antrean dari Mobile JKN masuk tanpa tindakan petugas (server menariknya dari PCare): daftar dimuat ulang berkala selama tidak ada modal terbuka.
+    const segarkan = setInterval(() => { if (!terbuka && !document.hidden) void muat(); }, 20000);
     if (!document.querySelector('link[data-pasien-css]')) {
         const css = document.createElement('link');
         css.rel = 'stylesheet';
@@ -230,6 +245,6 @@ export function HalamanDaftarPasien() {
     void muat();
     if (new URLSearchParams(search).has('tahap') && !keadaan.tahap)
         ganti(`/pasien${queryPasien(keadaan)}`);
-    el.tutup = () => { actif = false; version++; clearTimeout(timer); clearInterval(minute); document.removeEventListener('keydown', tekan); modal?.tutup(); page?.tutup?.(); kesiapanTutup?.(); };
+    el.tutup = () => { lebar.removeEventListener('change', tempatkanNav); lepasPantauSlot(); nav.remove(); actif = false; version++; clearTimeout(timer); clearInterval(minute); clearInterval(segarkan); document.removeEventListener('keydown', tekan); modal?.tutup(); page?.tutup?.(); kesiapanTutup?.(); };
     return el;
 }

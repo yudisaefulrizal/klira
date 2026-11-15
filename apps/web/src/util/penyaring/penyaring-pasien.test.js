@@ -84,8 +84,14 @@ describe('tindakan per baris', () => {
         expect(jenis(baris(kunj('batal')))).toEqual(['daftarkan', 'buka', 'riwayat', 'keluarga']);
     });
     it('antrean mengikuti status, diikuti tombol tahap dan panel pendamping', () => {
-        expect(jenis(baris(kunj('menunggu')))).toEqual(['panggil', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
-        expect(jenis(baris(kunj('dipanggil')))).toEqual(['panggil', 'batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
+        // Tahap menunggu skrining: pasien langsung diskrining, belum bisa dipanggil dokter.
+        expect(jenis(baris(kunj('menunggu')))).toEqual(['batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
+        // Sesudah skrining (tahap pemeriksaan) dokter dapat memanggil.
+        expect(jenis(baris({ ...kunj('menunggu'), tahap_layanan: 'pemeriksaan' }))).toEqual(['panggil', 'batal', 'periksa', 'skrining', 'persetujuan', 'order_lab', 'spesimen', 'hasil_lab', 'buka', 'riwayat', 'keluarga']);
+        // Sesudah skrining: dipanggil bisa dilewati; yang dilewati bisa dipanggil lagi atau dibatalkan.
+        const sesudah = (s) => jenis(baris({ ...kunj(s), tahap_layanan: 'pemeriksaan' })).filter((j) => ['panggil', 'lewati', 'batal'].includes(j));
+        expect(sesudah('dipanggil')).toEqual(['panggil', 'lewati', 'batal']);
+        expect(sesudah('dilewati')).toEqual(['panggil', 'batal']);
         expect(jenis(baris(kunj('dilayani')))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
         expect(jenis(baris(kunj('selesai')))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);
         expect(jenis(baris(kunj(null)))).toEqual(['skrining', 'buka', 'riwayat', 'keluarga']);

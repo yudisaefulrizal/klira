@@ -1,7 +1,7 @@
 import * as db from '@klira/db';
-/** Dipanggil dalam transaksi pelayanan; pembaruan bersyarat menjaga waktu pertama dan status terminal. */
+/** Antrean baru berjalan setelah skrining selesai (tahap pemeriksaan); skrining tidak menjalankan antrean. Dipanggil dalam transaksi pelayanan; pembaruan bersyarat menjaga waktu pertama dan status terminal. */
 export async function mulaiAntreanDalam(tx, fasyankesId, kunjunganId, waktu) {
-    const k = await db.ubahKunjunganUntukMulaiAntreanDalam('in-progress', fasyankesId, kunjunganId, ['menunggu_skrining', 'pemeriksaan'], 'batal', ['planned', 'arrived', 'in-progress'], tx);
+    const k = await db.ubahKunjunganUntukMulaiAntreanDalam('in-progress', fasyankesId, kunjunganId, ['pemeriksaan'], 'batal', ['planned', 'arrived', 'in-progress'], tx);
     if (!k.count)
         return;
     await db.ubahAntreanUntukMulaiAntreanDalam(waktu, fasyankesId, kunjunganId, ['menunggu', 'dipanggil', 'dilayani'], null, tx);

@@ -51,7 +51,10 @@ export function aksiBaris(baris, boleh) {
     }
     if (k?.antrean && k.tahap_layanan !== 'ditutup' && boleh('kunjungan', 'perbaikan')) {
         for (const jenis of aksiAntreanTersedia(k.antrean.status)) {
-            if (jenis === 'panggil' || jenis === 'batal')
+            // Setelah daftar pasien langsung ke skrining; Panggil oleh dokter baru muncul setelah skrining selesai.
+            if (jenis === 'panggil' && k.tahap_layanan === 'menunggu_skrining')
+                continue;
+            if (jenis === 'panggil' || jenis === 'lewati' || jenis === 'batal')
                 hasil.push({ jenis });
         }
     }
@@ -105,7 +108,7 @@ export function aksiBaris(baris, boleh) {
  */
 export function kelompokAksi(baris, aksi) {
     const k = baris.kunjungan;
-    const langsung = new Set(['panggil', 'daftarkan', 'skrining', 'periksa', 'telaah', 'bayar', 'serah_obat', 'serah_hasil', 'tutup_kunjungan']);
+    const langsung = new Set(['panggil', 'lewati', 'daftarkan', 'skrining', 'periksa', 'telaah', 'bayar', 'serah_obat', 'serah_hasil', 'tutup_kunjungan']);
     const utama = [];
     const lainnya = [];
     for (const a of aksi) {

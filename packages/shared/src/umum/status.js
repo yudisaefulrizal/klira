@@ -84,6 +84,7 @@ export const JENIS_MUTASI = buat({
 export const STATUS_ANTREAN = buat({
     menunggu: { label: 'Menunggu', warna: 'abu' },
     dipanggil: { label: 'Dipanggil', warna: 'kuning' },
+    dilewati: { label: 'Dilewati', warna: 'merah' },
     dilayani: { label: 'Dilayani', warna: 'biru' },
     selesai: { label: 'Selesai', warna: 'hijau' },
     batal: { label: 'Batal', warna: 'merah' },
@@ -92,6 +93,7 @@ export const STATUS_ANTREAN = buat({
 export const STATUS_LAYANAN = buat({
     menunggu: { label: 'Menunggu', warna: 'abu' },
     dipanggil: { label: 'Dipanggil', warna: 'kuning' },
+    dilewati: { label: 'Dilewati', warna: 'merah' },
     skrining: { label: 'Skrining', warna: 'biru' },
     spesimen: { label: 'Spesimen', warna: 'biru' },
     diperiksa: { label: 'Diperiksa', warna: 'biru' },
@@ -109,8 +111,8 @@ export function statusLayananDari(kunjungan) {
         case 'ditutup': return 'selesai';
         case 'kasir': return 'pembayaran';
         case 'resep': return 'menunggu_obat';
-        case 'pemeriksaan': return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'menunggu' ? 'menunggu' : kunjungan.jenis === 'LAB' ? 'spesimen' : 'diperiksa';
-        default: return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'dilayani' ? 'skrining' : 'menunggu';
+        case 'pemeriksaan': return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'dilewati' ? 'dilewati' : antrean === 'menunggu' ? 'menunggu' : kunjungan.jenis === 'LAB' ? 'spesimen' : 'diperiksa';
+        default: return 'skrining';
     }
 }
 /** Kunci STATUS_HASIL_LAB dari ringkasan { total, divalidasi, diserahkan_pada }; null bila tidak ada order lab. */

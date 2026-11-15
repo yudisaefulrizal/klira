@@ -276,6 +276,12 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         await panggil('PUT', adr, 'dokter2', { langkah: 1, isi: { a: 2 } });
     });
     it('selesaikan pemeriksaan: maju ke kasir, draf terhapus, lalu catatan baru ditolak', async () => {
+        expect((await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', { tahap: 'kasir' })).status).toBe(409);
+        expect((await panggil('PUT', klinis(kunjA1, 'subjek'), 'dokter', { isi: { isi: 'Batuk 4 hari' } })).status).toBe(200);
+        expect((await panggil('PUT', klinis(kunjA1, 'asesmen'), 'dokter', { isi: { isi: 'Hipertensi' } })).status).toBe(200);
+        // diagnosis ICD-10 juga wajib
+        expect((await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', { tahap: 'kasir' })).status).toBe(409);
+        expect((await panggil('PUT', klinis(kunjA1, 'diagnosis'), 'dokter', { isi: { item: [{ kode: 'I10', nama: 'Essential (primary) hypertension', peran: 'utama' }] } })).status).toBe(200);
         const r = await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', { tahap: 'kasir' });
         expect(r.status).toBe(200);
         expect(r.badan.data.tahap_layanan).toBe('kasir');
@@ -284,9 +290,14 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         expect(antrean.waktu_mulai).not.toBeNull();
         expect(antrean.waktu_selesai).not.toBeNull();
         expect(await uji.hitungDrafUntukKlinisKlinisIntegrasiTest3(kunjA1)).toBe(0);
-        expect((await panggil('PUT', `/kunjungan/${kunjA1}/draf/pemeriksaan-klinis`, 'dokter', { langkah: 1, isi: {} })).status).toBe(409);
+        // draf catatan tetap diterima setelah pemeriksaan selesai (kasir); yang bukan catatan (hasil lab, persetujuan) mengikuti kunjungan yang belum ditutup
+        expect((await panggil('PUT', `/kunjungan/${kunjA1}/draf/pemeriksaan-klinis`, 'dokter', { langkah: 1, isi: {} })).status).toBe(200);
         expect((await panggil('POST', `/kunjungan/${kunjA1}/klinis/selesai`, 'dokter', {})).status).toBe(409);
-        expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { paru_lain: 'Terlambat' } })).status).toBe(409);
+        // kasir (belum ditutup) masih menerima catatan tanpa alasan; setelah ditutup wajib beralasan
+        expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { paru_lain: 'Susulan di kasir' } })).status).toBe(200);
+        await uji.ubahKunjunganUntukFarmasiFarmasiIntegrasiTest('ditutup', kunjA1);
+        expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { paru_lain: 'Terlambat' } })).status).toBe(400);
+        expect((await panggil('PUT', klinis(kunjA1, 'pemeriksaan'), 'dokter', { isi: { paru_lain: 'Terlambat' }, alasan: 'Terlewat saat pemeriksaan' })).status).toBe(200);
     });
     it('riwayat dan salin dari kunjungan sebelumnya (draf, pasien sama saja)', async () => {
         await uji.ubahKunjunganUntukFarmasiFarmasiIntegrasiTest('ditutup', kunjA1);

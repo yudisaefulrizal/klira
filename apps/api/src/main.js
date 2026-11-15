@@ -35,7 +35,10 @@ async function mulai() {
     timerInstagram.unref();
     const timerTokenInstagram = setInterval(() => void perbaruiTokenInstagram().catch(() => console.error('Pemeliharaan Instagram gagal.')), 3600000);
     timerTokenInstagram.unref();
-    server.once('close', () => { clearInterval(timerInstagram); clearInterval(timerTokenInstagram); });
+    // Pendaftaran Mobile JKN ditarik dari PCare secara berkala untuk fasyankes yang mengaktifkan antrean online.
+    const timerAntreanJkn = setInterval(() => void app.locals.layananAntreanJkn?.tarikSemua().catch(() => console.error('Tarik pendaftaran Mobile JKN gagal.')), 30000);
+    timerAntreanJkn.unref();
+    server.once('close', () => { clearInterval(timerInstagram); clearInterval(timerTokenInstagram); clearInterval(timerAntreanJkn); });
     void perbaruiTokenInstagram().catch(() => console.error('Pemeliharaan Instagram gagal; periksa migrasi.'));
     void pulihkanInstagram();
     server.listen(port, () => {

@@ -3,7 +3,8 @@ import { ANTREAN_LAB, REGISTRASI, bolehAksiAntrean, bolehPindahTahap, tanggalWib
 import { gagal } from '../../../umum/hasil.js';
 import { KunjunganBerjalanError } from '../data-access/repositori.js';
 const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
-export function buatLayananKunjungan({ repo, audit, orderLab, sekarang = () => new Date() }) {
+/** `antreanBpjs` (opsional): mengabarkan antrean pasien JKN ke BPJS setelah daftar, panggil, dan batal; tidak pernah menggagalkan tindakan. */
+export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antreanBpjs, sekarang = () => new Date() }) {
     return {
         opsi(p) {
             return repo.opsi(p.fasyankes_id);
@@ -51,9 +52,12 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sekarang = () => n
             kabarkanLayarPanggilan(p.fasyankes_id);
             await audit.catat({
                 fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'kunjungan', entitas_id: k.id,
-                keterangan: `Pendaftaran kunjungan ${m.jenis}${k.antrean ? ` antrean ${k.antrean.kode}` : ''}`, alamat,
+                keterangan: `Pendaftaran kunjungan ${m.jenis}${k.antrean ? ` antrean ${k.antrean.kode}` : ''}${m.sumber === 'mobile_jkn' ? ' lewat Mobile JKN' : ''}`, alamat,
             });
-            return { ok: true, data: k };
+            // Pasien yang belum punya IHS Number dicari lagi saat kunjungan (mis. SATUSEHAT baru dikonfigurasi); gagal tidak menggagalkan pendaftaran.
+            const satusehat = sinkronIhs ? { satusehat: await sinkronIhs(p, m.pasien_id, { alamat }) } : {};
+            const bpjs = antreanBpjs ? { antrean_bpjs: await antreanBpjs.setelahDaftar(p, k) } : {};
+            return { ok: true, data: { ...k, ...satusehat, ...bpjs } };
         },
         /** Maju satu tahap layanan (skrining, pemeriksaan, resep, kasir); penutupan kunjungan punya peristiwanya sendiri. */
         async ubahTahap(p, id, ke, alamat) {
@@ -76,6 +80,9 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sekarang = () => n
                 return gagal('tidak_ditemukan', REGISTRASI.galat.antreanTidakAda);
             if (!bolehAksiAntrean(status, aksi))
                 return gagal('konflik', REGISTRASI.galat.antreanTidakSah);
+            // Setelah daftar pasien langsung ke skrining; dokter baru memanggil pasien yang sudah diskrining.
+            if (aksi === 'panggil' && (await repo.tahapAntrean(p.fasyankes_id, id)) === 'menunggu_skrining')
+                return gagal('konflik', REGISTRASI.galat.belumSkrining);
             const t = TRANSISI_ANTREAN[aksi];
             const hasil = await repo.ubahAntrean(p.fasyankes_id, id, aksi, t.dari, t.ke, sekarang(), lokasiPilihan);
             if (!hasil)
@@ -91,8 +98,9 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sekarang = () => n
             if (hasil.galat === 'poli_tidak_operasional')
                 return gagal('konflik', REGISTRASI.galat.poliTidakOperasional(hasil.poli));
             kabarkanLayarPanggilan(p.fasyankes_id);
-            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'antrean', entitas_id: id, keterangan: `Antrean ${hasil.kode}: ${aksi} (${status} menjadi ${t.ke})`, alamat });
-            return { ok: true, data: hasil };
+            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'antrean', entitas_id: id, keterangan: `Antrean ${hasil.kode}: ${aksi} (${status} menjadi ${t.ke})${p.sistem === 'mobile_jkn' ? ' lewat Mobile JKN' : ''}`, alamat });
+            const bpjs = antreanBpjs ? { antrean_bpjs: await antreanBpjs.setelahAksi(p, id, aksi) } : {};
+            return { ok: true, data: { ...hasil, ...bpjs } };
         },
         /** Daftar antrean satu hari (bawaan hari ini menurut zona Asia/Jakarta). */
         async daftarAntrean(p, f) {

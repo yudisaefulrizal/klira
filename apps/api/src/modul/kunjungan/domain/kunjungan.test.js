@@ -19,6 +19,7 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         tahapSekarang: async (f, id) => (f === 1 && id === 5 ? 'pemeriksaan' : null),
         ubahTahap: jest.fn(async () => kunjungan),
         statusAntrean: async (f, id) => (f === 1 && id === 8 ? 'menunggu' : null),
+        tahapAntrean: async (f, id) => (f === 1 && id === 8 ? 'pemeriksaan' : null),
         ubahAntrean: jest.fn(async () => ({ id: 8, kode: 'A-001' })),
     };
     const orderLab = jest.fn(async () => ({ ok: true, data: {} }));
@@ -33,6 +34,18 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         expect(h).toMatchObject({ ok: true });
         expect(dasarRepo.daftarkan).toHaveBeenCalledWith(1, 3, expect.objectContaining({ nomor_sep: null, keluhan_singkat: 'batuk', jenis_poli: 'Umum', awalan: 'U' }), new Date('2026-10-25T01:00:00Z'));
         expect(catatan).toEqual([expect.objectContaining({ aksi: 'input', entitas: 'kunjungan' })]);
+    });
+    it('mencari IHS Number pasien saat pendaftaran dan melampirkan hasilnya; kunjungan tetap tersimpan walau hasilnya gagal', async () => {
+        const sinkronIhs = jest.fn(async () => ({ status: 'gagal', pesan: 'x' }));
+        const h = await buatLayananKunjungan({ repo: dasarRepo, orderLab, sinkronIhs, audit: { catat: async () => {} }, sekarang: () => new Date('2026-10-25T01:00:00Z') }).daftarkan(saya, masukan, '::1');
+        expect(h).toMatchObject({ ok: true, data: { id: 5, satusehat: { status: 'gagal' } } });
+        expect(sinkronIhs).toHaveBeenCalledWith(saya, 10, { alamat: '::1' });
+    });
+    it('pendaftaran yang ditolak tidak mencari IHS Number', async () => {
+        const sinkronIhs = jest.fn();
+        const l = buatLayananKunjungan({ repo: { ...dasarRepo, pasienAda: async () => false }, orderLab, sinkronIhs, audit: { catat: async () => {} } });
+        expect((await l.daftarkan(saya, masukan)).ok).toBe(false);
+        expect(sinkronIhs).not.toHaveBeenCalled();
     });
     it('menolak dokter yang tidak bertugas di poli jenis terpilih; dokter boleh kosong', async () => {
         const l = buat();
@@ -65,9 +78,25 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
     it('antrean: aksi sesuai status; mulai dari menunggu ditolak', async () => {
         const l = buat();
         expect(await l.aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: true });
-        expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', expect.any(Date), undefined);
+        expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'panggil', ['menunggu', 'dipanggil', 'dilewati'], 'dipanggil', expect.any(Date), undefined);
         expect(await l.aksiAntrean(saya, 8, 'mulai')).toMatchObject({ ok: false, kode: 'konflik' });
         expect(await l.aksiAntrean({ id: 3, fasyankes_id: 2 }, 8, 'panggil')).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+    });
+    it('lewati hanya dari dipanggil; pasien yang dilewati dapat dipanggil lagi', async () => {
+        expect(await buat().aksiAntrean(saya, 8, 'lewati')).toMatchObject({ ok: false, kode: 'konflik' });
+        const l = buat({ statusAntrean: async () => 'dipanggil' });
+        expect(await l.aksiAntrean(saya, 8, 'lewati')).toMatchObject({ ok: true });
+        expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'lewati', ['dipanggil'], 'dilewati', expect.any(Date), undefined);
+        dasarRepo.ubahAntrean.mockClear();
+        const lagi = buat({ statusAntrean: async () => 'dilewati' });
+        expect(await lagi.aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: true });
+        expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'panggil', ['menunggu', 'dipanggil', 'dilewati'], 'dipanggil', expect.any(Date), undefined);
+        expect(await lagi.aksiAntrean(saya, 8, 'mulai')).toMatchObject({ ok: false, kode: 'konflik' });
+    });
+    it('panggil ditolak selama pasien masih di skrining; dokter memanggil setelah skrining selesai', async () => {
+        const l = buat({ tahapAntrean: async () => 'menunggu_skrining' });
+        expect(await l.aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('belum selesai skrining') });
+        expect(dasarRepo.ubahAntrean).not.toHaveBeenCalled();
     });
     it('panggil ditolak bila poli masih melayani pasien lain atau tidak operasional', async () => {
         const sibuk = jest.fn(async () => ({ galat: 'poli_sibuk', poli: 'Poli Umum 1', kode: 'A-006' }));

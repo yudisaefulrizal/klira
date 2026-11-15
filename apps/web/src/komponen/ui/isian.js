@@ -3,6 +3,7 @@ import { h, Fragment } from '../../util/h.js';
 import { PENANDA_NORMAL } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { InfoBantuan } from './info-bantuan.js';
+import { buatTanggalTiga } from './tanggal-tiga.js';
 
 /** Gaya dasar kontrol formulir; dipakai bersama oleh Isian dan Pilihan. */
 export const gayaKontrol = {
@@ -74,6 +75,13 @@ export function PesanGalat({
     }
   }, children);
 }
+/** Isian tanggal tiga kolom untuk `type: "date"` (pengganti pemilih tanggal bawaan peramban); `onChange`/`onInput` menerima peristiwa dengan `target.value`. */
+function IsianTanggal({ id, label, galat, value, disabled, onChange, onInput }) {
+  const el = buatTanggalTiga({ id, nilai: value ?? '', label: typeof label === 'string' ? label : '', galat: !!galat, disabled });
+  if (galat) el.setAttribute('aria-describedby', `${id}-galat`);
+  for (const f of [onChange, onInput]) if (f) el.addEventListener('input', f);
+  return el;
+}
 export function Isian({
   label,
   id,
@@ -101,7 +109,12 @@ export function Isian({
     diubah: diubah
   }), petunjuk && h(InfoBantuan, {
     label: label
-  }, petunjuk)), h("input", {
+  }, petunjuk)), sisa.type === 'date' ? IsianTanggal({
+    id,
+    label,
+    galat,
+    ...sisa
+  }) : h("input", {
     id: id,
     style: {
       ...gayaKontrol,

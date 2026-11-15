@@ -37,10 +37,10 @@ describe('status layanan gabungan kunjungan', () => {
     const k = (tahap_layanan, antrean) => ({ tahap_layanan, antrean: antrean ? { status: antrean } : null });
     it('mencakup semua kondisi dari antrean dan tahap', () => {
         const kasus = [
-            [k('menunggu_skrining', 'menunggu'), 'menunggu'], [k('menunggu_skrining', 'dipanggil'), 'dipanggil'], [k('menunggu_skrining', 'dilayani'), 'skrining'],
+            [k('menunggu_skrining', 'menunggu'), 'skrining'], [k('menunggu_skrining', 'dilayani'), 'skrining'],
             [k('pemeriksaan', 'menunggu'), 'menunggu'], [k('pemeriksaan', 'dipanggil'), 'dipanggil'], [k('pemeriksaan', 'dilayani'), 'diperiksa'],
             [k('resep', 'selesai'), 'menunggu_obat'], [k('kasir', 'selesai'), 'pembayaran'], [k('ditutup', 'selesai'), 'selesai'],
-            [k('menunggu_skrining', 'batal'), 'batal'], [k('ditutup', null), 'selesai'], [k('pemeriksaan', null), 'diperiksa'],
+            [k('menunggu_skrining', 'batal'), 'batal'], [k('ditutup', null), 'selesai'], [k('pemeriksaan', null), 'diperiksa'], [k('pemeriksaan', 'dilewati'), 'dilewati'],
         ];
         for (const [kunjungan, harapan] of kasus)
             expect(s.statusLayananDari(kunjungan)).toBe(harapan);

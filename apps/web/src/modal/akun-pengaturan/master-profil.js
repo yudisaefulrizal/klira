@@ -15,7 +15,7 @@ export function bukaModalMasterProfil({ jenis, baris, onTutup, onSelesai }) {
   let dicoba = false, memproses = false, aktif = true;
   const judulJenis = MASTER.jenis[jenis], modal = bukaModal1({ judul: ubah ? MASTER.judulUbah(judulJenis) : MASTER.judulTambah(judulJenis), lebar: 'modalSedang', onTutup, lindungiTutup: () => masterBerubah(awal, nilai) });
   const pesan = document.createElement('div'), form = document.createElement('form'); pesan.style.display = 'contents'; form.id = 'bentuk-master'; form.noValidate = true; Object.assign(form.style, { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: token.jarak.md, rowGap: token.jarak.md }); modal.isi.append(pesan, form);
-  const simpan = tombol(MASTER.simpan); simpan.type = 'submit'; simpan.setAttribute('form', form.id); modal.aksi.append(tombol(MASTER.batal, onTutup, 'sekunder'), simpan);
+  const simpan = tombol(MASTER.simpan); simpan.type = 'submit'; simpan.setAttribute('form', form.id); modal.aksi.append(tombol(MASTER.batal, () => modal.mintaTutup(), 'sekunder'), simpan);
   function atur(kunci, v) { nilai[kunci] = v; perbarui(); }
   for (const b of definisi) {
     const id = `master-${b.kunci}`;

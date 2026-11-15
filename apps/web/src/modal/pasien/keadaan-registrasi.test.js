@@ -1,49 +1,49 @@
 import { jest } from '@jest/globals';
-import { awalRegistrasi, BIDANG_SENSITIF_REGISTRASI, bentukRegistrasi, bisaCariDuplikat, galatRegistrasi, hapusWali, isianCariDuplikat, ringkasanRegistrasi, ubahJalur, ubahTidakCakap, } from './keadaan-registrasi.js';
+import { awalRegistrasi, BIDANG_SENSITIF_REGISTRASI, bentukRegistrasi, bisaCariDuplikat, galatRegistrasi, hapusWali, isianCariDuplikat, ubahJalur, ubahTidakCakap, } from './keadaan-registrasi.js';
 import { saringSensitif } from '../../util/draf/draf.js';
 import { awalKunjungan, bentukKunjungan, dokterPoli, galatKunjungan, keteranganAsuransi, ubahKunjungan } from './keadaan-kunjungan.js';
 const sah = (p = {}) => ({
     ...awalRegistrasi(), nama: 'Siti', nik: '3201010101900001', tanggal_lahir: '1990-05-01', ibu_kandung: 'Rina', jenis_kelamin: 'perempuan', setuju: true, ...p,
 });
 const kandidat = (alasan) => ({ id: 1, nomor_rm: '00-00-001', nama: 'Siti', tanggal_lahir: '1990-05-01', alasan });
-describe('galat registrasi per langkah', () => {
-    it('isian awal: identitas dan general consent bermasalah, langkah lain sah', () => {
+describe('galat registrasi (satu formulir)', () => {
+    it('isian awal: identitas dan general consent bermasalah', () => {
         const g = galatRegistrasi(awalRegistrasi(), 1, null);
-        expect(g.perLangkah[0]).toBeTruthy();
-        expect(g.perLangkah[4]).toBeTruthy();
-        expect([1, 2, 3].map((i) => g.perLangkah[i])).toEqual([null, null, null]);
+        expect(g.pesan.length).toBeGreaterThan(0);
         expect(g.bidang.nama).toBeTruthy();
         expect(g.bidang['persetujuan.setuju']).toBeTruthy();
     });
     it('isian lengkap sah', () => {
-        expect(galatRegistrasi(sah(), 1, null).perLangkah).toEqual(Array(6).fill(null));
+        expect(galatRegistrasi(sah(), 1, null).pesan).toEqual([]);
     });
-    it('teks persetujuan belum termuat menahan langkah consent', () => {
-        expect(galatRegistrasi(sah(), null, null).perLangkah[4]).toBeTruthy();
+    it('teks persetujuan belum termuat menahan pendaftaran dan dilaporkan paling akhir', () => {
+        const g = galatRegistrasi(sah(), null, null);
+        expect(g.bidang['persetujuan.teks_persetujuan_id']).toBeTruthy();
+        expect(g.pesan.at(-1)).toBe(g.bidang['persetujuan.teks_persetujuan_id']);
     });
-    it('jalur identitas khusus: paspor butuh nomor di langkah identitas; tanpa identitas tidak butuh NIK', () => {
+    it('jalur identitas khusus: paspor butuh nomor; tanpa identitas tidak butuh NIK', () => {
         const paspor = galatRegistrasi(sah({ jalur_identitas: 'paspor', nik: '' }), 1, null);
         expect(awalRegistrasi().jalur_identitas).toBe('nik');
-        expect(paspor.perLangkah[0]).toBeTruthy();
-        expect(paspor.perLangkah[2]).toBeNull();
         expect(paspor.bidang.nomor_paspor).toBeTruthy();
-        expect(galatRegistrasi(sah({ jalur_identitas: 'paspor', nik: '', nomor_paspor: 'A1' }), 1, null).perLangkah).toEqual(Array(6).fill(null));
-        expect(galatRegistrasi(sah({ jalur_identitas: 'tanpa_identitas', nik: '' }), 1, null).perLangkah).toEqual(Array(6).fill(null));
+        expect(galatRegistrasi(sah({ jalur_identitas: 'paspor', nik: '', nomor_paspor: 'A1' }), 1, null).pesan).toEqual([]);
+        expect(galatRegistrasi(sah({ jalur_identitas: 'tanpa_identitas', nik: '' }), 1, null).pesan).toEqual([]);
     });
-    it('tidak cakap butuh wali di langkah wali dan penandatangan wali', () => {
+    it('tidak cakap butuh wali dan penandatangan wali', () => {
         const k = ubahTidakCakap(sah(), true);
         expect(k.penandatangan).toBe('wali');
-        expect(galatRegistrasi(k, 1, null).perLangkah[2]).toBeTruthy();
+        expect(galatRegistrasi(k, 1, null).bidang.wali).toBeTruthy();
         const lengkap = { ...k, wali: [{ hubungan: 'Ibu', nama: 'Rina', kontak: '' }], wali_ke: '0' };
-        expect(galatRegistrasi(lengkap, 1, null).perLangkah).toEqual(Array(6).fill(null));
-        expect(galatRegistrasi({ ...lengkap, wali_ke: '' }, 1, null).perLangkah[4]).toBeTruthy();
+        expect(galatRegistrasi(lengkap, 1, null).pesan).toEqual([]);
+        expect(galatRegistrasi({ ...lengkap, wali_ke: '' }, 1, null).pesan.length).toBeGreaterThan(0);
     });
-    it('duplikat: NIK sama memblokir; nama-lahir-ibu butuh pernyataan berbeda', () => {
-        expect(galatRegistrasi(sah(), 1, [kandidat('nik')]).perLangkah[0]).toBeTruthy();
-        expect(galatRegistrasi(sah({ konfirmasi_duplikat: true }), 1, [kandidat('nik')]).perLangkah[0]).toBeTruthy();
-        expect(galatRegistrasi(sah(), 1, [kandidat('nama_lahir_ibu')]).perLangkah[0]).toBeTruthy();
-        expect(galatRegistrasi(sah({ konfirmasi_duplikat: true }), 1, [kandidat('nama_lahir_ibu')]).perLangkah[0]).toBeNull();
-        expect(galatRegistrasi(sah(), 1, []).perLangkah[0]).toBeNull();
+    it('duplikat: NIK sama memblokir; nama-lahir-ibu butuh pernyataan berbeda; pesannya paling atas', () => {
+        expect(galatRegistrasi(sah(), 1, [kandidat('nik')]).pesan).toHaveLength(1);
+        expect(galatRegistrasi(sah({ konfirmasi_duplikat: true }), 1, [kandidat('nik')]).pesan).toHaveLength(1);
+        expect(galatRegistrasi(sah(), 1, [kandidat('nama_lahir_ibu')]).pesan).toHaveLength(1);
+        expect(galatRegistrasi(sah({ konfirmasi_duplikat: true }), 1, [kandidat('nama_lahir_ibu')]).pesan).toEqual([]);
+        expect(galatRegistrasi(sah(), 1, []).pesan).toEqual([]);
+        const g = galatRegistrasi({ ...sah({ nama: '' }) }, 1, [kandidat('nama_lahir_ibu')]);
+        expect(g.pesan[0]).toBe('Tinjau kemungkinan data ganda: pakai pasien yang ada atau nyatakan pasien ini berbeda.');
     });
 });
 describe('bentuk registrasi dan bantuan isian', () => {
@@ -75,22 +75,11 @@ describe('bentuk registrasi dan bantuan isian', () => {
         expect(bisaCariDuplikat(sah({ nik: '3201010101900001', nama: '' }))).toBe(true);
         expect(isianCariDuplikat(sah({ nik: '12', nama: ' Siti ' }))).toEqual({ nama: 'Siti', tanggal_lahir: '1990-05-01', ibu_kandung: 'Rina' });
     });
-    it('ringkasan memuat identitas, wali, dan general consent', () => {
-        const k = { ...sah({ jalur_identitas: 'tanpa_identitas', nik: '' }), wali: [{ hubungan: 'Ibu', nama: 'Rina', kontak: '0812' }], penandatangan: 'wali', wali_ke: '0' };
-        const r = ringkasanRegistrasi(k, { id: 1, jenis: 'general', versi: 3, judul: 'GC', tujuan: 't', isi: 'i' });
-        expect(r.map((b) => b.judul)).toHaveLength(6);
-        expect(r[0].baris.find((b) => b.label === 'Status identitas')?.nilai).toBe('Identitas sementara');
-        expect(r[3].baris[0]).toEqual({ label: 'Ibu', nilai: 'Rina (0812)' });
-        expect(r[5].baris).toEqual(expect.arrayContaining([{ label: 'Versi teks 3', nilai: 'GC' }, { label: 'Penandatangan', nilai: 'Rina' }]));
-    });
-    it('langkah Penjamin: nomor kartu JKN, nama asuransi, dan nomor polis dikirim dan diringkas; galatnya di langkah 3', () => {
+    it('penjamin: nomor kartu JKN, keterangan asuransi, dan nomor polis dikirim; polis terlalu panjang ditandai', () => {
         const k = sah({ jkn_nomor_kartu: '0001', asuransi_nama: 'Asuransi X', asuransi_nomor_polis: 'POL-1' });
         expect(bentukRegistrasi(k, 1)).toMatchObject({ jkn_nomor_kartu: '0001', asuransi_nama: 'Asuransi X', asuransi_nomor_polis: 'POL-1' });
         expect(Object.keys(bentukRegistrasi(k, 1)).filter((b) => b.startsWith('jkn_'))).toEqual(['jkn_nomor_kartu']);
-        const r = ringkasanRegistrasi(k, { id: 1, jenis: 'general', versi: 3, judul: 'GC', tujuan: 't', isi: 'i' });
-        const penjamin = r.find((b) => b.judul === 'Penjamin');
-        expect(penjamin?.baris).toEqual([{ label: 'Nomor kartu JKN', nilai: '0001' }, { label: 'Nama asuransi', nilai: 'Asuransi X' }, { label: 'Nomor polis', nilai: 'POL-1' }]);
-        expect(galatRegistrasi(sah({ asuransi_nomor_polis: 'x'.repeat(51) }), 1, []).perLangkah[3]).toBeTruthy();
+        expect(galatRegistrasi(sah({ asuransi_nomor_polis: 'x'.repeat(51) }), 1, []).bidang.asuransi_nomor_polis).toBeTruthy();
     });
 });
 describe('pendaftaran kunjungan', () => {

@@ -2,6 +2,8 @@ import { tanggalWib } from '@klira/shared';
 import { panggilApi } from '../../api-klien/klien.js';
 import { grafikPenumpukan } from './grafik-penumpukan.js';
 import { teksHtml as aman } from '../../util/teks-html.js';
+import { gantiInputTanggal } from '../../komponen/ui/tanggal-tiga.js';
+import { tanggalLengkapSah } from '../../util/tanggal-tiga.js';
 const angka = n => n === null ? '—' : new Intl.NumberFormat('id-ID', { maximumFractionDigits: 1 }).format(n);
 const durasi = n => n === null ? 'Belum tersedia' : `${angka(n)} menit`;
 
@@ -10,6 +12,7 @@ export function pasangStatistik(wadah) {
   let dari = hariIni, sampai = hariIni, poli = '', pilih = '', data = null, galat = '', memuat = true;
   let aktif = true, versi = 0, timer;
   wadah.innerHTML = `<div class="statistik"><header class="stat-kepala"><div><h1>Analisis Alur Pelayanan</h1><p>Temukan hambatan pada setiap tahap pelayanan rawat jalan.</p></div><button data-perbarui disabled>Memuat…</button></header><section class="stat-filter" aria-label="Filter statistik"><label>Dari<input aria-label="Dari" type="date" name="dari"></label><label>Sampai<input aria-label="Sampai" type="date" name="sampai"></label><label>Poli<select aria-label="Poli" name="poli"><option value="">Semua poli</option></select></label><button data-rentang="1">Hari ini</button><button data-rentang="7">7 hari</button><button data-rentang="30">30 hari</button></section><div data-pesan style="display:contents"></div><div data-statistik style="display:contents"></div></div>`;
+  gantiInputTanggal(wadah); // tanggal diketik manual (tanggal, bulan, tahun)
   const cari = selector => wadah.querySelector(selector);
   function filter() {
     const awal = cari('[name=dari]'), akhir = cari('[name=sampai]');
@@ -69,9 +72,13 @@ export function pasangStatistik(wadah) {
     void ambil(); timer = setInterval(() => void ambil(), 60000);
   }
   function ubah(e) {
-    if ((e.type === 'input' && e.target.tagName !== 'INPUT') || (e.type === 'change' && e.target.tagName === 'INPUT')) return;
-    if (e.target.name === 'dari') dari = e.target.value;
-    else if (e.target.name === 'sampai') sampai = e.target.value;
+    const tanggal = e.target.dataset?.tanggalTiga !== undefined;
+    // Tanggal tiga kolom hanya dipakai saat pengetikan selesai (`tanggal-selesai`), dan hanya bila tanggalnya lengkap dan sah.
+    if (tanggal ? e.type !== 'tanggal-selesai' : (e.type === 'input' && e.target.tagName !== 'INPUT') || (e.type === 'change' && e.target.tagName === 'INPUT')) return;
+    if (e.target.name === 'dari' || e.target.name === 'sampai') {
+      if (!tanggalLengkapSah(e.target.value)) return;
+      if (e.target.name === 'dari') dari = e.target.value; else sampai = e.target.value;
+    }
     else if (e.target.name === 'poli') poli = e.target.value;
     else return;
     filter(); mulaiMuat();
@@ -82,6 +89,6 @@ export function pasangStatistik(wadah) {
     else if (e.target.closest('[data-rentang]')) { sampai = hariIni; dari = tanggalWib(new Date(Date.now() - (Number(e.target.closest('[data-rentang]').dataset.rentang) - 1) * 86400000)); filter(); mulaiMuat(); }
     else if (e.target.closest('[data-pilih]')) { pilih = e.target.closest('[data-pilih]').dataset.pilih; tindakLanjut(); }
   }
-  wadah.addEventListener('input', ubah); wadah.addEventListener('change', ubah); wadah.addEventListener('click', klik); filter(); mulaiMuat();
-  return () => { aktif = false; versi++; clearInterval(timer); wadah.removeEventListener('input', ubah); wadah.removeEventListener('change', ubah); wadah.removeEventListener('click', klik); wadah.replaceChildren(); };
+  wadah.addEventListener('input', ubah); wadah.addEventListener('change', ubah); wadah.addEventListener('tanggal-selesai', ubah); wadah.addEventListener('click', klik); filter(); mulaiMuat();
+  return () => { aktif = false; versi++; clearInterval(timer); wadah.removeEventListener('input', ubah); wadah.removeEventListener('change', ubah); wadah.removeEventListener('tanggal-selesai', ubah); wadah.removeEventListener('click', klik); wadah.replaceChildren(); };
 }

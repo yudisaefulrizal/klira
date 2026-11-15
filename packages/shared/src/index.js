@@ -16,3 +16,4 @@ export * from './layanan/layar-panggilan.js';
 export * from './layanan/website-klinik.js';
 export * from './umum/harga.js';
 export { AKUN_DEMO } from './umum/akun-demo.js';
+export * from './layanan/katalog-endpoint.js';

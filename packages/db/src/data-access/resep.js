@@ -289,3 +289,9 @@ export async function kunciResepKunjungan(kunjunganId, fasyankesId, koneksi = po
 export async function kunciResep(resepId, fasyankesId, koneksi = pool) {
     return baca("SELECT id, kunjungan_id, status FROM resep WHERE id = ? AND fasyankes_id = ? FOR UPDATE", [resepId, fasyankesId], koneksi);
 }
+
+/** Ganti catatan seluruh resep (kolom `teks`) saat dokter mengubah resepnya. */
+export async function ubahCatatanUntukSimpanResep(id, fasyankes_id, teks, koneksi = pool) {
+    const hasil = await tulis("UPDATE `resep` SET `teks` = ? WHERE `id` = ? AND `fasyankes_id` = ?", [teks, id, fasyankes_id], koneksi);
+    return { count: hasil.affectedRows };
+}

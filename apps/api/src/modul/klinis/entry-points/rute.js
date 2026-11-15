@@ -7,7 +7,7 @@ import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
 const idSumber = z.object({ id: z.coerce.number().int().positive(), sumber_id: z.coerce.number().int().positive() });
 const idAnak = z.object({ id: z.coerce.number().int().positive(), anak_id: z.coerce.number().int().positive() });
-const queryRiwayat = z.object({ kecuali: z.coerce.number().int().positive().optional() });
+const queryRiwayat = z.object({ kecuali: z.coerce.number().int().positive().optional(), batas: z.coerce.number().int().min(1).max(200).default(20) });
 const queryTindakanKlinik = z.object({ cari: z.string().trim().max(100).default(''), batas: z.coerce.number().int().min(1).max(50).default(20) });
 /**
  * Rute klinis (3.3, 4.2): catatan per bagian (izin `klinis`; lihat boleh juga lewat `rekam-medis`), riwayat, salinan, terminologi, favorit,
@@ -95,7 +95,7 @@ export function buatRuteKlinis(layananAkses, layananIzin, layanan) {
             return tidakAda(res);
         if (!q.success)
             return galatValidasi(res, q.error);
-        kirimHasil(res, await layanan.riwayat(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req)));
+        kirimHasil(res, await layanan.riwayat(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req), q.data.batas));
     }));
     // Kamus terminologi adalah referensi tanpa data pasien: juga dibuka pengelola master (form tarif tindakan memilih kode ICD-9-CM).
     const lihatTerminologi = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['master', 'input'], ['master', 'perbaikan']);

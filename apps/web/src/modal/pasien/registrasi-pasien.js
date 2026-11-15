@@ -1,31 +1,69 @@
 import { GALAT, MODAL, REGISTRASI } from '@klira/shared';
+import { ringkasStatusIhs } from '../../halaman/satusehat/keadaan-satusehat.js';
 import { cekDuplikatPasien, registrasiPasien, teksGeneralConsent } from '../../api-klien/pasien.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
-import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
+import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { adaPerubahan, adaptorLokal, kunciDraf } from '../../util/draf/draf.js';
 import { buatDrafOtomatis } from '../../util/draf/draf-otomatis.js';
-import { batasi, langkahBermasalah } from '../../util/langkah.js';
-import { awalRegistrasi, BIDANG_KUNCI_DUPLIKAT, bentukRegistrasi, bisaCariDuplikat, galatRegistrasi, isianCariDuplikat, JUMLAH_LANGKAH_REGISTRASI, BIDANG_SENSITIF_REGISTRASI } from './keadaan-registrasi.js';
-import { KonteksPasien, LangkahConsent, LangkahIdentitas, LangkahPenjamin, LangkahRingkasan, LangkahSosial, LangkahWali } from './langkah-registrasi.js';
+import { awalRegistrasi, BIDANG_KUNCI_DUPLIKAT, bentukRegistrasi, bisaCariDuplikat, galatRegistrasi, isianCariDuplikat, BIDANG_SENSITIF_REGISTRASI } from './keadaan-registrasi.js';
+import { FormRegistrasi, KonteksPasien } from './langkah-registrasi.js';
 export const ALUR_REGISTRASI_PASIEN = 'registrasi-pasien';
+/**
+ * Registrasi pasien baru: satu formulir dua kolom (identitas, data sosial, alamat, penjamin, wali/keluarga) dengan general consent di bawahnya,
+ * tanpa langkah dan tanpa ringkasan. Draf otomatis tanpa data sensitif; pencarian data ganda berjalan saat isian kunci berubah.
+ */
 export function bukaRegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan }) {
   const awal = awalRegistrasi(), adaptor = adaptorLokal(kunciDraf(ALUR_REGISTRASI_PASIEN, penggunaSaatIni().pengguna?.id), { sensitif: BIDANG_SENSITIF_REGISTRASI });
-  let keadaan = { ...awal }, indeks = 0, dikunjungi = [0], tampilGalat = false, galat = null, memproses = false, hasil = null, kandidat = null, mencari = false, galatCari = null, teks = null, memuatTeks = true, galatTeks = null, drafDipulihkan = false, aktif = true, timer, versi = 0, modal, enfant;
-  const draf = buatDrafOtomatis({ adaptor, nilai: keadaan, awal, langkah: indeks, aktif: false }); const p = draf.keadaan.pulihan; if (p) { keadaan = { ...awal, ...p.nilai, jalur_identitas: 'nik', nomor_paspor: '', nomor_kitas: '' }; drafDipulihkan = true; }
+  let keadaan = { ...awal }, tampilGalat = false, galat = null, memproses = false, hasil = null, kandidat = null, mencari = false, galatCari = null, teks = null, memuatTeks = true, galatTeks = null, drafDipulihkan = false, aktif = true, timer, versi = 0, enfant;
+  // Isian tambah wali yang belum ditambahkan bertahan selama formulir dilukis ulang.
+  const tampungWali = { hubungan: '', nama: '', kontak: '', coba: false };
+  const draf = buatDrafOtomatis({ adaptor, nilai: keadaan, awal, langkah: 0, aktif: false }); const p = draf.keadaan.pulihan; if (p) { keadaan = { ...awal, ...p.nilai, jalur_identitas: 'nik', nomor_paspor: '', nomor_kitas: '' }; drafDipulihkan = true; }
   function bersih() { aktif = false; versi++; clearTimeout(timer); enfant?.tutup?.(); draf.tutup(); modal.tutup(); }
   function tutup() { bersih(); (hasil ? onSelesai : onTutup)(); }
-  function autosave() { draf.perbarui({ adaptor, nilai: keadaan, awal, langkah: indeks, aktif: !hasil }); }
+  const modal = bukaModal1({ lebar: 'modalBesar', judul: REGISTRASI.judul, lindungiTutup: () => !hasil && adaPerubahan(awal, keadaan), onTutup: tutup });
+  const status = document.createElement('div'), wadah = document.createElement('div'), simpan = tombol(REGISTRASI.buat, () => void kirim());
+  status.style.display = 'contents'; wadah.style.display = 'contents'; modal.isi.append(status, wadah); modal.aksi.append(simpan);
+  function autosave() { draf.perbarui({ adaptor, nilai: keadaan, awal, langkah: 0, aktif: !hasil }); }
   function g() { return galatRegistrasi(keadaan, teks?.id ?? null, kandidat); }
-  function update() { modal?.perbarui({ galat: galat ?? '', nonaktif: memproses, labelKirim: memproses ? REGISTRASI.membuat : REGISTRASI.buat }); }
-  function paint() { if (!modal || !aktif || hasil) return; const focus = document.activeElement, id = focus?.id, start = focus?.selectionStart, end = focus?.selectionEnd; modal.ke(indeks, { fokus: false, beritahu: false }); update(); if (id) { const f = document.getElementById(id); f?.focus(); if (start != null) try { f.setSelectionRange(start, end); } catch {} } }
+  function catatan() { const el = peringatan(MODAL.drafDipulihkan, 'biru'); el.append(' ', tombol(MODAL.buangDraf, () => { draf.buang(); keadaan = awalRegistrasi(); kandidat = null; drafDipulihkan = false; cariDuplikat(); autosave(); paint(); }, 'teks')); return el; }
+  function update() {
+    status.replaceChildren(...(drafDipulihkan ? [catatan()] : []), ...(galat ? [peringatan(galat)] : []));
+    modal.konteks.replaceChildren(KonteksPasien({ keadaan }));
+    simpan.disabled = memproses; simpan.textContent = memproses ? REGISTRASI.membuat : REGISTRASI.buat;
+  }
+  function paint() {
+    if (!aktif || hasil) return;
+    const focus = document.activeElement, id = focus?.id, start = focus?.selectionStart, end = focus?.selectionEnd;
+    enfant?.tutup?.();
+    enfant = FormRegistrasi({ keadaan, ubah, galat: g().bidang, tampilGalat, kandidat, mencari, galatCari, onCari: cariDuplikat, teks, memuat: memuatTeks, galatMuat: galatTeks, tampung: tampungWali, onPakai(c) { draf.hapus(); bersih(); onDaftarkanKunjungan({ id: c.id, nama: c.nama, nomor_rm: c.nomor_rm }); } });
+    wadah.replaceChildren(enfant); update();
+    if (id) { const f = document.getElementById(id); f?.focus(); if (start != null) try { f.setSelectionRange(start, end); } catch { /* tipe isian tanpa seleksi */ } }
+  }
   function cariDuplikat() { clearTimeout(timer); const saat = ++versi; kandidat = null; galatCari = null; mencari = bisaCariDuplikat(keadaan); if (!mencari) { paint(); return; } const masukan = isianCariDuplikat(keadaan); timer = setTimeout(async () => { try { const h = await cekDuplikatPasien(masukan); if (aktif && saat === versi) kandidat = h; } catch (e) { if (aktif && saat === versi) galatCari = e instanceof GalatApi ? e.message : REGISTRASI.duplikatGagal; } finally { if (aktif && saat === versi) { mencari = false; paint(); } } }, 500); }
   function ubah(p) { keadaan = { ...keadaan, ...p }; if (BIDANG_KUNCI_DUPLIKAT.some(b => b in p)) { if (keadaan.konfirmasi_duplikat && !('konfirmasi_duplikat' in p)) keadaan = { ...keadaan, konfirmasi_duplikat: false }; cariDuplikat(); } autosave(); paint(); }
-  function isi(n) { enfant?.tutup?.(); const dasar = { keadaan, ubah, galat: g().bidang, tampilGalat }; enfant = n === 0 ? LangkahIdentitas({ ...dasar, kandidat, mencari, galatCari, onCari: cariDuplikat, onPakai(c) { draf.hapus(); bersih(); onDaftarkanKunjungan({ id: c.id, nama: c.nama, nomor_rm: c.nomor_rm }); } }) : n === 1 ? LangkahSosial(dasar) : n === 2 ? LangkahWali(dasar) : n === 3 ? LangkahPenjamin(dasar) : n === 4 ? LangkahConsent({ ...dasar, teks, memuat: memuatTeks, galatMuat: galatTeks }) : LangkahRingkasan({ keadaan, teks }); return enfant; }
-  function catatan() { if (!drafDipulihkan) return []; const el = peringatan(MODAL.drafDipulihkan, 'biru'); el.append(tombol(MODAL.buangDraf, () => { draf.buang(); keadaan = awalRegistrasi(); indeks = 0; dikunjungi = [0]; kandidat = null; drafDipulihkan = false; cariDuplikat(); autosave(); paint(); }, 'teks')); return el; }
-  modal = bukaModalBertahap({ judul: REGISTRASI.judul, langkah: ['identitas', 'sosial', 'wali', 'penjamin', 'consent', 'ringkasan'].map((id, n) => ({ id, judul: REGISTRASI.langkah[id], isi: () => isi(n), selesai: () => n < JUMLAH_LANGKAH_REGISTRASI - 1 && dikunjungi.includes(n) && indeks !== n && !g().perLangkah[n] })), onIndeks(n) { indeks = batasi(n, JUMLAH_LANGKAH_REGISTRASI); if (!dikunjungi.includes(indeks)) dikunjungi.push(indeks); galat = null; autosave(); update(); }, konteks: () => KonteksPasien({ keadaan }), catatan, onTutup: tutup, lindungiTutup: () => adaPerubahan(awal, keadaan), onLanjut(dari) { if (dari === 0 && bisaCariDuplikat(keadaan) && (mencari || kandidat === null)) { galat = galatCari ?? REGISTRASI.duplikatMencari; update(); return false; } if (g().perLangkah[dari]) { tampilGalat = true; galat = g().perLangkah[dari]; paint(); return false; } galat = null; return true; }, labelKirim: REGISTRASI.buat, onKirim: kirim });
-  async function kirim() { if (memproses) return; if (bisaCariDuplikat(keadaan) && (mencari || kandidat === null)) { galat = galatCari ?? REGISTRASI.duplikatMencari; indeks = 0; paint(); return; } const masalah = langkahBermasalah(g().perLangkah); if (masalah >= 0) { tampilGalat = true; galat = g().perLangkah[masalah]; indeks = masalah; paint(); return; } galat = null; memproses = true; update(); try { const h = await registrasiPasien(bentukRegistrasi(keadaan, teks?.id ?? null)); draf.hapus(); if (!aktif) return; hasil = h; enfant?.tutup?.(); const el = document.createElement('div'), p = document.createElement('p'), label = document.createElement('span'), rm = document.createElement('strong'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); p.textContent = REGISTRASI.berhasilPesan(h.nama); label.textContent = REGISTRASI.nomorRm; label.style.color = token.warna.teksRedup; rm.textContent = h.nomor_rm; rm.style.fontSize = token.huruf.ukuran.judul; rm.dataset.testid = 'nomor-rm-baru'; el.append(p, label, rm); modal.hasil({ judul: REGISTRASI.berhasilJudul, isi: el, aksi: [tombol(REGISTRASI.selesai, tutup, 'sekunder'), tombol(REGISTRASI.daftarkanKunjungan, () => { bersih(); onDaftarkanKunjungan({ id: h.id, nama: h.nama, nomor_rm: h.nomor_rm }); })] }); } catch (e) { if (aktif) { galat = e instanceof GalatApi ? e.message : GALAT.umum; if (e instanceof GalatApi && e.status === 409) { indeks = 0; cariDuplikat(); } paint(); } } finally { memproses = false; if (aktif) update(); } }
-  autosave(); cariDuplikat(); update(); teksGeneralConsent().then(t => { if (aktif) teks = t; }).catch(e => { if (aktif) galatTeks = e instanceof GalatApi ? e.message : REGISTRASI.consentGagal; }).finally(() => { if (aktif) { memuatTeks = false; paint(); } }); return { tutup: bersih };
+  const fokusSalah = () => wadah.querySelector('[aria-invalid="true"]')?.focus();
+  async function kirim() {
+    if (memproses) return;
+    if (bisaCariDuplikat(keadaan) && (mencari || kandidat === null)) { galat = galatCari ?? REGISTRASI.duplikatMencari; paint(); return; }
+    const masalah = g().pesan;
+    if (masalah.length) { tampilGalat = true; galat = masalah[0]; paint(); fokusSalah(); return; }
+    galat = null; memproses = true; update();
+    try {
+      const h = await registrasiPasien(bentukRegistrasi(keadaan, teks?.id ?? null)); draf.hapus(); if (!aktif) return;
+      hasil = h; enfant?.tutup?.();
+      const el = document.createElement('div'), pesan = document.createElement('p'), label = document.createElement('span'), rm = document.createElement('strong');
+      Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); pesan.textContent = REGISTRASI.berhasilPesan(h.nama); label.textContent = REGISTRASI.nomorRm; label.style.color = token.warna.teksRedup; rm.textContent = h.nomor_rm; rm.style.fontSize = token.huruf.ukuran.judul; rm.dataset.testid = 'nomor-rm-baru'; el.append(pesan, label, rm);
+      const ihs = ringkasStatusIhs(h.satusehat); if (ihs) el.append(peringatan(ihs.teks, ihs.nada));
+      modal.judul.textContent = REGISTRASI.berhasilJudul; modal.setLebar('modalSedang'); modal.konteks.replaceChildren(); modal.isi.replaceChildren(el);
+      modal.aksi.replaceChildren(tombol(REGISTRASI.selesai, tutup, 'sekunder'), tombol(REGISTRASI.daftarkanKunjungan, () => { bersih(); onDaftarkanKunjungan({ id: h.id, nama: h.nama, nomor_rm: h.nomor_rm }); }));
+    } catch (e) {
+      if (aktif) { galat = e instanceof GalatApi ? e.message : GALAT.umum; if (e instanceof GalatApi && e.status === 409) cariDuplikat(); paint(); }
+    } finally { memproses = false; if (aktif && !hasil) update(); }
+  }
+  modal.fokus(); autosave(); cariDuplikat(); paint();
+  teksGeneralConsent().then(t => { if (aktif) teks = t; }).catch(e => { if (aktif) galatTeks = e instanceof GalatApi ? e.message : REGISTRASI.consentGagal; }).finally(() => { if (aktif) { memuatTeks = false; paint(); } });
+  return { tutup: bersih };
 }

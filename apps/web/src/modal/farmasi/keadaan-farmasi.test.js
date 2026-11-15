@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { FARMASI } from '@klira/shared';
-import { adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, isiDariObat, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi.js';
+import { perbaruiPlan, resepDariServer, teksPlanResep, adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, isiDariObat, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi.js';
 const kfa = { kode: '93000001', nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, satuan: 'tablet', status: 'aktif', lokal: false };
 describe('master obat', () => {
     it('memilih KFA mengisi nama dan satuan awal tanpa menimpa isian klinik', () => {
@@ -39,13 +39,45 @@ describe('mutasi stok', () => {
         expect(bentukMutasi({ ...k, obatId: '3' }).master_obat_id).toBe(3);
     });
 });
-describe('resep dokter (teks bebas)', () => {
-    it('teks wajib, dirapikan, maksimal 2000 karakter', () => {
-        expect(galatResep(awalResep()).teks).toBeTruthy();
-        expect(galatResep('   ').teks).toBeTruthy();
-        expect(galatResep('R/ Parasetamol 500 mg tab ½, CTM 4 mg tab ½, m.f. pulv. dtd No. X, s 3 dd pulv I')).toEqual({});
-        expect(galatResep('x'.repeat(2001)).teks).toBeTruthy();
-        expect(bentukResep('R/ Amoxicillin')).toEqual({ teks: 'R/ Amoxicillin' });
+describe('resep dokter (obat satu per satu + catatan)', () => {
+    const baris = (p = {}) => ({ master_obat_id: '1', jumlah: '10', aturan_pakai: '3 x 1 sesudah makan', bentuk: '', rute: '', ...p });
+    it('awal: satu baris obat kosong dengan aturan pakai ditulis dokter, tanpa catatan', () => {
+        expect(awalResep()).toEqual({ baris: [{ master_obat_id: '', jumlah: '1', aturan_pakai: '', bentuk: '', rute: 'Oral' }], catatan: '' });
+        expect(adaIsianResep(awalResep())).toBe(false);
+    });
+    it('obat wajib dipilih, aturan pakai wajib, catatan maksimal 1000 karakter dan boleh kosong', () => {
+        expect(galatResep(awalResep())['item.0.master_obat_id']).toBeTruthy();
+        expect(galatResep({ baris: [baris({ aturan_pakai: ' ' })], catatan: '' })['item.0.aturan_pakai']).toBeTruthy();
+        expect(galatResep({ baris: [baris()], catatan: '' })).toEqual({});
+        expect(galatResep({ baris: [baris()], catatan: 'x'.repeat(1001) }).catatan).toBeTruthy();
+        expect(galatResep({ baris: [], catatan: '' }).item).toBeTruthy();
+    });
+    it('bentuk kiriman: item dan catatan; obat sama boleh lebih dari sekali', () => {
+        const r = { baris: [baris(), baris({ aturan_pakai: 'racikan' })], catatan: 'Dibuat puyer' };
+        expect(bentukResep(r)).toEqual({ item: [{ master_obat_id: 1, jumlah: '10', aturan_pakai: '3 x 1 sesudah makan', bentuk: null, rute: null }, { master_obat_id: 1, jumlah: '10', aturan_pakai: 'racikan', bentuk: null, rute: null }], catatan: 'Dibuat puyer' });
+        expect(adaIsianResep(r)).toBe(true);
+    });
+    it('teks untuk Plan: satu baris per obat lalu catatan', () => {
+        const obat = [{ id: 1, nama_tampil: 'Parasetamol 500 mg', satuan: 'tablet' }, { id: 2, nama_tampil: 'Amoksisilin 500 mg', satuan: 'kapsul' }];
+        const r = { baris: [baris(), baris({ master_obat_id: '2', jumlah: '15', aturan_pakai: '3 x 1' }), baris({ master_obat_id: '' })], catatan: ' Parasetamol dibuat puyer ' };
+        expect(teksPlanResep(r, obat)).toBe('R/ Parasetamol 500 mg No. 10 tablet — 3 x 1 sesudah makan\nR/ Amoksisilin 500 mg No. 15 kapsul — 3 x 1\nCatatan: Parasetamol dibuat puyer');
+    });
+});
+describe('resep tersimpan dan Plan', () => {
+    it('isian dari resep tersimpan: item menjadi baris, catatan dari server; resep tanpa item mendapat satu baris kosong', () => {
+        const r = resepDariServer({ item: [{ master_obat_id: 1, jumlah: 10, aturan_pakai: '3 x 1', bentuk: 'Tablet', rute: 'Oral' }], catatan: 'Dibuat puyer' });
+        expect(r).toEqual({ baris: [{ master_obat_id: '1', jumlah: '10', aturan_pakai: '3 x 1', bentuk: 'Tablet', rute: 'Oral' }], catatan: 'Dibuat puyer' });
+        expect(resepDariServer({ item: [], catatan: '' }).baris).toHaveLength(1);
+    });
+    it('Plan: blok resep lama diganti blok baru; bila tidak ditemukan ditambahkan; terlalu panjang -> null', () => {
+        expect(perbaruiPlan('', null, 'Resep:\nA', 100)).toBe('Resep:\nA');
+        expect(perbaruiPlan('Istirahat cukup', null, 'Resep:\nA', 100)).toBe('Istirahat cukup\n\nResep:\nA');
+        expect(perbaruiPlan('Istirahat cukup\n\nResep:\nA\n\nKontrol 3 hari', 'Resep:\nA', 'Resep:\nB', 100)).toBe('Istirahat cukup\n\nResep:\nB\n\nKontrol 3 hari');
+        // blok lama sudah diketik ulang dokter: blok baru ditambahkan di akhir
+        expect(perbaruiPlan('Resep: diubah dokter', 'Resep:\nA', 'Resep:\nB', 100)).toBe('Resep: diubah dokter\n\nResep:\nB');
+        expect(perbaruiPlan('x'.repeat(95), null, 'Resep:\nA', 100)).toBeNull();
+        // karakter khusus ($&) pada blok baru tidak ditafsirkan sebagai pola ganti
+        expect(perbaruiPlan('Resep:\nA', 'Resep:\nA', 'Resep:\n$& 5', 100)).toBe('Resep:\n$& 5');
     });
 });
 describe('item resep (apoteker)', () => {
@@ -85,11 +117,6 @@ describe('telaah', () => {
         expect(galatTelaah({ ...k, catatan: 'cek alergi' })).toEqual({});
         expect(galatTelaah({ ...k, klinis: true })).toEqual({});
     });
-});
-test('resep awal dan teks berisi spasi tidak diajukan', () => {
-    expect(adaIsianResep(awalResep())).toBe(false);
-    expect(adaIsianResep('  \n ')).toBe(false);
-    expect(adaIsianResep('R/ Parasetamol')).toBe(true);
 });
 describe('rute pemberian', () => {
     it('opsi rute: kosong, daftar baku, dan nilai lama di luar daftar tetap muncul', () => {

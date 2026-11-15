@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { BAGIAN_KLINIS, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
-import { barisPemeriksaanFisik, keadaanAwalForm, langkahDraf, bagianLangkah, VERSI_DRAF, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian, hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan, pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, syaratSelesaiTerpenuhi, tambahDiagnosis, tambahTindakan, kunciItemTindakan, ubahTindakan, } from './keadaan-pemeriksaan.js';
+import { barisPemeriksaanFisik, keadaanAwalForm, langkahDraf, bagianLangkah, VERSI_DRAF, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian, hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan, pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, tambahDiagnosis, tambahTindakan, kunciItemTindakan, ubahTindakan, } from './keadaan-pemeriksaan.js';
 const bagianKosongServer = () => Object.fromEntries(BAGIAN_KLINIS.map((b) => [b, { bagian: b, isi: null, pengesahan: null, verifikasi: 'belum_disahkan' }]));
 const sah = { versi: 1, pengguna_id: 1, pengguna_nama: 'Dr', jenis_akun: 'Dokter', waktu: '2026-10-25T00:00:00Z', hash: 'h' };
 const sahkan = (b, bagian, isi) => {
@@ -67,7 +67,7 @@ describe('perubahan, validasi, dan rencana simpan', () => {
         k.anamnesis.keluhan_utama = '  ';
         expect(galatBagian('anamnesis', k)).toMatch(/Wajib/);
     });
-    it('rencana simpan mengikuti urutan langkah, alasan hanya bila ada bagian yang sudah disahkan, syarat selesai', () => {
+    it('rencana simpan mengikuti urutan langkah, alasan hanya bila ada bagian yang sudah disahkan', () => {
         const k = awalKeadaan();
         k.anamnesis.keluhan_utama = 'Batuk';
         k.tanda_vital.nadi = '82';
@@ -76,8 +76,6 @@ describe('perubahan, validasi, dan rencana simpan', () => {
         expect(r.map((x) => x.bagian)).toEqual(['anamnesis', 'tanda_vital']);
         expect(perluAlasan(r, tak)).toBe(false);
         expect(perluAlasan(r, { ...tak, tanda_vital: true })).toBe(true);
-        expect(syaratSelesaiTerpenuhi(tak, r)).toBe(false);
-        expect(syaratSelesaiTerpenuhi({ ...tak, diagnosis: true, tindak_lanjut: true }, r)).toBe(true);
         // skrining hanya menyimpan tanda vital dan keperawatan
         expect(rencanaSimpan('skrining', k, server, tak).map((x) => x.bagian)).toEqual(['tanda_vital']);
     });
@@ -269,7 +267,6 @@ describe('default keadaan baik dan draf', () => {
         expect(r.map((x) => x.bagian)).toEqual(['kie', 'obat_poli']);
         expect(perluAlasan(r, disahkanDari(b))).toBe(true);
         expect(galatBagian('diagnosis_banding', { ...k, diagnosis_banding: 'x'.repeat(1001) })).not.toBeNull();
-        expect(syaratSelesaiTerpenuhi({ ...disahkanDari(b), anamnesis: true, diagnosis: true, tindak_lanjut: true }, [])).toBe(true);
     });
 });
 describe('draf order lab bersama pemeriksaan', () => {

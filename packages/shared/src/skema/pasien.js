@@ -94,6 +94,8 @@ export const cekDuplikatMasukan = z.object({
 /** Filter Daftar pasien (query string): pencarian nama/nomor RM/NIK, tahap layanan, paginasi. */
 export const filterPasien = z.object({
     untuk_kunjungan: z.enum(['true']).optional(),
+    /** Semua pasien (urut nama) tanpa kata pencarian, bukan hanya yang berkunjung pada tanggal itu. */
+    semua: z.enum(['true']).optional(),
     tanggal: z.preprocess(kosongJadiTiada, z.iso.date().optional()),
     cari: z.preprocess(kosongJadiTiada, z.string().trim().max(100).optional()),
     tahap: z.preprocess(kosongJadiTiada, z.enum(NILAI_TAHAP_FILTER).default('semua')),

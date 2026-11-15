@@ -40,17 +40,35 @@ export function buatLayananFarmasi({ repo, audit }) {
             await catat(p, 'input', 'mutasi_stok', h.stok.id, `${m.jenis} batch ${m.batch}, stok sekarang ${h.stok.jumlah}${m.alasan ? ` (${m.alasan})` : ''}`, alamat);
             return { ok: true, data: h.stok };
         },
-        /** Resep dari dokter berupa teks bebas (P3): tanpa item dan tanpa item tagihan; item obat dan biayanya diisi apoteker saat telaah. */
-        async buatResep(p, kunjunganId, m, alamat) {
+        /**
+         * Satu resep per kunjungan: dokter memilih obat (jumlah dan aturan pakai) dengan catatan seluruh resep. Dibuat bila belum ada, selain itu diganti
+         * selama pemeriksaan belum diselesaikan dan resep belum ditelaah. Item tagihan obat dibuat (atau dibuat ulang) saat disimpan.
+         */
+        async simpanResep(p, kunjunganId, m, alamat) {
             const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
             if (!k)
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
             if (k.tahap_layanan === 'ditutup')
                 return gagal('konflik', G.kunjunganDitutup);
-            const { resepId, tagihan } = await repo.buatResep({ fasyankesId: p.fasyankes_id, kunjungan: k, dpjpId: p.id, oleh: p.id, teks: m.teks.trim() });
+            // Resep masih bisa dibuat atau diubah dokter sampai diteruskan ke kasir; resep yang sudah ditelaah apoteker ditolak oleh repositori.
+            if (!['menunggu_skrining', 'pemeriksaan', 'resep'].includes(k.tahap_layanan))
+                return gagal('konflik', G.resepTerkunciPemeriksaan);
+            const item = m.item.map((i) => ({ master_obat_id: i.master_obat_id, aturan_pakai: i.aturan_pakai.trim(), bentuk: i.bentuk?.trim() || null, rute: i.rute?.trim() || null, jumlah: Number(i.jumlah) }));
+            const ids = [...new Set(item.map((i) => i.master_obat_id))];
+            const obat = await repo.obatAktifDari(p.fasyankes_id, ids);
+            if (obat.length !== ids.length)
+                return gagal('tidak_valid', G.obatTidakAda, 'item');
+            // Rute bawaan dari master obat bila dokter tidak menyebutkannya.
+            const lengkap = item.map((i) => ({ ...i, rute: i.rute ?? obat.find((o) => o.id === i.master_obat_id)?.rute ?? null }));
+            const hasil = await repo.simpanResep({ fasyankesId: p.fasyankes_id, kunjungan: k, dpjpId: p.id, oleh: p.id, catatan: m.catatan?.trim() ?? '', item: lengkap, obat });
+            if (hasil === 'tagihan_terkunci')
+                return gagal('konflik', G.itemTerkunci, 'item');
+            if (hasil === 'resep_terkunci')
+                return gagal('konflik', G.resepTerkunciTelaah);
+            const { resepId, diubah, tagihan } = hasil;
             const resep = (await repo.resep(p.fasyankes_id, resepId));
-            await catat(p, 'input', 'resep', resepId, `Resep ${resep.nomor_resep} (teks dokter) untuk kunjungan ${kunjunganId}`, alamat);
-            return { ok: true, data: { resep, tagihan } };
+            await catat(p, diubah ? 'perbaikan' : 'input', 'resep', resepId, `Resep ${resep.nomor_resep} ${diubah ? 'diubah' : 'dibuat'} (${item.length} item obat) untuk kunjungan ${kunjunganId}`, alamat);
+            return { ok: true, data: { resep, tagihan, diubah } };
         },
         async resepKunjungan(p, kunjunganId, alamat) {
             if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))

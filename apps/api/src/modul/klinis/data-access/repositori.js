@@ -1,7 +1,7 @@
 import * as db from '@klira/db';
 import { cariIcd, kamusIcd, sistemIcd } from './terminologi-icd.js';
 import { mulaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
-import { alergiTercatat, PEMERIKSAAN_BIDANG, samarNomor, TANDA_VITAL, umurTahun } from '@klira/shared';
+import { alergiTercatat, LOINC_KESADARAN, nomorDokumen, PEMERIKSAAN_BIDANG, samarNomor, TANDA_VITAL, umurTahun } from '@klira/shared';
 import { sinkronItemTindakanDalam } from '../../kasir/data-access/repositori.js';
 import { ambilKunjungan, keDto } from '../../kunjungan/data-access/repositori.js';
 import { tulisPengesahanDalam } from '../../rekam-medis/data-access/repositori.js';
@@ -17,7 +17,7 @@ async function versiTerbaru(c, bagian, fasyankesId, kunjunganId) {
     const p = await db.cariPengesahanCatatanUntukVersiTerbaru(fasyankesId, bagian, kunjunganId, c);
     return p?.versi ?? null;
 }
-const kosongTandaVital = () => Object.fromEntries(TANDA_VITAL.map((t) => [t.kunci, null]));
+const kosongTandaVital = () => ({ ...Object.fromEntries(TANDA_VITAL.map((t) => [t.kunci, null])), kesadaran: null });
 const kosongPemeriksaan = () => Object.fromEntries(PEMERIKSAAN_BIDANG.map((b) => [b, null]));
 /** Isi bagian pada versi tertentu. */
 async function bacaVersi(c, bagian, fasyankesId, kunjunganId, versi) {
@@ -28,7 +28,13 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
-        case 'obat_poli': {
+        case 'obat_poli':
+        case 'evaluasi':
+        case 'subjek':
+        case 'objek':
+        case 'asesmen':
+        case 'plan':
+        case 'instruksi': {
             const n = await db.cariNarasiKlinisUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, bagian, c);
             return n ? { isi: n.isi } : null;
         }
@@ -55,7 +61,7 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
             const isi = kosongTandaVital();
             for (const b of baris)
                 if (b.bidang in isi)
-                    isi[b.bidang] = angka(b.nilai);
+                    isi[b.bidang] = b.bidang === 'kesadaran' ? b.nilai : angka(b.nilai);
             return isi;
         }
         case 'pemeriksaan': {
@@ -101,7 +107,13 @@ async function tulisIsi(tx, bagian, isi, fasyankesId, kunjunganId, versi, oleh, 
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
-        case 'obat_poli': {
+        case 'obat_poli':
+        case 'evaluasi':
+        case 'subjek':
+        case 'objek':
+        case 'asesmen':
+        case 'plan':
+        case 'instruksi': {
             await db.tambahNarasiKlinisUntukTulisIsi(fasyankesId, kunjunganId, bagian, isi.isi, versi, oleh, tx);
             return;
         }
@@ -120,6 +132,8 @@ async function tulisIsi(tx, bagian, isi, fasyankesId, kunjunganId, versi, oleh, 
             const data = TANDA_VITAL.filter((t) => tv[t.kunci] !== null).map((t) => ({
                 ...dasar, kelompok: 'tanda_vital', bidang: t.kunci, kode_loinc: t.loinc, nilai: String(tv[t.kunci]), satuan_ucum: t.satuan, waktu,
             }));
+            if (tv.kesadaran !== null)
+                data.push({ ...dasar, kelompok: 'tanda_vital', bidang: 'kesadaran', kode_loinc: LOINC_KESADARAN, nilai: tv.kesadaran, satuan_ucum: null, waktu });
             await db.tambahBanyakObservasiUntukTulisIsi(data, tx);
             return;
         }
@@ -161,7 +175,7 @@ export class RepositoriKlinisMysql {
     async kunjunganDto(fasyankesId, id) {
         if (!(await db.hitungKunjunganUntukKunjunganAda(id, fasyankesId)))
             return null;
-        return keDto(await ambilKunjungan(db.pool, id));
+        return { ...keDto(await ambilKunjungan(db.pool, id)), nomor_dokumen: nomorDokumen(await db.nomorUrutKunjungan(fasyankesId, id)) };
     }
     async dataCetak(fasyankesId, kunjunganId) {
         const [k, konteks] = await Promise.all([
@@ -255,6 +269,12 @@ export class RepositoriKlinisMysql {
         if (!daftar.length)
             return [];
         const ids = daftar.map((k) => k.id);
+        const peserta = await db.daftarPesertaKunjunganUntukRiwayatPasien(fasyankesId, ids);
+        const dpjp = new Map();
+        for (const x of peserta)
+            if (!dpjp.has(x.kunjungan_id))
+                dpjp.set(x.kunjungan_id, x.pengguna_id);
+        const namaDokter = new Map((dpjp.size ? await db.daftarPenggunaUntukRiwayat([...new Set(dpjp.values())], fasyankesId) : []).map((x) => [x.id, x.nama]));
         const [anamnesis, diagnosis, lanjut, poli] = await Promise.all([
             db.daftarAnamnesisUntukRiwayatPasien(fasyankesId, ids),
             db.daftarDiagnosisUntukRiwayatPasien(fasyankesId, ids),
@@ -266,6 +286,7 @@ export class RepositoriKlinisMysql {
             const versiDx = dx[0]?.versi;
             return {
                 id: k.id, mulai: k.mulai.toISOString(), jenis: k.jenis, poli_nama: poli.find((p) => p.id === k.lokasi_id)?.nama ?? null,
+                dpjp_nama: namaDokter.get(dpjp.get(k.id)) ?? null, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran,
                 keluhan_utama: anamnesis.find((a) => a.kunjungan_id === k.id)?.keluhan_utama ?? null,
                 diagnosis: dx.filter((d) => d.versi === versiDx).map((d) => ({ kode: d.kode_icd10, nama: d.nama, peran: d.peran })),
                 tindak_lanjut: lanjut.find((l) => l.kunjungan_id === k.id)?.jenis ?? null,

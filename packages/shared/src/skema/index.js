@@ -21,3 +21,7 @@ export * from './rawat-inap.js';
 export * from './klaim.js';
 export * from './pdp.js';
 export * from './kesiapan.js';
+export * from './satusehat.js';
+export * from './pcare.js';
+export * from './uji-endpoint.js';
+export * from './antrean-jkn.js';

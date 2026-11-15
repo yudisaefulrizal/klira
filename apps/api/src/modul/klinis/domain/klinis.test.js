@@ -98,14 +98,25 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
         expect(repo.simpanBagian).toHaveBeenCalledTimes(1);
         expect(catatan).toHaveLength(1);
     });
-    it('perbaikan: wajib alasan, isi lama masuk versi catatan, audit perbaikan', async () => {
-        const { l, catatan, versiCatatan } = buatDunia();
+    it('belum ditutup: diubah bebas tanpa alasan (alasan bawaan dicatat); ditutup: wajib alasan', async () => {
+        const { l, catatan, versiCatatan, dunia } = buatDunia();
         await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
-        expect(await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: 'Pilek' }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
-        const h = await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: 'Pilek' }, 'Salah catat');
+        const h = await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: 'Pilek' }, undefined);
         expect(h).toMatchObject({ ok: true, data: { tersimpan: true, bagian: { pengesahan: { versi: 2 } } } });
-        expect(versiCatatan).toEqual([expect.objectContaining({ versi: 1, alasan: 'Salah catat', isi_lama: expect.objectContaining({ keluhan_utama: 'Batuk' }) })]);
+        expect(versiCatatan).toEqual([expect.objectContaining({ versi: 1, alasan: 'Pembaruan catatan sebelum kunjungan ditutup', isi_lama: expect.objectContaining({ keluhan_utama: 'Batuk' }) })]);
         expect(catatan.map((c) => c.aksi)).toEqual(['input', 'perbaikan']);
+        for (const tahap of ['resep', 'kasir']) {
+            dunia.tahap = tahap;
+            expect(await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: `Batuk ${tahap}` }, undefined)).toMatchObject({ ok: true, data: { tersimpan: true } });
+        }
+        dunia.tahap = 'ditutup';
+        expect(await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: 'Pilek lagi' }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: 'Pilek lagi' }, '   ')).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(await l.simpanBagian(saya, 10, 'anamnesis', { keluhan_utama: 'Pilek lagi' }, 'Salah catat')).toMatchObject({ ok: true, data: { tersimpan: true } });
+        expect(versiCatatan.at(-1)).toMatchObject({ alasan: 'Salah catat' });
+        // catatan yang belum pernah diisi pun butuh alasan setelah ditutup
+        expect(await l.simpanBagian(saya, 10, 'subjek', { isi: 'Susulan' }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(await l.simpanBagian(saya, 10, 'subjek', { isi: 'Susulan' }, 'Terlewat')).toMatchObject({ ok: true });
     });
     it('deteksi perubahan: isi di basis data diubah di luar alur terlihat sebagai berubah', async () => {
         const { l, isi } = buatDunia();
@@ -124,18 +135,16 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
         expect(pengesahanTersimpan.get('keperawatan:10')?.hash).toBe(hashIsi(tersimpan));
         expect(await l.simpanBagian(saya, 10, 'keperawatan', { ...DEFAULT_KEPERAWATAN }, undefined)).toMatchObject({ ok: true, data: { tersimpan: false } });
         const ubah = { ...DEFAULT_KEPERAWATAN, nyeri_jenis: 'akut', nyeri_skala: 7 };
-        expect(await l.simpanBagian(saya, 10, 'keperawatan', ubah, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(await l.simpanBagian(saya, 10, 'keperawatan', ubah, 'Nyeri terlewat')).toMatchObject({ ok: true, data: { bagian: { pengesahan: { versi: 2 }, isi: { nyeri_skala: 7 } } } });
         expect(versiCatatan).toEqual([expect.objectContaining({ versi: 1, alasan: 'Nyeri terlewat' })]);
     });
-    it('tahap skrining maju ke pemeriksaan saat catatan pertama disimpan; kasir dan ditutup menolak catatan', async () => {
+    it('tahap skrining maju ke pemeriksaan saat catatan pertama disimpan; kasir menerima catatan, ditutup butuh alasan', async () => {
         const w = buatDunia('menunggu_skrining');
         await w.l.simpanBagian(saya, 10, 'tanda_vital', { sistolik: 120 }, undefined);
         expect(w.dunia.ubahTahap).toEqual(['pemeriksaan']);
-        for (const t of ['kasir', 'ditutup']) {
-            const x = buatDunia(t);
-            expect(await x.l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined)).toMatchObject({ ok: false, kode: 'konflik' });
-        }
+        expect(await buatDunia('kasir').l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined)).toMatchObject({ ok: true });
+        expect(await buatDunia('ditutup').l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
+        expect(await buatDunia('ditutup').l.simpanBagian(saya, 10, 'anamnesis', anamnesis, 'Susulan')).toMatchObject({ ok: true });
     });
     it('kunjungan fasyankes lain tidak ditemukan; pelaksana tindakan harus pengguna fasyankes', async () => {
         const { l } = buatDunia();
@@ -180,13 +189,15 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
 });
 
 describe('layanan klinis: selesai dan salinan', () => {
-    it('selesai butuh anamnesis, diagnosis, dan tindak lanjut tersimpan, lalu maju ke kasir', async () => {
+    it('selesai butuh Subjek, Asesmen, dan Diagnosis tersimpan, lalu maju ke kasir', async () => {
         const { l, dunia } = buatDunia();
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
-        await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
-        await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama' }] }, undefined);
+        await l.simpanBagian(saya, 10, 'subjek', { isi: 'Batuk 3 hari' }, undefined);
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
-        await l.simpanBagian(saya, 10, 'tindak_lanjut', { jenis: 'pulang' }, undefined);
+        await l.simpanBagian(saya, 10, 'asesmen', { isi: 'ISPA' }, undefined);
+        // diagnosis ICD-10 wajib: tanpa itu pemeriksaan belum bisa diselesaikan
+        expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
+        await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }] }, undefined);
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: true });
         expect(dunia.ubahTahap).toEqual(['kasir']);
     });
@@ -214,22 +225,23 @@ describe('layanan klinis: draf server', () => {
         expect(catatan).toEqual([]);
         expect(repo.simpanDraf).toHaveBeenCalledTimes(2);
     });
-    it('kunjungan fasyankes lain 404, tahap tertutup 409, draf kedaluwarsa dibuang', async () => {
+    it('kunjungan fasyankes lain 404, draf catatan diterima di semua tahap, draf non-catatan ditolak setelah ditutup, draf kedaluwarsa dibuang', async () => {
         const { l, dunia, repo } = buatDunia();
         expect(await l.simpanDraf({ id: 7, fasyankes_id: 2 }, 10, 'skrining', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         await l.simpanDraf(saya, 10, 'skrining', { langkah: 0, isi: { a: 1 } });
         dunia.waktu = new Date(dunia.waktu.getTime() + 13 * 3_600_000);
         expect(await l.bacaDraf(saya, 10, 'skrining')).toEqual({ ok: true, data: null });
         expect(repo.hapusDraf).toHaveBeenCalledWith(1, 10, 7, 'skrining');
-        dunia.tahap = 'kasir';
-        expect(await l.simpanDraf(saya, 10, 'skrining', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'konflik' });
+        for (const tahap of ['kasir', 'ditutup'])
+            dunia.tahap = tahap, expect(await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 0, isi: {} })).toMatchObject({ ok: true });
+        expect(await l.simpanDraf(saya, 10, 'hasil-lab', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'konflik' });
     });
     it('draf kunjungan dihapus saat pemeriksaan selesai', async () => {
         const { l, repo } = buatDunia();
         await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 0, isi: { a: 1 } });
-        await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
-        await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama' }] }, undefined);
-        await l.simpanBagian(saya, 10, 'tindak_lanjut', { jenis: 'pulang' }, undefined);
+        await l.simpanBagian(saya, 10, 'subjek', { isi: 'Batuk' }, undefined);
+        await l.simpanBagian(saya, 10, 'asesmen', { isi: 'ISPA' }, undefined);
+        await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }] }, undefined);
         await l.selesai(saya, 10, 'kasir');
         expect(repo.hapusDraf).toHaveBeenCalledWith(1, 10);
         expect(await l.bacaDraf(saya, 10, 'pemeriksaan-klinis')).toEqual({ ok: true, data: null });
@@ -237,13 +249,12 @@ describe('layanan klinis: draf server', () => {
 });
 
 describe('narasi formulir (diagnosa banding, KIE, obat di poli)', () => {
-    it.each(['diagnosis_banding', 'kie', 'obat_poli'])('%s: simpan, buka, koreksi, audit, dan isolasi fasyankes', async (bagian) => {
+    it.each(['diagnosis_banding', 'kie', 'obat_poli', 'evaluasi', 'subjek', 'objek', 'asesmen', 'plan', 'instruksi'])('%s: simpan, buka, koreksi, audit, dan isolasi fasyankes', async (bagian) => {
         const { l, catatan, versiCatatan } = buatDunia();
         expect(await l.simpanBagian(saya, 10, bagian, { isi: '  Catatan nakes  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: true, bagian: { isi: { isi: 'Catatan nakes' }, verifikasi: 'sah', pengesahan: { versi: 1, pengguna_id: 7 } } } });
         expect(await l.ambil(saya, 10)).toMatchObject({ ok: true, data: { bagian: { [bagian]: { isi: { isi: 'Catatan nakes' }, verifikasi: 'sah' } } } });
-        expect(await l.simpanBagian(saya, 10, bagian, { isi: '' }, undefined)).toMatchObject({ ok: false });
         expect(await l.simpanBagian(saya, 10, bagian, { isi: '' }, 'Koreksi catatan')).toMatchObject({ ok: true, data: { bagian: { isi: { isi: null }, pengesahan: { versi: 2 } } } });
-        expect(versiCatatan).toEqual([expect.objectContaining({ isi_lama: { isi: 'Catatan nakes' } })]);
+        expect(versiCatatan).toEqual([expect.objectContaining({ isi_lama: { isi: 'Catatan nakes' }, alasan: 'Koreksi catatan' })]);
         expect(catatan).toEqual(expect.arrayContaining([expect.objectContaining({ aksi: 'input', entitas: bagian }), expect.objectContaining({ aksi: 'perbaikan', entitas: bagian })]));
         expect(await l.ambil({ ...saya, fasyankes_id: 2 }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });
@@ -252,11 +263,13 @@ describe('narasi formulir (diagnosa banding, KIE, obat di poli)', () => {
         expect(await l.simpanBagian(saya, 10, 'kie', { isi: '  ' }, undefined)).toMatchObject({ ok: true, data: { tersimpan: false, bagian: { isi: null, pengesahan: null } } });
         expect(repo.simpanBagian).not.toHaveBeenCalled();
     });
-    it('narasi bukan syarat penyelesaian', async () => {
+    it('catatan lain (objek, plan, instruksi, evaluasi, KIE, dll) dan bagian terstruktur selain diagnosis bukan syarat penyelesaian', async () => {
         const { l, dunia } = buatDunia();
-        await l.simpanBagian(saya, 10, 'anamnesis', anamnesis, undefined);
-        await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'I10', nama: 'Hipertensi', peran: 'utama' }] }, undefined);
-        await l.simpanBagian(saya, 10, 'tindak_lanjut', { jenis: 'pulang' }, undefined);
+        expect(await l.simpanBagian(saya, 10, 'objek', { isi: 'Tampak sakit ringan' }, undefined)).toMatchObject({ ok: true });
+        expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
+        await l.simpanBagian(saya, 10, 'subjek', { isi: 'Batuk' }, undefined);
+        await l.simpanBagian(saya, 10, 'asesmen', { isi: 'ISPA' }, undefined);
+        await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }] }, undefined);
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: true });
         expect(dunia.tahap).toBe('kasir');
     });

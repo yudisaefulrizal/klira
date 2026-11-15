@@ -1,5 +1,6 @@
 import { token } from '../../gaya/token.js';
 import { KEAMANAN } from '@klira/shared';
+import { buatTanggalTiga } from './tanggal-tiga.js';
 import { totalHalaman } from '../../util/tab/penyaring-tab.js';
 
 /** Primitif DOM UI yang sudah ada: menerima teks/Node dan mengembalikan elemen browser. */
@@ -24,18 +25,21 @@ export function peringatan(teks, nada = 'merah') {
 export function bidang({ id, label, jenis = 'text', nilai = '', opsi, ubah, autoComplete, maxLength }) {
   const el = document.createElement('div'), judul = document.createElement('label'); judul.htmlFor = id; judul.textContent = label;
   Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); Object.assign(judul.style, { fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang, padding: '0' });
-  const kontrol = document.createElement(opsi ? 'select' : jenis === 'textarea' ? 'textarea' : 'input'); kontrol.id = id;
+  // Tanggal diketik manual dalam tiga kolom (bukan pemilih tanggal bawaan peramban); `value`, peristiwa `input`, dan `focus()` tetap seperti isian biasa.
+  const tanggal = jenis === 'date' && !opsi;
+  const kontrol = tanggal ? buatTanggalTiga({ id, label }) : document.createElement(opsi ? 'select' : jenis === 'textarea' ? 'textarea' : 'input'); if (!tanggal) kontrol.id = id;
+  if (tanggal) judul.addEventListener('click', () => kontrol.focus());
   if (kontrol.tagName === 'INPUT') kontrol.type = jenis;
   if (autoComplete !== undefined) kontrol.autocomplete = autoComplete;
   if (maxLength !== undefined) kontrol.maxLength = maxLength;
   if (opsi) for (const o of opsi) { const option = document.createElement('option'); option.value = o.nilai; option.textContent = o.label; kontrol.append(option); }
-  Object.assign(kontrol.style, { height: token.ukuran.isian, padding: `0 ${token.jarak.sm}`, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang, background: token.warna.permukaan, color: token.warna.teks, fontFamily: token.huruf.keluarga, fontSize: token.huruf.ukuran.dasar });
+  if (!tanggal) Object.assign(kontrol.style, { height: token.ukuran.isian, padding: `0 ${token.jarak.sm}`, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang, background: token.warna.permukaan, color: token.warna.teks, fontFamily: token.huruf.keluarga, fontSize: token.huruf.ukuran.dasar });
   if (jenis === 'textarea') Object.assign(kontrol.style, { height: token.ukuran.areaTeks, padding: token.jarak.sm, resize: 'vertical' });
   kontrol.value = nilai; if (ubah) kontrol.addEventListener(opsi ? 'change' : 'input', e => ubah(e.target.value));
   const galat = document.createElement('span'); galat.id = `${id}-galat`; galat.setAttribute('role', 'alert'); galat.hidden = true;
   Object.assign(galat.style, { color: token.warna.status.merah.teks, fontSize: token.huruf.ukuran.kecil }); el.append(judul, kontrol, galat);
   return { el, kontrol, setGalat(pesan) {
-    galat.textContent = pesan ?? ''; galat.hidden = !pesan; kontrol.style.borderColor = pesan ? token.warna.status.merah.teks : token.warna.garis;
+    galat.textContent = pesan ?? ''; galat.hidden = !pesan; if (tanggal) kontrol.tandaiGalat(!!pesan); else kontrol.style.borderColor = pesan ? token.warna.status.merah.teks : token.warna.garis;
     if (pesan) { kontrol.setAttribute('aria-invalid', 'true'); kontrol.setAttribute('aria-describedby', galat.id); }
     else { kontrol.removeAttribute('aria-invalid'); kontrol.removeAttribute('aria-describedby'); }
   } };

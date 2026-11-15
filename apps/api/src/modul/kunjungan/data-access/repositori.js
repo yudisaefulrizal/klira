@@ -85,6 +85,8 @@ export class RepositoriKunjunganMysql {
                         // Nomor = urutan berikutnya per jenis poli (awalan) per hari; poli ditetapkan saat dipanggil.
                         const maks = await db.ringkasanAntreanUntukDaftarkan(fasyankesId, d.awalan, tanggal, tx);
                         await db.tambahAntreanUntukDaftarkan(fasyankesId, k.id, d.jenis_poli, d.awalan, tanggal, (maks._max.nomor ?? 0) + 1, 'menunggu', sekarang, oleh, tx);
+                        if (d.sumber === 'mobile_jkn')
+                            await db.tandaiSumberAntrean(k.id, fasyankesId, 'mobile_jkn', d.pcare_no_urut ?? null, tx);
                     }
                     return keDto(await ambilKunjungan(tx, k.id));
                 });
@@ -104,8 +106,6 @@ export class RepositoriKunjunganMysql {
             if (n.count !== 1)
                 return null;
             const waktu = new Date();
-            if (ke === 'pemeriksaan')
-                await mulaiAntreanDalam(tx, fasyankesId, id, waktu);
             if (dari === 'pemeriksaan' && (ke === 'resep' || ke === 'kasir'))
                 await selesaiAntreanDalam(tx, fasyankesId, id, waktu);
             return keDto(await ambilKunjungan(tx, id));
@@ -113,6 +113,10 @@ export class RepositoriKunjunganMysql {
     }
     async statusAntrean(fasyankesId, id) {
         return (await db.cariAntreanUntukStatusAntrean(id, fasyankesId))?.status ?? null;
+    }
+    /** Tahap layanan kunjungan milik antrean ini; null bila antrean tidak ada. */
+    tahapAntrean(fasyankesId, id) {
+        return db.cariTahapLayananUntukTahapAntrean(id, fasyankesId);
     }
     async ubahAntrean(fasyankesId, id, aksi, dari, ke, waktu, lokasiPilihan) {
         let poliPanggil = null;
@@ -154,9 +158,12 @@ export class RepositoriKunjunganMysql {
                 if (tetapkan)
                     await db.ubahAntreanUntukTetapkanPoli(id, lokasiId, tx);
             }
-            const n = await db.ubahAntreanUntukUbahAntrean(ke, (aksi === 'panggil') ? (waktu) : (undefined), ((!(aksi === 'panggil')) && (aksi === 'mulai')) ? (waktu) : (undefined), ((!(aksi === 'panggil')) && (!(aksi === 'mulai'))) ? (waktu) : (undefined), id, fasyankesId, [...dari], tx);
+            const n = await db.ubahAntreanUntukUbahAntrean(ke, (aksi === 'panggil') ? (waktu) : (undefined), ((!(aksi === 'panggil')) && (aksi === 'mulai')) ? (waktu) : (undefined), (aksi === 'selesai' || aksi === 'batal') ? (waktu) : (undefined), id, fasyankesId, [...dari], tx);
             if (n.count !== 1)
                 return false;
+            // Dilewati melepas poli: antrean tidak lagi memegangnya, dan poli dipilih ulang saat dipanggil lagi.
+            if (aksi === 'lewati')
+                await db.ubahAntreanUntukTetapkanPoli(id, null, tx);
             if (aksi === 'panggil') {
                 const a = await db.wajibAntreanUntukUbahAntrean(id, tx);
                 // Event dan perubahan status berada dalam transaksi yang sama, termasuk panggil ulang.

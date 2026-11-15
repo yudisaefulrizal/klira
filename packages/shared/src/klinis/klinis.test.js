@@ -17,6 +17,13 @@ describe('skema catatan klinis', () => {
         expect(tandaVitalIsi.safeParse({}).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ suhu: 80 }).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ nadi: 'abc' }).success).toBe(false);
+        // SpO2, GCS, dan kesadaran ikut sebagai tanda vital.
+        expect(tandaVitalIsi.parse({ spo2: '98', gcs: 15, kesadaran: 'compos_mentis' })).toMatchObject({ spo2: 98, gcs: 15, kesadaran: 'compos_mentis', suhu: null });
+        expect(tandaVitalIsi.parse({ suhu: 36, kesadaran: '' }).kesadaran).toBeNull();
+        expect(tandaVitalIsi.safeParse({ gcs: 16 }).success).toBe(false);
+        expect(tandaVitalIsi.safeParse({ spo2: 101 }).success).toBe(false);
+        expect(tandaVitalIsi.safeParse({ suhu: 36, kesadaran: 'pingsan' }).success).toBe(false);
+        expect(tandaVitalIsi.safeParse({ kesadaran: 'koma' }).success).toBe(true);
     });
     it('pemeriksaan: minimal satu bidang terisi', () => {
         expect(pemeriksaanIsi.safeParse({}).success).toBe(false);
@@ -55,7 +62,7 @@ describe('skema catatan klinis', () => {
         expect(tindakLanjutIsi.parse({ jenis: 'rujuk', tujuan: 'RS A', spri: 'y' })).toMatchObject({ tujuan: 'RS A', spri: null });
     });
     it('semua bagian punya skema', () => {
-        expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'diagnosis_banding', 'kie', 'obat_poli'].sort());
+        expect(Object.keys(SKEMA_BAGIAN).sort()).toEqual(['anamnesis', 'tanda_vital', 'keperawatan', 'pemeriksaan', 'diagnosis', 'tindakan', 'tindak_lanjut', 'diagnosis_banding', 'kie', 'obat_poli', 'evaluasi', 'subjek', 'objek', 'asesmen', 'plan', 'instruksi'].sort());
     });
     it('narasi formulir: panjang maksimal per bagian, kosong menjadi null', () => {
         expect(SKEMA_BAGIAN.diagnosis_banding.parse({ isi: ' J02.9 faringitis ' })).toEqual({ isi: 'J02.9 faringitis' });

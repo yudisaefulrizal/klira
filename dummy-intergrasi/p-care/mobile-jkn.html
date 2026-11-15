@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulator Mobile JKN</title>
+<style>
+  :root { --hijau: #0a8f5b; --hijau-tua: #06704a; --latar: #eef2f1; --kartu: #fff; --teks: #17211d; --redup: #5d6b66; --garis: #d8dfdc; --merah: #b3261e; --kuning: #8a5a00; --biru: #1d5fa8; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--latar); color: var(--teks); font-size: 15px; line-height: 1.45; }
+  .tata { display: flex; gap: 24px; padding: 24px; align-items: flex-start; flex-wrap: wrap; max-width: 1180px; margin: 0 auto; }
+  .hp { width: 380px; max-width: 100%; background: var(--kartu); border-radius: 28px; border: 1px solid var(--garis); overflow: hidden; flex: 0 0 auto; }
+  .hp header { background: var(--hijau); color: #fff; padding: 18px 20px; }
+  .hp header h1 { margin: 0; font-size: 18px; }
+  .hp header p { margin: 2px 0 0; font-size: 13px; opacity: .9; }
+  .isi { padding: 16px 20px 22px; display: flex; flex-direction: column; gap: 14px; }
+  .samping { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .panel { background: var(--kartu); border: 1px solid var(--garis); border-radius: 12px; padding: 16px 18px; }
+  h2 { margin: 0 0 10px; font-size: 15px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--redup); }
+  select, input, textarea { font: inherit; color: var(--teks); padding: 9px 10px; border: 1px solid var(--garis); border-radius: 8px; background: #fff; width: 100%; }
+  textarea { resize: vertical; min-height: 56px; }
+  button { font: inherit; border: 0; border-radius: 8px; padding: 10px 14px; cursor: pointer; background: var(--hijau); color: #fff; font-weight: 600; }
+  button:hover { background: var(--hijau-tua); }
+  button:disabled { opacity: .55; cursor: default; }
+  button.sekunder { background: #fff; color: var(--hijau-tua); border: 1px solid var(--hijau); }
+  button.bahaya { background: #fff; color: var(--merah); border: 1px solid var(--merah); }
+  button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--biru); outline-offset: 2px; }
+  .baris { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pesan { border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .pesan.ok { background: #e3f4ec; color: var(--hijau-tua); }
+  .pesan.galat { background: #fbe9e7; color: var(--merah); }
+  .tiket { border: 1px solid var(--garis); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+  .tiket .nomor { font-size: 34px; font-weight: 700; letter-spacing: 1px; }
+  .lencana { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+  .lencana.menunggu { background: #fff3d6; color: var(--kuning); }
+  .lencana.dipanggil { background: #dcebfb; color: var(--biru); }
+  .lencana.batal, .lencana.tidak_hadir { background: #fbe9e7; color: var(--merah); }
+  .redup { color: var(--redup); font-size: 13px; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 0; font-size: 14px; }
+  dt { color: var(--redup); }
+  dd { margin: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--garis); vertical-align: top; }
+  th { color: var(--redup); font-weight: 600; }
+  .gulir { max-height: 320px; overflow: auto; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="tata">
+  <section class="hp" aria-label="Tampilan HP peserta">
+    <header>
+      <h1>Mobile JKN (simulasi)</h1>
+      <p>Pendaftaran antrean faskes tingkat pertama</p>
+    </header>
+    <div class="isi">
+      <label>Peserta
+        <select id="peserta"></select>
+      </label>
+      <div id="tiket"></div>
+      <form id="form-ambil" class="isi" style="padding:0">
+        <label>Poli tujuan
+          <select id="poli"></select>
+        </label>
+        <label>Tanggal kunjungan
+          <select id="tanggal"><option value="hari_ini">Hari ini</option><option value="besok">Besok</option></select>
+        </label>
+        <label>Keluhan
+          <textarea id="keluhan" maxlength="500" placeholder="Contoh: demam dua hari"></textarea>
+        </label>
+        <div class="baris">
+          <button type="submit" id="tombol-ambil">Ambil antrean</button>
+        </div>
+      </form>
+      <div id="pesan" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div class="samping">
+    <section class="panel">
+      <h2>Cara kerja</h2>
+      <p class="redup" style="margin:0">Untuk klinik (FKTP), BPJS tidak memanggil aplikasi klinik. Pendaftaran dari Mobile JKN tercatat di PCare, lalu klinik menariknya secara berkala dan membuat antrean. Saat klinik memanggil atau membatalkan, klinik mengabarkannya ke layanan antrean BPJS dan status tiket di HP berubah.</p>
+      <p id="tarikan" style="margin:10px 0 0"></p>
+    </section>
+    <section class="panel">
+      <h2>Pendaftaran di PCare</h2>
+      <p class="redup" style="margin-top:0">Inilah yang ditarik klinik lewat <code>GET /pendaftaran/tglDaftar/{tanggal}</code>.</p>
+      <div class="gulir"><table><thead><tr><th>Tanggal</th><th>No. urut</th><th>Peserta</th><th>Poli</th><th>Keluhan</th></tr></thead><tbody id="tabel-pendaftaran"></tbody></table></div>
+    </section>
+    <section class="panel">
+      <h2>Antrean yang diketahui BPJS</h2>
+      <p class="redup" style="margin-top:0">Antrean dari Mobile JKN dan antrean pasien JKN yang didaftarkan di loket lalu dikirim klinik ke BPJS.</p>
+      <div class="gulir"><table><thead><tr><th>Tanggal</th><th>Nomor</th><th>Peserta</th><th>Poli</th><th>Asal</th><th>Status</th><th>Riwayat</th></tr></thead><tbody id="tabel-antrean"></tbody></table></div>
+    </section>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, teks, kelas) => { const e = document.createElement(tag); if (teks !== undefined) e.textContent = teks; if (kelas) e.className = kelas; return e; };
+const LABEL_STATUS = { menunggu: 'Menunggu', dipanggil: 'Dipanggil', batal: 'Batal', tidak_hadir: 'Tidak hadir' };
+const LABEL_ASAL = { mobile_jkn: 'Mobile JKN', faskes: 'Loket klinik' };
+let keadaan = null, sibuk = false;
+
+async function api(jalur, badan) {
+  const res = await fetch(`/mobile-jkn/api/${jalur}`, badan === undefined ? undefined : { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(badan) });
+  return res.json();
+}
+const jam = (iso) => new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const hari = (tanggal) => (tanggal === keadaan.hariIni ? 'Hari ini' : tanggal === keadaan.besok ? 'Besok' : tanggal);
+const namaPeserta = (noKartu) => keadaan.peserta.find((p) => p.noKartu === noKartu)?.nama ?? noKartu;
+const namaPoli = (kode) => keadaan.poli.find((p) => p.kodepoli === kode)?.namapoli ?? kode;
+function pesan(teks, jenis) { const p = $('pesan'); p.replaceChildren(); if (teks) p.append(el('div', teks, `pesan ${jenis}`)); }
+function isiPilihan(select, daftar, nilai, label) {
+  const lama = select.value; select.replaceChildren();
+  for (const d of daftar) { const o = el('option', label(d)); o.value = nilai(d); select.append(o); }
+  if ([...select.options].some((o) => o.value === lama)) select.value = lama;
+}
+function barisKosong(tbody, teks, kolom) { const tr = el('tr'), td = el('td', teks, 'redup'); td.colSpan = kolom; tr.append(td); tbody.append(tr); }
+const tiketAktif = () => keadaan.antrean.filter((a) => a.nomorkartu === $('peserta').value && a.tanggalperiksa >= keadaan.hariIni && ['menunggu', 'dipanggil'].includes(a.status));
+
+function gambar() {
+  if (!keadaan) return;
+  isiPilihan($('peserta'), keadaan.peserta, (p) => p.noKartu, (p) => `${p.nama} (${p.noKartu})${p.aktif ? '' : ' - tidak aktif'}${p.terdaftarDiSini ? '' : ' - faskes lain'}`);
+  isiPilihan($('poli'), keadaan.poli, (p) => p.kodepoli, (p) => p.namapoli);
+
+  const wadah = $('tiket'); wadah.replaceChildren();
+  for (const a of tiketAktif()) {
+    const t = el('div', undefined, 'tiket'), kepala = el('div');
+    kepala.append(el('span', `Poli ${a.namapoli}, ${hari(a.tanggalperiksa).toLowerCase()}`, 'redup'), ' ', el('span', LABEL_STATUS[a.status], `lencana ${a.status}`));
+    const aksi = el('div', undefined, 'baris'), batal = el('button', 'Batalkan antrean', 'bahaya');
+    batal.type = 'button'; batal.disabled = sibuk || a.sumber !== 'mobile_jkn';
+    batal.addEventListener('click', () => jalankan(async () => { const h = await api('batal', { noKartu: a.nomorkartu, kodepoli: a.kodepoli, tanggalperiksa: a.tanggalperiksa }); pesan(h.metadata.code === 200 ? `Antrean ${a.nomorantrean} dibatalkan.` : h.metadata.message, h.metadata.code === 200 ? 'ok' : 'galat'); }));
+    aksi.append(batal);
+    t.append(kepala, el('div', a.nomorantrean, 'nomor'), aksi);
+    if (a.status === 'dipanggil') t.append(el('div', 'Nomor Anda dipanggil. Silakan menuju poli.', 'pesan ok'));
+    else if (a.sumber === 'mobile_jkn') t.append(el('div', 'Nomor di atas adalah nomor urut PCare. Klinik memberi nomor antrean poli saat pendaftaran ini ditarik.', 'redup'));
+    wadah.append(t);
+  }
+
+  const t = keadaan.tarikanPendaftaran, info = $('tarikan'); info.replaceChildren();
+  info.append(el('span', t ? `Klinik terakhir menarik pendaftaran pukul ${jam(t.waktu)} (tanggal ${t.tanggal}).` : 'Klinik belum pernah menarik pendaftaran. Pastikan antrean online di klira aktif dan koneksi PCare mengarah ke dummy ini.', t ? 'lencana dipanggil' : 'lencana menunggu'));
+
+  const tp = $('tabel-pendaftaran'); tp.replaceChildren();
+  if (!keadaan.pendaftaran.length) barisKosong(tp, 'Belum ada pendaftaran.', 5);
+  for (const p of [...keadaan.pendaftaran].reverse()) { const tr = el('tr'); tr.append(el('td', p.tglDaftar), el('td', p.noUrut), el('td', namaPeserta(p.noKartu)), el('td', namaPoli(p.kdPoli)), el('td', p.keluhan)); tp.append(tr); }
+
+  const tb = $('tabel-antrean'); tb.replaceChildren();
+  if (!keadaan.antrean.length) barisKosong(tb, 'Belum ada antrean.', 7);
+  for (const a of [...keadaan.antrean].reverse()) {
+    const tr = el('tr'), st = el('td');
+    st.append(el('span', LABEL_STATUS[a.status] ?? a.status, `lencana ${a.status}`));
+    tr.append(el('td', hari(a.tanggalperiksa)), el('td', a.nomorantrean), el('td', namaPeserta(a.nomorkartu)), el('td', a.namapoli), el('td', LABEL_ASAL[a.sumber] ?? a.sumber), st, el('td', a.riwayat.map((r) => `${jam(r.waktu)} ${r.peristiwa}`).join('; ')));
+    tb.append(tr);
+  }
+  $('tombol-ambil').disabled = sibuk;
+}
+async function muat() { try { keadaan = await api('keadaan'); gambar(); } catch { pesan('Simulator tidak dapat dimuat. Pastikan service-dummy masih berjalan.', 'galat'); } }
+async function jalankan(kerja) { if (sibuk) return; sibuk = true; gambar(); try { await kerja(); } catch { pesan('Permintaan gagal. Pastikan service-dummy masih berjalan.', 'galat'); } finally { sibuk = false; await muat(); } }
+
+$('peserta').addEventListener('change', () => { pesan('', ''); gambar(); });
+$('form-ambil').addEventListener('submit', (e) => {
+  e.preventDefault();
+  void jalankan(async () => {
+    const h = await api('ambil', { noKartu: $('peserta').value, kodepoli: $('poli').value, tanggal: $('tanggal').value, keluhan: $('keluhan').value });
+    if (h.metadata.code === 200) { $('keluhan').value = ''; pesan(`Pendaftaran berhasil. Nomor urut ${h.response.nomorantrean} di poli ${h.response.namapoli}.`, 'ok'); }
+    else pesan(h.metadata.message, 'galat');
+  });
+});
+void muat();
+setInterval(() => { if (!sibuk) void muat(); }, 4000);
+</script>
+</body>
+</html>

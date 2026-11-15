@@ -19,3 +19,8 @@ export async function ubahPesertaKunjunganUntukPulangkan(selesai, kunjungan_id, 
     const hasil = await tulis("UPDATE `peserta_kunjungan` t SET `selesai` = IF(?, t.`selesai`, ?) WHERE ((? OR t.`kunjungan_id` <=> ?)) AND ((? OR t.`selesai` <=> ?))", [selesai === undefined, selesai ?? null, kunjungan_id === undefined, kunjungan_id ?? null, selesai2 === undefined, selesai2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
+/** Peserta (dokter) dari banyak kunjungan sekaligus, urut pencatatan: yang pertama per kunjungan adalah DPJP. */
+export async function daftarPesertaKunjunganUntukRiwayatPasien(fasyankes_id, kunjungan_id, koneksi = pool) {
+    const baris = await baca("SELECT t.`kunjungan_id`, t.`pengguna_id` FROM `peserta_kunjungan` t WHERE t.`fasyankes_id` = ? AND t.`kunjungan_id` IN (?) ORDER BY t.`id` ASC", [fasyankes_id, kunjungan_id.length ? kunjungan_id : [null]], koneksi);
+    return baris;
+}
