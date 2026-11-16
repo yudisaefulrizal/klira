@@ -1,3 +1,4 @@
+import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js';
 import { CARA_PEMBAYARAN, DAFTAR_PASIEN, JENIS_KUNJUNGAN, PROFIL_PASIEN, STATUS_IDENTITAS, STATUS_LAYANAN, STATUS_PERAN_DIAGNOSIS, TAHAP_LAYANAN, aksiAntreanTersedia, statusLayananDari, tanggalWib } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { riwayatKunjungan } from '../../api-klien/klinis.js';
@@ -258,9 +259,12 @@ export function TabPasien({ search, pindah, ganti }) {
         if (a.kunjungan !== lama.kunjungan) { ikutiTanggalKunjungan(); lukisRiwayat(); pasangPanel(); }
         else if (a.sub !== lama.sub) panel?.pilihSub(a.sub);
     };
-    el.tutup = () => { aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); };
+    el.tutup = () => { aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); lepasSinyal?.(); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); };
     // Antrean dimuat ulang berkala selama menunya terbuka dan tidak ada modal: pendaftaran dari Mobile JKN masuk tanpa tindakan petugas.
-    antInterval = setInterval(() => { if (aktif && menuKiri === 'pasien' && !cariKiri && !modal && !document.hidden) void muatAntrean(true); }, 20000);
+    const bolehMuatAntrean = () => aktif && menuKiri === 'pasien' && !cariKiri && !modal && !document.hidden;
+    // Sinyal WebSocket dari server memuat antrean seketika; pemuatan berkala (60 detik) jaring pengaman bila sambungan putus.
+    antInterval = setInterval(() => { if (bolehMuatAntrean()) void muatAntrean(true); }, 60000);
+    const lepasSinyal = dengarAntreanBerubah(() => { if (bolehMuatAntrean()) void muatAntrean(true); });
     bangun();
     return el;
 }

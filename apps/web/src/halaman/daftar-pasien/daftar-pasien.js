@@ -1,3 +1,4 @@
+import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab } from '../../komponen/ui/primitif.js';
 import { KelolaMasterTab } from '../../komponen/master/kelola-master-tab.js';
@@ -26,7 +27,7 @@ const KOLOM = [
 ];
 export function HalamanDaftarPasien() {
     const { pengguna } = penggunaSaatIni(), { search: initialSearch, ganti, pindah } = navigasiSaatIni(), boleh = izinSaatIni(), pesan = pesanSaatIni();
-    let search = initialSearch, keadaan = keadaanPasienDariQuery(search), cari = keadaan.cari, hasil = null, galat = null, terbuka = null, sekarang = new Date(), actif = true, version = 0, timer, modal, kesiapanTutup, page;
+    let search = initialSearch, keadaan = keadaanPasienDariQuery(search), cari = keadaan.cari, hasil = null, galat = null, terbuka = null, sekarang = new Date(), actif = true, tabTerlukis = null, version = 0, timer, modal, kesiapanTutup, page;
     const kotakCari = { current: null }, el = document.createElement('div'), nav = document.createElement('div'), contenu = document.createElement('div');
     el.style.display = 'contents';
     el.append(nav, contenu);
@@ -110,6 +111,12 @@ export function HalamanDaftarPasien() {
             page.perbaruiAlamat(search);
             return;
         }
+        // Tab master (Poli, Praktisi, Jadwal) juga tidak dibangun ulang pada tab yang sama: pelukisan berkala menutup modal yang sedang terbuka.
+        if (tabAktif !== 'antrean' && tabAktif !== 'pasien' && tabTerlukis === tabAktif && page) {
+            page.perbaruiAlamat?.(search);
+            return;
+        }
+        tabTerlukis = tabAktif;
         page?.tutup?.();
         page = tabAktif === 'pasien' ? TabPasien({ search, pindah, ganti }) : tabAktif === 'antrean' ? view() : KelolaMasterTab({ jenis: tabAktif });
         contenu.replaceChildren(page);
@@ -127,7 +134,7 @@ export function HalamanDaftarPasien() {
     }
     async function muat() {
         // Antrean hanya dimuat saat tabnya terbuka (tab Pasien memuat datanya sendiri).
-        if (page?.jenisTab === 'pasien')
+        if (page?.jenisTab === 'pasien' || (tabTerlukis && tabTerlukis !== 'antrean'))
             return;
         const saat = ++version;
         try {
@@ -155,7 +162,9 @@ export function HalamanDaftarPasien() {
     document.addEventListener('keydown', tekan);
     const minute = setInterval(() => { sekarang = new Date(); paint(); }, 60000);
     // Antrean dari Mobile JKN masuk tanpa tindakan petugas (server menariknya dari PCare): daftar dimuat ulang berkala selama tidak ada modal terbuka.
-    const segarkan = setInterval(() => { if (!terbuka && !document.hidden) void muat(); }, 20000);
+    // Sinyal WebSocket dari server membuat antrean baru muncul seketika; pemuatan berkala tinggal jaring pengaman bila sambungan putus.
+    const segarkan = setInterval(() => { if (!terbuka && !document.hidden) void muat(); }, 60000);
+    const lepasSinyal = dengarAntreanBerubah(() => { if (!terbuka && !document.hidden) void muat(); });
     if (!document.querySelector('link[data-pasien-css]')) {
         const css = document.createElement('link');
         css.rel = 'stylesheet';
@@ -167,6 +176,6 @@ export function HalamanDaftarPasien() {
     void muat();
     if (new URLSearchParams(search).has('tahap') && !keadaan.tahap)
         ganti(`/pasien${queryPasien(keadaan)}`);
-    el.tutup = () => { lebar.removeEventListener('change', tempatkanNav); lepasPantauSlot(); nav.remove(); actif = false; version++; clearTimeout(timer); clearInterval(minute); clearInterval(segarkan); document.removeEventListener('keydown', tekan); modal?.tutup(); page?.tutup?.(); kesiapanTutup?.(); };
+    el.tutup = () => { lebar.removeEventListener('change', tempatkanNav); lepasPantauSlot(); nav.remove(); actif = false; version++; clearTimeout(timer); clearInterval(minute); clearInterval(segarkan); lepasSinyal(); document.removeEventListener('keydown', tekan); modal?.tutup(); page?.tutup?.(); kesiapanTutup?.(); };
     return el;
 }

@@ -136,3 +136,28 @@ test('pemantauan ditutup setelah sesi berakhir', async () => {
     sesiBerlaku = false;
     expect(await ditutup).toBe(1008);
 });
+function tungguTipe(ws, tipe) {
+    return new Promise(resolve => {
+        const dengar = (d) => {
+            if (JSON.parse(d.toString()).tipe === tipe) {
+                ws.off('message', dengar);
+                resolve(true);
+            }
+        };
+        ws.on('message', dengar);
+    });
+}
+
+test('perubahan antrean memberi pemantau sinyal antrean tanpa data, hanya untuk fasilitasnya', async () => {
+    const monitor = pemantau();
+    await tungguJumlah(monitor);
+    const diterima = [];
+    monitor.on('message', d => diterima.push(JSON.parse(d.toString())));
+    const sinyal = tungguTipe(monitor, 'antrean');
+    kabarkanLayarPanggilan(7);
+    await sinyal;
+    kabarkanLayarPanggilan(8);
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(diterima.filter(p => p.tipe === 'antrean')).toEqual([{ tipe: 'antrean' }]);
+    expect(diterima.some(p => p.tipe === 'perubahan')).toBe(false);
+});

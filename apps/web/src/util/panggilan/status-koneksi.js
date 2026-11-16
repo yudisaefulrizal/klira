@@ -72,6 +72,10 @@ export function pantauStatusKoneksi(fasilitas, opsi) {
                     }
                     else if (pesan.tipe === 'hidup')
                         awasi();
+                    else if (pesan.tipe === 'antrean') {
+                        awasi();
+                        opsi.antrean?.();
+                    }
                     else if (pesan.tipe === 'layar' && Number.isSafeInteger(pesan.jumlah) && pesan.jumlah >= 0) {
                         awasi();
                         opsi.layar({ status: pesan.jumlah ? 'terhubung' : 'tidak-ada', jumlah: pesan.jumlah });

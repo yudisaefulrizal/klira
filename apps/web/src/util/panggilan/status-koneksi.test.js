@@ -71,3 +71,16 @@ test('heartbeat macet tidak mempertahankan indikator layar hijau', async () => {
     expect(s.sockets[0].close).toHaveBeenCalled();
     s.pantau.tutup();
 });
+
+test('sinyal antrean dari server diteruskan ke pemanggil dan tidak mengubah status layar', async () => {
+    const antrean = jest.fn(), layar = jest.fn(), sockets = [];
+    const buatSocket = jest.fn(() => { const k = { onmessage: null, onclose: null, onerror: null, close: jest.fn() }; sockets.push(k); return k; });
+    const ambil = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ status: 'ok' }) });
+    const pantau = pantauStatusKoneksi(7, { asal: 'https://klira.test', ambil, buatSocket, server: jest.fn(), layar, antrean });
+    await selesai();
+    const sebelum = layar.mock.calls.length;
+    pesan(sockets[0], { tipe: 'antrean' });
+    expect(antrean).toHaveBeenCalledTimes(1);
+    expect(layar.mock.calls.length).toBe(sebelum);
+    pantau.tutup();
+});

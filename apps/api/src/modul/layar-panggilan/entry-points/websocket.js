@@ -24,8 +24,9 @@ export function pasangWebsocketLayarPanggilan(server, baseUrl, heartbeatMs = 200
     };
     const lepas = dengarkanLayarPanggilan(fasilitas => {
         for (const [ws, info] of klien)
-            if (info.fasilitas === fasilitas && !info.pemantau)
-                kirim(ws, { tipe: 'perubahan' });
+            if (info.fasilitas === fasilitas)
+                // Layar publik memuat ulang panggilannya; petugas (pemantau) hanya diberi tahu bahwa antrean berubah dan membaca ulang lewat API berizin.
+                kirim(ws, { tipe: info.pemantau ? 'antrean' : 'perubahan' });
     });
     const upgrade = (req, socket, head) => {
         const path = req.url?.split('?')[0] ?? '';
