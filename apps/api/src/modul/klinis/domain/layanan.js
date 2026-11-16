@@ -6,7 +6,8 @@ import { BentrokVersiError } from '../data-access/repositori.js';
 /** Tahap yang masih menerima catatan klinis; setelah kasir, perubahan lewat perbaikan catatan (Rekam medis). */
 export const TAHAP_BOLEH_CATAT = ['menunggu_skrining', 'pemeriksaan', 'resep'];
 /** Bagian yang wajib tersimpan sebelum pemeriksaan diselesaikan: Subjek dan Asesmen pada catatan SOAPIE, serta diagnosis ICD-10 (satu utama). */
-export const BAGIAN_WAJIB_SELESAI = ['subjek', 'asesmen', 'diagnosis'];
+/** Asesmen tidak wajib: diagnosis ICD-10 yang terisi sudah memenuhi syarat asesmen. */
+export const BAGIAN_WAJIB_SELESAI = ['subjek', 'diagnosis'];
 const ADA_ISI = (bagian, isi) => bagian === 'diagnosis' || bagian === 'tindakan' ? (isi?.item.length ?? 0) > 0 : isi !== null;
 export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang = () => new Date() }) {
     const kedaluwarsaMs = KEDALUWARSA_DRAF_KLINIS_JAM * 3_600_000;

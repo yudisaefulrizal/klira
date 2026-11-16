@@ -75,6 +75,8 @@ export const METODE_BAYAR = buat({
     tunai: { label: 'Tunai', warna: 'hijau' },
     transfer: { label: 'Transfer', warna: 'biru' },
     qris: { label: 'QRIS', warna: 'ungu' },
+    jkn: { label: 'JKN (BPJS)', warna: 'biru' },
+    asuransi: { label: 'Asuransi', warna: 'biru' },
 });
 export const JENIS_MUTASI = buat({
     terima: { label: 'Terima', warna: 'hijau' },

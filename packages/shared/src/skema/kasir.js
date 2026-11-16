@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { KASIR } from '../umum/teks.js';
 import { teksOpsional } from './umum.js';
 const bulat = (maks, min = 0) => z.preprocess((v) => (v === '' || v === null ? undefined : v), z.coerce.number({ error: KASIR.galat.angka }).int(KASIR.galat.angka).min(min, min > 0 ? KASIR.galat.jumlahMinimal : KASIR.galat.negatif).max(maks));
-export const NILAI_METODE_BAYAR = ['tunai', 'transfer', 'qris'];
+export const NILAI_METODE_BAYAR = ['tunai', 'transfer', 'qris', 'jkn', 'asuransi'];
 export const MAKS_BARIS_BAYAR = 3;
 const barisBayar = z.object({ metode: z.enum(NILAI_METODE_BAYAR, { error: KASIR.galat.metode }), jumlah: bulat(1_000_000_000, 1) });
 /**

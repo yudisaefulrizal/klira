@@ -20,12 +20,12 @@ const buat = (tag, kelas, teks) => { const el = document.createElement(tag); if 
 const pesanGalat = (e, bawaan) => (e instanceof GalatApi ? e.message : bawaan);
 
 /**
- * Halaman Pasien di Daftar pasien (dibuka dari tabel Antrean): identitas di atas, menu kiri (Riwayat dan Pasien: antrean hari itu, atau semua pasien saat mencari),
+ * Halaman Pasien di Daftar pasien (tab Pasien di header Daftar pasien): identitas di atas, menu kiri (Riwayat dan Pasien: antrean hari itu, atau semua pasien saat mencari),
  * dan catatan kunjungan terpilih (SOAPIE, Resep, Tindakan, Penunjang, Dokumen) di kanan. Pasien, kunjungan, dan tab
  * pendamping tersimpan di alamat halaman.
  */
 export function TabPasien({ search, pindah, ganti }) {
-    const boleh = izinSaatIni(), bolehRiwayat = boleh('klinis', 'lihat') || boleh('rekam-medis', 'lihat');
+    const boleh = izinSaatIni(), bolehRiwayat = boleh('klinis', 'lihat') || boleh('rekam-medis', 'lihat') || boleh('penunjang', 'lihat') || boleh('kasir', 'lihat');
     const el = buat('section', 'halaman-pasien profil-pasien');
     let aktif = true, a = keadaanAlamat(search), versi = 0, timer, modal, panel, ikonAksi = [];
     // Profil
@@ -42,6 +42,7 @@ export function TabPasien({ search, pindah, ganti }) {
     // --- Profil pasien ---
     function bangunProfil() {
         pasien = null; riwayat = null; galatPasien = null; galatRiwayat = null; cariRiwayat = ''; panel?.tutup(); panel = undefined;
+        if (!a.pasien) menuKiri = 'pasien';
         kotakIdentitas = kartu({ susun: 'md' }); kotakIdentitas.classList.add('profil-identitas');
         const badan = buat('div', 'profil-badan'); kotakRiwayat = kartu({ susun: 'sm' }); kotakRiwayat.classList.add('profil-riwayat'); kotakPanel = kartu(); kotakPanel.classList.add('profil-kanan');
         badan.append(kotakRiwayat, kotakPanel);
@@ -54,6 +55,7 @@ export function TabPasien({ search, pindah, ganti }) {
         if (!kotakIdentitas) return;
         for (const i of ikonAksi) i.tutup?.();
         ikonAksi = [];
+        if (!a.pasien) return void kotakIdentitas.replaceChildren(buat('span', 'profil-redup', T.pilihPasien));
         if (galatPasien) return void kotakIdentitas.replaceChildren(peringatan(galatPasien));
         if (!pasien) return void kotakIdentitas.replaceChildren(buat('span', 'profil-redup', T.memuat));
         const I = T.identitas, baris = buat('div', 'profil-identitas-baris'), nama = buat('h2', null, pasien.nama), aksi = buat('div', 'profil-identitas-aksi'), peserta = kepesertaan(pasien), umur = umurTahun(pasien.tanggal_lahir);
@@ -78,7 +80,7 @@ export function TabPasien({ search, pindah, ganti }) {
     function lukisRiwayat() {
         if (!kotakRiwayat) return;
         const R = T.riwayat, fokus = document.activeElement?.id === 'cari-riwayat-pasien', judul = buat('div', 'profil-kotak-kepala');
-        const M = T.menuKiri, menu = tab([{ id: 'kiri-riwayat', label: M.riwayat }, { id: 'kiri-pasien', label: M.pasien }], `kiri-${menuKiri}`, M.label, (id) => { menuKiri = id.replace('kiri-', ''); lukisRiwayat(); });
+        const M = T.menuKiri, menu = tab([{ id: 'kiri-riwayat', label: M.riwayat }, { id: 'kiri-pasien', label: M.pasien }], `kiri-${menuKiri}`, M.label, (id) => { menuKiri = a.pasien ? id.replace('kiri-', '') : 'pasien'; lukisRiwayat(); });
         kotakRiwayat.replaceChildren(menu.el);
         if (menuKiri === 'pasien') return void lukisPasienKiri();
         kotakRiwayat.append(judul);
@@ -206,6 +208,7 @@ export function TabPasien({ search, pindah, ganti }) {
         if (!kotakPanel) return;
         panel?.tutup(); panel = undefined;
         const r = riwayat?.find((x) => x.id === a.kunjungan);
+        if (!a.pasien) return void kotakPanel.replaceChildren(buat('p', 'profil-redup', T.pilihPasien));
         if (!bolehRiwayat || !pasien || !r) return void kotakPanel.replaceChildren(buat('p', 'profil-redup', bolehRiwayat ? (riwayat && !riwayat.length ? T.riwayat.kosong : riwayat ? T.riwayat.pilih : T.memuat) : T.riwayat.tanpaIzin));
         panel = PanelKunjungan({
             kunjunganId: r.id, pasien, ringkas: r, sub: a.sub,
@@ -235,6 +238,7 @@ export function TabPasien({ search, pindah, ganti }) {
     }
     async function muatProfil() {
         const saat = ++versi, id = a.pasien;
+        if (!id) return;
         const [p, r] = await Promise.all([detailPasien(id).catch((e) => ({ galat: pesanGalat(e, T.gagalPasien) })), muatRiwayat()]);
         if (!aktif || saat !== versi) return;
         if (p.galat) galatPasien = p.galat; else { pasien = p; galatPasien = null; }
@@ -246,18 +250,17 @@ export function TabPasien({ search, pindah, ganti }) {
         if (!panel) pasangPanel();
     }
 
-    function bangun() { clearTimeout(timer); tutupModal(); panel?.tutup(); panel = undefined; kotakIdentitas = kotakRiwayat = kotakPanel = undefined; versi++; if (a.pasien) bangunProfil(); else ganti('/pasien'); }
+    function bangun() { clearTimeout(timer); tutupModal(); panel?.tutup(); panel = undefined; kotakIdentitas = kotakRiwayat = kotakPanel = undefined; versi++; bangunProfil(); }
     el.jenisTab = 'pasien';
     el.perbaruiAlamat = (baru) => {
         const lama = a; a = keadaanAlamat(baru);
         if (a.pasien !== lama.pasien) return bangun();
-        if (!a.pasien) return;
         if (a.kunjungan !== lama.kunjungan) { ikutiTanggalKunjungan(); lukisRiwayat(); pasangPanel(); }
         else if (a.sub !== lama.sub) panel?.pilihSub(a.sub);
     };
     el.tutup = () => { aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); };
     // Antrean dimuat ulang berkala selama menunya terbuka dan tidak ada modal: pendaftaran dari Mobile JKN masuk tanpa tindakan petugas.
-    antInterval = setInterval(() => { if (aktif && menuKiri === 'pasien' && !cariKiri && a.pasien && !modal && !document.hidden) void muatAntrean(true); }, 20000);
+    antInterval = setInterval(() => { if (aktif && menuKiri === 'pasien' && !cariKiri && !modal && !document.hidden) void muatAntrean(true); }, 20000);
     bangun();
     return el;
 }

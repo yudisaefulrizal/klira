@@ -9,8 +9,8 @@ const angkaSah = (j) => {
     const n = Number(j);
     return j.trim() !== '' && Number.isInteger(n) && n > 0 ? n : 0;
 };
-/** Baris pertama tunai terisi sisa tagihan. */
-export const awalBayar = (sisa = 0) => ({ baris: [{ metode: 'tunai', jumlah: sisa > 0 ? String(sisa) : '' }] });
+/** Baris pertama terisi sisa tagihan (metode bawaan tunai; pasien JKN atau asuransi memakai metodenya). */
+export const awalBayar = (sisa = 0, metode = 'tunai') => ({ baris: [{ metode, jumlah: sisa > 0 ? String(sisa) : '' }] });
 /** Sisa yang belum tertutup baris yang ada (tidak negatif). */
 export const belumTertutup = (k, sisa) => Math.max(0, sisa - k.baris.reduce((s, b) => s + angkaSah(b.jumlah), 0));
 /** Menambah baris metode (maks 3) dengan metode pertama yang belum dipakai dan jumlah = sisa yang belum tertutup. */
@@ -68,7 +68,7 @@ export function daftarSyarat(g) {
     ];
 }
 /** Belum lunas butuh alasan, kecuali kunjungan JKN (biaya diklaim ke BPJS; alasan dicatat otomatis oleh server). */
-export const bisaTutup = (g, alasan) => daftarSyarat(g).every((s) => s.ok || !s.wajib) && (g.syarat.lunas || g.syarat.ditanggung_jkn || alasan.trim().length > 0);
+export const bisaTutup = (g, alasan) => daftarSyarat(g).every((s) => s.ok || !s.wajib) && (g.syarat.lunas || alasan.trim().length > 0);
 export const awalShift = () => ({ kas: '', alasan: '' });
 export function galatBukaShift(k) {
     return Object.fromEntries(Object.entries(petakan(bukaShiftMasukan.safeParse({ kas_awal: k.kas }).error?.issues ?? [])).map(([a, b]) => [a === 'kas_awal' ? 'kas' : a, b]));

@@ -1,4 +1,4 @@
-import { BAGIAN_SOAPIE, CARA_PEMBAYARAN, alergiTercatat, FARMASI, GALAT, KESADARAN, KLINIS, LABEL_NARASI, MAKS_NARASI, PROFIL_PASIEN, REKAM_MEDIS, STATUS_PENGESAHAN, STATUS_RESEP, TAHAP_LAYANAN } from '@klira/shared';
+import { BAGIAN_SOAPIE, CARA_PEMBAYARAN, alergiTercatat, FARMASI, GALAT, KESADARAN, KLINIS, LABEL_NARASI, MAKS_NARASI, PENUNJANG, PERSETUJUAN_TINDAKAN, PROFIL_PASIEN, REKAM_MEDIS, STATUS_PENGESAHAN, STATUS_RESEP, TAHAP_LAYANAN } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { ambilKlinis, ambilKonteksKlinis, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis.js';
 import { resepKunjungan, semuaMasterObatAktif, siapkanResep, simpanResep, telaahResep } from '../../api-klien/farmasi.js';
@@ -21,7 +21,12 @@ import { barisDariTindakan, bentukIsiTindakan, galatTindakan } from '../../modal
 import { TampilanResep } from '../../modal/farmasi/tampilan-resep.js';
 import { disahkanDari, isiBagian, keadaanDariServer, rencanaSimpanBagian } from '../../modal/pemeriksaan/keadaan-pemeriksaan.js';
 import { DaftarOrderLab } from '../../modal/penunjang/daftar-order-lab.js';
+import { bukaPersetujuanTindakan } from '../../modal/pemeriksaan/persetujuan-tindakan.js';
 import { bukaOrderLab } from '../../modal/penunjang/order-lab.js';
+import { bukaAmbilSpesimen } from '../../modal/penunjang/ambil-spesimen.js';
+import { bukaHasilLab } from '../../modal/penunjang/hasil-lab.js';
+import { menungguSpesimen } from '../../modal/penunjang/keadaan-spesimen.js';
+import { menungguHasil } from '../../modal/penunjang/keadaan-hasil-lab.js';
 import { bukaCetakRekamMedis } from '../../modal/rekam-medis/cetak-rekam-medis.js';
 import { bukaResumeSurat } from '../../modal/rekam-medis/resume-surat.js';
 import { tanggalWaktuPendek } from '../../util/format.js';
@@ -46,7 +51,11 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     // Satu baris: tab di kiri; status, cara bayar, dan Cetak rekam medis di kanan.
     const bar = buat('div', 'profil-panel-bar'); bar.append(navTab, kepala);
     el.append(bar, isi);
-    let aktif = true, sub = subAwal, klinis = null, konteks = null, galatMuat = null, k = null, awal = null, tensiTeks = '', modal;
+    // Akun tanpa izin klinis atau rekam medis (analis lab, kasir) hanya mengerjakan tab kerjanya (Penunjang, Penutup); catatan klinis tidak dimuat.
+    const terbatas = !(boleh('klinis', 'lihat') || boleh('rekam-medis', 'lihat'));
+    const subTerbatas = [...(boleh('penunjang', 'lihat') ? ['penunjang'] : []), ...(boleh('kasir', 'lihat') ? ['penutup'] : [])];
+    const subSah = terbatas ? subTerbatas : SUB_TAB;
+    let aktif = true, sub = subSah.includes(subAwal) ? subAwal : subSah[0], klinis = null, konteks = null, galatMuat = null, k = null, awal = null, tensiTeks = '', modal;
     let tampilGalat = false, galat = null, pesan = null, memproses = false, alasan = '';
     let resep = awalResep(), resepGalat = null, resepPesan = null, resepProses = false, resepTampilGalat = false, obatMaster = null, obatGalat = null, obatMemuat = false, resepSinkron = false;
     let penutup = null;
@@ -56,7 +65,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     // Data tab pendamping dimuat saat tabnya pertama dibuka, lalu dipakai ulang sampai ada perubahan.
     const data = { resep: null, penunjang: null, dokumen: null };
 
-    const tabs = tab(SUB_TAB.map((id) => ({ id: `kunjungan-${id}`, label: T.tab[id] })), `kunjungan-${sub}`, T.riwayat.judul, (id) => onSub(id.replace('kunjungan-', '')));
+    const tabs = tab(subSah.map((id) => ({ id: `kunjungan-${id}`, label: T.tab[id] })), `kunjungan-${sub}`, T.riwayat.judul, (id) => onSub(id.replace('kunjungan-', '')));
     navTab.append(tabs.el);
 
     const mode = () => modeCatatan(klinis.kunjungan, boleh);
@@ -97,6 +106,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         const kj = klinis.kunjungan;
         const tanda = buat('div', 'profil-panel-tanda');
         tanda.append(lencana(TAHAP_LAYANAN.label(kj.tahap_layanan), TAHAP_LAYANAN.warna(kj.tahap_layanan)), lencana(CARA_PEMBAYARAN.label(kj.cara_pembayaran), 'abu'));
+        if (terbatas) { kepala.append(tanda); return; }
         const cetak = tombol(T.soapie.cetak, () => { tutupModal(); modal = bukaCetakRekamMedis({ kunjunganId, onTutup() { modal = undefined; } }); }, 'sekunder');
         kepala.append(tanda, cetak);
     }
@@ -199,6 +209,8 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             // pemeriksaan ikut diselesaikan. Di tahap pemeriksaan tombol selalu bisa ditekan (kekurangan dilaporkan saat ditekan); di tahap lain hanya bila ada isian baru.
             const selesai = tombol(memproses ? S.menyimpan : tahapKerja ? S.selesaikan : S.simpanPerubahan, () => void selesaikan());
             selesai.disabled = memproses || (!(m.ubah && tahap === 'pemeriksaan') && !r.length);
+            // Di luar tahap kerja (setelah pemeriksaan selesai) tombol Simpan perubahan hanya muncul bila ada perubahan.
+            if (!tahapKerja && !r.length) return kaki;
             const baris = buat('div', 'profil-soapie-tombol'); baris.append(selesai); kaki.append(baris);
         }
         return kaki;
@@ -211,8 +223,8 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         const r = rencana(), masalah = r.find((x) => x.galat);
         if (masalah) return void sebut(masalah.galat, idKolom(masalah.bagian));
         if (mode().tutup && r.length && !alasan.trim()) return void sebut(S.alasanWajib);
-        const tahap = klinis.kunjungan.tahap_layanan, kurang = ['subjek', 'asesmen', 'diagnosis'].find((b) => klinis.bagian[b].verifikasi !== 'sah' && !r.some((x) => x.bagian === b));
-        // Di tahap pemeriksaan Selesaikan menuntut Subjek dan Asesmen; di tahap menunggu skrining isian hanya disimpan (skrining selesai, kunjungan maju ke pemeriksaan) dan dokter memeriksa setelah memanggil.
+        const tahap = klinis.kunjungan.tahap_layanan, kurang = ['subjek', 'diagnosis'].find((b) => klinis.bagian[b].verifikasi !== 'sah' && !r.some((x) => x.bagian === b));
+        // Di tahap pemeriksaan Selesaikan menuntut Subjek dan Diagnosis ICD-10 (Asesmen boleh kosong); di tahap menunggu skrining isian hanya disimpan (skrining selesai, kunjungan maju ke pemeriksaan) dan dokter memeriksa setelah memanggil.
         if (mode().ubah && tahap === 'pemeriksaan' && kurang) return void sebut(S.syaratSelesai, idKolom(kurang));
         const akanSelesai = mode().ubah && tahap === 'pemeriksaan';
         memproses = true; galat = null; pesan = null; lukis();
@@ -332,9 +344,13 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         const kotak = buat('div', 'profil-kotak');
         if (ada) kotak.append(kepala(ada));
         const simpan = tombol(resepProses ? R.mengajukan : ada ? R.simpanUbah : R.ajukan, () => void kirimResep());
-        simpan.disabled = resepProses || !adaIsianResep(resep); simpan.style.alignSelf = 'flex-start';
+        simpan.style.alignSelf = 'flex-start';
+        // Resep yang sudah diajukan: tombol simpan hanya muncul bila isian berbeda dari resep tersimpan.
+        const asal = ada ? JSON.stringify(resepDariServer(ada)) : null;
+        const segarkanSimpan = () => { simpan.disabled = resepProses || !adaIsianResep(resep); simpan.hidden = asal !== null && JSON.stringify(resep) === asal; };
+        segarkanSimpan();
         // Editor menggambar ulang dirinya sendiri; panel hanya mencatat isian dan membuka tombol simpan.
-        const form = LangkahResep({ resep, obat: obatMaster, onUbah(p) { resep = { ...resep, ...p }; resepPesan = null; simpan.disabled = resepProses || !adaIsianResep(resep); }, galat: galatResep(resep), tampilGalat: resepTampilGalat, disabled: resepProses });
+        const form = LangkahResep({ resep, obat: obatMaster, onUbah(p) { resep = { ...resep, ...p }; resepPesan = null; segarkanSimpan(); }, galat: galatResep(resep), tampilGalat: resepTampilGalat, disabled: resepProses });
         kotak.append(form);
         if (resepGalat) kotak.append(peringatan(resepGalat));
         if (resepPesan) kotak.append(peringatan(resepPesan, 'hijau'));
@@ -349,7 +365,11 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     }
     function isiTindakan() {
         const R = T.resep, bungkus = buat('div', 'profil-kolom');
-        bungkus.append(judulSeksi(R.tindakan));
+        const kepalaSeksi = buat('div', 'profil-kotak-kepala'); kepalaSeksi.append(judulSeksi(R.tindakan));
+        // Persetujuan tindakan: alur bertahap di modal, hanya untuk kunjungan yang sedang berjalan.
+        if (boleh('persetujuan', 'input') && !['menunggu_skrining', 'ditutup'].includes(klinis.kunjungan.tahap_layanan))
+            kepalaSeksi.append(tombol(PERSETUJUAN_TINDAKAN.judul, () => { tutupModal(); modal = bukaPersetujuanTindakan({ kunjunganId, pasien: pasienRingkas, onTutup: tutupModal, onSelesai: tutupModal }); }, 'sekunder'));
+        bungkus.append(kepalaSeksi);
         const item = klinis.bagian.tindakan.isi?.item ?? [];
         // Seperti resep: dapat diubah selama pemeriksaan berjalan (sesudah skrining) dan belum diselesaikan.
         const bolehUbah = mode().ubah && klinis.kunjungan.tahap_layanan === 'pemeriksaan';
@@ -419,6 +439,14 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         const kepalaSeksi = buat('div', 'profil-kotak-kepala'); kepalaSeksi.append(judulSeksi(P.judul));
         if (boleh('klinis', 'input') && !['menunggu_skrining', 'ditutup'].includes(kj.tahap_layanan))
             kepalaSeksi.append(tombol(P.order, () => { tutupModal(); modal = bukaOrderLab({ kunjunganId, pasien: pasienRingkas, cara: kj.cara_pembayaran === 'jkn' ? 'jkn' : 'umum', onTutup: tutupModal, onSelesai() { tutupModal(); data.penunjang = null; lukis(); onBerubah(); } }); }, 'sekunder'));
+        // Ambil spesimen dan Hasil lab muncul hanya bila ada order yang menunggu; kunjungan penunjang saja tetap bisa diisi hasilnya setelah Selesai.
+        const dm = data.penunjang;
+        if (boleh('penunjang', 'input') && dm.nilai && (kj.jenis === 'LAB' || kj.tahap_layanan !== 'menunggu_skrining')) {
+            const sesudah = () => { tutupModal(); data.penunjang = null; lukis(); onBerubah(); };
+            const buka = (fungsi) => () => { tutupModal(); modal = fungsi({ kunjunganId, pasien: pasienRingkas, onTutup: tutupModal, onSelesai: sesudah }); };
+            if (menungguSpesimen(dm.nilai).length) kepalaSeksi.append(tombol(PENUNJANG.aksi.spesimen, buka(bukaAmbilSpesimen), 'sekunder'));
+            if (menungguHasil(dm.nilai).length) kepalaSeksi.append(tombol(PENUNJANG.aksi.hasil, buka(bukaHasilLab), 'sekunder'));
+        }
         bungkus.append(kepalaSeksi);
         const d = data.penunjang;
         if (d.memuat) bungkus.append(redup(T.memuat));
@@ -463,7 +491,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         isi.setAttribute('aria-labelledby', `tab-kunjungan-${sub}`);
         if (galatMuat) isi.replaceChildren(peringatan(galatMuat));
         else if (!klinis) isi.replaceChildren(redup(KLINIS.detail.memuat));
-        else isi.replaceChildren(sub === 'resep' ? isiResep() : sub === 'tindakan' ? isiTindakan() : sub === 'penutup' ? isiPenutup() : sub === 'penunjang' ? isiPenunjang() : sub === 'dokumen' ? isiDokumen() : isiPemeriksaan());
+        else isi.replaceChildren(terbatas ? (sub === 'penutup' ? isiPenutup() : isiPenunjang()) : sub === 'resep' ? isiResep() : sub === 'tindakan' ? isiTindakan() : sub === 'penutup' ? isiPenutup() : sub === 'penunjang' ? isiPenunjang() : sub === 'dokumen' ? isiDokumen() : isiPemeriksaan());
         if (id) {
             const f = document.getElementById(id);
             f?.focus({ preventScroll: true });
@@ -471,6 +499,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         }
     }
     async function muat() {
+        if (terbatas) { klinis = { kunjungan: ringkas, bagian: {} }; galatMuat = null; lukisKepala(); lukis(); return; }
         try {
             const [hasilKlinis, ctx] = await Promise.all([ambilKlinis(kunjunganId), ambilKonteksKlinis(kunjunganId).catch(() => null)]);
             if (!aktif) return;
@@ -480,7 +509,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         if (aktif) { lukisKepala(); lukis(); }
     }
 
-    el.pilihSub = (baru) => { if (baru === sub) return; sub = baru; tabs.pilih(`kunjungan-${sub}`); lukis(); };
+    el.pilihSub = (baru) => { if (!subSah.includes(baru) || baru === sub) return; sub = baru; tabs.pilih(`kunjungan-${sub}`); lukis(); };
     el.tutup = () => { aktif = false; penutup?.tutup(); draf?.tutup(); tutupModal(); };
     lukis(); void muat();
     return el;

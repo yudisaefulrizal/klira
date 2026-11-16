@@ -31,12 +31,12 @@ describe('penyerahan hasil lab (penunjang saja) di kasir', () => {
         expect(repo.serahHasil).not.toHaveBeenCalled();
         expect(await buat({ kunjungan: async () => null }).l.serahHasil(p, 99, { penerima_nama: 'X' })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });
-    it('hasil ditahan sampai lunas; pasien JKN boleh tanpa pelunasan', async () => {
+    it('hasil ditahan sampai lunas; pasien JKN pun harus dicatat lunas (metode JKN)', async () => {
         const belumLunas = buat({ tagihan: async () => ({ status_tagihan: 'lengkap', sisa: 10000, item: [] }) });
         expect(await belumLunas.l.serahHasil(p, 20, { penerima_nama: 'X' })).toMatchObject({ ok: false, kode: 'konflik' });
         expect(belumLunas.repo.serahHasil).not.toHaveBeenCalled();
         const jkn = buat({ tagihan: async () => ({ status_tagihan: 'lengkap', sisa: 10000, item: [] }), kunjungan: async () => ({ id: 20, tahap_layanan: 'ditutup', cara_pembayaran: 'jkn' }) });
-        expect(await jkn.l.serahHasil(p, 20, { penerima_nama: 'X' })).toMatchObject({ ok: true });
+        expect(await jkn.l.serahHasil(p, 20, { penerima_nama: 'X' })).toMatchObject({ ok: false, kode: 'konflik' });
     });
     it('hasil belum divalidasi dan penyerahan ganda ditolak dengan pesan berbeda', async () => {
         const belumSiap = buat({ serahHasil: async () => ({ ok: false, sebab: 'belum_siap' }) });

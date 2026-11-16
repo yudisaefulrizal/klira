@@ -189,12 +189,11 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
 });
 
 describe('layanan klinis: selesai dan salinan', () => {
-    it('selesai butuh Subjek, Asesmen, dan Diagnosis tersimpan, lalu maju ke kasir', async () => {
+    it('selesai butuh Subjek dan Diagnosis tersimpan (Asesmen boleh kosong), lalu maju ke kasir', async () => {
         const { l, dunia } = buatDunia();
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
         await l.simpanBagian(saya, 10, 'subjek', { isi: 'Batuk 3 hari' }, undefined);
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
-        await l.simpanBagian(saya, 10, 'asesmen', { isi: 'ISPA' }, undefined);
         // diagnosis ICD-10 wajib: tanpa itu pemeriksaan belum bisa diselesaikan
         expect(await l.selesai(saya, 10, 'kasir')).toMatchObject({ ok: false, kode: 'konflik' });
         await l.simpanBagian(saya, 10, 'diagnosis', { item: [{ kode: 'J06.9', nama: 'Acute upper respiratory infection, unspecified', peran: 'utama' }] }, undefined);

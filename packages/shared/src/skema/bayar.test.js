@@ -11,7 +11,7 @@ describe('bayarMasukan (beberapa metode)', () => {
         expect(bayarMasukan.safeParse({ pembayaran: [] }).success).toBe(false);
         expect(bayarMasukan.safeParse({}).success).toBe(false);
         expect(bayarMasukan.safeParse({ metode: 'tunai', jumlah: 5000 }).success).toBe(false);
-        const empat = ['tunai', 'transfer', 'qris', 'tunai'].map((metode) => ({ metode, jumlah: 1 }));
+        const empat = ['tunai', 'transfer', 'qris', 'jkn'].map((metode) => ({ metode, jumlah: 1 }));
         expect(bayarMasukan.safeParse({ pembayaran: empat }).success).toBe(false);
         const ganda = bayarMasukan.safeParse({ pembayaran: [{ metode: 'qris', jumlah: 1 }, { metode: 'qris', jumlah: 2 }] });
         expect(ganda.success).toBe(false);

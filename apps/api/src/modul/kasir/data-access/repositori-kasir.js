@@ -1,6 +1,6 @@
 import * as db from '@klira/db';
 import { selesaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
-import { hargaTarif, rincianBayar, statusHasilLabDari, tanggalRetensi } from '@klira/shared';
+import { NILAI_METODE_BAYAR, hargaTarif, rincianBayar, statusHasilLabDari, tanggalRetensi } from '@klira/shared';
 import { totalTagihan, keItemDto, statusTagihanDari } from './repositori.js';
 const rentangWib = (tanggal) => {
     const dari = new Date(`${tanggal}T00:00:00.000+07:00`);
@@ -68,7 +68,7 @@ export class RepositoriKasirMysql {
         const bayar = await db.kelompokPembayaranUntukKeShiftDto(fasyankesId, shifts.map((s) => s.id));
         const nama = new Map((await db.daftarPenggunaUntukNamaPengguna([...new Set(shifts.map((s) => s.kasir_id))])).map((u) => [u.id, u.nama]));
         return shifts.map((s) => {
-            const per = { tunai: 0, transfer: 0, qris: 0 };
+            const per = Object.fromEntries(NILAI_METODE_BAYAR.map((m) => [m, 0]));
             let jumlah = 0;
             for (const b of bayar.filter((x) => x.shift_id === s.id)) {
                 per[b.metode] = b._sum.jumlah ?? 0;
@@ -76,7 +76,7 @@ export class RepositoriKasirMysql {
             }
             return {
                 id: s.id, kasir_id: s.kasir_id, kasir_nama: nama.get(s.kasir_id) ?? null, buka: s.buka.toISOString(), tutup: s.tutup?.toISOString() ?? null, kas_awal: s.kas_awal, kas_akhir: s.kas_akhir,
-                selisih: s.selisih, alasan_selisih: s.alasan_selisih, tunai: per.tunai, transfer: per.transfer, qris: per.qris, jumlah_pembayaran: jumlah, kas_seharusnya: s.kas_awal + per.tunai,
+                selisih: s.selisih, alasan_selisih: s.alasan_selisih, tunai: per.tunai, transfer: per.transfer, qris: per.qris, jkn: per.jkn, asuransi: per.asuransi, jumlah_pembayaran: jumlah, kas_seharusnya: s.kas_awal + per.tunai,
             };
         });
     }
@@ -113,13 +113,13 @@ export class RepositoriKasirMysql {
             db.kelompokPembayaranUntukRekap(fasyankesId, dari, sampai),
             db.daftarShiftKasirUntukRekap(fasyankesId, dari, sampai),
         ]);
-        const per = { tunai: 0, transfer: 0, qris: 0 };
+        const per = Object.fromEntries(NILAI_METODE_BAYAR.map((m) => [m, 0]));
         let jumlah = 0;
         for (const b of bayar) {
             per[b.metode] = b._sum.jumlah ?? 0;
             jumlah += b._count._all;
         }
-        return { tanggal, per_metode: per, total: per.tunai + per.transfer + per.qris, jumlah_pembayaran: jumlah, shift: await this.keShiftDto(fasyankesId, shifts) };
+        return { tanggal, per_metode: per, total: Object.values(per).reduce((a, b) => a + b, 0), jumlah_pembayaran: jumlah, shift: await this.keShiftDto(fasyankesId, shifts) };
     }
     // ---- Pembayaran ----
     /**
@@ -270,7 +270,7 @@ export class RepositoriKasirMysql {
      * Tutup bila di tahap kasir, tagihan lengkap, semua resep diserahkan; belum lunas hanya dengan alasan, kecuali kunjungan JKN
      * (alasan otomatis `alasanJkn`: biaya diklaim ke BPJS). Pembaruan bersyarat tahap (gagal diam bila sudah berubah).
      */
-    async tutup(fasyankesId, kunjunganId, alasan, alasanJkn) {
+    async tutup(fasyankesId, kunjunganId, alasan) {
         return db.transaksi(async (tx) => {
             const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, fasyankesId, tx);
             if (!k || k.tahap_layanan !== 'kasir')
@@ -282,8 +282,6 @@ export class RepositoriKasirMysql {
                 return { ok: false, sebab: 'resep_belum' };
             const total = t ? totalTagihan(t.item) : 0;
             const lunas = (t?.pembayaran.reduce((s, p) => s + p.jumlah, 0) ?? 0) >= total;
-            if (!lunas && k.cara_pembayaran === 'jkn' && !(alasan && alasan.trim()))
-                alasan = alasanJkn;
             if (!lunas && !(alasan && alasan.trim()))
                 return { ok: false, sebab: 'belum_lunas_alasan' };
             const tutup = new Date();

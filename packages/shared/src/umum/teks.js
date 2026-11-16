@@ -490,7 +490,7 @@ export const PROFIL_KLINIK = {
 /** Daftar pasien (3.1): halaman awal akun klinis dan administrasi. */
 export const DAFTAR_PASIEN = {
     judul: 'Daftar pasien',
-    tab: { antrean: 'Antrean pasien', poli: 'Poli', praktisi: 'Praktisi', jadwal: 'Jadwal praktik' },
+    tab: { antrean: 'Antrean pasien', pasien: 'Pasien', poli: 'Poli', praktisi: 'Praktisi', jadwal: 'Jadwal praktik' },
     cari: 'Cari pasien',
     petunjukCari: 'Cari nama, nomor RM, NIK, atau nomor JKN',
     registrasi: 'Registrasi pasien baru',
@@ -520,7 +520,7 @@ export const DAFTAR_PASIEN = {
     jenisSibuk: (jenis) => `Semua poli ${jenis} sedang melayani`,
     poliSaatDipanggil: 'Poli ditentukan saat pasien dipanggil: poli sejenis yang bebas.',
     poliSibuk: (poli, kode) => `${poli} sedang melayani ${kode}`,
-    aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', bayar: 'Pembayaran', serah_obat: 'Serahkan obat', tutup_kunjungan: 'Tutup kunjungan', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', serah_hasil: 'Serahkan hasil', panggil: 'Panggil', panggilUlang: 'Panggil ulang', panggilLagi: 'Panggil lagi', lewati: 'Lewati', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
+    aksi: { skrining: 'Skrining', periksa: 'Periksa', telaah: 'Telaah resep', bayar: 'Pembayaran', serah_obat: 'Serahkan obat', tutup_kunjungan: 'Tutup kunjungan', persetujuan: 'Persetujuan tindakan', order_lab: 'Order lab', spesimen: 'Ambil spesimen', hasil_lab: 'Hasil lab', riwayat: 'Riwayat', keluarga: 'Keluarga', bukaPasien: 'Buka pasien', buka: 'Buka data', daftarkan: 'Daftarkan kunjungan', serah_hasil: 'Serahkan hasil', panggil: 'Panggil', panggilUlang: 'Panggil ulang', panggilLagi: 'Panggil lagi', lewati: 'Lewati', mulai: 'Mulai', selesai: 'Selesai', batal: 'Batalkan' },
     aksiGagal: 'Tindakan antrean gagal. Muat ulang daftar lalu coba lagi.',
     batalJudul: 'Batalkan antrean?',
     batalPesan: (kode, nama) => `Antrean ${kode} atas nama ${nama} akan dibatalkan.`,
@@ -809,7 +809,7 @@ export const KLINIS = {
         kunjunganTidakAda: 'Kunjungan tidak ditemukan.', kunjunganTertutup: 'Kunjungan sudah melewati tahap pemeriksaan. Perubahan dilakukan lewat perbaikan catatan di Rekam medis.',
         pelaksanaTidakSah: 'Pelaksana tindakan bukan pengguna fasyankes ini.', perbaikanButuhPersetujuan: 'Perbaikan oleh pengguna lain atau setelah 2x24 jam memerlukan persetujuan lewat permintaan perbaikan di Rekam medis.',
         alasanPerbaikan: 'Alasan perbaikan wajib diisi karena bagian ini sudah disahkan.', bentrok: 'Catatan baru saja diubah pengguna lain. Muat ulang lalu coba lagi.',
-        syaratSelesai: 'Subjek, Asesmen, dan Diagnosis harus tersimpan sebelum pemeriksaan diselesaikan.', tahapSelesai: 'Pemeriksaan hanya dapat diselesaikan pada tahap pemeriksaan.',
+        syaratSelesai: 'Subjek dan Diagnosis (ICD-10) harus tersimpan sebelum pemeriksaan diselesaikan.', tahapSelesai: 'Pemeriksaan hanya dapat diselesaikan pada tahap pemeriksaan.',
         sumberTidakSah: 'Kunjungan sumber harus milik pasien yang sama dan berbeda dari kunjungan ini.', entitasTidakDikenal: 'Jenis catatan tidak dikenal.', favoritGanda: 'Favorit sudah ada.',
         favoritTidakAda: 'Favorit tidak ditemukan.', templatTidakAda: 'Templat tidak ditemukan.', anggotaTidakAda: 'Pasien anggota tidak ditemukan.', keluargaGanda: 'Anggota keluarga ini sudah tertaut.',
         keluargaTidakAda: 'Data keluarga tidak ditemukan.', diriSendiri: 'Pasien tidak dapat ditautkan dengan dirinya sendiri.',
@@ -831,7 +831,7 @@ export const PENUNJANG = {
     rekap: {
         kolom: { pasien: 'Pasien', pemeriksaan: 'Pemeriksaan', prioritas: 'Prioritas', status: 'Status', hasil: 'Hasil', waktu: 'Dipesan' },
         filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal', kosong: 'Tidak ada order lab pada penyaring ini.',
-        gagalMuat: 'Rekap lab gagal dimuat.', catatan: 'Pekerjaan per pasien (ambil spesimen, hasil) dibuka dari Daftar pasien.', bukaDaftar: 'Buka Daftar pasien',
+        gagalMuat: 'Rekap lab gagal dimuat.', catatan: 'Pekerjaan per pasien (ambil spesimen, hasil) dikerjakan di tab Penunjang pada halaman Pasien.', bukaDaftar: 'Buka Daftar pasien',
     },
     master: {
         judul: 'Master pemeriksaan', tambah: 'Tambah pemeriksaan', ubah: 'Ubah', cari: 'Cari pemeriksaan', kosong: 'Belum ada pemeriksaan.', gagalMuat: 'Master pemeriksaan gagal dimuat.',
@@ -1007,8 +1007,7 @@ export const KASIR = {
         petunjuk: 'Harga hanya berubah untuk kunjungan ini; master tarif tidak berubah.',
     },
     jkn: {
-        ditanggung: 'Ditanggung JKN', petunjukBayar: 'Pasien JKN: biaya ditanggung BPJS dan diklaim setelah kunjungan ditutup. Catat pembayaran hanya untuk biaya di luar tanggungan (mis. naik kelas).',
-        petunjukTutup: 'Pasien JKN: kunjungan bisa ditutup tanpa pembayaran. Tagihan tetap tercatat sebagai dasar klaim.', alasan: 'Ditanggung JKN (diklaim ke BPJS)',
+        ditanggung: 'Ditanggung JKN', petunjukBayar: 'Pasien JKN atau asuransi: pilih metode JKN (BPJS) atau Asuransi dan isi jumlah yang ditanggung, walaupun tidak ada uang yang diterima. Biaya di luar tanggungan (mis. naik kelas) dicatat dengan metode lain.',
     },
     judul: 'Kasir dan klaim',
     tab: { shift: 'Shift dan rekap harian', klaim: 'Klaim JKN/BPJS' },
@@ -1454,7 +1453,7 @@ export const UJI_ENDPOINT = {
 export const TEKS = { satusehat: PENGATURAN_SATUSEHAT, pcare: PENGATURAN_PCARE, antreanJkn: ANTREAN_JKN, ujiEndpoint: UJI_ENDPOINT, beranda: BERANDA, pdp: PDP, klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN };
 /** Halaman Pasien (tab di Daftar pasien): profil, riwayat kunjungan, dan catatan pemeriksaan SOAPIE per kunjungan. */
 export const PROFIL_PASIEN = {
-    judul: 'Pasien',
+    judul: 'Pasien', pilihPasien: 'Pilih pasien dari daftar di kiri, atau cari dengan nama, nomor RM, NIK, atau nomor JKN.',
     cari: 'Cari pasien', petunjukCari: 'Nama, nomor RM, NIK, atau nomor JKN',
     memuat: 'Memuat…', gagalDaftar: 'Daftar pasien gagal dimuat.', kosong: 'Tidak ada pasien yang cocok.',
     kembali: 'Antrean',
@@ -1491,7 +1490,7 @@ export const PROFIL_PASIEN = {
         alasan: 'Alasan perubahan', alasanKet: 'Kunjungan sudah ditutup: setiap perubahan wajib beralasan dan tercatat di audit.', alasanWajib: 'Alasan perubahan wajib diisi.',
         tersimpan: (n) => `${n} bagian tersimpan.`, tanpaPerubahan: 'Tidak ada perubahan untuk disimpan.',
         selesai: 'Pemeriksaan diselesaikan.', tandaVital: 'Tanda vital', tandaVitalKet: 'Tersimpan terpisah dari catatan SOAPIE.', tandaVitalKosong: 'Belum ada tanda vital.', gagal: 'Catatan gagal disimpan.',
-        syaratSelesai: 'Subjek, Asesmen, dan Diagnosis wajib diisi sebelum pemeriksaan diselesaikan.',
+        syaratSelesai: 'Subjek dan Diagnosis (ICD-10) wajib diisi sebelum pemeriksaan diselesaikan.',
         bacaSaja: {
             tanpaIzin: 'Akun Anda hanya dapat melihat catatan pemeriksaan ini.',
             lab: 'Kunjungan penunjang saja tidak memiliki catatan pemeriksaan dokter.',

@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { awalSerah, bentukSerah, galatSerah } from '../farmasi/keadaan-farmasi.js';
 import { KASIR } from '@klira/shared';
 import { awalBayar, awalShift, bentukBayar, bisaTutup, daftarSyarat, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, galatUbahHarga, hapusBaris, hargaDiubah, ringkasBayar, selisihShift, tambahBaris, ubahBaris, ubahHargaTersedia } from './keadaan-kasir.js';
-const gambaran = (syarat = {}) => ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ditanggung_jkn: false, ...syarat } });
+const gambaran = (syarat = {}) => ({ syarat: { tahap_kasir: true, tagihan_lengkap: true, resep_diserahkan: true, lunas: true, ...syarat } });
 describe('tambah item dari tarif', () => {
     it('tarif wajib dipilih dan jumlah bilangan bulat minimal 1', () => {
         expect(galatTambahItem('', '1')).toBeTruthy();
@@ -63,9 +63,9 @@ describe('syarat tutup kunjungan', () => {
         expect(bisaTutup(gambaran({ resep_diserahkan: false }), 'alasan')).toBe(false);
         expect(bisaTutup(gambaran({ lunas: false }), '')).toBe(false);
         expect(bisaTutup(gambaran({ lunas: false }), 'akan melunasi besok')).toBe(true);
-        // JKN: biaya diklaim ke BPJS, boleh ditutup tanpa pembayaran dan tanpa alasan; syarat wajib lain tetap berlaku.
-        expect(bisaTutup(gambaran({ lunas: false, ditanggung_jkn: true }), '')).toBe(true);
-        expect(bisaTutup(gambaran({ lunas: false, ditanggung_jkn: true, resep_diserahkan: false }), '')).toBe(false);
+        // Pasien JKN pun harus menginput pembayaran (metode JKN): tanpa pelunasan atau alasan, kunjungan belum bisa ditutup.
+        expect(bisaTutup(gambaran({ lunas: false }), '')).toBe(false);
+        expect(awalBayar(5000, 'jkn')).toEqual({ baris: [{ metode: 'jkn', jumlah: '5000' }] });
     });
 });
 describe('shift', () => {

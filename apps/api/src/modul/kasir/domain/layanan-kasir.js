@@ -19,7 +19,6 @@ export function buatLayananKasir({ repo, farmasi, audit }) {
             kunjungan: k, tagihan, resep, shift_terbuka: !!shift, tarif, hasil_lab: hasilLab,
             syarat: {
                 tahap_kasir: k.tahap_layanan === 'kasir', tagihan_lengkap: tagihan.status_tagihan === 'lengkap', resep_diserahkan: resep.every((r) => r.status === 'diserahkan'), lunas: tagihan.sisa === 0,
-                ditanggung_jkn: k.cara_pembayaran === 'jkn',
             },
         };
     }
@@ -81,7 +80,7 @@ export function buatLayananKasir({ repo, farmasi, audit }) {
             if (!lab)
                 return gagal('konflik', G.bukanPenunjang);
             const tagihan = await repo.tagihan(p.fasyankes_id, kunjunganId);
-            if (!(tagihan.sisa === 0 || k.cara_pembayaran === 'jkn'))
+            if (tagihan.sisa !== 0)
                 return gagal('konflik', G.belumLunasSerah);
             const h = await repo.serahHasil(p.fasyankes_id, p.id, kunjunganId, m);
             if (!h.ok)
@@ -146,7 +145,7 @@ export function buatLayananKasir({ repo, farmasi, audit }) {
         async tutup(p, kunjunganId, m, alamat) {
             if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const h = await repo.tutup(p.fasyankes_id, kunjunganId, m.alasan?.trim() || null, KASIR.jkn.alasan);
+            const h = await repo.tutup(p.fasyankes_id, kunjunganId, m.alasan?.trim() || null);
             if (!h.ok) {
                 const pesan = { tahap_salah: G.tahapSalah, tagihan_belum_lengkap: G.tagihanBelumLengkap, resep_belum: G.resepBelumDiserahkan, belum_lunas_alasan: G.belumLunasAlasan, bentrok: G.bentrok }[h.sebab];
                 return gagal('konflik', pesan, h.sebab === 'belum_lunas_alasan' ? 'alasan' : undefined);
