@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import { awalOrderLab, bentukOrderLab, galatOrderLab, gantiPilihan, perkiraanBiaya, rupiah, saringPemeriksaan } from './keadaan-order-lab.js';
 import { awalSpesimen, bentukSpesimen, galatSpesimen, gantiOrderSpesimen, menungguSpesimen } from './keadaan-spesimen.js';
 import { awalHasilLab, galatHasilLab, langkahBermasalahHasil, menungguHasil, pulihkanHasilLab, rencanaHasil, saranUntuk, terapkanSaran, ubahIsian, } from './keadaan-hasil-lab.js';
+import { bisaCetakHasilLab, susunLembarHasilLab } from './keadaan-cetak-lab.js';
 import { awalMasterPemeriksaan, bentukMasterPemeriksaan, galatMasterPemeriksaan, perubahanMaster } from './keadaan-master-pemeriksaan.js';
 const master = (id, p = {}) => ({
     id, kode: `K${id}`, nama: `Tes ${id}`, kode_loinc: null, jenis_spesimen: null, satuan: null, rujukan_min: null, rujukan_maks: null, rujukan_teks: null, aktif: true, tarif: null, ...p,
@@ -131,5 +132,31 @@ describe('Hasil lab: draf', () => {
         expect(hasil.interpretasi).toEqual({ 1: 'normal', 2: '' });
         expect(hasil.validasi).toBe(false);
         expect(pulihkanHasilLab(awal, null)).toBe(awal);
+    });
+});
+describe('Cetak hasil lab', () => {
+    const orders = [
+        order(1, { nama: 'Hemoglobin', kode_loinc: '718-7', status: 'divalidasi', spesimen: { asal: 'Darah vena', waktu_ambil: '2026-11-17T02:00:00Z', petugas_id: 2, petugas_nama: 'Fajar' },
+            hasil: { nilai: '14.2', satuan: 'g/dL', rujukan_teks: '12-16 g/dL', interpretasi: 'normal', catatan: null, dientri_oleh: 'Fajar', dientri_pada: '2026-11-17T02:05:00Z', validator_nama: 'Fajar', divalidasi_pada: '2026-11-17T02:10:00Z' } }),
+        order(2, { nama: 'Gula darah sewaktu', kode_loinc: '2339-0', status: 'divalidasi', spesimen: { asal: 'Darah kapiler', waktu_ambil: '2026-11-17T02:01:00Z', petugas_id: 2, petugas_nama: 'Fajar' },
+            hasil: { nilai: '215', satuan: 'mg/dL', rujukan_teks: '70-140 mg/dL', interpretasi: 'tinggi', catatan: 'Puasa ulang', dientri_oleh: 'Fajar', dientri_pada: '2026-11-17T02:06:00Z', validator_nama: 'Fajar', divalidasi_pada: '2026-11-17T02:12:00Z' } }),
+        order(3, { nama: 'Kolesterol', status: 'menunggu_hasil', hasil: { nilai: '190', satuan: 'mg/dL', rujukan_teks: null, interpretasi: 'normal', catatan: null, dientri_oleh: 'Fajar', dientri_pada: '', validator_nama: null, divalidasi_pada: null } }),
+    ];
+    it('hanya menyertakan hasil yang sudah divalidasi dan menandai hasil di luar batas normal', () => {
+        expect(bisaCetakHasilLab([])).toBe(false);
+        expect(bisaCetakHasilLab([orders[2]])).toBe(false);
+        expect(bisaCetakHasilLab(orders)).toBe(true);
+        const l = susunLembarHasilLab({
+            orders,
+            pasien: { nama: 'Raka Pratama', nomor_rm: '00-00-016', tanggal_lahir: '1995-11-17', jenis_kelamin: 'laki_laki' },
+            kunjungan: { id: 59, mulai: '2026-11-17T01:39:00Z', jenis: 'LAB', cara_pembayaran: 'umum', fasyankes_nama: 'Klinik Bhakti Rahayu' },
+        });
+        expect(l.klinik).toBe('Klinik Bhakti Rahayu');
+        expect(l.poli).toBe('Laboratorium');
+        expect(l.validator).toBe('Fajar');
+        expect(l.spesimenAsal).toBe('Darah vena, Darah kapiler');
+        expect(l.baris).toHaveLength(2);
+        expect(l.baris[0]).toMatchObject({ nama: 'Hemoglobin', nilai: '14.2', interpretasi: 'Normal', tebal: false });
+        expect(l.baris[1]).toMatchObject({ nama: 'Gula darah sewaktu', nilai: '215', interpretasi: 'Tinggi', keterangan: 'Puasa ulang', tebal: true });
     });
 });

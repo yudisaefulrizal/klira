@@ -15,7 +15,7 @@ export function buatRutePenunjang(layananAkses, layananIzin, layanan) {
     const pengguna = (res) => res.locals.pengguna;
     const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
-    const lihatOrder = wajibIzinSalahSatu(['penunjang', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat']);
+    const lihatOrder = wajibIzinSalahSatu(['penunjang', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['kasir', 'lihat'], ['kasir', 'input']);
     const pesanOrder = wajibIzin('klinis', 'input');
     // Master dibaca juga oleh pemesan order (pilih pemeriksaan).
     const bacaMaster = wajibIzinSalahSatu(['penunjang', 'lihat'], ['klinis', 'input']);

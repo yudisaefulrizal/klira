@@ -1,10 +1,11 @@
-import { KASIR, STATUS_HASIL_LAB } from '@klira/shared';
+import { KASIR, PENUNJANG, STATUS_HASIL_LAB } from '@klira/shared';
 import { hasilBelumDiserahkan } from '../../api-klien/kasir.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { kartu, tombol, tabel, baris, sel, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { bukaSerahHasil } from '../../modal/kasir-klaim/serah-hasil.js';
+import { bukaCetakHasilLab } from '../../modal/penunjang/cetak-hasil-lab.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 
 /** Hasil lab kunjungan penunjang saja yang belum diserahkan (lintas tanggal), dengan tombol Serahkan hasil bila hasil sudah divalidasi. */
@@ -25,7 +26,8 @@ export function TabHasil() {
       for (const r of daftar) {
         const hasil = sel(); hasil.append(lencana(STATUS_HASIL_LAB.label(r.status), STATUS_HASIL_LAB.warna(r.status)), ` ${r.divalidasi}/${r.total}`);
         const aksi = sel(); aksi.style.textAlign = 'right';
-        if (r.status === 'belum_diserahkan' && boleh('kasir', 'input')) aksi.append(tombol(S.serahkan, () => { modal = bukaSerahHasil({ kunjunganId: r.kunjungan_id, pasienNama: r.pasien_nama, onTutup() { modal = undefined; }, onSelesai() { modal = undefined; void muat(); } }); }, 'sekunder'));
+        if (r.divalidasi > 0) aksi.append(tombol(PENUNJANG.cetak.tombol, () => { modal?.tutup(); modal = bukaCetakHasilLab({ kunjunganId: r.kunjungan_id, pasien: { nama: r.pasien_nama, nomor_rm: r.pasien_nomor_rm }, kunjungan: { id: r.kunjungan_id, mulai: r.mulai, jenis: 'LAB', perujuk: r.perujuk }, onTutup() { modal = undefined; } }); }, 'sekunder'), ' ');
+        if (r.status === 'belum_diserahkan' && boleh('kasir', 'input')) aksi.append(tombol(S.serahkan, () => { modal?.tutup(); modal = bukaSerahHasil({ kunjunganId: r.kunjungan_id, pasienNama: r.pasien_nama, onTutup() { modal = undefined; }, onSelesai() { modal = undefined; void muat(); } }); }, 'sekunder'));
         tbl.tbody.append(baris(sel(r.pasien_nama), sel(r.pasien_nomor_rm), sel(formatWaktu(r.mulai)), sel(r.perujuk ?? '-'), hasil, aksi));
       }
       box.append(tbl.el); isi.append(box);

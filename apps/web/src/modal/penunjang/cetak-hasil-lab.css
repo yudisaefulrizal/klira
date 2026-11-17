@@ -1,0 +1,32 @@
+/* Cetak hasil pemeriksaan laboratorium: pratinjau layar dan lembar A4 saat dicetak. */
+.chl-lapis { position: fixed; inset: 0; z-index: 1000; overflow: auto; background: var(--warna-latar); padding: 16px; }
+.chl-alat { display: flex; align-items: center; gap: 8px; max-width: 210mm; margin: 0 auto 12px; }
+.chl-tumbuh { flex: 1; }
+.chl-memuat { max-width: 210mm; margin: 0 auto; color: var(--warna-teks-redup); }
+.chl-lembar { box-sizing: border-box; width: 210mm; min-height: 200mm; margin: 0 auto; padding: 14mm 14mm 12mm; background: #fff; color: #17302e;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 11px; line-height: 1.45; box-shadow: var(--bayangan-modal); display: flex; flex-direction: column; gap: 10px; }
+.chl-kepala { border-bottom: 2px solid #0b6b64; padding-bottom: 8px; }
+.chl-kepala h1 { margin: 0 0 2px; font-size: 16px; letter-spacing: .03em; color: #0b6b64; }
+.chl-kepala h2 { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: #17302e; }
+.chl-kisi { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 12px; border: 1px solid #b9c6c3; padding: 8px 10px; background: #f9fbfb; }
+.chl-sel { display: flex; flex-direction: column; min-width: 0; }
+.chl-label { font-size: 9.5px; font-weight: 500; color: #4b605e; }
+.chl-nilai { font-size: 11px; overflow-wrap: anywhere; }
+.chl-tebal { font-weight: 600; color: #7a4a00; }
+.chl-tabel { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.chl-tabel th { background: #0b6b64; color: #fff; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 6px 8px; border: 1px solid #0b6b64; }
+.chl-tabel td { padding: 6px 8px; border: 1px solid #b9c6c3; vertical-align: top; }
+.chl-tabel tr:nth-child(even) td { background: #f4f8f7; }
+.chl-loinc { display: block; font-size: 9.5px; color: #4b605e; }
+.chl-pengesahan { margin-top: 8px; align-self: flex-end; min-width: 55mm; border: 1px solid #b9c6c3; background: #f4f8f7; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 10px; color: #3f5755; }
+.chl-pengesahan strong { font-size: 10.5px; color: #17302e; }
+.chl-kaki { margin-top: auto; padding-top: 8px; border-top: 1px solid #d5dfdd; display: flex; justify-content: space-between; gap: 12px; font-size: 9.5px; color: #4b605e; }
+
+@media print {
+  @page { size: A4; margin: 0; }
+  body > *:not(.chl-lapis) { display: none !important; }
+  .chl-lapis { position: static; padding: 0; background: #fff; overflow: visible; }
+  .chl-alat, .chl-memuat { display: none; }
+  .chl-lembar { box-shadow: none; margin: 0; width: 100%; min-height: auto; }
+  .chl-tabel th, .chl-tabel tr:nth-child(even) td, .chl-kisi, .chl-pengesahan { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

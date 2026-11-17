@@ -1,4 +1,4 @@
-import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, NILAI_METODE_BAYAR, STATUS_HASIL_LAB } from '@klira/shared';
+import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, NILAI_METODE_BAYAR, PENUNJANG, STATUS_HASIL_LAB } from '@klira/shared';
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan, tutupKunjungan } from '../../api-klien/kasir.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
@@ -13,6 +13,7 @@ import { bukaCetakBayar } from '../../modal/kasir-klaim/cetak-bayar.js';
 import { bisaCetakBayar } from '../../modal/kasir-klaim/keadaan-cetak-bayar.js';
 import { TambahItemTarif } from '../../modal/kasir-klaim/tambah-item-tarif.js';
 import { bukaUbahHarga } from '../../modal/kasir-klaim/ubah-harga.js';
+import { bukaCetakHasilLab } from '../../modal/penunjang/cetak-hasil-lab.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 
@@ -23,11 +24,11 @@ const LABEL_SYARAT = { tahap: B.syarat.tahap, tagihan: B.syarat.tagihan, resep: 
  * Tab Penutup di panel kunjungan (pengganti modal Pembayaran, Serah terima obat, dan Tutup kunjungan): ringkasan diagnosis dan tindakan, tagihan, pembayaran,
  * serah obat, lalu tutup kunjungan, masing-masing aktif sesuai izin akun. `onBerubah()` dipanggil tiap perubahan yang menggeser tahap atau tagihan.
  */
-export function PanelPenutup({ kunjunganId, klinis, onBerubah }) {
+export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, onBerubah }) {
   const boleh = izinSaatIni();
   const bolehKasir = boleh('kasir', 'lihat') || boleh('kasir', 'input') || boleh('kasir', 'perbaikan'), bolehBayar = boleh('kasir', 'input'), bolehTutup = boleh('kasir', 'perbaikan'), bolehObat = boleh('farmasi', 'input');
   const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
-  let g = null, bayar = awalBayar(), galatMuat = null, galat = null, info = null, dicoba = false, memproses = false, alasan = '', ditutup = null, aktif = true, anak = [], modalHarga, modalSerah;
+  let g = null, bayar = awalBayar(), galatMuat = null, galat = null, info = null, dicoba = false, memproses = false, alasan = '', ditutup = null, aktif = true, anak = [], modalHarga, modalSerah, modalCetakLab;
   const tahap = () => g?.kunjungan.tahap_layanan ?? klinis().kunjungan.tahap_layanan;
   // Setelah obat diserahkan, syarat tutup (resep sudah diserahkan) berubah di server: data kasir dimuat ulang sekali per penyerahan.
   let serahSegar = true;
@@ -90,6 +91,7 @@ export function PanelPenutup({ kunjunganId, klinis, onBerubah }) {
       r1.append(lencana(STATUS_HASIL_LAB.label(hl.status), STATUS_HASIL_LAB.warna(hl.status)), teks(`${hl.divalidasi}/${hl.total}`, true));
       if (hl.status === 'diserahkan') r1.append(teks(KASIR.serahHasil.diserahkanPada(formatWaktu(hl.diserahkan_pada), hl.penerima_nama ?? '-'), true));
       if (hl.status === 'belum_diserahkan' && bolehBayar) { const b = tombol(KASIR.serahHasil.serahkan, () => { modalSerah = bukaSerahHasil({ kunjunganId, pasienNama: g.kunjungan.pasien_nama, onTutup() { modalSerah = undefined; }, onSelesai(h) { modalSerah = undefined; terapkan(h); } }); }, 'sekunder'); b.disabled = memproses || (g.tagihan.sisa > 0 && !g.syarat.ditanggung_jkn); r1.append(b); }
+      if (hl.divalidasi > 0) { const bCetak = tombol(PENUNJANG.cetak.tombol, () => { modalCetakLab?.tutup(); modalCetakLab = bukaCetakHasilLab({ kunjunganId, pasien, kunjungan: { ...kjRingkas, ...g.kunjungan }, onTutup() { modalCetakLab = undefined; } }); }, 'sekunder'); r1.append(bCetak); }
       if (hl.status === 'belum_diserahkan' && g.tagihan.sisa > 0) r1.append(teks(`${B.sisa}: ${rupiah(g.tagihan.sisa)}`, true));
       if (hl.status === 'menunggu') blok.append(teks(KASIR.serahHasil.menunggu, true));
       blok.prepend(judul, r1); e.append(blok);
@@ -250,7 +252,7 @@ export function PanelPenutup({ kunjunganId, klinis, onBerubah }) {
       .catch((e) => { if (aktif) { galatMuat = e instanceof GalatApi ? e.message : B.gagal; lukis(); } });
   };
   el.perbarui = () => lukis();
-  el.tutup = () => { aktif = false; for (const a of anak) a.tutup?.(); modalHarga?.tutup(); modalSerah?.tutup(); serah.tutup(); };
+  el.tutup = () => { aktif = false; for (const a of anak) a.tutup?.(); modalHarga?.tutup(); modalSerah?.tutup(); modalCetakLab?.tutup(); serah.tutup(); };
   lukis(); el.muat();
   return el;
 }

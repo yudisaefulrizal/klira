@@ -27,6 +27,8 @@ import { bukaAmbilSpesimen } from '../../modal/penunjang/ambil-spesimen.js';
 import { bukaHasilLab } from '../../modal/penunjang/hasil-lab.js';
 import { menungguSpesimen } from '../../modal/penunjang/keadaan-spesimen.js';
 import { menungguHasil } from '../../modal/penunjang/keadaan-hasil-lab.js';
+import { bukaCetakHasilLab } from '../../modal/penunjang/cetak-hasil-lab.js';
+import { bisaCetakHasilLab } from '../../modal/penunjang/keadaan-cetak-lab.js';
 import { bukaCetakRekamMedis } from '../../modal/rekam-medis/cetak-rekam-medis.js';
 import { bukaResumeSurat } from '../../modal/rekam-medis/resume-surat.js';
 import { tanggalWaktuPendek } from '../../util/format.js';
@@ -366,7 +368,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     }
     /** Penutup (tagihan, pembayaran, serah obat, tutup kunjungan) dibuat sekali dan dipakai ulang supaya isian pembayaran tidak hilang saat berpindah tab. */
     function isiPenutup() {
-        if (!penutup) penutup = PanelPenutup({ kunjunganId, klinis: () => klinis, onBerubah: () => { void muat(); onBerubah(); } });
+        if (!penutup) penutup = PanelPenutup({ kunjunganId, pasien, ringkas, klinis: () => klinis, onBerubah: () => { void muat(); onBerubah(); } });
         penutup.perbarui();
         return penutup;
     }
@@ -453,6 +455,10 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             const buka = (fungsi) => () => { tutupModal(); modal = fungsi({ kunjunganId, pasien: pasienRingkas, onTutup: tutupModal, onSelesai: sesudah }); };
             if (menungguSpesimen(dm.nilai).length) kepalaSeksi.append(tombol(PENUNJANG.aksi.spesimen, buka(bukaAmbilSpesimen), 'sekunder'));
             if (menungguHasil(dm.nilai).length) kepalaSeksi.append(tombol(PENUNJANG.aksi.hasil, buka(bukaHasilLab), 'sekunder'));
+        }
+        if (dm.nilai && bisaCetakHasilLab(dm.nilai)) {
+            const kjRingkas = { ...ringkas, ...kj, poli_nama: kj.poli_nama ?? konteks?.kunjungan?.poli_nama ?? ringkas?.poli_nama ?? null, dpjp_nama: dpjpNama() };
+            kepalaSeksi.append(tombol(PENUNJANG.cetak.tombol, () => { tutupModal(); modal = bukaCetakHasilLab({ kunjunganId, orders: dm.nilai, pasien, kunjungan: kjRingkas, onTutup: tutupModal }); }, 'sekunder'));
         }
         bungkus.append(kepalaSeksi);
         const d = data.penunjang;

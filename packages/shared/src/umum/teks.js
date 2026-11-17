@@ -907,6 +907,13 @@ export const PENUNJANG = {
         ringkasanHasil: 'Hasil yang akan disimpan', langkahSebelumnya: 'Isi nilai minimal satu hasil terlebih dahulu.', ringkasanKosong: 'Belum ada hasil yang diisi.', belumDiisi: 'Belum diisi',
         gagalSebagian: (nama) => `Hasil "${nama}" gagal diproses. Hasil sebelumnya sudah tersimpan.`, rujukanTidakAda: 'Tanpa rentang rujukan',
     },
+    cetak: {
+        tombol: 'Cetak hasil lab', judul: 'Cetak hasil lab', judulLembar: 'HASIL PEMERIKSAAN LABORATORIUM', cetak: 'Cetak', tutup: 'Tutup', memuat: 'Menyiapkan hasil lab…', gagal: 'Hasil lab gagal dimuat.', kosong: 'Belum ada hasil laboratorium yang divalidasi pada kunjungan ini.',
+        tglDaftar: 'Tgl. pendaftaran', noPelayanan: 'No. kunjungan', poli: 'Unit / Poli', pengirim: 'Dokter / Perujuk',
+        noRm: 'No. RM', nama: 'Nama pasien', nik: 'NIK', lahirKelamin: 'Tgl. lahir · Jns. kelamin', caraBayar: 'Cara pembayaran', spesimen: 'Spesimen', waktuSpesimen: 'Waktu ambil spesimen', waktuValidasi: 'Waktu validasi',
+        kolom: { pemeriksaan: 'Pemeriksaan', hasil: 'Hasil', satuan: 'Satuan', rujukan: 'Nilai rujukan', interpretasi: 'Interpretasi', keterangan: 'Keterangan' },
+        peranLab: 'Analis laboratorium', disahkan: 'Disahkan elektronik', dicetak: (oleh, waktu) => `Dicetak dari Klira${oleh ? ` oleh ${oleh}` : ''}, ${waktu}`, tandaTebal: 'Isian bercetak tebal: hasil di luar batas normal',
+    },
     galat: {
         cariPendek: 'Ketik minimal dua huruf.', angka: 'Isi dengan angka.', loinc: 'Pilih kode LOINC dari hasil pencarian, atau isi dengan format seperti 718-7.', rentang: 'Rujukan minimum tidak boleh lebih besar dari maksimum.', tidakAdaPerubahan: 'Tidak ada perubahan.',
         pilihPemeriksaan: 'Pilih minimal satu pemeriksaan.', pemeriksaanGanda: 'Pemeriksaan tidak boleh ganda.', waktuMasaDepan: 'Waktu pengambilan tidak boleh di masa depan.', pilihInterpretasi: 'Pilih interpretasi hasil.',
