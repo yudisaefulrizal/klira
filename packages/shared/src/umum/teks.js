@@ -1058,7 +1058,7 @@ export const KASIR = {
     },
     bayar: {
         judul: 'Pembayaran', judulDenganObat: 'Pembayaran dan serah obat', langkah: { tagihan: 'Tagihan', pembayaran: 'Pembayaran', serah: 'Serah terima obat', ringkasan: 'Ringkasan' }, tagihanJudul: 'Rincian tagihan', kolom: { item: 'Item', jumlah: 'Jumlah', harga: 'Harga', subtotal: 'Subtotal' },
-        total: 'Total', dibayar: 'Sudah dibayar', sisa: 'Sisa', lunas: 'Lunas', tagihanLengkap: 'Tagihan lengkap', tagihanBelum: 'Ada item tanpa harga: tagihan belum lengkap dan belum bisa dibayar.', metode: 'Metode bayar', diterima: 'Jumlah diterima (Rp)',
+        total: 'Total', dibayar: 'Sudah dibayar', sisa: 'Sisa', lunas: 'Lunas', belumLunas: 'Belum lunas', tagihanLengkap: 'Tagihan lengkap', tagihanBelumLengkap: 'Tagihan belum lengkap', tagihanBelum: 'Ada item tanpa harga: tagihan belum lengkap dan belum bisa dibayar.', metode: 'Metode bayar', diterima: 'Jumlah diterima (Rp)',
         kembalian: (rp) => `Kembalian ${rp}`, catat: 'Catat pembayaran', mencatat: 'Mencatat...', pembayaranJudul: 'Pembayaran tercatat', tanpaPembayaran: 'Belum ada pembayaran.', tanpaShift: 'Buka shift kasir dulu di halaman Kasir dan klaim.',
         tercatat: (rp) => `Pembayaran ${rp} tercatat.`, serahJudul: 'Serah terima obat', serahKosong: 'Tidak ada resep pada kunjungan ini.', serahBelumSiap: 'Resep belum siap di farmasi; serah terima menunggu apoteker menyiapkan.',
         serahSudah: 'Obat sudah diserahkan.', serah: 'Serahkan obat', menyerahkan: 'Menyerahkan...', serahInfo: 'Penyerahan mengurangi stok (batch terdekat kedaluwarsa lebih dulu) dan tidak dapat dibatalkan.',
@@ -1113,6 +1113,11 @@ export const REKAM_MEDIS = {
             versi: (n) => `Versi ${n}`, sah: 'Isi sah (hash cocok)', berubah: 'Isi berubah setelah disahkan', suratSudah: 'Surat yang sudah dibuat', suratBaru: 'Surat baru (kosongkan isi bila tidak membuat surat)', suratJenis: 'Jenis surat', suratTujuan: 'Tujuan', suratIsi: 'Isi surat',
             suratTanpa: 'Belum ada surat.', simpan: 'Simpan', menyimpan: 'Menyimpan...', tersimpan: 'Tersimpan.', gagal: 'Resume gagal disimpan.', ringkasanTanpa: 'Tanpa surat baru', jenisSurat: { rujukan: 'Surat rujukan', keterangan_sakit: 'Surat keterangan sakit', lainnya: 'Surat lainnya' }, tutup: 'Tutup',
             hasilJudul: 'Resume tersimpan', hasilPesan: (surat) => (surat ? `Resume tersimpan dan surat ${surat} dibuat.` : 'Resume tersimpan.'),
+            cetak: {
+                tombol: 'Cetak resume & surat', judul: 'Cetak resume medis dan surat', judulLembar: 'RESUME MEDIS & SURAT KETERANGAN', judulResume: 'RESUME MEDIS', cetak: 'Cetak', tutup: 'Tutup', memuat: 'Menyiapkan dokumen…', gagal: 'Dokumen gagal dimuat.', kosong: 'Belum ada resume medis atau surat pada kunjungan ini.',
+                noRm: 'No. RM', nama: 'Nama pasien', noPelayanan: 'No. kunjungan', poli: 'Unit / Poli', dokter: 'Dokter', disahkan: 'Disahkan elektronik',
+                dicetak: (oleh, waktu) => `Dicetak dari Klira${oleh ? ` oleh ${oleh}` : ''}, ${waktu}`,
+            },
         },
         pembukaan: {
             judul: 'Permintaan pembukaan rekam medis', ajukan: 'Ajukan permintaan', langkah: { pemohon: 'Pemohon', dasar: 'Dasar dan cakupan', ringkasan: 'Ringkasan' }, pemohon: 'Nama pemohon', instansi: 'Instansi pemohon', dasarLabel: 'Dasar pembukaan', alasanHukum: 'Alasan hukum',
@@ -1523,7 +1528,7 @@ export const PROFIL_PASIEN = {
         vital: { suhu: 'Suhu (°C)', tinggi_badan: 'Tinggi Badan (cm)', berat_badan: 'Berat (kg)', tensi: 'Tensi (mmHg)', respirasi: 'Respirasi (/menit)', nadi: 'Nadi (/menit)', spo2: 'SpO2 (%)', gcs: 'GCS (E,V,M)', kesadaran: 'Kesadaran', galatTensi: 'Tulis tensi sebagai sistole/diastole, contoh 120/80.' },
         dilakukan: 'Dilakukan', profesi: 'Profesi / Jabatan / Departemen', alergi: 'Alergi', alergiKet: 'Disimpan pada skrining keperawatan kunjungan ini.', alergiTercatat: (teks) => `Tercatat sebelumnya: ${teks}`, tanpaAlergi: 'Tidak ada',
         nomorDokumen: 'Nomor dokumen',
-        menyimpan: 'Menyimpan…', selesaikan: 'Selesaikan', simpanPerubahan: 'Simpan perubahan', cetak: 'Cetak rekam medis',
+        menyimpan: 'Menyimpan…', selesaikan: 'Selesaikan', simpanPerubahan: 'Simpan perubahan', cetak: 'Cetak rekam medis', cetakMenu: 'Cetak dokumen',
         alasan: 'Alasan perubahan', alasanKet: 'Kunjungan sudah ditutup: setiap perubahan wajib beralasan dan tercatat di audit.', alasanWajib: 'Alasan perubahan wajib diisi.',
         tersimpan: (n) => `${n} bagian tersimpan.`, tanpaPerubahan: 'Tidak ada perubahan untuk disimpan.',
         selesai: 'Pemeriksaan diselesaikan.', tandaVital: 'Tanda vital', tandaVitalKet: 'Tersimpan terpisah dari catatan SOAPIE.', tandaVitalKosong: 'Belum ada tanda vital.', gagal: 'Catatan gagal disimpan.',

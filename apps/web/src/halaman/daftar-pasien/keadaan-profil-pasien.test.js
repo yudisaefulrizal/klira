@@ -1,6 +1,6 @@
 import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_SOAPIE } from '@klira/shared';
 import { awalKeadaan } from '../../modal/pemeriksaan/keadaan-pemeriksaan.js';
-import { alamatProfil, bentukDraf, terapkanDraf, keadaanAlamat, kepesertaan, modeCatatan, parseTensi, pelaksana, saringRiwayat, teksTensi, umurTahun } from './keadaan-profil-pasien.js';
+import { alamatProfil, bentukDraf, terapkanDraf, keadaanAlamat, kepesertaan, modeCatatan, opsiCetakPanel, parseTensi, pelaksana, saringRiwayat, tandaKepalaPanel, teksTensi, umurTahun } from './keadaan-profil-pasien.js';
 
 const izin = (...daftar) => (fitur, aksi) => daftar.includes(`${fitur}:${aksi}`);
 
@@ -82,5 +82,34 @@ describe('halaman Pasien', () => {
         expect(terapkanDraf(dasar, '', { ...bentukDraf(ubah, ''), diagnosis: [{ kode: 1 }, { kode: 'I10', nama: 'x', peran: 'salah' }] }).k.diagnosis).toEqual([]);
         expect(terapkanDraf(dasar, '', null)).toBeNull();
         expect(terapkanDraf(dasar, '', { versi_draf: 1, subjek: 123, tanda_vital: 'x', alergi: null, tensi: {} })).toBeNull();
+    });
+    it('tanda kepala panel: memuat status sesuai tab yang sedang dibuka', () => {
+        const klinis = {
+            kunjungan: { tahap_layanan: 'ditutup', cara_pembayaran: 'umum' },
+            bagian: { tindakan: { verifikasi: 'sah', pengesahan: { pengguna_nama: 'dr. A', jenis_akun: 'Dokter', versi: 2 } } },
+        };
+        expect(tandaKepalaPanel({ sub: 'pemeriksaan', klinis }).map((x) => x.label)).toEqual(['Ditutup']);
+        expect(tandaKepalaPanel({ sub: 'resep', klinis, data: { resep: { nilai: [{ nomor_resep: 'R-001', status: 'diajukan' }] } } }).map((x) => x.label))
+            .toEqual(['Ditutup', 'R-001', 'Menunggu farmasi']);
+        expect(tandaKepalaPanel({ sub: 'tindakan', klinis }).map((x) => x.label))
+            .toEqual(['Ditutup', 'Disahkan', 'Versi 2']);
+        expect(tandaKepalaPanel({ sub: 'penunjang', klinis, data: { penunjang: { nilai: [{ status: 'divalidasi' }, { status: 'menunggu_hasil' }] } } }).map((x) => x.label))
+            .toEqual(['Ditutup', '1/2 divalidasi']);
+        expect(tandaKepalaPanel({
+            sub: 'penutup', klinis,
+            kasir: { kunjungan: klinis.kunjungan, tagihan: { status_tagihan: 'lengkap', total: 100000, sisa: 0 }, hasil_lab: { status: 'diserahkan', divalidasi: 2, total: 2 } },
+            resepSerah: [{ status: 'diserahkan' }],
+        }).map((x) => x.label)).toEqual(['Ditutup', 'Diserahkan di kasir', 'Sudah diserahkan (2/2)']);
+    });
+    it('opsi cetak panel: mengumpulkan dokumen yang tersedia dan diizinkan untuk menu printer', () => {
+        expect(opsiCetakPanel({
+            terbatas: false, bolehKlinis: true, bolehRekamMedis: false, bolehPenunjang: true, bolehKasir: true,
+            orders: [{ status: 'divalidasi', hasil: { nilai: '12' } }],
+            kasir: { tagihan: { pembayaran: [{ metode: 'tunai', jumlah: 50000 }] } },
+        }).map((x) => x.id)).toEqual(['rekam-medis', 'hasil-lab', 'bayar']);
+        expect(opsiCetakPanel({
+            terbatas: true, bolehKlinis: false, bolehRekamMedis: false, bolehPenunjang: false, bolehKasir: true,
+            kasir: { hasil_lab: { divalidasi: 1 }, tagihan: { pembayaran: [] } },
+        }).map((x) => x.id)).toEqual(['hasil-lab']);
     });
 });

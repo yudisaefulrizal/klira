@@ -1,8 +1,79 @@
-import { BAGIAN_SOAPIE, PROFIL_PASIEN, TANDA_VITAL } from '@klira/shared';
+import { BAGIAN_SOAPIE, KASIR, KLINIS, PENUNJANG, PROFIL_PASIEN, STATUS_HASIL_LAB, STATUS_ORDER_PENUNJANG, STATUS_PENGESAHAN, STATUS_RESEP, TAHAP_LAYANAN, TANDA_VITAL } from '@klira/shared';
 import { tanggalWaktuPendek } from '../../util/format.js';
 
 /** Tab pendamping di panel kunjungan; yang pertama adalah bawaan. */
-export const SUB_TAB = ['pemeriksaan', 'resep', 'tindakan', 'penunjang', 'dokumen', 'penutup'];
+export const SUB_TAB = ['pemeriksaan', 'resep', 'tindakan', 'penunjang', 'penutup'];
+/**
+ * Daftar lencana status untuk baris atas kanan panel kunjungan (`profil-panel-tanda`),
+ * selalu diawali tahap layanan lalu diikuti status sesuai tab yang sedang dibuka.
+ */
+export function tandaKepalaPanel({ sub, klinis, data = {}, kasir = null, resepSerah = [] }) {
+    const kj = kasir?.kunjungan ?? klinis?.kunjungan;
+    if (!kj)
+        return [];
+    const lencana = [
+        { label: TAHAP_LAYANAN.label(kj.tahap_layanan), warna: TAHAP_LAYANAN.warna(kj.tahap_layanan) },
+    ];
+    if (sub === 'resep') {
+        for (const r of data.resep?.nilai ?? []) {
+            lencana.push(
+                { label: r.nomor_resep, warna: 'abu' },
+                { label: r.status === 'diajukan' ? PROFIL_PASIEN.resep.menungguFarmasi : STATUS_RESEP.label(r.status), warna: STATUS_RESEP.warna(r.status) },
+            );
+        }
+    }
+    else if (sub === 'tindakan') {
+        const td = klinis?.bagian?.tindakan;
+        if (td?.pengesahan && td.verifikasi) {
+            const p = td.pengesahan;
+            lencana.push(
+                { label: STATUS_PENGESAHAN.label(td.verifikasi), warna: STATUS_PENGESAHAN.warna(td.verifikasi), title: KLINIS.status.disahkanOleh(p.pengguna_nama, p.jenis_akun) },
+                { label: KLINIS.status.versi(p.versi), warna: 'abu' },
+            );
+        }
+    }
+    else if (sub === 'penunjang') {
+        const daftar = data.penunjang?.nilai ?? [];
+        if (daftar.length === 1) {
+            const st = daftar[0].status;
+            lencana.push({ label: STATUS_ORDER_PENUNJANG.label(st), warna: STATUS_ORDER_PENUNJANG.warna(st) });
+        }
+        else if (daftar.length > 1) {
+            const valid = daftar.filter((o) => o.status === 'divalidasi').length;
+            lencana.push({ label: `${valid}/${daftar.length} ${STATUS_ORDER_PENUNJANG.label('divalidasi').toLowerCase()}`, warna: valid === daftar.length ? 'hijau' : 'kuning' });
+        }
+    }
+    else if (sub === 'penutup') {
+        const t = kasir?.tagihan;
+        if (t && t.status_tagihan !== 'lengkap')
+            lencana.push({ label: KASIR.bayar.tagihanBelumLengkap, warna: 'kuning' });
+        if (resepSerah.length) {
+            const st = resepSerah.every((r) => r.status === 'diserahkan') ? 'diserahkan' : resepSerah.some((r) => r.status === 'siap') ? 'siap' : resepSerah[0].status;
+            lencana.push({ label: st === 'diajukan' ? PROFIL_PASIEN.resep.menungguFarmasi : STATUS_RESEP.label(st), warna: STATUS_RESEP.warna(st) });
+        }
+        if (kasir?.hasil_lab?.status) {
+            const hl = kasir.hasil_lab;
+            lencana.push({ label: `${STATUS_HASIL_LAB.label(hl.status)} (${hl.divalidasi}/${hl.total})`, warna: STATUS_HASIL_LAB.warna(hl.status) });
+        }
+    }
+    return lencana;
+}
+/**
+ * Daftar pilihan cetak yang muncul dari tombol ikon printer di kanan atas panel kunjungan.
+ * Hanya opsi yang relevan dan boleh dicetak untuk tab/keadaan kunjungan ini yang disertakan.
+ */
+export function opsiCetakPanel({ terbatas, bolehKlinis, bolehPenunjang, bolehKasir, bolehRekamMedis, orders = null, kasir = null }) {
+    const daftar = [];
+    if (!terbatas && (bolehKlinis || bolehRekamMedis))
+        daftar.push({ id: 'rekam-medis', label: PROFIL_PASIEN.soapie.cetak });
+    if (bolehPenunjang && Array.isArray(orders) && orders.some((o) => o.status === 'divalidasi' && !!o.hasil))
+        daftar.push({ id: 'hasil-lab', label: PENUNJANG.cetak.tombol });
+    else if (bolehKasir && kasir?.hasil_lab?.divalidasi > 0)
+        daftar.push({ id: 'hasil-lab', label: PENUNJANG.cetak.tombol });
+    if (bolehKasir && kasir && kasir.tagihan?.pembayaran?.length > 0)
+        daftar.push({ id: 'bayar', label: KASIR.cetakBayar.tombol });
+    return daftar;
+}
 /**
  * Mode panel pemeriksaan untuk satu kunjungan: `ubah` (SOAPIE dapat diisi) dan `ubahVital` (tanda vital dan alergi), atau baca saja beserta alasannya.
  * Selama kunjungan belum ditutup catatan bebas diubah; sesudah ditutup (`tutup`) tetap bisa diubah tetapi setiap perubahan wajib beralasan.

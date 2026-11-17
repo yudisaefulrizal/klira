@@ -141,9 +141,17 @@
 .profil-riwayat-atas { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .profil-panel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .profil-panel-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
-.profil-panel-kepala { display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-left: auto; }
+.profil-panel-kepala { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin-left: auto; }
 .profil-panel-kepala:empty { display: none; }
 .profil-panel-tanda { display: flex; gap: 6px; flex-wrap: wrap; }
+.profil-cetak-bungkus { position: relative; display: inline-flex; }
+.profil-cetak-tombol { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px !important; padding: 0 !important; border-radius: 10px !important; }
+.profil-cetak-tombol svg { width: 18px; height: 18px; display: block; }
+.profil-cetak-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; min-width: 220px; padding: 6px; display: flex; flex-direction: column; gap: 2px; background: var(--warna-permukaan); border: 1px solid var(--warna-garis); border-radius: 10px; box-shadow: var(--bayangan-modal); }
+.profil-cetak-item { width: 100%; padding: 8px 12px; text-align: left; font: inherit; font-size: 13px; font-weight: 500; color: var(--warna-teks); background: transparent; border: 0; border-radius: 8px; cursor: pointer; white-space: nowrap; }
+.profil-cetak-item:hover:not(:disabled) { background: var(--warna-utama-latar); color: var(--warna-utama); }
+.profil-cetak-item:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: -2px; }
+.profil-cetak-item:disabled { opacity: .45; cursor: not-allowed; }
 .profil-kolom { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .profil-kotak { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--warna-garis); border-radius: 10px; }
 .profil-kotak-kepala { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }

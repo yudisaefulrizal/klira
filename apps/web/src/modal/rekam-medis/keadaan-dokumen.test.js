@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { adaSuratBaru, awalLaporan, awalPembukaan, awalPenyampaian, awalResume, galatLaporan, galatPembukaan, galatPenyampaian, galatResume, langkahBermasalahResume, resumeSama } from './keadaan-dokumen.js';
+import { adaSuratBaru, awalLaporan, awalPembukaan, awalPenyampaian, awalResume, bisaCetakDokumen, galatLaporan, galatPembukaan, galatPenyampaian, galatResume, langkahBermasalahResume, resumeSama, susunLembarDokumen } from './keadaan-dokumen.js';
 const dok = (resume = null) => ({
     kunjungan: { id: 1, pasien_id: 1, pasien_nama: 'A', pasien_nomor_rm: 'RM1', tahap_layanan: 'ditutup' }, resume, saran: { diagnosis_akhir: 'I10 Hipertensi', terapi: 'Amlodipin', kondisi_pulang: '' }, surat: [],
 });
@@ -29,6 +29,18 @@ describe('keadaan resume dan surat', () => {
         const g = galatResume({ ...k, surat_isi: 'Mohon tindak lanjut' }, d);
         expect(g.surat_tujuan).toBeDefined();
         expect(langkahBermasalahResume(g)).toBe(2);
+    });
+    it('cetak dokumen: tersedia bila ada resume atau surat dan menyusun lembar cetak', () => {
+        expect(bisaCetakDokumen(dok())).toBe(false);
+        const d = {
+            ...dok({ isi: tersimpan, versi: 2, pengesahan: { pengguna_nama: 'dr. Budi', waktu: '2026-11-17T01:00:00.000Z' }, verifikasi: 'sah', diperbarui_pada: '' }),
+            surat: [{ id: 5, jenis: 'keterangan_sakit', nomor_surat: 'S-20261117-001', tujuan: null, isi: 'Istirahat 2 hari', dokter_nama: 'dr. Budi', dibuat_pada: '2026-11-17T01:05:00.000Z' }],
+        };
+        expect(bisaCetakDokumen(d)).toBe(true);
+        const lembar = susunLembarDokumen({ dok: d, pasien: { nama: 'Putu', nomor_rm: 'RM-01' }, kunjungan: { id: 9, poli_nama: 'Poli Umum 1' } });
+        expect(lembar.pasien).toEqual({ nama: 'Putu', nomorRm: 'RM-01' });
+        expect(lembar.resume).toMatchObject({ versi: 2, verifikasi: 'sah', dokter: 'dr. Budi' });
+        expect(lembar.surat[0]).toMatchObject({ nomor: 'S-20261117-001', jenisLabel: 'Surat keterangan sakit', isi: 'Istirahat 2 hari' });
     });
 });
 describe('keadaan pembukaan, penyampaian, laporan', () => {

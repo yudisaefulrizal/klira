@@ -1,10 +1,50 @@
-import { filterLaporan, pembukaanMasukan, penyampaianMasukan, resumeMasukan, suratMasukan } from '@klira/shared';
+import { filterLaporan, pembukaanMasukan, penyampaianMasukan, REKAM_MEDIS, resumeMasukan, suratMasukan } from '@klira/shared';
 const petakan = (isu) => {
     const g = {};
     for (const i of isu ?? [])
         g[i.path.map(String).join('.') || ''] ??= i.message;
     return g;
 };
+/** Apakah sudah ada resume medis atau minimal satu surat keterangan yang bisa dicetak. */
+export const bisaCetakDokumen = (d) => Boolean(d && (d.resume || (Array.isArray(d.surat) && d.surat.length > 0)));
+/** Menyusun data lembar cetak resume medis dan surat keterangan satu kunjungan (fungsi murni, tanpa DOM). */
+export function susunLembarDokumen({ dok, pasien = {}, kunjungan = {} }) {
+    const R = REKAM_MEDIS.dok.resume, kj = dok?.kunjungan ?? {};
+    const dokterBawaan = kunjungan.dpjp_nama ?? null;
+    const resume = dok?.resume ? {
+        versi: dok.resume.versi ?? 1,
+        verifikasi: dok.resume.verifikasi ?? 'belum_disahkan',
+        dokter: dok.resume.pengesahan?.pengguna_nama ?? dokterBawaan,
+        waktu: dok.resume.pengesahan?.waktu ?? dok.resume.diperbarui_pada ?? null,
+        baris: [
+            { label: R.ringkasan, nilai: dok.resume.isi?.ringkasan || '-' },
+            { label: R.diagnosis, nilai: dok.resume.isi?.diagnosis_akhir || '-' },
+            { label: R.terapi, nilai: dok.resume.isi?.terapi || '-' },
+            { label: R.kondisi, nilai: dok.resume.isi?.kondisi_pulang || '-' },
+            { label: R.anjuran, nilai: dok.resume.isi?.anjuran || '-' },
+        ],
+    } : null;
+    const surat = (dok?.surat ?? []).map((s) => ({
+        id: s.id,
+        nomor: s.nomor_surat,
+        jenisLabel: R.jenisSurat[s.jenis] ?? s.jenis,
+        tujuan: s.tujuan ?? null,
+        isi: s.isi ?? '-',
+        dokter: s.dokter_nama ?? dokterBawaan,
+        waktu: s.dibuat_pada ?? null,
+    }));
+    return {
+        kunjunganId: kunjungan.id ?? kj.id ?? null,
+        poli: kunjungan.poli_nama ?? null,
+        dokter: dokterBawaan,
+        pasien: {
+            nama: pasien.nama ?? kj.pasien_nama ?? '-',
+            nomorRm: pasien.nomor_rm ?? kj.pasien_nomor_rm ?? '-',
+        },
+        resume,
+        surat,
+    };
+}
 /** Isi awal dari resume tersimpan; bila belum ada, dari saran (diagnosis dan tindakan kunjungan). */
 export function awalResume(d) {
     const r = d?.resume?.isi;
