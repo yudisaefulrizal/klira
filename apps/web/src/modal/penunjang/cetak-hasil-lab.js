@@ -2,6 +2,7 @@ import { CARA_PEMBAYARAN, PENUNJANG } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { ordersKunjungan } from '../../api-klien/penunjang.js';
 import { peringatan, tombol } from '../../komponen/ui/primitif.js';
+import { bukaTabCetak } from '../../util/cetak-tab.js';
 import { tanggalPendek, tanggalWaktuPendek } from '../../util/format.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { susunLembarHasilLab } from './keadaan-cetak-lab.js';
@@ -76,14 +77,16 @@ function bangunLembar(d, oleh) {
     return lembar;
 }
 
-/** Membuka dialog pratinjau cetak hasil pemeriksaan laboratorium (A4) untuk satu kunjungan. */
+/** Membuka pratinjau cetak hasil pemeriksaan laboratorium (A4) di tab baru (atau dialog bila pop-up diblokir). */
 export function bukaCetakHasilLab({ kunjunganId, orders: ordersAwal, pasien, kunjungan, onTutup }) {
     const oleh = penggunaSaatIni().pengguna?.nama ?? null, avant = document.activeElement;
+    const cssHref = new URL('./cetak-hasil-lab.css', import.meta.url).href;
     let aktif = true;
-    if (!document.querySelector('link[data-cetak-hasil-lab]')) {
+    const tabCetak = bukaTabCetak({ judul: C.judul, cssHref, onTutup: () => { aktif = false; onTutup?.(); } });
+    if (!tabCetak && !document.querySelector('link[data-cetak-hasil-lab]')) {
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = new URL('./cetak-hasil-lab.css', import.meta.url).href;
+        css.href = cssHref;
         css.dataset.cetakHasilLab = '';
         document.head.append(css);
     }
@@ -96,9 +99,14 @@ export function bukaCetakHasilLab({ kunjunganId, orders: ordersAwal, pasien, kun
         aktif = false;
         document.removeEventListener('keydown', tekan);
         lapis.remove();
-        if (avant?.isConnected) avant.focus();
+        tabCetak?.hancurkan();
+        if (!tabCetak && avant?.isConnected) avant.focus();
     }
-    function tutup() { hancurkan(); onTutup?.(); }
+    function tutup() {
+        if (tabCetak) { aktif = false; tabCetak.tutup(); return; }
+        hancurkan();
+        onTutup?.();
+    }
     function tekan(e) {
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tutup(); }
         if (e.key === 'Tab') {
@@ -109,14 +117,18 @@ export function bukaCetakHasilLab({ kunjunganId, orders: ordersAwal, pasien, kun
         }
     }
 
-    const btnTutup = tombol(C.tutup, tutup, 'sekunder'), btnCetak = tombol(C.cetak, () => window.print());
+    const btnTutup = tombol(C.tutup, tutup, 'sekunder'), btnCetak = tombol(C.cetak, () => (tabCetak ? tabCetak.cetak() : window.print()));
     btnCetak.disabled = true;
     alat.append(buat('strong', '', C.judul), buat('span', 'chl-tumbuh'), btnTutup, btnCetak);
     isi.append(buat('p', 'chl-memuat', C.memuat));
     lapis.append(alat, isi);
-    document.body.append(lapis);
-    document.addEventListener('keydown', tekan);
-    btnTutup.focus();
+    if (tabCetak) {
+        tabCetak.body.append(lapis);
+    } else {
+        document.body.append(lapis);
+        document.addEventListener('keydown', tekan);
+        btnTutup.focus();
+    }
 
     function tampilkan(daftar) {
         if (!aktif) return;

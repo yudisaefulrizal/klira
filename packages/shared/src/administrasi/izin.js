@@ -57,7 +57,6 @@ export const HALAMAN_MENU = [
     { path: '/penunjang', label: 'Penunjang', fitur: ['penunjang'] },
     { path: '/farmasi', label: 'Farmasi', fitur: ['farmasi'] },
     { path: '/kasir-klaim', label: 'Kasir dan klaim', fitur: ['kasir', 'klaim'] },
-    { path: '/rekam-medis', label: 'Rekam medis', fitur: ['rekam-medis', 'klinis'] },
     { path: '/satusehat', label: 'SATUSEHAT', fitur: ['satusehat'] },
     { path: '/test-endpoint', label: 'Test endpoint', fitur: ['satusehat'] },
     { path: '/pelindungan-data', label: 'Pelindungan data', fitur: ['pdp'] },

@@ -6,7 +6,6 @@ const asetMenu = {
   '/penunjang': 'penunjang',
   '/farmasi': 'farmasi',
   '/kasir-klaim': 'kasir-klaim',
-  '/rekam-medis': 'rekam-medis',
   '/satusehat': 'satusehat',
   '/test-endpoint': 'satusehat',
   '/pelindungan-data': 'pelindungan-data',
