@@ -21,11 +21,12 @@ export async function bacaKlinikPublik(host, slug) {
         return null;
     const tanggal = new Date(`${tanggalWib(new Date())}T00:00:00Z`);
     const layanan = await db.daftarLokasiUntukBacaKlinikPublik(web.fasyankes_id, 'poli', 'O');
-    const baris = web.tampilkan_jadwal ? await db.daftarJadwalPraktikUntukBacaKlinikPublik(web.fasyankes_id, true, tanggal, null, tanggal, layanan.map(l => l.id)) : [];
+    const baris = web.tampilkan_jadwal ? await db.daftarJadwalPraktikUntukBacaKlinikPublik(web.fasyankes_id, true, layanan.map(l => l.id)) : [];
+    const shift = new Map((await db.daftarShiftUntukDaftar(web.fasyankes_id)).map(x => [x.id, x]));
     return {
         nama: web.fasyankes.nama, slug: web.slug, domain: web.domain ?? '', judul: web.judul, ringkasan: web.ringkasan,
         tentang: web.tentang, alamat: web.alamat, whatsapp: web.whatsapp, telepon: web.telepon, email: web.email,
         jam_operasional: web.jam_operasional, warna_utama: web.warna_utama, logo_url: web.logo_url, hero_url: web.hero_url,
-        layanan, jadwal: baris.map(j => ({ hari: j.hari, jam_mulai: j.jam_mulai, jam_selesai: j.jam_selesai, poli_id: j.lokasi_id, poli_nama: layanan.find(l => l.id === j.lokasi_id).nama, praktisi: web.tampilkan_nama_praktisi ? j.pengguna?.nama ?? null : null })),
+        layanan, jadwal: baris.map(j => ({ hari: j.hari, jam_mulai: shift.get(j.shift_id)?.jam_mulai ?? '', jam_selesai: shift.get(j.shift_id)?.jam_selesai ?? '', poli_id: j.lokasi_id, poli_nama: layanan.find(l => l.id === j.lokasi_id).nama, praktisi: web.tampilkan_nama_praktisi ? j.pengguna?.nama ?? null : null })),
     };
 }

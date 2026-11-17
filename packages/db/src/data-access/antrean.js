@@ -96,7 +96,7 @@ export async function daftarAntreanSibukUntukPetakan(fasyankes_id, lokasi_ids, t
 
 /** Poli operasional untuk satu jenis yang sedang bebas pada tanggal itu (tidak memegang antrean dipanggil/dilayani di skrining/pemeriksaan). Bila `dpjp_id` ada, hanya poli tempat dokter itu punya jadwal aktif. */
 export async function daftarPoliBebasUntukPanggil(fasyankes_id, jenis_poli, tanggal, dpjp_id, koneksi = pool) {
-    return baca("SELECT l.`id`, l.`nama` FROM `lokasi` l WHERE l.`fasyankes_id` = ? AND l.`jenis` = 'poli' AND l.`status_operasional` = 'O' AND LOWER(l.`jenis_poli`) = LOWER(?) AND NOT EXISTS (SELECT 1 FROM `antrean` a JOIN `kunjungan` k ON k.`id` = a.`kunjungan_id` WHERE a.`lokasi_id` = l.`id` AND a.`tanggal` = ? AND a.`status` IN ('dipanggil', 'dilayani') AND k.`tahap_layanan` IN ('menunggu_skrining', 'pemeriksaan')) AND (? IS NULL OR EXISTS (SELECT 1 FROM `jadwal_praktik` j WHERE j.`lokasi_id` = l.`id` AND j.`pengguna_id` = ? AND j.`aktif` = 1)) ORDER BY l.`id` ASC", [fasyankes_id, jenis_poli, tanggal, dpjp_id ?? null, dpjp_id ?? null], koneksi);
+    return baca("SELECT l.`id`, l.`nama` FROM `lokasi` l WHERE l.`fasyankes_id` = ? AND l.`jenis` = 'poli' AND l.`status_operasional` = 'O' AND LOWER(l.`jenis_poli`) = LOWER(?) AND NOT EXISTS (SELECT 1 FROM `antrean` a JOIN `kunjungan` k ON k.`id` = a.`kunjungan_id` WHERE a.`lokasi_id` = l.`id` AND a.`tanggal` = ? AND a.`status` IN ('dipanggil', 'dilayani') AND k.`tahap_layanan` IN ('menunggu_skrining', 'pemeriksaan')) AND (? IS NULL OR EXISTS (SELECT 1 FROM `jadwal_praktik` j WHERE j.`lokasi_id` = l.`id` AND j.`pengguna_id` = ?)) ORDER BY l.`id` ASC", [fasyankes_id, jenis_poli, tanggal, dpjp_id ?? null, dpjp_id ?? null], koneksi);
 }
 /** Tetapkan poli pada antrean yang dipanggil pertama kali, dan salin ke kunjungan. */
 export async function ubahAntreanUntukTetapkanPoli(id, lokasi_id, koneksi = pool) {
@@ -105,7 +105,7 @@ export async function ubahAntreanUntukTetapkanPoli(id, lokasi_id, koneksi = pool
 }
 /** Poli (operasional) tempat dokter punya jadwal aktif, untuk satu jenis poli. */
 export async function hitungPoliDokterUntukJenis(fasyankes_id, jenis_poli, dpjp_id, koneksi = pool) {
-    const [b] = await baca("SELECT COUNT(DISTINCT l.`id`) AS jumlah FROM `lokasi` l JOIN `jadwal_praktik` j ON j.`lokasi_id` = l.`id` AND j.`aktif` = 1 AND j.`pengguna_id` = ? WHERE l.`fasyankes_id` = ? AND l.`jenis` = 'poli' AND l.`status_operasional` = 'O' AND LOWER(l.`jenis_poli`) = LOWER(?)", [dpjp_id, fasyankes_id, jenis_poli], koneksi);
+    const [b] = await baca("SELECT COUNT(DISTINCT l.`id`) AS jumlah FROM `lokasi` l JOIN `jadwal_praktik` j ON j.`lokasi_id` = l.`id` AND j.`pengguna_id` = ? WHERE l.`fasyankes_id` = ? AND l.`jenis` = 'poli' AND l.`status_operasional` = 'O' AND LOWER(l.`jenis_poli`) = LOWER(?)", [dpjp_id, fasyankes_id, jenis_poli], koneksi);
     return Number(b.jumlah);
 }
 

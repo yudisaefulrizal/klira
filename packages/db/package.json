@@ -8,6 +8,7 @@
     "seed:wilayah": "node ../../skrip/dengan-env.mjs node src/seed/wilayah.js",
     "seed:terminologi": "node ../../skrip/dengan-env.mjs node src/seed/terminologi.js",
     "migrasi": "node ../../skrip/dengan-env.mjs node src/migrasi/entry-points/cli.js",
+    "cadangan": "node ../../skrip/dengan-env.mjs node src/cadangan/entry-points/cli.js",
     "seed:demo": "node ../../skrip/dengan-env.mjs node src/seed/demo.js"
   },
   "dependencies": {

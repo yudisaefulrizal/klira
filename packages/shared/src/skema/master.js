@@ -29,15 +29,17 @@ const jadwalDasar = z.object({
     pengguna_id: idPositif,
     lokasi_id: idPositif,
     hari: z.number({ error: MASTER.galat.wajib }).int().min(1, MASTER.galat.wajib).max(7, MASTER.galat.wajib),
-    jam_mulai: jam,
-    jam_selesai: jam,
-    kuota: z.number({ error: MASTER.galat.kuota }).int(MASTER.galat.kuota).min(1, MASTER.galat.kuota).max(10000, MASTER.galat.kuota),
-    berlaku_dari: tanggal,
-    berlaku_sampai: tanggal.nullish(),
+    shift_id: idPositif,
+    kuota: z.number({ error: MASTER.galat.kuota }).int(MASTER.galat.kuota).min(1, MASTER.galat.kuota).max(10000, MASTER.galat.kuota).nullish(),
 });
-export const jadwalMasukan = jadwalDasar
-    .refine((j) => j.jam_selesai > j.jam_mulai, { path: ['jam_selesai'], message: MASTER.galat.jamSelesai })
-    .refine((j) => !j.berlaku_sampai || j.berlaku_sampai >= j.berlaku_dari, { path: ['berlaku_sampai'], message: MASTER.galat.berlakuSampai });
+/** Tiga shift tetap per klinik; hanya jam yang bisa diatur. Shift boleh melewati tengah malam (selesai lebih awal dari mulai, mis. 21:00-07:00). */
+export const SHIFT_BAWAAN = [
+    { urutan: 1, nama: 'Pagi', jam_mulai: '07:00', jam_selesai: '14:00' },
+    { urutan: 2, nama: 'Siang', jam_mulai: '14:00', jam_selesai: '21:00' },
+    { urutan: 3, nama: 'Malam', jam_mulai: '21:00', jam_selesai: '07:00' },
+];
+export const shiftUbah = z.object({ jam_mulai: jam, jam_selesai: jam }).refine((j) => j.jam_selesai !== j.jam_mulai, { path: ['jam_selesai'], message: MASTER.galat.jamShiftSama });
+export const jadwalMasukan = jadwalDasar;
 /** Awalan kode tarif tindakan yang dibuat otomatis bila kode dikosongkan (TND-001, TND-002, ... per fasyankes). */
 export const AWALAN_KODE_TINDAKAN = 'TND-';
 /** Kode tindakan berikutnya dari kode yang sudah ada: nomor terbesar berpola TND-nnn ditambah satu (minimal tiga digit). */
@@ -89,7 +91,7 @@ export const filterMaster = z.object({
     halaman: z.coerce.number().int().min(1).default(1),
     ukuran: z.coerce.number().int().min(1).max(100).default(20),
 });
-export const SUMBER_OPSI_MASTER = ['poli', 'ruang', 'praktisi', 'pengguna-tanpa-profil'];
+export const SUMBER_OPSI_MASTER = ['poli', 'ruang', 'praktisi', 'pengguna-tanpa-profil', 'shift'];
 export const sumberOpsiMaster = z.enum(SUMBER_OPSI_MASTER);
 const opsiDari = (peta) => Object.entries(peta).map(([nilai, label]) => ({ nilai, label }));
 const B = MASTER.bidang;
@@ -134,14 +136,11 @@ export const DEFINISI_MASTER = {
             { kunci: 'pengguna_id', label: B.praktisi_id, tipe: 'rujukan', rujukan: 'praktisi', wajib: true },
             { kunci: 'lokasi_id', label: B.lokasi_id, tipe: 'rujukan', rujukan: 'poli', wajib: true },
             { kunci: 'hari', label: B.hari, tipe: 'pilihan', wajib: true, opsi: opsiDari(MASTER.hari), nilaiAwal: '1', numerik: true },
-            { kunci: 'jam_mulai', label: B.jam_mulai, tipe: 'waktu', wajib: true },
-            { kunci: 'jam_selesai', label: B.jam_selesai, tipe: 'waktu', wajib: true },
-            { kunci: 'kuota', label: B.kuota, tipe: 'angka', wajib: true },
-            { kunci: 'berlaku_dari', label: B.berlaku_dari, tipe: 'tanggal', wajib: true },
-            { kunci: 'berlaku_sampai', label: B.berlaku_sampai, tipe: 'tanggal' },
+            { kunci: 'shift_id', label: B.shift_id, tipe: 'rujukan', rujukan: 'shift', wajib: true },
+            { kunci: 'kuota', label: B.kuota, tipe: 'angka', petunjuk: P.kuota },
         ],
-        kolom: [{ kunci: 'pengguna_nama', label: K.praktisi }, { kunci: 'lokasi_nama', label: K.poli }, { kunci: 'hari', label: K.hari }, { kunci: 'jam', label: K.jam }, { kunci: 'kuota', label: K.kuota }, { kunci: 'periode', label: K.periode }],
-        punyaStatus: true,
+        kolom: [{ kunci: 'pengguna_nama', label: K.praktisi }, { kunci: 'lokasi_nama', label: K.poli }, { kunci: 'hari', label: K.hari }, { kunci: 'shift', label: K.shift }, { kunci: 'kuota', label: K.kuota }],
+        punyaStatus: false,
     },
     tarif: {
         bidang: [
@@ -167,8 +166,9 @@ export function teksSelMaster(kunci, baris) {
     const v = baris[kunci];
     switch (kunci) {
         case 'hari': return MASTER.hari[Number(v)] ?? '-';
+        case 'kuota': return v === null || v === undefined || v === '' ? MASTER.tanpaBatas : String(v);
+        case 'shift': return baris.shift_nama ? `${baris.shift_nama}${baris.jam_mulai ? ` (${baris.jam_mulai}-${baris.jam_selesai})` : ''}` : '-';
         case 'jam': return `${baris.jam_mulai}-${baris.jam_selesai}`;
-        case 'periode': return baris.berlaku_sampai ? `${baris.berlaku_dari} s/d ${baris.berlaku_sampai}` : `${baris.berlaku_dari} s/d -`;
         case 'jenis': return MASTER.jenisTarif[v] ?? String(v ?? '-');
         case 'tingkat': return MASTER.tingkat[v] ?? String(v ?? '-');
         case 'harga_umum':

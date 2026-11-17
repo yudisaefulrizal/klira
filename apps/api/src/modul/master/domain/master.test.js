@@ -43,6 +43,8 @@ describe('layanan master dengan repositori tiruan', () => {
         namaLokasiAda: async (f, jenis, nama, kecuali) => jenis === 'poli' && nama === 'Poli Umum' && kecuali !== 1,
         ambil: async () => null,
         buat: async () => ({ id: 5, aktif: true }),
+        shiftAda: async () => true,
+        jadwalBentrok: async (f, pengguna, hari, shift, kecuali) => (pengguna === 7 && hari === 1 && shift === 1 && kecuali !== 99 ? { id: 99, lokasi_nama: 'Poli Gigi' } : null),
     };
     const layanan = buatLayananMaster({ repo, audit: { catat: async (e) => void catatan.push(e) } });
     it('rujukan di luar fasyankes ditolak tanpa menyimpan atau mencatat audit', async () => {
@@ -60,6 +62,14 @@ describe('layanan master dengan repositori tiruan', () => {
         expect(await layanan.buat(p, 'poli', { nama: 'Poli Umum', status_operasional: 'O' })).toMatchObject({ ok: false, kode: 'konflik' });
         expect((await layanan.buat(p, 'poli', { nama: 'Poli Umum 2', status_operasional: 'O' })).ok).toBe(true);
         expect(catatan.at(-1)).toMatchObject({ aksi: 'input' });
+    });
+    it('jadwal: dokter yang sudah bertugas di hari dan shift yang sama ditolak, shift atau hari lain sah', async () => {
+        const p = { id: 1, fasyankes_id: 1 }, dasar = { pengguna_id: 7, lokasi_id: 10, hari: 1, shift_id: 1 };
+        const h = await layanan.buat(p, 'jadwal', dasar);
+        expect(h).toMatchObject({ ok: false, kode: 'konflik' });
+        expect(h.pesan).toContain('Poli Gigi');
+        expect((await layanan.buat(p, 'jadwal', { ...dasar, shift_id: 2 })).ok).toBe(true);
+        expect((await layanan.buat(p, 'jadwal', { ...dasar, hari: 2 })).ok).toBe(true);
     });
     it('ubah baris yang tidak ada: tidak ditemukan', async () => {
         expect(await layanan.ubah({ id: 1, fasyankes_id: 1 }, 'poli', 99, { nama: 'x' })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });

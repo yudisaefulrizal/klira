@@ -118,6 +118,9 @@ export const MODAL = {
     tutupDrafPesan: 'Isian Anda tersimpan sebagai draf dan dapat dilanjutkan nanti.',
     tutupDrafYa: 'Tutup, simpan draf',
     tutupDrafTidak: 'Lanjutkan mengisi',
+    tutupTanpaSimpanJudul: 'Tutup tanpa menyimpan?',
+    tutupTanpaSimpanPesan: 'Isian yang belum disimpan akan hilang.',
+    tutupTanpaSimpanYa: 'Tutup',
     alasanOpsional: 'Alasan (opsional)',
     peringatanJudul: 'Peringatan izin',
     peringatanKeterangan: 'Peringatan tidak memblokir. Isi alasan untuk melanjutkan; peringatan dan alasannya tercatat di audit.',
@@ -352,13 +355,16 @@ export const KEAMANAN = {
     galatBatasPercobaan: 'Batas percobaan harus bilangan bulat dalam rentang yang diizinkan.',
     galatPanjangKataSandi: 'Panjang kata sandi harus bilangan bulat dalam rentang yang diizinkan.',
     backupJudul: 'Riwayat backup',
-    backupPetunjuk: 'Hanya baca. Pencatatan backup dilakukan tugas terjadwal.',
+    backupPetunjuk: 'Hanya baca. Setiap unduhan, pemulihan, dan reset dicatat di sini.',
     backupKolom: { waktu: 'Waktu', status: 'Status', ukuran: 'Ukuran', lokasi: 'Lokasi' },
     backupKosong: 'Belum ada riwayat backup.',
     backupGagalMuat: 'Riwayat backup gagal dimuat.',
     tanpaLokasi: '-',
     sistemJudul: 'Cadangan dan reset sistem',
     sistemPetunjuk: 'Unduh cadangan seluruh data secara berkala, terutama sebelum memulihkan atau mereset.',
+    sistemPetunjukServer: 'Unduh cadangan seluruh data secara berkala. Pemulihan dan reset hanya dilakukan operator lewat perintah di server.',
+    lewatServer: 'Pemulihan dan reset lewat web dinonaktifkan. Operator menjalankannya lewat perintah di server.',
+    unggahTerlaluBesar: (mb) => `Berkas cadangan melebihi ${mb} MB. Pulihkan lewat perintah operator di server.`,
     unduh: 'Unduh backup sistem',
     unggah: 'Unggah backup sistem',
     reset: 'Reset sistem',
@@ -375,6 +381,19 @@ export const KEAMANAN = {
     memproses: 'Memproses...',
     sebelumnya: 'Sebelumnya',
     berikutnya: 'Berikutnya',
+};
+/** Tampilan jadwal praktik: dikelompokkan per hari, dokter, atau shift. */
+export const JADWAL_PRAKTIK = {
+    tampilan: 'Tampilan jadwal', poli: 'Peta poli', dokter: 'Peta dokter',
+    semuaDokter: 'Semua dokter', semuaPoli: 'Semua poli', dokterPilih: 'Dokter', poliPilih: 'Poli', kosong: 'Kosong', tanpaPoli: 'Belum ada poli.', tanpaDokter: 'Belum ada praktisi.', slotTerisi: (n, total) => `${n}/${total} slot terisi`,
+    tambahDi: (poli, hari, shift) => `Tambah jadwal ${poli}, ${hari}, shift ${shift}`,
+    hapus: 'Hapus', hapusJudul: 'Hapus jadwal?', hapusPesan: (b) => `${b.pengguna_nama}, ${b.lokasi_nama}, ${MASTER.hari[Number(b.hari)]}, shift ${b.shift_nama}. Jadwal ini akan dihapus dari peta.`, hapusYa: 'Hapus jadwal', gagalHapus: 'Jadwal gagal dihapus.',
+};
+/** Halaman Shift: tiga shift tetap, hanya jamnya yang diatur. */
+export const SHIFT = {
+    judul: 'Shift', petunjuk: 'Tiga shift tetap tiap hari. Jam shift dipakai oleh jadwal praktik; nama dan jumlahnya tidak berubah. Shift malam boleh melewati tengah malam (mis. 21:00 sampai 07:00).',
+    kolom: { shift: 'Shift', mulai: 'Jam mulai', selesai: 'Jam selesai', tindakan: 'Tindakan' },
+    simpan: 'Simpan', tersimpan: 'Jam shift disimpan.', gagal: 'Jam shift gagal disimpan.', gagalMuat: 'Shift gagal dimuat.', memuat: 'Memuat…',
 };
 export const MASTER = {
     judulTab: 'Master data',
@@ -414,10 +433,12 @@ export const MASTER = {
     galat: {
         wajib: 'Wajib diisi.',
         angka: 'Isi dengan bilangan bulat tidak negatif.',
-        kuota: 'Kuota minimal 1.',
+        kuota: 'Kuota minimal 1, atau kosongkan bila tanpa batas.',
+        jadwalBentrok: (poli) => `Dokter ini sudah dijadwalkan di ${poli} pada hari dan shift yang sama. Satu dokter tidak bisa berada di dua tempat sekaligus.`,
+        jadwalTanpaStatus: 'Jadwal praktik tidak punya status aktif; hapus jadwal yang tidak dipakai.',
         waktu: 'Isi jam dengan format JJ:MM.',
         jamSelesai: 'Jam selesai harus setelah jam mulai.',
-        berlakuSampai: 'Tanggal berlaku sampai tidak boleh sebelum berlaku dari.',
+        jamShiftSama: 'Jam selesai tidak boleh sama dengan jam mulai.',
         tanggal: 'Isi tanggal yang sah.',
         indukBed: 'Pilih ruang untuk bed.',
         bukanMilikKlinik: 'Pilihan tidak termasuk klinik ini.',
@@ -436,12 +457,13 @@ export const MASTER = {
     bidang: {
         nama: 'Nama', jenis_poli: 'Jenis poli', induk_poli: 'Poli induk', induk_ruang: 'Ruang induk', ihs_location_id: 'IHS Location ID', status_operasional: 'Status',
         pengguna_id: 'Pengguna', profesi: 'Profesi', nomor_sip: 'Nomor SIP', masa_berlaku_sip: 'Masa berlaku SIP', ihs_practitioner_id: 'IHS Practitioner ID',
-        praktisi_id: 'Praktisi', lokasi_id: 'Poli', hari: 'Hari', jam_mulai: 'Jam mulai', jam_selesai: 'Jam selesai', kuota: 'Kuota',
-        berlaku_dari: 'Berlaku dari', berlaku_sampai: 'Berlaku sampai',
+        praktisi_id: 'Praktisi', lokasi_id: 'Poli', hari: 'Hari', shift_id: 'Shift', jam_mulai: 'Jam mulai', jam_selesai: 'Jam selesai', kuota: 'Kuota',
         kode: 'Kode', jenis: 'Jenis', harga_umum: 'Harga umum (Rp)', harga_jkn: 'Harga JKN (Rp, opsional)', kode_icd9cm: 'Kode ICD-9-CM',
     },
     /** Penjelasan singkat di bawah kolom isian master yang memakai istilah teknis. */
+    tanpaBatas: 'Tanpa batas',
     petunjuk: {
+        kuota: 'Kosongkan bila tanpa batas.',
         perubahanHarga: 'Perubahan harga hanya berlaku untuk layanan berikutnya. Tagihan yang sudah ada tidak berubah. Perubahan tercatat di log audit.',
         status_operasional: 'Aktif berarti dapat dipakai untuk melayani pasien (poli hanya bisa dipilih saat mendaftarkan kunjungan bila aktif). Pilih "Tidak aktif" bila ditutup sementara.',
         jenis_poli: 'Jenis layanan poli, mis. Umum atau Gigi. Poli sejenis (Poli Umum 1 dan 2) berbagi satu antrean dengan awalan nomor yang sama, dibuat otomatis dari jenis.',
@@ -454,7 +476,7 @@ export const MASTER = {
         icd9Terpilih: (kode) => `Terpilih: ${kode}`, icd9Ganti: 'Ganti kode', icd9Cari: 'Cari ICD-9-CM', icd9Petunjuk: 'Ketik kode atau nama tindakan',
     },
     kolom: {
-        induk: 'Induk', jenisPoli: 'Jenis', awalanAntrean: 'Awalan nomor', indukPoli: 'Poli', indukRuang: 'Ruang', sip: 'Nomor SIP', berlaku: 'Berlaku SIP', praktisi: 'Praktisi', poli: 'Poli', hari: 'Hari', jam: 'Jam', kuota: 'Kuota', periode: 'Periode',
+        induk: 'Induk', jenisPoli: 'Jenis', awalanAntrean: 'Awalan nomor', indukPoli: 'Poli', indukRuang: 'Ruang', sip: 'Nomor SIP', berlaku: 'Berlaku SIP', praktisi: 'Praktisi', poli: 'Poli', hari: 'Hari', shift: 'Shift', jam: 'Jam', kuota: 'Kuota',
         kode: 'Kode', jenis: 'Jenis', hargaUmum: 'Harga umum', hargaJkn: 'Harga JKN', icd9cm: 'ICD-9-CM', nama: 'Nama', profesi: 'Profesi', tingkat: 'Tingkat', indukKode: 'Kode induk', ihs: 'IHS ID', asal: 'Asal',
     },
 };
@@ -490,7 +512,7 @@ export const PROFIL_KLINIK = {
 /** Daftar pasien (3.1): halaman awal akun klinis dan administrasi. */
 export const DAFTAR_PASIEN = {
     judul: 'Daftar pasien',
-    tab: { antrean: 'Antrean pasien', pasien: 'Pasien', poli: 'Poli', praktisi: 'Praktisi', jadwal: 'Jadwal praktik' },
+    tab: { antrean: 'Antrean pasien', pasien: 'Pasien', poli: 'Poli', praktisi: 'Praktisi', shift: 'Shift', jadwal: 'Jadwal praktik' },
     cari: 'Cari pasien',
     petunjukCari: 'Cari nama, nomor RM, NIK, atau nomor JKN',
     registrasi: 'Registrasi pasien baru',
@@ -1021,6 +1043,12 @@ export const KASIR = {
         riwayat: 'Shift hari ini', kosongRiwayat: 'Belum ada shift pada tanggal ini.', ringkasTutup: (selisih) => (selisih === 0 ? 'Kas sesuai.' : `Selisih ${selisih > 0 ? '+' : ''}${selisih}.`),
     },
     rekap: { judul: 'Rekap harian', tanggal: 'Tanggal', total: 'Total diterima', jumlah: 'Jumlah pembayaran', gagalMuat: 'Rekap harian gagal dimuat.', catatan: 'Pembayaran dan tutup kunjungan dibuka dari Daftar pasien. Penyerahan obat dilakukan oleh farmasi.', perMetode: 'Per metode bayar' },
+    /** Bukti pembayaran (struk) yang dicetak dari tab Penutup. */
+    cetakBayar: {
+        tombol: 'Cetak bukti bayar', judul: 'Bukti pembayaran', judulStruk: 'BUKTI PEMBAYARAN', cetak: 'Cetak', tutup: 'Tutup', pasien: 'Pasien', noRm: 'No. RM', kunjungan: 'No. kunjungan', tanggal: 'Tanggal', kasir: 'Kasir',
+        item: 'Rincian', total: 'Total', dibayar: 'Dibayar', sisa: 'Sisa tagihan', lunas: 'LUNAS', belumLunas: 'BELUM LUNAS', pembayaran: 'Pembayaran', carabayar: 'Cara bayar', terima: 'Terima kasih.',
+        dicetak: (oleh, waktu) => `Dicetak ${waktu}${oleh ? ` oleh ${oleh}` : ''}`,
+    },
     bayar: {
         judul: 'Pembayaran', judulDenganObat: 'Pembayaran dan serah obat', langkah: { tagihan: 'Tagihan', pembayaran: 'Pembayaran', serah: 'Serah terima obat', ringkasan: 'Ringkasan' }, tagihanJudul: 'Rincian tagihan', kolom: { item: 'Item', jumlah: 'Jumlah', harga: 'Harga', subtotal: 'Subtotal' },
         total: 'Total', dibayar: 'Sudah dibayar', sisa: 'Sisa', lunas: 'Lunas', tagihanLengkap: 'Tagihan lengkap', tagihanBelum: 'Ada item tanpa harga: tagihan belum lengkap dan belum bisa dibayar.', metode: 'Metode bayar', diterima: 'Jumlah diterima (Rp)',
@@ -1471,6 +1499,8 @@ export const PROFIL_PASIEN = {
         pilih: 'Pilih kunjungan di sebelah kiri untuk melihat catatan pemeriksaannya.',
     },
     tab: { pemeriksaan: 'Pemeriksaan', resep: 'Resep', tindakan: 'Tindakan', penunjang: 'Penunjang', dokumen: 'Dokumen', penutup: 'Penutup' },
+    bukanDpjp: (nama) => `Dokter yang dipilih saat pendaftaran: ${nama}. Anda bukan dokter tersebut; isian tetap dapat disimpan dan dicatat atas nama dokter itu, sedangkan nama Anda hanya tercatat di log audit.`,
+    pindahDraf: { judul: 'Ada isian yang belum disimpan', pesan: 'Pemeriksaan pasien ini belum disimpan. Jika pindah, isiannya dibuang.', buang: 'Buang draf dan pindah', batal: 'Tetap di sini' },
     soapie: {
         S: { judul: 'Subjek', ket: 'Keluhan dan riwayat dari pasien' },
         O: { judul: 'Objek', ket: 'Tanda vital, pemeriksaan fisik, dan hasil penunjang' },

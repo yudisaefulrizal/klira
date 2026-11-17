@@ -45,7 +45,11 @@ export class RepositoriKasirMysql {
     }
     async kunjungan(fasyankesId, id) {
         const k = await db.cariKunjunganUntukKunjungan2(id, fasyankesId);
-        return k && { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran };
+        if (!k)
+            return k;
+        // Nama klinik untuk kop bukti pembayaran yang dicetak.
+        const f = await db.ambilFasyankesUntukAmbil(fasyankesId);
+        return { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, fasyankes_nama: f?.nama ?? null };
     }
     /** Tagihan lengkap dengan pembayaran; kunjungan tanpa tagihan menghasilkan tagihan kosong (lunas, total 0). */
     async tagihan(fasyankesId, kunjunganId) {

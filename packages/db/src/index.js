@@ -9,3 +9,4 @@ export { bacaCsvTerminologi, imporTerminologiCsv, seedTerminologiContoh, TERMINO
 export * from './retensi/retensi-whatsapp.js';
 export * from './retensi/retensi-instagram.js';
 export * from './cadangan/index.js';
+export * from './fasyankes-tunggal.js';

@@ -87,10 +87,6 @@ export async function ambilFasyankesUntukUpgrade(id, koneksi = pool) {
     const baris = await baca("SELECT t.`id` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
-export async function ambilFasyankesUntukJalankanSeed(kode_registrasi, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`fasyankes_id`, t.`nama`, t.`jenis`, t.`bentuk_usaha`, t.`kode_registrasi`, t.`organization_id`, t.`status_akreditasi`, t.`tanggal_akreditasi`, t.`puskesmas_wilayah`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `fasyankes` t WHERE ((? OR t.`kode_registrasi` <=> ?)) LIMIT 1", [kode_registrasi === undefined, kode_registrasi ?? null], koneksi);
-    return (baris[0] ?? null);
-}
 export async function tambahFasyankesUntukJalankanSeed(fasyankes_id, nama, jenis, kode_registrasi, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `fasyankes` (`fasyankes_id`, `nama`, `jenis`, `kode_registrasi`) VALUES (?, ?, ?, ?)", [(fasyankes_id === undefined ? null : fasyankes_id) ?? null, (nama === undefined ? null : nama) ?? null, ((jenis === undefined ? null : jenis) ?? null), (kode_registrasi === undefined ? null : kode_registrasi) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
@@ -107,4 +103,9 @@ export async function ubahFasyankesUntukJalankanSeed(fasyankes_id, koneksi = poo
 }
 export async function kunciFasyankes(fasyankesId, koneksi = pool) {
     return baca("SELECT id FROM fasyankes WHERE id = ? FOR UPDATE", [fasyankesId], koneksi);
+}
+/** Id fasyankes yang ada, paling banyak `batas` baris (penjaga satu instalasi satu fasyankes). */
+export async function daftarIdFasyankes(batas = 2, koneksi = pool) {
+    const baris = await baca("SELECT `id` FROM `fasyankes` ORDER BY `id` LIMIT ?", [batas], koneksi);
+    return baris.map((b) => b.id);
 }

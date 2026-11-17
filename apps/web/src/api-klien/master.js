@@ -17,3 +17,6 @@ export const ubahAktifMaster = (jenis, id, aktif) => panggilApi('PATCH', `/maste
 export const ambilProfilKlinik = () => panggilApi('GET', '/fasyankes/profil');
 export const simpanProfilKlinik = (m) => panggilApi('PATCH', '/fasyankes/profil', m);
 export const daftarRiwayatProfil = (halaman, ukuran) => panggilApi('GET', `/fasyankes/riwayat-profil?halaman=${halaman}&ukuran=${ukuran}`);
+export const hapusJadwal = (id) => panggilApi('DELETE', `/master/jadwal/${id}`);
+export const daftarShift = () => panggilApi('GET', '/master/shift');
+export const ubahShift = (id, m) => panggilApi('PATCH', `/master/shift/${id}`, m);

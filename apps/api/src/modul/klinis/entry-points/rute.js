@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, } from '@klira/shared';
+import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, punyaIzin, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -88,14 +88,18 @@ export function buatRuteKlinis(layananAkses, layananIzin, layanan) {
             return tidakAda(res);
         kirimHasil(res, await layanan.salinan(pengguna(res), p.data.id, p.data.sumber_id, alamatDari(req)));
     }));
-    rute.get('/pasien/:id/riwayat-kunjungan', masuk, lihatKlinis, bungkus(async (req, res) => {
+    // Daftar kunjungan pasien juga dibuka petugas penunjang (analis lab) dan kasir untuk bekerja di tab Penunjang dan Penutup halaman Pasien; tanpa izin klinis atau rekam medis isi klinisnya dikosongkan.
+    const lihatDaftarKunjungan = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['penunjang', 'lihat'], ['kasir', 'lihat']);
+    rute.get('/pasien/:id/riwayat-kunjungan', masuk, lihatDaftarKunjungan, bungkus(async (req, res) => {
         const id = idParam.safeParse(req.params);
         const q = queryRiwayat.safeParse(req.query);
         if (!id.success)
             return tidakAda(res);
         if (!q.success)
             return galatValidasi(res, q.error);
-        kirimHasil(res, await layanan.riwayat(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req), q.data.batas));
+        const hasil = await layanan.riwayat(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req), q.data.batas);
+        const klinis = punyaIzin(pengguna(res), 'klinis', 'lihat') || punyaIzin(pengguna(res), 'rekam-medis', 'lihat');
+        kirimHasil(res, !klinis && hasil.ok ? { ...hasil, data: hasil.data.map((k) => ({ ...k, keluhan_utama: null, diagnosis: [], tindak_lanjut: null })) } : hasil);
     }));
     // Kamus terminologi adalah referensi tanpa data pasien: juga dibuka pengelola master (form tarif tindakan memilih kode ICD-9-CM).
     const lihatTerminologi = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['master', 'input'], ['master', 'perbaikan']);

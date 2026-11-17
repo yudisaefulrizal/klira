@@ -13,9 +13,10 @@ const barisPraktisi = (p) => ({
     id: p.id, aktif: p.aktif, pengguna_id: p.pengguna_id, pengguna_nama: p.pengguna.nama, profesi: p.profesi, nomor_sip: p.nomor_sip,
     masa_berlaku_sip: tgl(p.masa_berlaku_sip), ihs_practitioner_id: p.ihs_practitioner_id,
 });
-const barisJadwal = (j) => ({
-    id: j.id, aktif: j.aktif, pengguna_id: j.pengguna_id, pengguna_nama: j.pengguna.nama, lokasi_id: j.lokasi_id, lokasi_nama: j.lokasi.nama,
-    hari: j.hari, jam_mulai: j.jam_mulai, jam_selesai: j.jam_selesai, kuota: j.kuota, berlaku_dari: tgl(j.berlaku_dari), berlaku_sampai: tgl(j.berlaku_sampai),
+/** Jadwal membawa nama dan jam shift-nya (jam hanya tersimpan di tabel shift). */
+const barisJadwal = (j, shift) => ({
+    id: j.id, pengguna_id: j.pengguna_id, pengguna_nama: j.pengguna.nama, lokasi_id: j.lokasi_id, lokasi_nama: j.lokasi.nama,
+    hari: j.hari, shift_id: j.shift_id, shift_nama: shift.get(j.shift_id)?.nama ?? null, jam_mulai: shift.get(j.shift_id)?.jam_mulai ?? null, jam_selesai: shift.get(j.shift_id)?.jam_selesai ?? null, kuota: j.kuota,
 });
 const barisTarif = (t) => ({
     id: t.id, aktif: t.aktif, kode: t.kode, nama: t.nama, jenis: t.jenis, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn, kode_icd9cm: t.kode_icd9cm,
@@ -43,10 +44,11 @@ export class RepositoriMasterMysql {
         }
         if (jenis === 'jadwal') {
             const [total, data] = await Promise.all([
-                db.hitungJadwalPraktikUntukDaftar(fasyankesId, (!(aktif === undefined)) ? (aktif) : undefined, cari, cari),
-                db.daftarJadwalPraktikUntukDaftar(fasyankesId, (!(aktif === undefined)) ? (aktif) : undefined, cari, cari, f.ukuran, (f.halaman - 1) * f.ukuran),
+                db.hitungJadwalPraktikUntukDaftar(fasyankesId, cari, cari),
+                db.daftarJadwalPraktikUntukDaftar(fasyankesId, cari, cari, f.ukuran, (f.halaman - 1) * f.ukuran),
             ]);
-            return { total, baris: data.map(barisJadwal) };
+            const shift = await this.petaShift(fasyankesId);
+            return { total, baris: data.map((j) => barisJadwal(j, shift)) };
         }
         if (jenis === 'tarif') {
             const [total, data] = await Promise.all([
@@ -90,7 +92,7 @@ export class RepositoriMasterMysql {
         }
         if (jenis === 'jadwal') {
             const j = await db.cariJadwalPraktikUntukAmbil(id, fasyankesId);
-            return j ? barisJadwal(j) : null;
+            return j ? barisJadwal(j, await this.petaShift(fasyankesId)) : null;
         }
         const t = await db.cariTarifLayananUntukAmbil(id, fasyankesId);
         return t ? barisTarif(t) : null;
@@ -110,8 +112,8 @@ export class RepositoriMasterMysql {
         }
         if (jenis === 'jadwal') {
             const d = data;
-            const j = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahJadwalPraktikUntukBuat(fasyankesId, d.pengguna_id, d.lokasi_id, d.hari, d.jam_mulai, d.jam_selesai, d.kuota, d.berlaku_dari, d.berlaku_sampai ?? null, oleh, koneksiBaru); return db.tambahJadwalPraktikUntukBuatHasil(_hasil.id, koneksiBaru); });
-            return barisJadwal(j);
+            const j = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahJadwalPraktikUntukBuat(fasyankesId, d.pengguna_id, d.lokasi_id, d.hari, d.shift_id, d.kuota ?? null, oleh, koneksiBaru); return db.tambahJadwalPraktikUntukBuatHasil(_hasil.id, koneksiBaru); });
+            return barisJadwal(j, await this.petaShift(fasyankesId));
         }
         const d = data;
         return barisTarif(await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahTarifLayananUntukBuat(fasyankesId, (dataTarif(d))?.kode, (dataTarif(d))?.nama, (dataTarif(d))?.jenis, (dataTarif(d))?.harga_umum, (dataTarif(d))?.harga_jkn, (dataTarif(d))?.kode_icd9cm, oleh, koneksiBaru); return db.tambahTarifLayananUntukBuatHasil(_hasil.id, koneksiBaru); }));
@@ -130,7 +132,7 @@ export class RepositoriMasterMysql {
         }
         else if (jenis === 'jadwal') {
             const d = data;
-            await db.ubahJadwalPraktikUntukUbah(d.pengguna_id, d.lokasi_id, d.hari, d.jam_mulai, d.jam_selesai, d.kuota, d.berlaku_dari, d.berlaku_sampai ?? null, id, fasyankesId);
+            await db.ubahJadwalPraktikUntukUbah(d.pengguna_id, d.lokasi_id, d.hari, d.shift_id, d.kuota ?? null, id, fasyankesId);
         }
         else {
             const d = data;
@@ -143,8 +145,6 @@ export class RepositoriMasterMysql {
             await db.ubahLokasiUntukSetAktif(aktif ? 'O' : 'U', id, fasyankesId);
         else if (jenis === 'praktisi')
             await db.ubahProfilProfesiUntukSetAktif(aktif, id, fasyankesId);
-        else if (jenis === 'jadwal')
-            await db.ubahJadwalPraktikUntukSetAktif(aktif, id, fasyankesId);
         else
             await db.ubahTarifLayananUntukSetAktif(aktif, id, fasyankesId);
         return (await this.ambil(fasyankesId, jenis, id));
@@ -158,8 +158,35 @@ export class RepositoriMasterMysql {
             const p = await db.daftarPenggunaUntukOpsi(fasyankesId, true, (cari) ? (cari) : undefined, UKURAN_OPSI);
             return p.map((x) => ({ nilai: String(x.id), label: x.nama }));
         }
+        if (sumber === 'shift')
+            return (await this.daftarShift(fasyankesId)).map((x) => ({ nilai: String(x.id), label: `${x.nama} (${x.jam_mulai}-${x.jam_selesai})` }));
         const p = await db.daftarPenggunaUntukOpsi2(fasyankesId, true, (cari) ? (cari) : undefined, UKURAN_OPSI);
         return p.map((x) => ({ nilai: String(x.id), label: x.nama }));
+    }
+    /** Shift klinik (urut Pagi, Siang, Malam). */
+    async daftarShift(fasyankesId) {
+        return (await db.daftarShiftUntukDaftar(fasyankesId)).map((x) => ({ id: x.id, urutan: x.urutan, nama: x.nama, jam_mulai: x.jam_mulai, jam_selesai: x.jam_selesai }));
+    }
+    async petaShift(fasyankesId) {
+        return new Map((await this.daftarShift(fasyankesId)).map((x) => [x.id, x]));
+    }
+    async ambilShift(fasyankesId, id) {
+        return (await this.daftarShift(fasyankesId)).find((x) => x.id === id) ?? null;
+    }
+    async ubahShift(fasyankesId, id, d) {
+        await db.ubahShiftUntukUbah(d.jam_mulai, d.jam_selesai, id, fasyankesId);
+        return this.ambilShift(fasyankesId, id);
+    }
+    async shiftAda(fasyankesId, id) {
+        return !!(await db.cariShiftUntukAmbil(id, fasyankesId));
+    }
+    /** Jadwal lain dokter itu pada hari dan shift yang sama (dokter tidak bisa di dua tempat sekaligus). */
+    async jadwalBentrok(fasyankesId, penggunaId, hari, shiftId, kecualiId) {
+        const b = await db.cariJadwalPraktikUntukBentrok(fasyankesId, penggunaId, hari, shiftId, kecualiId);
+        return b ? { id: b.id, lokasi_nama: b.lokasi_nama } : null;
+    }
+    async hapusJadwal(fasyankesId, id) {
+        await db.hapusJadwalPraktikUntukHapus(id, fasyankesId);
     }
     async lokasiAda(fasyankesId, id, jenis) {
         return (await db.hitungLokasiUntukLokasiAda(id, fasyankesId, jenis)) > 0;

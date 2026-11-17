@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { GALAT, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, jenisMaster, jenisMasterUbah, sumberOpsiMaster, ubahAktifMaster } from '@klira/shared';
+import { GALAT, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, jenisMaster, shiftUbah, jenisMasterUbah, sumberOpsiMaster, ubahAktifMaster } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -48,6 +48,19 @@ export function buatRuteMaster(layananAkses, layananIzin, layanan) {
     rute.get('/master/kesiapan', masuk, wajibIzin('master', 'lihat'), bungkus(async (_req, res) => {
         res.json({ data: await hitungKesiapan(pengguna(res).fasyankes_id) });
     }));
+    // Shift tetap tiga (Pagi, Siang, Malam): hanya dibaca dan jamnya diubah. Harus sebelum '/master/:jenis'.
+    rute.get('/master/shift', masuk, wajibIzin('master', 'lihat'), bungkus(async (_req, res) => {
+        res.json({ data: await layanan.daftarShift(pengguna(res)) });
+    }));
+    rute.patch('/master/shift/:id', masuk, wajibIzin('master', 'perbaikan'), bungkus(async (req, res) => {
+        const id = idRute(req);
+        if (!id)
+            return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
+        const b = shiftUbah.safeParse(req.body ?? {});
+        if (!b.success)
+            return galatValidasi(res, b.error);
+        kirimHasil(res, await layanan.ubahShift(pengguna(res), id, b.data, alamatDari(req)));
+    }));
     rute.get('/master/:jenis', masuk, wajibIzin('master', 'lihat'), bungkus(async (req, res) => {
         const j = jenisMaster.safeParse(req.params.jenis);
         if (!j.success)
@@ -77,6 +90,12 @@ export function buatRuteMaster(layananAkses, layananIzin, layanan) {
         if (!b.success)
             return galatValidasi(res, b.error);
         kirimHasil(res, await layanan.ubah(pengguna(res), j, id, b.data, alamatDari(req)));
+    }));
+    rute.delete('/master/jadwal/:id', masuk, wajibIzin('master', 'perbaikan'), bungkus(async (req, res) => {
+        const id = idRute(req);
+        if (!id)
+            return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
+        kirimHasil(res, await layanan.hapusJadwal(pengguna(res), id, alamatDari(req)));
     }));
     rute.patch('/master/:jenis/:id/aktif', masuk, wajibIzin('master', 'perbaikan'), bungkus(async (req, res) => {
         const j = jenisUbah(req, res);

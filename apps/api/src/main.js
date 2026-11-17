@@ -8,10 +8,23 @@ import { createServer } from 'node:http';
 import { pasangWebsocketWhatsapp } from './modul/whatsapp/entry-points/websocket.js';
 import { buatApp } from './app.js';
 import { bacaKonfigurasi } from './config/lingkungan.js';
+import { GalatFasyankesGanda, pastikanFasyankesTunggal } from '@klira/db';
+/** Satu instalasi satu fasyankes: menolak mulai bila database berisi lebih dari satu. Database yang belum siap atau tidak terjangkau tidak menahan proses. */
+async function periksaFasyankesTunggal() {
+    try {
+        await pastikanFasyankesTunggal();
+    }
+    catch (galat) {
+        if (galat instanceof GalatFasyankesGanda)
+            throw galat;
+        console.error('Pemeriksaan satu fasyankes dilewati: database belum siap atau tidak terjangkau.');
+    }
+}
 async function mulai() {
-    const { port, baseUrl } = bacaKonfigurasi();
+    const { port, baseUrl, trustProxy } = bacaKonfigurasi();
+    await periksaFasyankesTunggal();
     const server = createServer();
-    const app = buatApp();
+    const app = buatApp(undefined, { trustProxy });
     server.on('request', app);
     pasangWebsocketWhatsapp(server, app.locals.layananAkses, baseUrl);
     pasangWebsocketInstagram(server, app.locals.layananAkses, baseUrl);
@@ -45,4 +58,4 @@ async function mulai() {
         console.log(`Klira berjalan di port ${port} (${baseUrl})`);
     });
 }
-void mulai().catch((galat) => { console.error(galat); process.exitCode = 1; });
+void mulai().catch((galat) => { console.error(galat instanceof GalatFasyankesGanda ? galat.message : galat); process.exit(1); });

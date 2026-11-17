@@ -132,14 +132,17 @@ async function siapkanMaster(id) {
   // Jadwal: Senin-Sabtu (dan Minggu, agar demo bisa kapan saja).
   const jadwalAda = (await api('admin', 'GET', '/master/jadwal?ukuran=100')).data?.total ?? 0;
   if (!jadwalAda) {
+    // Jadwal memilih shift tetap (1 = Pagi, 2 = Siang, 3 = Malam); jam shift diatur di tab Shift.
+    const shift = (await api('admin', 'GET', '/master/shift')).data ?? [];
+    const idShift = (urutan) => shift.find((x) => x.urutan === urutan)?.id;
     const jadwal = [
-      [id.dokter, poli.umum, '08:00', '14:00', 30], [id.dokter, poli.umum, '16:00', '21:00', 20], [id.dokter, poli.umum2, '08:00', '14:00', 30],
-      [id.drg, poli.gigi, '09:00', '15:00', 12], [id.bidan, poli.kia, '08:00', '13:00', 15],
+      [id.dokter, poli.umum, 1, 30], [id.dokter, poli.umum, 2, 20],
+      [id.drg, poli.gigi, 1, 12], [id.bidan, poli.kia, 1, 15],
     ];
-    for (const [pengguna_id, lokasi_id, jam_mulai, jam_selesai, kuota] of jadwal) {
+    for (const [pengguna_id, lokasi_id, urutan, kuota] of jadwal) {
       if (!pengguna_id) continue;
       for (let hari = 1; hari <= 7; hari++) {
-        const r = await api('admin', 'POST', '/master/jadwal', { pengguna_id, lokasi_id, hari, jam_mulai, jam_selesai, kuota, berlaku_dari: tambahHari(-30) });
+        const r = await api('admin', 'POST', '/master/jadwal', { pengguna_id, lokasi_id, hari, shift_id: idShift(urutan), kuota });
         if (r.status >= 300) { gagal++; console.log(`  ✗ jadwal ${pengguna_id}/${hari} -> ${r.status} ${JSON.stringify(r.isi).slice(0, 200)}`); }
       }
     }

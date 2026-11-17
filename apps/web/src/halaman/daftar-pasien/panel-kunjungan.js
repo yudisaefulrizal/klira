@@ -170,13 +170,20 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         kotak.append(...[grid, g && kecil(g, 'profil-galat'), sah].filter(Boolean));
         return kotak;
     }
+    // Dokter lain boleh mengisi, tetapi catatan tetap atas nama dokter pendaftaran; pengisi sebenarnya hanya tercatat di log audit.
+    const dpjpNama = () => klinis.kunjungan.dpjp_nama ?? konteks?.kunjungan?.dpjp_nama ?? ringkas?.dpjp_nama ?? null, namaDpjp = () => dpjpNama() ?? '-';
+    function bukanDpjp() {
+        const dpjpId = klinis.kunjungan.dpjp_id ?? ringkas?.dpjp_id ?? konteks?.kunjungan?.dpjp_id, saya = penggunaSaatIni().pengguna;
+        return !!dpjpId && !!saya && /dokter/i.test(saya.jenis_akun ?? '') && saya.id !== dpjpId;
+    }
     function isiPemeriksaan() {
         const m = mode(), bungkus = buat('div', 'profil-soapie');
         if (!m.ubah) bungkus.append(peringatan(S.bacaSaja[m.alasan], 'biru'));
+        if (m.ubah && bukanDpjp()) bungkus.append(peringatan(T.bukanDpjp(namaDpjp()), 'kuning'));
         if (m.alasan !== 'lab') {
             const form = buat('div', 'profil-form'), kiri = buat('div', 'profil-form-kolom'), kanan = buat('div', 'profil-form-kolom profil-form-kanan');
             const p = pelaksana(klinis.bagian, ['tanda_vital', ...BAGIAN_SOAPIE]), pengguna = penggunaSaatIni().pengguna;
-            const dilakukan = isian('profil-dilakukan', p?.nama ?? (m.ubah || m.ubahVital ? pengguna?.nama ?? '' : '-'), { boleh: false });
+            const dilakukan = isian('profil-dilakukan', dpjpNama() ?? p?.nama ?? (m.ubah || m.ubahVital ? pengguna?.nama ?? '' : '-'), { boleh: false });
             const profesi = isian('profil-profesi', [p?.jenis_akun, ringkas?.poli_nama].filter(Boolean).join(' · ') || '-', { boleh: false });
             const alergi = isian('profil-alergi', k.keperawatan.alergi, { boleh: m.ubahVital, maxLength: 500, onInput: (v) => ubah({ keperawatan: { ...k.keperawatan, alergi: v } }) });
             alergi.placeholder = konteks?.alergi ? S.alergiTercatat(konteks.alergi) : S.tanpaAlergi;
@@ -509,6 +516,9 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         if (aktif) { lukisKepala(); lukis(); }
     }
 
+    /** Ada isian pemeriksaan yang belum disimpan (selain yang sudah ada di server). */
+    el.adaDraf = () => !!klinis && bisaDraf() && JSON.stringify(bentukDraf(k, tensiTeks)) !== JSON.stringify(awalDraf);
+    el.buangDraf = () => draf?.hapus();
     el.pilihSub = (baru) => { if (!subSah.includes(baru) || baru === sub) return; sub = baru; tabs.pilih(`kunjungan-${sub}`); lukis(); };
     el.tutup = () => { aktif = false; penutup?.tutup(); draf?.tutup(); tutupModal(); };
     lukis(); void muat();

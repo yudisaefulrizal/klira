@@ -9,7 +9,7 @@ export async function hitungKesiapan(fasyankesId) {
     const [poli, praktisi, jadwal, tarif, obat, pemeriksaan, tanpaTarif, sipLewat] = await Promise.all([
         db.hitungLokasiUntukHitungKesiapan(fasyankesId, 'poli', 'O'),
         db.hitungProfilProfesiUntukHitungKesiapan(fasyankesId, true),
-        db.hitungJadwalPraktikUntukHitungKesiapan(fasyankesId, true),
+        db.hitungJadwalPraktikUntukHitungKesiapan(fasyankesId),
         db.hitungTarifLayananUntukHitungKesiapan(fasyankesId, 'konsultasi', true),
         db.hitungMasterObatUntukHitungKesiapan(fasyankesId, true),
         db.hitungMasterPemeriksaanUntukHitungKesiapan(fasyankesId, true),

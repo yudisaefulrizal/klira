@@ -2,14 +2,15 @@ import { pathToFileURL as kliraFileUrl } from 'node:url';
 import * as db from '../data-access/index.js';
 import { hashKataSandi } from '../keamanan/kata-sandi.js';
 import { jalankanSeed } from './seed.js';
+import { pastikanFasyankesTunggal } from '../fasyankes-tunggal.js';
 import { AKUN_DEMO } from '@klira/shared';
 export async function seedDemo(env = process.env) {
     if (!['development', 'test'].includes(env.NODE_ENV ?? ''))
         throw new Error('Seed demo hanya diizinkan di development atau test.');
     await jalankanSeed(db.pool, env);
-    const fas = await db.ambilFasyankesUntukJalankanSeed('KLINIK-CONTOH');
-    if (!fas)
-        throw new Error('Klinik contoh tidak ditemukan.');
+    const fas = { id: await pastikanFasyankesTunggal() };
+    if (!fas.id)
+        throw new Error('Fasyankes tidak ditemukan.');
     const hash = await hashKataSandi(env.KLIRA_SANDI_DEMO || 'admin123');
     return db.transaksi(async (koneksi) => {
         await db.kunciFasyankes(fas.id, koneksi);

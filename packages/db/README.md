@@ -12,6 +12,30 @@ Komponen API disusun dalam `apps/api/src/modul/<komponen>/`:
 - `domain`: aturan layanan dan pemetaan hasil.
 - `entry-points`: rute HTTP, webhook, dan WebSocket.
 
+## Satu instalasi, satu fasyankes
+
+Satu instalasi Klira (satu database) melayani tepat satu fasyankes. Klinik lain memakai instalasi dan database sendiri. Kolom `fasyankes_id` tetap ada di setiap tabel sebagai penjaga, tetapi login, koneksi WhatsApp/Instagram, serta cadangan, pemulihan, dan reset bekerja atas seluruh database, sehingga fasyankes kedua tidak boleh ada.
+
+Aturan ini ditegakkan di dua tempat melalui `pastikanFasyankesTunggal()` (`src/fasyankes-tunggal.js`):
+
+- Seed memakai fasyankes yang sudah ada, juga setelah kode registrasinya diganti lewat profil klinik, dan hanya membuat "Klinik Contoh" bila database masih kosong. Seed menolak database yang berisi lebih dari satu fasyankes.
+- API menolak mulai bila database berisi lebih dari satu fasyankes.
+
+Uji integrasi membuat fasyankes tambahan untuk menguji pembatasan data dan menghapusnya kembali. Bila uji terhenti di tengah dan fasyankes uji tertinggal, bangun ulang database pengembangan dengan `fresh` lalu seed.
+
+## Cadangan dan pemulihan
+
+```sh
+npm run cadangan -w packages/db -- buat /jalur/klira-2026-11-16.sql
+npm run cadangan -w packages/db -- pulihkan /jalur/klira-2026-11-16.sql --ya
+```
+
+`buat` menulis dump seluruh database ke berkas baru yang hanya bisa dibaca pemiliknya dan menolak menimpa berkas yang sudah ada. Berkas berisi data pasien: simpan terenkripsi dan di luar server. `pulihkan` menghapus seluruh data lalu memuat isi berkas, sehingga wajib ditegaskan dengan `--ya`; hentikan aplikasi lebih dulu dan mulai ulang sesudahnya. Reset ke keadaan awal dilakukan dengan `fresh` dan seed (lihat Migrasi).
+
+Alat yang dipakai adalah `mysqldump` dan `mysql`, atau `mariadb-dump` dan `mariadb` bila yang terpasang paket MariaDB. Saat memuat dump, klien dijalankan dengan perintah pengakses sistem dimatikan (`--sandbox` pada MariaDB, `--system-command=OFF` pada MySQL), karena tanpa itu baris `\!` di dalam berkas dijalankan sebagai perintah shell di server.
+
+Halaman Pengaturan hanya menyediakan unduhan cadangan. Pemulihan dan reset lewat web mati secara bawaan dan hanya hidup bila `KLIRA_PULIHKAN_LEWAT_WEB=1`; saat hidup, unggahan dibatasi 512 MB dan ditolak bila klien database tidak bisa mematikan perintah sistem. Setiap unduhan, pemulihan, dan reset dicatat di log audit sebelum dijalankan (entitas `cadangan`) dan di `riwayat_backup`.
+
 ## Migrasi
 
 CLI berjalan langsung dengan Node.js:

@@ -5,7 +5,7 @@ import { pasangRuteKoneksi } from '../domain/koneksi.js';
 import { kirimMeta, idPesan, hash, konfigurasiMeta, GalatMeta } from '../domain/meta.js';
 import { kabarkanInstagram } from '../domain/kanal.js';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { enkripsiRahasia, dekripsiRahasia, kunciPercakapanInstagram, pangkasPesanInstagram, } from '@klira/db';
 import { punyaIzin, kirimPesanWa, ubahPercakapanWa, } from '@klira/shared';
 import { buatFasilitasAudit } from '../../../middleware/audit.js';
@@ -105,7 +105,8 @@ export function buatRuteInstagram(akses, izin) {
         kabarkanInstagram({ tipe: 'percakapan', fasyankes_id: pengguna(res).fasyankes_id });
         res.json({ data: { ok: true } });
     });
-    rute.post('/instagram/percakapan/:id/pesan', wajibIzin('instagram', 'lihat'), audit.lihat({ entitas: 'ig_pesan', ringkasan: 'Permintaan kirim pesan Instagram' }), async (req, res) => {
+    // Badan berlampiran (hingga 8 MB, base64) baru diurai di sini: sesi, izin, dan kepemilikan percakapan sudah diperiksa.
+    rute.post('/instagram/percakapan/:id/pesan', wajibIzin('instagram', 'lihat'), express.json({ limit: '12mb' }), audit.lihat({ entitas: 'ig_pesan', ringkasan: 'Permintaan kirim pesan Instagram' }), async (req, res) => {
         const hasil = kirimPesanWa.safeParse(req.body);
         if (!hasil.success)
             return tolak(res, hasil.error.issues[0].message);

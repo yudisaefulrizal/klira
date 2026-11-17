@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-const { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, kodeTindakanBerikut, profilKlinikMasukan, teksSelMaster } = await import("../index.js");
+const { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, kodeTindakanBerikut, profilKlinikMasukan, shiftUbah, teksSelMaster } = await import("../index.js");
 
 describe('skema master', () => {
     it('poli: nama dan jenis wajib, status bawaan operasional', () => {
@@ -17,14 +17,14 @@ describe('skema master', () => {
         expect(SKEMA_MASTER.praktisi.safeParse(profil).success).toBe(false);
         expect(SKEMA_MASTER_UBAH.praktisi.safeParse(profil).success).toBe(true);
     });
-    it('jadwal: hari 1-7, jam sah dan berurutan, kuota minimal 1, periode berurutan', () => {
-        const j = { pengguna_id: 1, lokasi_id: 2, hari: 1, jam_mulai: '08:00', jam_selesai: '12:00', kuota: 10, berlaku_dari: '2026-01-01' };
+    it('jadwal: hari 1-7, shift wajib, kuota minimal 1', () => {
+        const j = { pengguna_id: 1, lokasi_id: 2, hari: 1, shift_id: 3, kuota: 10 };
         expect(SKEMA_MASTER.jadwal.safeParse(j).success).toBe(true);
         expect(SKEMA_MASTER.jadwal.safeParse({ ...j, hari: 8 }).success).toBe(false);
-        expect(SKEMA_MASTER.jadwal.safeParse({ ...j, jam_mulai: '8:00' }).success).toBe(false);
-        expect(SKEMA_MASTER.jadwal.safeParse({ ...j, jam_selesai: '08:00' }).success).toBe(false);
+        expect(SKEMA_MASTER.jadwal.safeParse({ ...j, shift_id: undefined }).success).toBe(false);
         expect(SKEMA_MASTER.jadwal.safeParse({ ...j, kuota: 0 }).success).toBe(false);
-        expect(SKEMA_MASTER.jadwal.safeParse({ ...j, berlaku_sampai: '2025-12-31' }).success).toBe(false);
+        expect(SKEMA_MASTER.jadwal.safeParse({ ...j, kuota: null }).success).toBe(true);
+        expect(SKEMA_MASTER.jadwal.safeParse({ pengguna_id: 1, lokasi_id: 2, hari: 1, shift_id: 3 }).success).toBe(true);
     });
     it('tarif: jenis dan harga', () => {
         const t = { kode: 'K', nama: 'N', jenis: 'kamar', harga_umum: 100 };
@@ -59,12 +59,23 @@ describe('skema master', () => {
     });
 });
 
+describe('jam shift', () => {
+    it('jam sah; selesai boleh melewati tengah malam tetapi tidak sama dengan mulai', () => {
+        expect(shiftUbah.safeParse({ jam_mulai: '08:00', jam_selesai: '14:00' }).success).toBe(true);
+        expect(shiftUbah.safeParse({ jam_mulai: '21:00', jam_selesai: '07:00' }).success).toBe(true);
+        expect(shiftUbah.safeParse({ jam_mulai: '8:00', jam_selesai: '14:00' }).success).toBe(false);
+        expect(shiftUbah.safeParse({ jam_mulai: '14:00', jam_selesai: '14:00' }).success).toBe(false);
+    });
+});
+
 describe('teks sel master', () => {
     it('memformat hari, jam, periode, harga, dan asal wilayah', () => {
-        const j = { id: 1, aktif: true, hari: 3, jam_mulai: '08:00', jam_selesai: '10:00', berlaku_dari: '2026-01-01', berlaku_sampai: null };
+        const j = { id: 1, aktif: true, hari: 3, shift_nama: 'Pagi', jam_mulai: '08:00', jam_selesai: '10:00' };
         expect(teksSelMaster('hari', j)).toBe(MASTER.hari[3]);
         expect(teksSelMaster('jam', j)).toBe('08:00-10:00');
-        expect(teksSelMaster('periode', j)).toBe('2026-01-01 s/d -');
+        expect(teksSelMaster('shift', j)).toBe('Pagi (08:00-10:00)');
+        expect(teksSelMaster('kuota', { kuota: null })).toBe(MASTER.tanpaBatas);
+        expect(teksSelMaster('kuota', { kuota: 20 })).toBe('20');
         expect(teksSelMaster('harga_jkn', { id: 1, aktif: true, harga_jkn: null })).toBe('-');
         expect(teksSelMaster('harga_umum', { id: 1, aktif: true, harga_umum: 50000 })).toContain('50');
         expect(teksSelMaster('contoh', { id: 1, aktif: true, contoh: true })).toBe(MASTER.contoh);

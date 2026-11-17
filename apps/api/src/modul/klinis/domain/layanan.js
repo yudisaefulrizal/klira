@@ -9,6 +9,8 @@ export const TAHAP_BOLEH_CATAT = ['menunggu_skrining', 'pemeriksaan', 'resep'];
 /** Asesmen tidak wajib: diagnosis ICD-10 yang terisi sudah memenuhi syarat asesmen. */
 export const BAGIAN_WAJIB_SELESAI = ['subjek', 'diagnosis'];
 const ADA_ISI = (bagian, isi) => bagian === 'diagnosis' || bagian === 'tindakan' ? (isi?.item.length ?? 0) > 0 : isi !== null;
+/** Bagian catatan dokter: diisi atas nama dokter pendaftaran. Tanda vital dan skrining keperawatan tetap atas nama pengisinya. */
+const BAGIAN_DOKTER = ['subjek', 'objek', 'asesmen', 'plan', 'instruksi', 'evaluasi', 'diagnosis'];
 export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang = () => new Date() }) {
     const kedaluwarsaMs = KEDALUWARSA_DRAF_KLINIS_JAM * 3_600_000;
     // Penyedia isi untuk deteksi perubahan setelah pengesahan: entitas = nama bagian, entitas_id = id kunjungan.
@@ -85,8 +87,11 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
                 && (await pengesahan.keadaan(p.fasyankes_id, bagian, kunjunganId)).status === 'belum_disahkan') {
                 return { ok: true, data: { bagian: await bagianDto(p.fasyankes_id, kunjunganId, bagian), kunjungan: (await repo.kunjunganDto(p.fasyankes_id, kunjunganId)), tersimpan: false } };
             }
+            // Dokter lain boleh mengisi, tetapi catatan tetap atas nama dokter yang dipilih saat pendaftaran; pelaku sebenarnya hanya tercatat di log audit.
+            const dpjpId = k.peserta?.[0]?.pengguna_id ?? null;
+            const atasNama = dpjpId && dpjpId !== p.id && BAGIAN_DOKTER.includes(bagian) && (await repo.penggunaDokter(p.fasyankes_id, p.id, sekarang())) ? dpjpId : p.id;
             const rencana = await pengesahan.siapkan({
-                fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, disetujuiOleh: opsi.disetujuiOleh, lewatiBatas: true,
+                fasyankesId: p.fasyankes_id, pelakuId: atasNama, fitur: 'klinis', entitas: bagian, entitasId: kunjunganId, isiBaru: isi, disetujuiOleh: opsi.disetujuiOleh, lewatiBatas: true,
                 alasan: alasan?.trim() || (tutup ? undefined : KLINIS.alasanOtomatis),
                 bacaIsiSekarang: () => repo.bacaBagian(p.fasyankes_id, kunjunganId, bagian),
             });
@@ -97,7 +102,7 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
                 return { ok: true, data: { bagian: await bagianDto(p.fasyankes_id, kunjunganId, bagian), kunjungan: dto, tersimpan: false } };
             const { rencana: r } = rencana.data;
             try {
-                await repo.simpanBagian({ fasyankesId: p.fasyankes_id, kunjunganId, bagian, isi, oleh: p.id, pengesahan: { ...r, fasyankesId: p.fasyankes_id, entitas: bagian, entitasId: kunjunganId } });
+                await repo.simpanBagian({ fasyankesId: p.fasyankes_id, kunjunganId, bagian, isi, oleh: atasNama, pengesahan: { ...r, fasyankesId: p.fasyankes_id, entitas: bagian, entitasId: kunjunganId } });
             }
             catch (e) {
                 if (e instanceof BentrokVersiError)
@@ -108,7 +113,7 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             const perbaikan = r.versi > 1;
             await audit.catat({
                 fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: perbaikan ? 'perbaikan' : 'input', entitas: bagian, entitas_id: kunjunganId,
-                keterangan: `${perbaikan ? 'Perbaikan' : 'Simpan'} dan sahkan ${bagian} versi ${r.versi}`, alamat,
+                keterangan: `${perbaikan ? 'Perbaikan' : 'Simpan'} dan sahkan ${bagian} versi ${r.versi}${atasNama !== p.id ? ` atas nama dokter pendaftaran (pengguna ${atasNama})` : ''}`, alamat,
             });
             // Tindakan dokter menjadi item tagihan (P5); bila tagihan terkunci, tindakan tetap tersimpan dan pengguna diberi pesan untuk kasir.
             let pesanTagihan = null;

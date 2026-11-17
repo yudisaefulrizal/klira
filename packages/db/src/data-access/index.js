@@ -29,6 +29,7 @@ export * from './izin.js';
 export * from './izin_jenis_akun.js';
 export * from './izin_per_akun.js';
 export * from './jadwal_praktik.js';
+export * from './shift.js';
 export * from './jenis_akun.js';
 export * from './kebijakan_retensi.js';
 export * from './keluarga_pasien.js';

@@ -8,8 +8,10 @@ jest.unstable_mockModule('@klira/db', () => {
     const ambilFasyankesUntukPengaturanWebsite = jest.fn();
     const daftarLokasiUntukBacaKlinikPublik = jest.fn();
     const daftarJadwalPraktikUntukBacaKlinikPublik = jest.fn();
+    const daftarShiftUntukDaftar = jest.fn();
     return { ...kliraActual0,
         pool: {},
+        daftarShiftUntukDaftar: daftarShiftUntukDaftar,
         cariWebsiteKlinikUntukBacaKlinikPublik: cariWebsiteKlinikUntukBacaKlinikPublik,
         daftarWebsiteKlinikUntukBacaKlinikPublik: daftarWebsiteKlinikUntukBacaKlinikPublik,
         hitungWebsiteKlinikUntukBacaKlinikPublik: hitungWebsiteKlinikUntukBacaKlinikPublik,
@@ -30,7 +32,8 @@ beforeEach(() => {
     jest.mocked(db.daftarWebsiteKlinikUntukBacaKlinikPublik).mockResolvedValue([]);
     jest.mocked(db.hitungWebsiteKlinikUntukBacaKlinikPublik).mockResolvedValue(0);
     jest.mocked(db.daftarLokasiUntukBacaKlinikPublik).mockResolvedValue([{ id: 3, nama: 'Poli Umum' }]);
-    jest.mocked(db.daftarJadwalPraktikUntukBacaKlinikPublik).mockResolvedValue([{ hari: 4, jam_mulai: '08:00', jam_selesai: '12:00', lokasi_id: 3, pengguna: { nama: 'Nama internal' } }]);
+    jest.mocked(db.daftarShiftUntukDaftar).mockResolvedValue([{ id: 9, jam_mulai: '08:00', jam_selesai: '12:00' }]);
+    jest.mocked(db.daftarJadwalPraktikUntukBacaKlinikPublik).mockResolvedValue([{ hari: 4, shift_id: 9, lokasi_id: 3, pengguna: { nama: 'Nama internal' } }]);
 });
 
 test('domain memilih website aktif, query layanan dan jadwal terisolasi, identitas internal tidak dikirim', async () => {
@@ -39,7 +42,7 @@ test('domain memilih website aktif, query layanan dan jadwal terisolasi, identit
     expect(data?.jadwal[0].praktisi).toBeNull();
     expect(jest.mocked(db.cariWebsiteKlinikUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: true, 2: 'klinik.example' })]));
     expect(jest.mocked(db.daftarLokasiUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 'poli', 2: 'O' })]));
-    expect(jest.mocked(db.daftarJadwalPraktikUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: true, 2: new Date(`${tanggalWib(new Date())}T00:00:00Z`), 5: [3] })]));
+    expect(jest.mocked(db.daftarJadwalPraktikUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: true, 2: [3] })]));
     expect(JSON.stringify(data)).not.toMatch(/fasyankes_id|pengguna_id|nomor_sip|Nama internal|nomor_rm|tampilkan_nama/);
 });
 

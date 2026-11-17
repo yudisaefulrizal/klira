@@ -14,4 +14,11 @@ export class RepositoriKeamananMysql {
         ]);
         return { total, baris: baris.map((b) => ({ ...b, ukuran_byte: b.ukuran_byte === null ? null : Number(b.ukuran_byte) })) };
     }
+    /** Catat operasi cadangan; mengembalikan id baris riwayat. */
+    catatBackup(fasyankesId, status, lokasi, oleh) {
+        return db.tambahRiwayatBackup(fasyankesId, status, lokasi, oleh);
+    }
+    selesaiBackup(id, fasyankesId, status, ukuranByte) {
+        return db.ubahStatusRiwayatBackup(id, fasyankesId, status, ukuranByte);
+    }
 }

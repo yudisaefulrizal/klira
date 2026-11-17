@@ -41,13 +41,13 @@ export class RepositoriKunjunganMysql {
         return (await db.hitungPenggunaUntukDpjpSah(penggunaId, fasyankesId, true)) > 0;
     }
     async dokterDiPoli(fasyankesId, penggunaId, lokasiId) {
-        return (await db.hitungJadwalPraktikUntukDokterDiPoli(fasyankesId, penggunaId, lokasiId, true)) > 0;
+        return (await db.hitungJadwalPraktikUntukDokterDiPoli(fasyankesId, penggunaId, lokasiId)) > 0;
     }
     async opsi(fasyankesId) {
         const [poli, praktisi, jadwal, poliJenis, pemeriksaanLab] = await Promise.all([
             db.daftarLokasiUntukOpsi2(fasyankesId, 'poli', 'O', 500),
             db.daftarPenggunaUntukOpsi3(fasyankesId, true, 500, 1),
-            db.daftarJadwalPraktikUntukOpsi(fasyankesId, true),
+            db.daftarJadwalPraktikUntukOpsi(fasyankesId),
             db.daftarPoliUntukJenis(fasyankesId),
             db.daftarMasterPemeriksaanUntukMasterAktifDari(fasyankesId, true, 'lab', undefined),
         ]);

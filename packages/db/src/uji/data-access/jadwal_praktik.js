@@ -3,7 +3,15 @@ export async function hapusJadwalPraktikUntukMasterMasterIntegrasiTest(fasyankes
     const hasil = await tulis("DELETE t FROM `jadwal_praktik` t WHERE ((? OR t.`fasyankes_id` IN (?)))", [fasyankes_id === undefined, (fasyankes_id)?.length ? (fasyankes_id) : [null]], koneksi);
     return { count: hasil.affectedRows };
 }
-export async function tambahJadwalPraktikUntukPasienPasienIntegrasiTest(fasyankes_id, pengguna_id, lokasi_id, hari, jam_mulai, jam_selesai, kuota, berlaku_dari, koneksi = pool) {
-    const hasil = await tulis("INSERT INTO `jadwal_praktik` (`fasyankes_id`, `pengguna_id`, `lokasi_id`, `hari`, `jam_mulai`, `jam_selesai`, `kuota`, `berlaku_dari`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [(fasyankes_id === undefined ? null : fasyankes_id) ?? null, (pengguna_id === undefined ? null : pengguna_id) ?? null, (lokasi_id === undefined ? null : lokasi_id) ?? null, (hari === undefined ? null : hari) ?? null, (jam_mulai === undefined ? null : jam_mulai) ?? null, (jam_selesai === undefined ? null : jam_selesai) ?? null, (kuota === undefined ? null : kuota) ?? null, (berlaku_dari === undefined ? null : berlaku_dari) ?? null], koneksi);
+export async function tambahJadwalPraktikUntukPasienPasienIntegrasiTest(fasyankes_id, pengguna_id, lokasi_id, hari, shift_id, kuota, koneksi = pool) {
+    const hasil = await tulis("INSERT INTO `jadwal_praktik` (`fasyankes_id`, `pengguna_id`, `lokasi_id`, `hari`, `shift_id`, `kuota`) VALUES (?, ?, ?, ?, ?, ?)", [(fasyankes_id === undefined ? null : fasyankes_id) ?? null, (pengguna_id === undefined ? null : pengguna_id) ?? null, (lokasi_id === undefined ? null : lokasi_id) ?? null, (hari === undefined ? null : hari) ?? null, (shift_id === undefined ? null : shift_id) ?? null, (kuota === undefined ? null : kuota) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
+}
+export async function tambahShiftUntukUji(fasyankes_id, urutan, nama, jam_mulai, jam_selesai, koneksi = pool) {
+    const hasil = await tulis("INSERT INTO `shift` (`fasyankes_id`, `urutan`, `nama`, `jam_mulai`, `jam_selesai`) VALUES (?, ?, ?, ?, ?)", [fasyankes_id, urutan, nama, jam_mulai, jam_selesai], koneksi);
+    return { id: hasil.insertId };
+}
+export async function hapusShiftUntukUji(fasyankes_id, koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `shift` t WHERE t.`fasyankes_id` IN (?)", [fasyankes_id?.length ? fasyankes_id : [null]], koneksi);
+    return { count: hasil.affectedRows };
 }

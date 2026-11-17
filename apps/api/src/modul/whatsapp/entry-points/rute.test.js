@@ -68,6 +68,7 @@ const db = await import("@klira/db");
 const { putuskanDanBersihkan } = await import("../../pesan/domain/bersihkan.js");
 const { default: express } = await import("express");
 const { buatRuteWhatsapp } = await import("./rute.js");
+const { panggilTanpaPort } = await import("../../../umum/panggil-tanpa-port.js");
 
 let user;
 
@@ -169,6 +170,25 @@ it('mengantrekan balasan dalam transaksi, tanpa mengirim dari proses API', async
     db.transaksi.mockImplementation((callback) => callback(db.pool));
     expect((await call('/percakapan/3/pesan', { teks: 'halo' })).status).toBe(201);
     expect(jest.mocked(db.tambahWaPesanUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 3, 1: 'keluar', 5: 'antre', 6: 7 })]));
+});
+
+it('kirim pesan mengurai badannya sendiri setelah sesi dan izin, tanpa pengurai global', async () => {
+    const polos = express();
+    polos.use('/api', buatRuteWhatsapp(akses, izin));
+    const kirim = (badan) => panggilTanpaPort(polos, { metode: 'POST', url: '/api/whatsapp/percakapan/3/pesan', badan });
+    // Tanpa sesi: ditolak sebelum badan dibaca, sehingga JSON rusak pun tidak pernah diurai.
+    user = null;
+    expect((await kirim('{rusak')).status).toBe(401);
+    user = { id: 7, fasyankes_id: 2, izin: [{ fitur: 'whatsapp', aksi: 'lihat', cakupan: 'unit' }] };
+    jest
+        .mocked(db.cariWaPercakapanUntukBuatRuteWhatsapp)
+        .mockResolvedValue({ id: 3, fasyankes_id: 2, jid: '6281234567890@s.whatsapp.net' });
+    jest
+        .mocked(db.ambilWaKoneksi)
+        .mockResolvedValue({ fasyankes_id: 2, aktif: true, status: 'terhubung', detak: new Date() });
+    jest.mocked(db.tambahWaPesanUntukBuatRuteWhatsapp).mockResolvedValue({ id: 41 });
+    db.transaksi.mockImplementation((callback) => callback(db.pool));
+    expect((await kirim({ teks: 'halo' })).status).toBe(201);
 });
 
 it('penanda baca hanya bergerak maju sampai pesan yang benar-benar dibuka', async () => {

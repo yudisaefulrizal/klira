@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 
-const { bacaKonfigurasi } = await import("./lingkungan.js");
+const { bacaKonfigurasi, bacaTrustProxy } = await import("./lingkungan.js");
 
 describe('bacaKonfigurasi', () => {
     const dasar = { PORT: '8074', BASE_URL: 'https://klira.nuscode.id' };
@@ -9,6 +9,7 @@ describe('bacaKonfigurasi', () => {
             port: 8074,
             baseUrl: 'https://klira.nuscode.id',
             nodeEnv: 'production',
+            trustProxy: 'loopback',
         });
     });
     it('NODE_ENV bawaan development', () => {
@@ -20,5 +21,20 @@ describe('bacaKonfigurasi', () => {
     it('galat bila BASE_URL tidak ada atau tidak valid', () => {
         expect(() => bacaKonfigurasi({ PORT: '8074' })).toThrow('BASE_URL');
         expect(() => bacaKonfigurasi({ PORT: '8074', BASE_URL: 'bukan url' })).toThrow('BASE_URL');
+    });
+});
+describe('bacaTrustProxy', () => {
+    it('bawaan hanya mempercayai proxy di host yang sama', () => {
+        expect(bacaTrustProxy(undefined)).toBe('loopback');
+        expect(bacaTrustProxy('  ')).toBe('loopback');
+    });
+    it('menerima jumlah hop, daftar alamat, dan false', () => {
+        expect(bacaTrustProxy('1')).toBe(1);
+        expect(bacaTrustProxy('loopback, 10.0.0.0/8')).toEqual(['loopback', '10.0.0.0/8']);
+        expect(bacaTrustProxy('false')).toBe(false);
+    });
+    it('menolak mempercayai semua proxy', () => {
+        expect(() => bacaTrustProxy('true')).toThrow('TRUST_PROXY');
+        expect(() => bacaKonfigurasi({ PORT: '8074', BASE_URL: 'https://klira.nuscode.id', TRUST_PROXY: 'TRUE' })).toThrow('TRUST_PROXY');
     });
 });

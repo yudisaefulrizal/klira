@@ -22,11 +22,12 @@ export function bukaKonfirmasi({ judul, pesan, labelYa = TOMBOL.konfirmasi, labe
 }
 
 /** Modal satu layar native, dengan riwayat dan perlindungan isian yang belum disimpan. */
-export function bukaModal1({ judul, onTutup, lindungiTutup = () => false, lebar = 'modalSedang' }) {
+/** `peringatanTutup` = { judul, pesan, ya, tidak } menggantikan teks bawaan (mis. modal tanpa draf: isian hilang bila ditutup). */
+export function bukaModal1({ judul, onTutup, lindungiTutup = () => false, lebar = 'modalSedang', peringatanTutup }) {
   let konfirmasi, ditutup = false;
   function mintaTutup() {
     if (lindungiTutup()) {
-      if (!konfirmasi) konfirmasi = bukaKonfirmasi({ judul: MODAL.tutupDrafJudul, pesan: MODAL.tutupDrafPesan, labelYa: MODAL.tutupDrafYa, labelTidak: MODAL.tutupDrafTidak,
+      if (!konfirmasi) konfirmasi = bukaKonfirmasi({ judul: peringatanTutup?.judul ?? MODAL.tutupDrafJudul, pesan: peringatanTutup?.pesan ?? MODAL.tutupDrafPesan, labelYa: peringatanTutup?.ya ?? MODAL.tutupDrafYa, labelTidak: peringatanTutup?.tidak ?? MODAL.tutupDrafTidak,
         onYa() { konfirmasi.tutup(); konfirmasi = undefined; onTutup(); }, onTidak() { konfirmasi.tutup(); konfirmasi = undefined; },
       });
       return false;

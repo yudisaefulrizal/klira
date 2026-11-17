@@ -1,18 +1,25 @@
 import { pathToFileURL as kliraFileUrl } from 'node:url';
 import * as db from '../data-access/index.js';
-import { IZIN_AWAL, JENIS_AKUN_AWAL, kredensialAwal } from '@klira/shared';
+import { IZIN_AWAL, JENIS_AKUN_AWAL, SHIFT_BAWAAN, kredensialAwal } from '@klira/shared';
 import { hashKataSandi } from '../keamanan/kata-sandi.js';
 import { seedTerminologiContoh } from './terminologi.js';
-/** Seed minimal: katalog izin dan satu fasyankes contoh dengan paket jenis akun awal. Idempoten. */
+import { pastikanFasyankesTunggal } from '../fasyankes-tunggal.js';
+/** Seed minimal: katalog izin dan satu fasyankes (dibuat sebagai Klinik Contoh bila belum ada) dengan paket jenis akun awal. Idempoten. */
 export async function jalankanSeed(koneksi, env = process.env) {
     for (const izin of IZIN_AWAL) {
         await db.simpanIzinUntukJalankanSeed((izin)?.fitur, (izin)?.aksi, (izin)?.cakupan, koneksi);
     }
-    let fas = await db.ambilFasyankesUntukJalankanSeed('KLINIK-CONTOH', koneksi);
+    // Satu instalasi satu fasyankes: klinik yang sudah ada dipakai (juga setelah kode registrasinya diganti); seed tidak pernah membuat fasyankes kedua.
+    const idAda = await pastikanFasyankesTunggal(koneksi);
+    let fas = idAda ? await db.tambahFasyankesUntukJalankanSeedHasil(idAda, koneksi) : null;
     if (!fas) {
         const baru = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahFasyankesUntukJalankanSeed(0, 'Klinik Contoh', 'klinik_pratama_rawat_jalan', 'KLINIK-CONTOH', koneksiBaru); return db.tambahFasyankesUntukJalankanSeedHasil(_hasil.id, koneksiBaru); });
         fas = await db.transaksi(async (koneksiBaru) => { (await db.ubahFasyankesUntukJalankanSeed(baru.id, koneksiBaru)); return db.tambahFasyankesUntukJalankanSeedHasil(baru.id, koneksiBaru); });
     }
+    // Tiga shift tetap (jam saja); migrasi mengisinya untuk klinik yang sudah ada, seed untuk klinik baru.
+    if ((await db.hitungShiftUntukSeed(fas.id, koneksi)) === 0)
+        for (const sh of SHIFT_BAWAAN)
+            await db.tambahShiftUntukSeed(fas.id, sh.urutan, sh.nama, sh.jam_mulai, sh.jam_selesai, koneksi);
     for (const j of JENIS_AKUN_AWAL) {
         const jenis = await db.transaksi(async (koneksiBaru) => { (await db.simpanJenisAkunUntukJalankanSeed(fas.id, j.nama, j.syarat_profesi, koneksiBaru)); return db.simpanJenisAkunUntukJalankanSeedHasil(fas.id, j.nama, koneksiBaru); });
         const daftar = [

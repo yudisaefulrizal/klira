@@ -12,6 +12,7 @@ import { buatRuteStatistik } from './modul/statistik/entry-points/rute.js';
 import path from 'path';
 import express from 'express';
 import { GALAT } from '@klira/shared';
+import { bacaTrustProxy } from './config/lingkungan.js';
 import { blokirSelamaWajibGanti } from './middleware/auth.js';
 import { PenampungAuditMysql } from './middleware/audit.js';
 import { buatLayananAkses } from './modul/akses/domain/layanan.js';
@@ -23,6 +24,7 @@ import { RepositoriIzinMysql } from './modul/akses/data-access/repositori-izin.j
 import { buatRuteIzin } from './modul/akses/entry-points/rute-izin.js';
 import { bacaPengaturanKeamanan, buatLayananKeamanan } from './modul/keamanan/domain/layanan.js';
 import { RepositoriKeamananMysql } from './modul/keamanan/data-access/repositori.js';
+import { buatLayananCadangan, pulihkanLewatWebAktif } from './modul/keamanan/domain/layanan-cadangan.js';
 import { buatRuteKeamanan } from './modul/keamanan/entry-points/rute.js';
 import { buatLayananAudit } from './modul/audit/domain/layanan.js';
 import { RepositoriAuditMysql } from './modul/audit/data-access/repositori.js';
@@ -100,11 +102,11 @@ import { RepositoriAntreanJknMysql } from './modul/antrean-jkn/data-access/repos
 import { buatRuteAntreanJkn } from './modul/antrean-jkn/entry-points/rute.js';
 const direktoriWebNative = path.resolve(__dirname, '../../web');
 const direktoriWebBawaan = direktoriWebNative;
+const JALUR_BADAN_BESAR = /^\/api\/(?:whatsapp|instagram)\/percakapan\/\d+\/pesan\/?$/i;
 export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     const app = express();
-    app.set('trust proxy', true);
-    app.use('/api/instagram', express.json({ limit: '12mb' }));
-    app.use('/api/whatsapp', express.json({ limit: '12mb' }));
+    // Hanya proxy yang disebut TRUST_PROXY (bawaan: loopback) yang dipercaya mengisi X-Forwarded-*; alamat klien di pembatas masuk dan log audit bergantung pada ini.
+    app.set('trust proxy', opsi.trustProxy ?? bacaTrustProxy(process.env.TRUST_PROXY));
     const repoKeamanan = new RepositoriKeamananMysql();
     const layananAkses = opsi.layananAkses ??
         buatLayananAkses({
@@ -115,7 +117,9 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
         });
     app.locals.layananAkses = layananAkses;
     app.use(buatRuteInstagramPublik(layananAkses));
-    app.use(express.json({ limit: '100kb' }));
+    // Kirim pesan berlampiran (hingga 8 MB) diurai oleh router kanalnya setelah sesi dan izin diperiksa, bukan di sini.
+    const uraiJson = express.json({ limit: '100kb' });
+    app.use((req, res, next) => (req.method === 'POST' && JALUR_BADAN_BESAR.test(req.path) ? next() : uraiJson(req, res, next)));
     const layananIzin = opsi.layananIzin ?? buatLayananIzin({ repo: new RepositoriIzinMysql(), audit: new PenampungAuditMysql() });
     app.get('/api/kesehatan', (_req, res) => {
         res.json({ status: 'ok' });
@@ -130,7 +134,8 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.use('/api', buatRuteWhatsapp(layananAkses, layananIzin));
     app.use('/api', buatRuteInstagram(layananAkses, layananIzin));
     app.use('/api', buatRuteIzin(layananAkses, layananIzin));
-    app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditMysql() })));
+    const layananCadangan = opsi.layananCadangan ?? buatLayananCadangan({ repo: repoKeamanan, audit: new PenampungAuditMysql(), lewatWeb: opsi.pulihkanLewatWeb ?? pulihkanLewatWebAktif() });
+    app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditMysql() }), layananCadangan));
     app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesMysql(), audit: new PenampungAuditMysql() })));
     const layananSatusehat = opsi.layananSatusehat ?? buatLayananSatusehat({ repo: new RepositoriSatusehatMysql(), audit: new PenampungAuditMysql() });
@@ -202,9 +207,14 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
             res.status(galat.status).json({ galat: { kode: 'instagram_meta', pesan: galat.message } });
             return;
         }
+        // Badan permintaan yang rusak atau terlalu besar adalah kesalahan klien, bukan galat server.
+        const statusBadan = { 'entity.parse.failed': 400, 'entity.too.large': 413 }[galat?.type];
+        if (statusBadan) {
+            res.status(statusBadan).json({ galat: { kode: statusBadan === 413 ? 'terlalu_besar' : 'tidak_valid', pesan: GALAT.tidakValid } });
+            return;
+        }
         console.error(galat);
-        const badan = { galat: { kode: 'galat_server', pesan: GALAT.umum } };
-        res.status(galat?.type === 'entity.parse.failed' ? 400 : 500).json(badan);
+        res.status(500).json({ galat: { kode: 'galat_server', pesan: GALAT.umum } });
     };
     // Source ESM uses stable URLs; never retain mixed versions across deployments.
     const modulBrowser = (direktori) => [

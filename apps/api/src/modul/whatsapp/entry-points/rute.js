@@ -2,7 +2,7 @@ import * as db from '@klira/db';
 import { pasangRuteBersihkan, putuskanDanBersihkan } from '../../pesan/domain/bersihkan.js';
 import { kabarkanWhatsapp } from '../domain/kanal.js';
 import { randomUUID } from 'node:crypto';
-import { Router } from 'express';
+import express, { Router } from 'express';
 import { enkripsiRahasia, dekripsiRahasia, kunciPercakapanWhatsapp, pangkasPesanWhatsapp, } from '@klira/db';
 import { jidWhatsappPribadi, punyaIzin, bukaPercakapanWa, kirimPesanWa, ubahPercakapanWa, } from '@klira/shared';
 import { alamatDari, buatFasilitasAudit } from '../../../middleware/audit.js';
@@ -159,7 +159,8 @@ export function buatRuteWhatsapp(akses, izin) {
         kabarkanWhatsapp({ tipe: 'percakapan', fasyankes_id: pengguna(res).fasyankes_id });
         res.json({ data: { ok: true } });
     });
-    rute.post('/whatsapp/percakapan/:id/pesan', wajibIzin('whatsapp', 'lihat'), audit.lihat({ entitas: 'wa_pesan', ringkasan: 'Permintaan kirim pesan WhatsApp' }), async (req, res) => {
+    // Badan berlampiran (hingga 8 MB, base64) baru diurai di sini: sesi, izin, dan kepemilikan percakapan sudah diperiksa.
+    rute.post('/whatsapp/percakapan/:id/pesan', wajibIzin('whatsapp', 'lihat'), express.json({ limit: '12mb' }), audit.lihat({ entitas: 'wa_pesan', ringkasan: 'Permintaan kirim pesan WhatsApp' }), async (req, res) => {
         const hasil = kirimPesanWa.safeParse(req.body);
         if (!hasil.success)
             return tolak(res, hasil.error.issues[0].message);

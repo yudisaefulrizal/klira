@@ -1,4 +1,4 @@
-import { MASTER } from '@klira/shared';
+import { MASTER, MODAL } from '@klira/shared';
 import { cariTerminologi } from '../../api-klien/klinis.js';
 import { buatMaster, opsiMaster, ubahMaster } from '../../api-klien/master.js';
 import { GalatApi } from '../../api-klien/klien.js';
@@ -10,12 +10,14 @@ import { InfoBantuan } from '../../komponen/ui/info-bantuan.js';
 import { awalMaster, bentukMasukan, bidangAktif, bidangTampil, galatMaster, masterBerubah, opsiDenganNilaiSaatIni, petunjukSaatIni, wajibSaatIni } from './keadaan-master.js';
 const JENIS_ISIAN = { teks: 'text', angka: 'number', tanggal: 'date', waktu: 'time' };
 const P = MASTER.petunjuk;
-export function bukaModalMasterProfil({ jenis, baris, onTutup, onSelesai }) {
-  const ubah = baris !== undefined, definisi = bidangTampil(jenis, ubah), awal = awalMaster(jenis, baris), nilai = { ...awal }, opsi = {}, controls = new Map();
+/** `tetap` = kunci bidang yang sudah ditentukan pemanggil (disembunyikan, nilainya tetap dari awalan/baris); `ringkasan` = teks penjelasnya. */
+export function bukaModalMasterProfil({ jenis, baris, awalan, tetap = [], ringkasan, hapus, onTutup, onSelesai }) {
+  const ubah = baris !== undefined, definisi = bidangTampil(jenis, ubah), awal = { ...awalMaster(jenis, baris), ...(baris ? {} : awalan) }, nilai = { ...awal }, opsi = {}, controls = new Map();
   let dicoba = false, memproses = false, aktif = true;
-  const judulJenis = MASTER.jenis[jenis], modal = bukaModal1({ judul: ubah ? MASTER.judulUbah(judulJenis) : MASTER.judulTambah(judulJenis), lebar: 'modalSedang', onTutup, lindungiTutup: () => masterBerubah(awal, nilai) });
+  const judulJenis = MASTER.jenis[jenis], modal = bukaModal1({ judul: ubah ? MASTER.judulUbah(judulJenis) : MASTER.judulTambah(judulJenis), lebar: 'modalSedang', onTutup, lindungiTutup: () => masterBerubah(awal, nilai), peringatanTutup: { judul: MODAL.tutupTanpaSimpanJudul, pesan: MODAL.tutupTanpaSimpanPesan, ya: MODAL.tutupTanpaSimpanYa, tidak: MODAL.tutupDrafTidak } });
   const pesan = document.createElement('div'), form = document.createElement('form'); pesan.style.display = 'contents'; form.id = 'bentuk-master'; form.noValidate = true; Object.assign(form.style, { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: token.jarak.md, rowGap: token.jarak.md }); modal.isi.append(pesan, form);
-  const simpan = tombol(MASTER.simpan); simpan.type = 'submit'; simpan.setAttribute('form', form.id); modal.aksi.append(tombol(MASTER.batal, () => modal.mintaTutup(), 'sekunder'), simpan);
+  const simpan = tombol(MASTER.simpan); simpan.type = 'submit'; simpan.setAttribute('form', form.id); if (hapus && ubah) { const h = tombol(hapus.label, hapus.onKlik, 'sekunder'); h.style.marginRight = 'auto'; modal.aksi.append(h); } modal.aksi.append(tombol(MASTER.batal, () => modal.mintaTutup(), 'sekunder'), simpan);
+  if (ringkasan) { const r = document.createElement('div'); r.textContent = ringkasan; Object.assign(r.style, { gridColumn: '1 / -1', fontWeight: token.huruf.berat.tebal, padding: token.jarak.sm, borderRadius: token.radius.sedang, background: token.warna.kepalaTabel }); form.append(r); }
   function atur(kunci, v) { nilai[kunci] = v; perbarui(); }
   for (const b of definisi) {
     const id = `master-${b.kunci}`;
@@ -44,7 +46,7 @@ export function bukaModalMasterProfil({ jenis, baris, onTutup, onSelesai }) {
   }
   function perbarui() {
     const g = galatMaster(jenis, nilai, ubah), keys = new Set(bidangAktif(jenis, ubah, nilai).map(b => b.kunci));
-    for (const [kunci, control] of controls) { control.el.style.display = keys.has(kunci) ? control.display : 'none'; control.perbarui(dicoba ? g[kunci] : undefined); }
+    for (const [kunci, control] of controls) { control.el.style.display = keys.has(kunci) && !tetap.includes(kunci) ? control.display : 'none'; control.perbarui(dicoba ? g[kunci] : undefined); }
     simpan.disabled = memproses || ubah && !masterBerubah(awal, nilai); simpan.textContent = memproses ? MASTER.menyimpan : MASTER.simpan;
   }
   form.addEventListener('submit', async e => {

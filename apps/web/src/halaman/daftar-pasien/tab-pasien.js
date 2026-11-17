@@ -2,6 +2,7 @@ import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js'
 import { CARA_PEMBAYARAN, DAFTAR_PASIEN, JENIS_KUNJUNGAN, PROFIL_PASIEN, STATUS_IDENTITAS, STATUS_LAYANAN, STATUS_PERAN_DIAGNOSIS, TAHAP_LAYANAN, aksiAntreanTersedia, statusLayananDari, tanggalWib } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { riwayatKunjungan } from '../../api-klien/klinis.js';
+import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { aksiAntrean } from '../../api-klien/kunjungan.js';
 import { daftarPasien, detailPasien } from '../../api-klien/pasien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
@@ -38,8 +39,17 @@ export function TabPasien({ search, pindah, ganti }) {
     let antTanggal = tanggalWib(new Date()), antTahap = tahapBawaan(boleh), antHalaman = 1, antHasil = null, antGalat = null, antMemuat = false, antMemproses = false, antVersi = 0, antIsi, antInterval, antManual = false;
 
     const tutupModal = () => { modal?.tutup(); modal = undefined; };
-    /** Pindah alamat. Isian pemeriksaan yang belum disimpan tersimpan sebagai draf otomatis, jadi tidak ada konfirmasi. */
-    function ke(perubahan, cara = pindah) { cara(alamatProfil({ ...a, ...perubahan })); }
+    /** Pindah alamat. Bila pindah pasien atau kunjungan sementara isian pemeriksaan belum disimpan, tanya dulu: buang draf atau tetap di sini. */
+    let konfirmasiPindah;
+    function ke(perubahan, cara = pindah) {
+        const tujuan = alamatProfil({ ...a, ...perubahan }), baru = keadaanAlamat(tujuan);
+        if (!panel?.adaDraf?.() || (baru.pasien === a.pasien && baru.kunjungan === a.kunjungan)) return cara(tujuan);
+        const D = PROFIL_PASIEN.pindahDraf;
+        konfirmasiPindah?.tutup();
+        konfirmasiPindah = bukaKonfirmasi({ judul: D.judul, pesan: D.pesan, labelYa: D.buang, labelTidak: D.batal,
+            onYa() { konfirmasiPindah?.tutup(); konfirmasiPindah = undefined; panel?.buangDraf(); cara(tujuan); },
+            onTidak() { konfirmasiPindah?.tutup(); konfirmasiPindah = undefined; } });
+    }
     // --- Profil pasien ---
     function bangunProfil() {
         pasien = null; riwayat = null; galatPasien = null; galatRiwayat = null; cariRiwayat = ''; panel?.tutup(); panel = undefined;
@@ -259,7 +269,7 @@ export function TabPasien({ search, pindah, ganti }) {
         if (a.kunjungan !== lama.kunjungan) { ikutiTanggalKunjungan(); lukisRiwayat(); pasangPanel(); }
         else if (a.sub !== lama.sub) panel?.pilihSub(a.sub);
     };
-    el.tutup = () => { aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); lepasSinyal?.(); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); };
+    el.tutup = () => { konfirmasiPindah?.tutup(); aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); lepasSinyal?.(); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); };
     // Antrean dimuat ulang berkala selama menunya terbuka dan tidak ada modal: pendaftaran dari Mobile JKN masuk tanpa tindakan petugas.
     const bolehMuatAntrean = () => aktif && menuKiri === 'pasien' && !cariKiri && !modal && !document.hidden;
     // Sinyal WebSocket dari server memuat antrean seketika; pemuatan berkala (60 detik) jaring pengaman bila sambungan putus.

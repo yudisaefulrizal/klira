@@ -1,6 +1,8 @@
 import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab } from '../../komponen/ui/primitif.js';
+import { TabJadwal } from '../../komponen/master/tab-jadwal.js';
+import { TabShift } from '../../komponen/master/tab-shift.js';
 import { KelolaMasterTab } from '../../komponen/master/kelola-master-tab.js';
 import { pilihTab } from '../../util/tab/ingatan-tab.js';
 import { IkonPasien, TombolIkonPasien } from '../../komponen/klinis/ikon-pasien.js';
@@ -101,7 +103,7 @@ export function HalamanDaftarPasien() {
         const focus = document.activeElement, id = focus?.id, start = focus?.selectionStart, end = focus?.selectionEnd;
         kesiapanTutup?.();
         const T = DAFTAR_PASIEN.tab, bolehPasien = boleh('pasien', 'lihat') || boleh('rekam-medis', 'lihat'), params = new URLSearchParams(search);
-        const daftar = [...(FITUR_AKSES_PASIEN.some(f => boleh(f, 'lihat')) ? [{ id: 'antrean', label: T.antrean }] : []), ...(bolehPasien ? [{ id: 'pasien', label: T.pasien }] : []), ...(boleh('master', 'lihat') ? [{ id: 'poli', label: T.poli }, { id: 'praktisi', label: T.praktisi }, { id: 'jadwal', label: T.jadwal }] : [])], ids = daftar.map(t => t.id);
+        const daftar = [...(FITUR_AKSES_PASIEN.some(f => boleh(f, 'lihat')) ? [{ id: 'antrean', label: T.antrean }] : []), ...(bolehPasien ? [{ id: 'pasien', label: T.pasien }] : []), ...(boleh('master', 'lihat') ? [{ id: 'poli', label: T.poli }, { id: 'praktisi', label: T.praktisi }, { id: 'shift', label: T.shift }, { id: 'jadwal', label: T.jadwal }] : [])], ids = daftar.map(t => t.id);
         const tabAktif = ids.length ? pilihTab(ids, params.get('tab'), null) : 'antrean';
         nav.replaceChildren();
         if (daftar.length > 1)
@@ -118,7 +120,7 @@ export function HalamanDaftarPasien() {
         }
         tabTerlukis = tabAktif;
         page?.tutup?.();
-        page = tabAktif === 'pasien' ? TabPasien({ search, pindah, ganti }) : tabAktif === 'antrean' ? view() : KelolaMasterTab({ jenis: tabAktif });
+        page = tabAktif === 'pasien' ? TabPasien({ search, pindah, ganti }) : tabAktif === 'antrean' ? view() : tabAktif === 'jadwal' ? TabJadwal() : tabAktif === 'shift' ? TabShift() : KelolaMasterTab({ jenis: tabAktif });
         contenu.replaceChildren(page);
         if (tabAktif !== 'antrean' && tabAktif !== 'pasien')
             page.perbaruiAlamat?.(search);

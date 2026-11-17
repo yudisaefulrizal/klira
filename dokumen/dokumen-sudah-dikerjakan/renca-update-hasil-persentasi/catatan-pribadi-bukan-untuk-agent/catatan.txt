@@ -1,0 +1,15 @@
+Mengisi formulir pendaftaran yang memuat informasi yang benar mengenai:
+
+Gambaran umum pengoperasian Sistem Elektronik yang terdiri atas:
+Nama Sistem Elektronik;
+Sektor Sistem Elektronik;
+Uniform resource locator (URL) website;
+Sistem nama domain (domain name system) dan/atau alamat Internet Protocol (IP) server;
+Deskripsi model bisnis;
+Deskripsi singkat fungsi Sistem Elektronik dan proses bisnis Sistem Elektronik;
+Keterangan Data Pribadi yang diproses;
+Keterangan lokasi pengelolaan, pemrosesan, dan/atau penyimpanan Sistem Elektronik dan Data Elektronik.
+Keterangan yang menyatakan bahwa PSE Lingkup Privat menjamin dan melaksanakan kewajiban pemberian akses terhadap Sistem Elektronik dan Data Elektronik dalam rangka memastikan efektivitas pengawasan dan penegakan hukum sesuai dengan peraturan perundang-undangan.
+Kewajiban untuk memastikan keamanan informasi sesuai dengan ketentuan peraturan perundang undangan;
+Kewajiban melakukan pelindungan Data Pribadi sesuai dengan ketentuan peraturan perundang undangan; dan
+Kewajiban untuk melakukan uji kelaikan Sistem Elektronik sesuai dengan ketentuan peraturan perundang-undangan.

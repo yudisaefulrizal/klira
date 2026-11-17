@@ -85,7 +85,8 @@ d('pasien, kunjungan, dan antrean terhadap database pengujian', () => {
         poliA = (await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahLokasiUntukKlinisKlinisIntegrasiTest(fas, 'Poli Umum', 'poli', koneksiBaru); return uji.tambahLokasiUntukKlinisKlinisIntegrasiTestHasil(_hasil.id, koneksiBaru); })).id;
         poliB = (await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahLokasiUntukKlinisKlinisIntegrasiTest(fas, 'Poli Anak', 'poli', koneksiBaru); return uji.tambahLokasiUntukKlinisKlinisIntegrasiTestHasil(_hasil.id, koneksiBaru); })).id;
         await uji.tambahLokasiUntukPasienPasienIntegrasiTest3(fas, 'Poli Tutup', 'poli', 'U');
-        await uji.tambahJadwalPraktikUntukPasienPasienIntegrasiTest(fas, id.dokter, poliA, 1, '08:00', '12:00', 10, new Date('2026-01-01'));
+        const shiftUji = await uji.tambahShiftUntukUji(fas, 1, 'Pagi', '07:00', '14:00');
+        await uji.tambahJadwalPraktikUntukPasienPasienIntegrasiTest(fas, id.dokter, poliA, 1, shiftUji.id, 10);
         const teks = await uji.wajibTeksPersetujuanUntukPasienPasienIntegrasiTest(null, 'general', 1);
         teksId = teks.id;
         for (const k of ['petugas', 'pelihat', 'rekam', 'biasa', 'lain'])
@@ -105,6 +106,7 @@ d('pasien, kunjungan, dan antrean terhadap database pengujian', () => {
         await uji.hapusUrutanNomorRmUntukPasienPasienIntegrasiTest([fas, fasLain]);
         await uji.hapusTeksPersetujuanUntukPasienPasienIntegrasiTest([fas, fasLain]);
         await uji.hapusJadwalPraktikUntukMasterMasterIntegrasiTest([fas, fasLain]);
+        await uji.hapusShiftUntukUji([fas, fasLain]);
         await uji.hapusProfilProfesiUntukMasterMasterIntegrasiTest([fas, fasLain]);
         await uji.hapusLokasiUntukKlinisKlinisIntegrasiTest([fas, fasLain]);
         await uji.hapusPenugasanJenisUntukFarmasiFarmasiIntegrasiTest([fas, fasLain]);

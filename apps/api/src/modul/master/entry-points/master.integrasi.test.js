@@ -51,6 +51,8 @@ d('master data dan profil klinik terhadap database pengujian', () => {
     beforeAll(async () => {
         fas = await buatFasyankes(kode, 'Uji Master');
         fasLain = await buatFasyankes(`${kode}-LAIN`, 'Uji Master Lain');
+        await uji.tambahShiftUntukUji(fas, 1, 'Pagi', '07:00', '14:00');
+        await uji.tambahShiftUntukUji(fasLain, 1, 'Pagi', '07:00', '14:00');
         const { buatApp } = kliraRequired1;
         server = buatApp('/tidak-ada', { baseUrl: 'https://klira.contoh' }).listen(0);
         await buatPengguna('pimpinan', '9940000000000001', SEMUA);
@@ -70,6 +72,7 @@ d('master data dan profil klinik terhadap database pengujian', () => {
         await uji.hapusSesiUntukAksesIzinIntegrasiTest(Object.values(id));
         await uji.hapusPeringatanIzinUntukKlinisKlinisIntegrasiTest([fas, fasLain]);
         await uji.hapusJadwalPraktikUntukMasterMasterIntegrasiTest([fas, fasLain]);
+        await uji.hapusShiftUntukUji([fas, fasLain]);
         await uji.hapusTarifLayananUntukMasterMasterIntegrasiTest([fas, fasLain]);
         await uji.hapusRiwayatProfilUntukMasterMasterIntegrasiTest([fas, fasLain]);
         await uji.hapusProfilProfesiUntukMasterMasterIntegrasiTest([fas, fasLain]);
@@ -147,21 +150,28 @@ d('master data dan profil klinik terhadap database pengujian', () => {
         expect(riwayat.badan.data.data[0].ringkasan).toContain('SIP-1 menjadi SIP-2');
         expect((await panggil('PATCH', `/master/praktisi/${baru.badan.data.id}/aktif`, 'pimpinan', { aktif: false })).badan.data.aktif).toBe(false);
     });
-    it('jadwal praktik: validasi jam dan rujukan, ubah, nonaktif', async () => {
+    it('jadwal praktik: validasi shift dan rujukan, ubah, kuota kosong, hapus', async () => {
         await panggil('PATCH', `/master/praktisi/${(await uji.wajibProfilProfesiUntukMasterMasterIntegrasiTest(fas)).id}/aktif`, 'pimpinan', { aktif: true });
         const poli = await uji.wajibLokasiUntukMasterMasterIntegrasiTest3(fas, 'poli');
-        const dasar = { pengguna_id: id.dokter, lokasi_id: poli.id, hari: 2, jam_mulai: '08:00', jam_selesai: '12:00', kuota: 20, berlaku_dari: '2026-01-01' };
-        expect((await panggil('POST', '/master/jadwal', 'pimpinan', { ...dasar, jam_selesai: '07:00' })).status).toBe(400);
+        const pagi = (await panggil('GET', '/master/shift', 'pimpinan')).badan.data[0];
+        const dasar = { pengguna_id: id.dokter, lokasi_id: poli.id, hari: 2, shift_id: pagi.id, kuota: 20 };
+        expect((await panggil('POST', '/master/jadwal', 'pimpinan', { ...dasar, shift_id: 999999 })).status).toBe(400);
         expect((await panggil('POST', '/master/jadwal', 'pimpinan', { ...dasar, kuota: 0 })).status).toBe(400);
-        expect((await panggil('POST', '/master/jadwal', 'pimpinan', { ...dasar, berlaku_sampai: '2025-01-01' })).status).toBe(400);
         expect((await panggil('POST', '/master/jadwal', 'pimpinan', { ...dasar, pengguna_id: id.dokter2 })).status).toBe(400); // tanpa profil
         expect((await panggil('POST', '/master/jadwal', 'lain', dasar)).status).toBe(400); // rujukan klinik lain
         const j = await panggil('POST', '/master/jadwal', 'pimpinan', dasar);
         expect(j.status).toBe(201);
-        expect(j.badan.data).toMatchObject({ hari: 2, jam_mulai: '08:00', lokasi_nama: 'Poli Umum 2', berlaku_dari: '2026-01-01', berlaku_sampai: null });
-        expect((await panggil('PATCH', `/master/jadwal/${j.badan.data.id}`, 'pimpinan', { ...dasar, kuota: 30, berlaku_sampai: '2026-12-31' })).badan.data).toMatchObject({ kuota: 30, berlaku_sampai: '2026-12-31' });
-        expect((await panggil('PATCH', `/master/jadwal/${j.badan.data.id}/aktif`, 'pimpinan', { aktif: false })).badan.data.aktif).toBe(false);
+        expect((await panggil('POST', '/master/jadwal', 'pimpinan', dasar)).status).toBe(409); // dokter yang sama, hari dan shift yang sama
+        expect(j.badan.data).toMatchObject({ hari: 2, shift_nama: 'Pagi', jam_mulai: pagi.jam_mulai, lokasi_nama: 'Poli Umum 2' });
+        expect((await panggil('PATCH', `/master/jadwal/${j.badan.data.id}`, 'pimpinan', { ...dasar, kuota: 30 })).badan.data).toMatchObject({ kuota: 30 });
+        expect((await panggil('PATCH', `/master/jadwal/${j.badan.data.id}/aktif`, 'pimpinan', { aktif: false })).status).toBe(400); // jadwal tanpa status aktif
+        const tanpaBatas = (({ kuota, ...sisa }) => sisa)(dasar);
+        expect((await panggil('PATCH', `/master/jadwal/${j.badan.data.id}`, 'pimpinan', tanpaBatas)).badan.data.kuota).toBeNull();
         expect((await panggil('GET', '/master/jadwal?cari=nama%20dokter', 'pelihat')).badan.data.total).toBe(1);
+        expect((await panggil('DELETE', `/master/jadwal/${j.badan.data.id}`, 'pelihat')).status).toBe(403);
+        expect((await panggil('DELETE', `/master/jadwal/${j.badan.data.id}`, 'lain')).status).toBe(404); // klinik lain
+        expect((await panggil('DELETE', `/master/jadwal/${j.badan.data.id}`, 'pimpinan')).status).toBe(200);
+        expect((await panggil('GET', '/master/jadwal?cari=nama%20dokter', 'pelihat')).badan.data.total).toBe(0);
     });
     it('tarif layanan: kode unik per klinik, harga JKN opsional, nonaktif', async () => {
         const t = await panggil('POST', '/master/tarif', 'pimpinan', { kode: 'KON-01', nama: 'Konsultasi dokter umum', jenis: 'konsultasi', harga_umum: 50000 });

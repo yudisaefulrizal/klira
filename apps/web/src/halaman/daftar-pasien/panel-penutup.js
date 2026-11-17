@@ -9,6 +9,8 @@ import { buatSerahObat } from '../../modal/farmasi/serah-terima-obat.js';
 import { awalBayar, bentukBayar, bisaTutup, daftarSyarat, galatBayar, hapusBaris, hargaDiubah, ringkasBayar, tambahBaris, ubahBaris, ubahHargaTersedia } from '../../modal/kasir-klaim/keadaan-kasir.js';
 import { LengkapiHarga } from '../../modal/kasir-klaim/lengkapi-harga.js';
 import { bukaSerahHasil } from '../../modal/kasir-klaim/serah-hasil.js';
+import { bukaCetakBayar } from '../../modal/kasir-klaim/cetak-bayar.js';
+import { bisaCetakBayar } from '../../modal/kasir-klaim/keadaan-cetak-bayar.js';
 import { TambahItemTarif } from '../../modal/kasir-klaim/tambah-item-tarif.js';
 import { bukaUbahHarga } from '../../modal/kasir-klaim/ubah-harga.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
@@ -130,6 +132,7 @@ export function PanelPenutup({ kunjunganId, klinis, onBerubah }) {
     if (!g.shift_terbuka && bolehBayar) e.append(peringatan(B.tanpaShift)); if (t.status_tagihan !== 'lengkap') e.append(peringatan(B.tagihanBelum));
     if (!t.pembayaran.length) e.append(teks(B.tanpaPembayaran, true));
     for (const p of t.pembayaran) { const r = document.createElement('div'); Object.assign(r.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' }); const jumlah = teks(rupiah(p.jumlah)); jumlah.style.flexGrow = '1'; r.append(lencana(METODE_BAYAR.label(p.metode), METODE_BAYAR.warna(p.metode)), jumlah, teks(`${p.kasir_nama ?? '-'} · ${formatWaktu(p.waktu)}`, true)); e.append(r); }
+    if (bisaCetakBayar(g)) e.append(tombol(KASIR.cetakBayar.tombol, () => bukaCetakBayar({ gambaran: g }), 'sekunder'));
     if (t.sisa > 0 && t.total > 0 && bolehBayar && tahap() !== 'ditutup') {
       const sisa = document.createElement('strong'); sisa.textContent = `${B.sisa}: ${rupiah(t.sisa)}`; e.append(sisa);
       if (metodeBawaan(g) !== 'tunai') e.append(peringatan(KASIR.jkn.petunjukBayar, 'biru'));

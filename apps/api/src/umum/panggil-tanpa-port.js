@@ -2,11 +2,16 @@
 import { Duplex } from 'node:stream';
 import { IncomingMessage, ServerResponse } from 'node:http';
 
-/** Hasil: { status, headers, teks, json() }. `headers` permintaan memakai nama huruf kecil atau bebas. */
-export function panggilTanpaPort(app, { metode = 'GET', url, headers = {}, badan }) {
+/**
+ * Hasil: { status, headers, teks, json() }. `headers` permintaan memakai nama huruf kecil atau bebas.
+ * `alamatSoket` (opsional) meniru alamat lawan sambungan, mis. proxy di depan aplikasi.
+ */
+export function panggilTanpaPort(app, { metode = 'GET', url, headers = {}, badan, alamatSoket }) {
     return new Promise((selesai, gagal) => {
         const keluar = [];
         const soket = new Duplex({ read() { }, write(potongan, _enc, lanjut) { keluar.push(Buffer.from(potongan)); lanjut(); } });
+        if (alamatSoket)
+            soket.remoteAddress = alamatSoket;
         const muatan = badan === undefined ? null : Buffer.from(typeof badan === 'string' ? badan : JSON.stringify(badan));
         const req = new IncomingMessage(soket);
         req.method = metode;
