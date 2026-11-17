@@ -30,6 +30,10 @@ export class RepositoriPenunjangMysql {
     async kunjungan(fasyankesId, id) {
         return db.cariKunjunganUntukKunjungan5(id, fasyankesId);
     }
+    async dpjpKunjungan(fasyankesId, kunjunganId) {
+        const peserta = await db.daftarPesertaKunjunganUntukRiwayatPasien(fasyankesId, [kunjunganId]);
+        return peserta[0]?.pengguna_id ?? null;
+    }
     async bagianDisahkan(fasyankesId, kunjunganId) {
         const p = await db.daftarPengesahanCatatanUntukBagianDisahkan(fasyankesId, kunjunganId, [...BAGIAN_KLINIS]);
         return p.map((x) => x.entitas);
@@ -50,6 +54,9 @@ export class RepositoriPenunjangMysql {
                 item.push({ jenis: 'lab', tarifId: t?.id ?? null, kode: t?.kode ?? m.kode, nama: m.nama, harga: hargaTarif(t, d.kunjungan.cara_pembayaran), orderPenunjangId: o.id });
             }
             const tagihanId = await tambahItemTagihanDalam(tx, d.fasyankesId, d.kunjungan.id, d.oleh, item);
+            // Rawat jalan yang order lab membebaskan poli agar bisa memanggil pasien lain; dokter memanggil lagi setelah hasil lab selesai.
+            if (d.kunjungan.jenis === 'AMB' && d.kunjungan.tahap_layanan === 'pemeriksaan')
+                await db.ubahAntreanUntukMulaiAntreanDalam2('menunggu', d.fasyankesId, d.kunjungan.id, ['dipanggil', 'dilayani'], tx);
             const t = await db.wajibTagihanUntukBuatOrder(tagihanId, tx);
             return { orderIds, tagihan: { status_tagihan: t.status_tagihan, status_pembayaran: t.status_pembayaran, total: totalTagihan(t.item) } };
         });

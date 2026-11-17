@@ -1,6 +1,7 @@
 import { fileURLToPath as kliraFilePath } from 'node:url';
 const __dirname = kliraFilePath(new URL('.', import.meta.url));
 import { pasangWebsocketLayarPanggilan } from './modul/layar-panggilan/entry-points/websocket.js';
+import { pasangWebsocketNotifikasi } from './modul/notifikasi/entry-points/websocket.js';
 import { perbaruiTokenInstagram } from './modul/instagram/domain/token.js';
 import { pulihkanPengirimanInstagram } from './modul/instagram/domain/pemulihan.js';
 import { pasangWebsocketInstagram } from './modul/instagram/entry-points/websocket.js';
@@ -29,6 +30,7 @@ async function mulai() {
     pasangWebsocketWhatsapp(server, app.locals.layananAkses, baseUrl);
     pasangWebsocketInstagram(server, app.locals.layananAkses, baseUrl);
     pasangWebsocketLayarPanggilan(server, baseUrl, 20000, app.locals.layananAkses);
+    pasangWebsocketNotifikasi(server, app.locals.layananAkses, baseUrl);
     let memulihkanInstagram = false;
     const pulihkanInstagram = async () => {
         if (memulihkanInstagram)

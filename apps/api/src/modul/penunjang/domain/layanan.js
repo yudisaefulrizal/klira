@@ -1,6 +1,7 @@
 import { ADDENDUM_TEKS, bolehAksiOrder, hasilJadiAddendum, PENUNJANG, ringkasPerubahanHarga } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
+import { kabarkanNotifikasi } from '../../notifikasi/domain/kanal.js';
 import { cariKatalogLoinc } from '../data-access/katalog-loinc.js';
 import { keDto as keDtoPengesahan } from '../../rekam-medis/domain/layanan.js';
 import { susunIsiHasil } from './isi.js';
@@ -52,6 +53,15 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
                 return gagal('tidak_valid', PENUNJANG.galat.pemeriksaanTidakAda, 'pemeriksaan_ids');
             const urut = m.pemeriksaan_ids.map((id) => master.find((x) => x.id === id));
             const { orderIds, tagihan } = await repo.buatOrder({ fasyankesId: p.fasyankes_id, kunjungan: k, oleh: p.id, master: urut, prioritas: m.prioritas, catatan: m.catatan });
+            kabarkanLayarPanggilan(p.fasyankes_id);
+            kabarkanNotifikasi({
+                tipe: 'order_lab_baru',
+                fasyankesId: p.fasyankes_id,
+                pelakuId: p.id,
+                kunjunganId,
+                jumlah: orderIds.length,
+                prioritas: m.prioritas,
+            });
             for (const id of orderIds) {
                 await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'order_penunjang', entitas_id: id, keterangan: `Order lab kunjungan ${kunjunganId} (${m.prioritas}), tagihan item dibuat`, alamat });
             }
@@ -140,6 +150,15 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
                 fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: ENTITAS_HASIL, entitas_id: orderId,
                 keterangan: `Validasi hasil lab${jadiAddendum ? ' (dicatat sebagai addendum, kirim ulang menunggu)' : ''}`, alamat,
             });
+            const semuaOrder = await repo.ordersKunjungan?.(p.fasyankes_id, o.data.kunjungan_id);
+            if (semuaOrder?.length && semuaOrder.every((x) => x.status === 'divalidasi')) {
+                if (k?.jenis === 'LAB') {
+                    kabarkanNotifikasi({ tipe: 'hasil_lab_kasir', fasyankesId: p.fasyankes_id, pelakuId: p.id, kunjunganId: k.id });
+                } else if (k) {
+                    const dpjpId = (await repo.dpjpKunjungan?.(p.fasyankes_id, k.id)) ?? null;
+                    kabarkanNotifikasi({ tipe: 'hasil_lab_selesai', fasyankesId: p.fasyankes_id, pelakuId: p.id, dpjpId, kunjunganId: k.id });
+                }
+            }
             return { ok: true, data: (await ordersDto(p.fasyankes_id, [(await repo.order(p.fasyankes_id, orderId))]))[0] };
         },
         /** Rekap lab dengan filter status dan tanggal (data minimal; isi hasil dibuka lewat order dan tercatat). */

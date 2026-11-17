@@ -1,4 +1,5 @@
 import { cocokSocketLayar } from '../../layar-panggilan/entry-points/websocket.js';
+import { cocokSocketNotifikasi } from '../../notifikasi/entry-points/websocket.js';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { WebSocketServer, WebSocket } from 'ws';
 import { punyaIzin } from '@klira/shared';
@@ -35,7 +36,7 @@ export function pasangWebsocketWhatsapp(server, akses, baseUrl, heartbeatMs = 30
     const upgrade = (req, socket, head) => {
         const path = req.url?.split('?')[0];
         if (path !== URL_HALAMAN && path !== URL_ENGINE) {
-            if (cocokSocketLayar(path ?? '') || path === '/api/instagram/ws' || (process.env.KLIRA_DEV === '1' && path === '/__klira_hmr'))
+            if (cocokSocketLayar(path ?? '') || cocokSocketNotifikasi(path ?? '') || path === '/api/instagram/ws' || (process.env.KLIRA_DEV === '1' && path === '/__klira_hmr'))
                 return;
             socket.destroy();
             return;

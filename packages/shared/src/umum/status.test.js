@@ -62,5 +62,8 @@ describe('penunjang saja: status hasil lab dan status layanan', () => {
         expect(s.statusLayananDari({ jenis: 'LAB', tahap_layanan: 'pemeriksaan', antrean: { status: 'dilayani' } })).toBe('spesimen');
         expect(s.statusLayananDari({ jenis: 'AMB', tahap_layanan: 'pemeriksaan', antrean: { status: 'dilayani' } })).toBe('diperiksa');
         expect(s.statusLayananDari({ jenis: 'LAB', tahap_layanan: 'kasir', antrean: { status: 'selesai' } })).toBe('pembayaran');
+        expect(s.statusLayananDari({ jenis: 'AMB', tahap_layanan: 'pemeriksaan', antrean: { status: 'menunggu' }, lab: { perlu_spesimen: 1, perlu_hasil: 0 } })).toBe('menunggu_lab');
+        expect(s.statusLayananDari({ jenis: 'AMB', tahap_layanan: 'pemeriksaan', antrean: { status: 'menunggu' }, lab: { perlu_spesimen: 0, perlu_hasil: 0, selesai: true } })).toBe('hasil_lab_siap');
+        expect(s.statusLayananDari({ jenis: 'AMB', tahap_layanan: 'pemeriksaan', antrean: { status: 'menunggu' }, lab: { perlu_spesimen: 0, perlu_hasil: 0 } })).toBe('menunggu');
     });
 });

@@ -1,4 +1,4 @@
-import { PENUNJANG, PRIORITAS_ORDER, TOMBOL } from '@klira/shared';
+import { PENUNJANG, TOMBOL } from '@klira/shared';
 import { GalatApi } from '../../api-klien/klien.js';
 import { ambilSpesimen, ordersKunjungan } from '../../api-klien/penunjang.js';
 import { token } from '../../gaya/token.js';
@@ -34,7 +34,7 @@ export function bukaAmbilSpesimen({ kunjunganId, pasien, onTutup, onSelesai }) {
     if (!orders) { isi.append(PENUNJANG.memuat); return; }
     if (!menunggu.length) { isi.append(peringatan(S.kosong, 'biru')); return; }
     const h = document.createElement('strong'); h.textContent = S.pilihOrder; pilihan.append(h);
-    for (const o of menunggu) pilihan.append(KotakCentang({ id: `spesimen-${o.id}`, label: o.nama, keterangan: [PRIORITAS_ORDER.label(o.prioritas), o.jenis_spesimen].filter(Boolean).join(' · '), checked: k.terpilih.includes(o.id), onChange() { k = gantiOrderSpesimen(k, orders, o.id); tampil(); } }));
+    for (const o of menunggu) pilihan.append(KotakCentang({ id: `spesimen-${o.id}`, label: o.nama, keterangan: o.jenis_spesimen || undefined, checked: k.terpilih.includes(o.id), onChange() { k = gantiOrderSpesimen(k, orders, o.id); tampil(); } }));
     asal.kontrol.value = k.asal; waktu.kontrol.value = k.waktu; isi.append(form); tampilGalat();
   }
   async function kirim() {

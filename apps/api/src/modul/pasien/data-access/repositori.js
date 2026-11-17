@@ -69,8 +69,8 @@ export class RepositoriPasienMysql {
             if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && k.antrean.jenis_poli !== ANTREAN_LAB.jenis_poli && await jenisPenuh(k.antrean.jenis_poli, k.peserta[0]?.pengguna_id))
                 penuh.set(k.id, k.antrean.jenis_poli);
         const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
-        // Penunjang saja: status hasil lab (menunggu hasil, belum diserahkan, sudah diserahkan) terpisah dari status kunjungan.
-        const hasilLab = new Map((await db.ringkasanHasilLabUntukKunjungan(fasyankesId, isi.flatMap((i) => (i.kunjungan?.jenis === 'LAB' ? [i.kunjungan.id] : [])))).map((r) => [r.kunjungan_id, statusHasilLabDari(r)]));
+        // Ringkasan order lab untuk seluruh kunjungan hari ini: dipakai status hasil lab (`LAB`) dan penanda hasil lab siap (`AMB`).
+        const ringkasanLab = new Map((await db.ringkasanHasilLabUntukKunjungan(fasyankesId, kunjunganIds)).map((r) => [r.kunjungan_id, r]));
         const lab = kunjunganIds.length
             ? await db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi')
             : [];
@@ -86,7 +86,9 @@ export class RepositoriPasienMysql {
                 else
                     perluHasil += g._count._all;
             }
-            return { perlu_spesimen: perluSpesimen, perlu_hasil: perluHasil };
+            const r = ringkasanLab.get(kunjunganId);
+            const selesai = Number(r?.total ?? 0) > 0 && Number(r.divalidasi) >= Number(r.total);
+            return { perlu_spesimen: perluSpesimen, perlu_hasil: perluHasil, selesai };
         };
         // Asal antrean (loket atau Mobile JKN) dan hasil pengiriman status antrean ke BPJS.
         const sumberAntrean = new Map((await db.daftarSumberAntreanUntukKunjungan(fasyankesId, kunjunganIds)).map((r) => [r.kunjungan_id, r]));
@@ -103,7 +105,7 @@ export class RepositoriPasienMysql {
                 poli_sibuk: penuh.has(k.id)
                     ? { jenis_poli: penuh.get(k.id), kode: null }
                     : k.antrean && ['menunggu', 'dipanggil', 'dilewati'].includes(k.antrean.status) && k.lokasi_id && sibukPoli.get(k.lokasi_id) && sibukPoli.get(k.lokasi_id).id !== k.antrean.id ? { jenis_poli: k.antrean.jenis_poli, kode: kodeAntrean(sibukPoli.get(k.lokasi_id).nomor, sibukPoli.get(k.lokasi_id).awalan) } : null,
-                hasil_lab: hasilLab.get(k.id) ?? null,
+                hasil_lab: k.jenis === 'LAB' && ringkasanLab.has(k.id) ? statusHasilLabDari(ringkasanLab.get(k.id)) : null,
                 lab: hitungLab(k.id),
                 ada_resep: resepAda.has(k.id),
             };

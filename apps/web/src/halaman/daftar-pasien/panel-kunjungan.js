@@ -5,6 +5,7 @@ import { resepKunjungan, semuaMasterObatAktif, siapkanResep, simpanResep, telaah
 import { kasirKunjungan } from '../../api-klien/kasir.js';
 import { ordersKunjungan } from '../../api-klien/penunjang.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
+import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { bidang, lencana, peringatan, tab, tabel, baris, sel, tombol } from '../../komponen/ui/primitif.js';
 import { adaIsianResep, awalResep, awalTelaah, barisDariItem, bentukResep, galatResep, perbaruiPlan, resepDariServer, teksPlanResep } from '../../modal/farmasi/keadaan-farmasi.js';
@@ -54,7 +55,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const subTerbatas = [...(boleh('penunjang', 'lihat') ? ['penunjang'] : []), ...(boleh('kasir', 'lihat') ? ['penutup'] : [])];
     const subSah = terbatas ? subTerbatas : SUB_TAB;
     let aktif = true, sub = subSah.includes(subAwal) ? subAwal : subSah[0], klinis = null, konteks = null, galatMuat = null, k = null, awal = null, tensiTeks = '', modal;
-    let tampilGalat = false, galat = null, pesan = null, memproses = false, alasan = '';
+    let tampilGalat = false, galat = null, pesan = null, memproses = false, alasan = '', konfirmasiUbahTutup = false;
     let resep = awalResep(), resepGalat = null, resepPesan = null, resepProses = false, resepTampilGalat = false, obatMaster = null, obatGalat = null, obatMemuat = false, resepSinkron = false;
     let penutup = null;
     let modeResep = 'telaah';
@@ -71,7 +72,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const server = () => keadaanDariServer(klinis.bagian);
     function setelKeadaan() {
         k = server();
-        awal = k; alasan = ''; tampilGalat = false; tensiTeks = teksTensi(k.tanda_vital); awalDraf = bentukDraf(k, tensiTeks);
+        awal = k; alasan = ''; tampilGalat = false; konfirmasiUbahTutup = false; tensiTeks = teksTensi(k.tanda_vital); awalDraf = bentukDraf(k, tensiTeks);
     }
     // Draf otomatis di server (bukan penyimpanan peramban): isian yang belum disimpan bertahan saat berpindah pasien atau menutup halaman.
     const adaptorDraf = adaptorDrafServer(kunjunganId, 'pemeriksaan-klinis');
@@ -88,7 +89,34 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             k = h.k; tensiTeks = h.tensi; pesan = S.drafDipulihkan; catatDraf(); lukis();
         });
     }
-    const ubah = (p) => { k = { ...k, ...p }; pesan = null; catatDraf(); lukis(); };
+    const terapkanUbah = (p) => { k = { ...k, ...p }; pesan = null; catatDraf(); lukis(); };
+    const ubah = (p) => {
+        if (mode().tutup && !konfirmasiUbahTutup) {
+            const fokusId = document.activeElement?.id ?? '';
+            const tensiBaru = tensiTeks;
+            tensiTeks = teksTensi(k.tanda_vital);
+            lukis();
+            tutupModal();
+            modal = bukaKonfirmasi({
+                judul: S.konfirmasiTutupJudul,
+                pesan: S.konfirmasiTutupPesan,
+                onYa() {
+                    tutupModal();
+                    konfirmasiUbahTutup = true;
+                    tensiTeks = tensiBaru;
+                    terapkanUbah(p);
+                    if (fokusId) document.getElementById(fokusId)?.focus({ preventScroll: true });
+                },
+                onTidak() {
+                    tutupModal();
+                    tensiTeks = teksTensi(k.tanda_vital);
+                    lukis();
+                },
+            });
+            return;
+        }
+        terapkanUbah(p);
+    };
     /** Bagian yang bisa disimpan dari halaman ini menurut tahap kunjungan: tanda vital dan/atau enam catatan SOAPIE. */
     const bagianUbah = () => [...(mode().ubahVital ? ['tanda_vital', 'keperawatan'] : []), ...(mode().ubah ? [...BAGIAN_SOAPIE, 'diagnosis'] : [])];
     const rencana = () => rencanaSimpanBagian(bagianUbah(), k, server(), disahkanDari(klinis.bagian));
@@ -343,18 +371,29 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 kaki.append(f.el, redup(S.alasanKet));
                 if (tampilGalat && !alasan.trim()) f.setGalat(S.alasanWajib);
             }
-            // Satu tombol untuk petugas skrining maupun dokter: Selesaikan menyimpan isian; di tahap skrining itu menyelesaikan skrining, di tahap
-            // pemeriksaan ikut diselesaikan. Di tahap pemeriksaan tombol selalu bisa ditekan (kekurangan dilaporkan saat ditekan); di tahap lain hanya bila ada isian baru.
-            const selesai = tombol(memproses ? S.menyimpan : tahapKerja ? S.selesaikan : S.simpanPerubahan, () => void selesaikan());
+            const labelUtama = memproses
+                ? S.menyimpan
+                : tahap === 'menunggu_skrining'
+                    ? 'Selesai skrining'
+                    : tahap === 'pemeriksaan'
+                        ? 'Selesaikan pemeriksaan'
+                        : S.simpanPerubahan;
+            const selesai = tombol(labelUtama, () => void selesaikan({ akhiri: true }));
             selesai.disabled = memproses || (!(m.ubah && tahap === 'pemeriksaan') && !r.length);
             // Di luar tahap kerja (setelah pemeriksaan selesai) tombol Simpan perubahan hanya muncul bila ada perubahan.
             if (!tahapKerja && !r.length) return kaki;
-            const baris = buat('div', 'profil-soapie-tombol'); baris.append(selesai); kaki.append(baris);
+            const baris = buat('div', 'profil-soapie-tombol');
+            if (m.ubah && tahap === 'pemeriksaan' && r.length > 0) {
+                const simpanSaja = tombol(memproses ? S.menyimpan : 'Simpan', () => void selesaikan({ akhiri: false }), 'sekunder');
+                simpanSaja.disabled = memproses;
+                baris.append(simpanSaja);
+            }
+            baris.append(selesai); kaki.append(baris);
         }
         return kaki;
     }
-    /** Selesaikan = simpan dan sahkan isian yang berubah, lalu (tahap pemeriksaan) selesaikan pemeriksaan. */
-    async function selesaikan() {
+    /** Simpan dan sahkan isian yang berubah; bila `akhiri` dan tahap `pemeriksaan`, akhiri pemeriksaan ke Resep/Kasir. */
+    async function selesaikan({ akhiri = true } = {}) {
         if (memproses) return;
         const sebut = (teks, kolom) => { tampilGalat = true; galat = teks; pesan = null; lukis(); if (kolom) document.getElementById(kolom)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); };
         if (!parseTensi(tensiTeks).sah) return void (sebut(S.vital.galatTensi), document.getElementById('tv-tensi')?.focus());
@@ -362,9 +401,9 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         if (masalah) return void sebut(masalah.galat, idKolom(masalah.bagian));
         if (mode().tutup && r.length && !alasan.trim()) return void sebut(S.alasanWajib);
         const tahap = klinis.kunjungan.tahap_layanan, kurang = ['subjek', 'diagnosis'].find((b) => klinis.bagian[b].verifikasi !== 'sah' && !r.some((x) => x.bagian === b));
-        // Di tahap pemeriksaan Selesaikan menuntut Subjek dan Diagnosis ICD-10 (Asesmen boleh kosong); di tahap menunggu skrining isian hanya disimpan (skrining selesai, kunjungan maju ke pemeriksaan) dan dokter memeriksa setelah memanggil.
-        if (mode().ubah && tahap === 'pemeriksaan' && kurang) return void sebut(S.syaratSelesai, idKolom(kurang));
-        const akanSelesai = mode().ubah && tahap === 'pemeriksaan';
+        // Di tahap pemeriksaan Selesaikan pemeriksaan menuntut Subjek dan Diagnosis ICD-10; tombol Simpan menyimpan sebagian tanpa mengakhiri pemeriksaan.
+        const akanSelesai = akhiri && mode().ubah && tahap === 'pemeriksaan';
+        if (akanSelesai && kurang) return void sebut(S.syaratSelesai, idKolom(kurang));
         memproses = true; galat = null; pesan = null; lukis();
         let disimpan = 0, pesanTagihan = null, berjalan = null, berhasil = false;
         try {

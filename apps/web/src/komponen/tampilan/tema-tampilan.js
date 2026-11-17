@@ -4,6 +4,7 @@ import { pantauStatusKoneksi } from '../../util/panggilan/status-koneksi.js';
 import { token } from '../../gaya/token.js';
 import { daftarkanSlotHeader } from './slot-header.js';
 import { PERISTIWA_ANTREAN_BERUBAH } from '../../util/panggilan/peristiwa-antrean.js';
+import { pasangNotifikasiLayar } from './notifikasi-layar.js';
 
 const pilihanTema = [
   { nilai: 'terang', label: 'Terang', ikon: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>' },
@@ -60,11 +61,12 @@ export function pasangTemaTampilan(wadah, pengguna, keluar) {
     antrean() { window.dispatchEvent(new CustomEvent(PERISTIWA_ANTREAN_BERUBAH)); },
   });
   const periksa = () => void pantau.periksaServer();
+  const notifikasiLayar = pasangNotifikasiLayar(wadah.querySelector('.status-koneksi'), pengguna);
   wadah.addEventListener('click', klik); media.addEventListener('change', perbaruiTema); window.addEventListener('storage', sinkronkan);
   window.addEventListener('online', periksa); window.addEventListener('offline', periksa);
   perbaruiTema(); perbaruiStatus();
   return () => {
-    cabutSlot(); menuPengguna?.tutup(); pantau.tutup(); wadah.removeEventListener('click', klik); media.removeEventListener('change', perbaruiTema); window.removeEventListener('storage', sinkronkan);
+    cabutSlot(); menuPengguna?.tutup(); notifikasiLayar.tutup(); pantau.tutup(); wadah.removeEventListener('click', klik); media.removeEventListener('change', perbaruiTema); window.removeEventListener('storage', sinkronkan);
     window.removeEventListener('online', periksa); window.removeEventListener('offline', periksa); wadah.replaceChildren();
   };
 }

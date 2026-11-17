@@ -1,4 +1,5 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
+import { kabarkanNotifikasi } from '../../notifikasi/domain/kanal.js';
 import { ANTREAN_LAB, REGISTRASI, bolehAksiAntrean, bolehPindahTahap, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { KunjunganBerjalanError } from '../data-access/repositori.js';
@@ -70,6 +71,16 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antrea
             if (!k)
                 return gagal('konflik', REGISTRASI.galat.tahapTidakSah, 'tahap');
             kabarkanLayarPanggilan(p.fasyankes_id);
+            if (dari === 'menunggu_skrining' && ke === 'pemeriksaan') {
+                kabarkanNotifikasi({
+                    tipe: 'skrining_selesai',
+                    fasyankesId: p.fasyankes_id,
+                    pelakuId: p.id,
+                    dpjpId: k.dpjp_id ?? null,
+                    kunjunganId: k.id,
+                    nomorAntrean: k.antrean?.kode ?? null,
+                });
+            }
             await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kunjungan', entitas_id: id, keterangan: `Tahap layanan ${dari} menjadi ${ke}`, alamat });
             return { ok: true, data: k };
         },

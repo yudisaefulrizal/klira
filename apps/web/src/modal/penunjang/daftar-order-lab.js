@@ -1,5 +1,5 @@
 import { h, Fragment } from '../../util/h.js';
-import { INTERPRETASI_HASIL, PENUNJANG, PRIORITAS_ORDER, STATUS_ORDER_PENUNJANG, STATUS_PENGESAHAN } from '@klira/shared';
+import { INTERPRETASI_HASIL, PENUNJANG, STATUS_ORDER_PENUNJANG, STATUS_PENGESAHAN } from '@klira/shared';
                                                        
 import { token } from '../../gaya/token.js';
 import { TampilanAddendum } from '../../komponen/klinis/tampilan-addendum.js';
@@ -33,8 +33,6 @@ export function DaftarOrderLab({
   }, h("strong", null, o.nama), o.kode_loinc && h("span", {
     style: redup
   }, `${D.kodeLoinc} ${o.kode_loinc}`), h(Tumbuh, null), h(Lencana, {
-    warna: PRIORITAS_ORDER.warna(o.prioritas)
-  }, PRIORITAS_ORDER.label(o.prioritas)), h(Lencana, {
     warna: STATUS_ORDER_PENUNJANG.warna(o.status)
   }, STATUS_ORDER_PENUNJANG.label(o.status))), h("span", {
     style: redup

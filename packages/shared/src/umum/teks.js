@@ -1530,6 +1530,8 @@ export const PROFIL_PASIEN = {
         nomorDokumen: 'Nomor dokumen',
         menyimpan: 'Menyimpan…', selesaikan: 'Selesaikan', simpanPerubahan: 'Simpan perubahan', cetak: 'Cetak rekam medis', cetakMenu: 'Cetak dokumen',
         alasan: 'Alasan perubahan', alasanKet: 'Kunjungan sudah ditutup: setiap perubahan wajib beralasan dan tercatat di audit.', alasanWajib: 'Alasan perubahan wajib diisi.',
+        konfirmasiTutupJudul: 'Kunjungan telah selesai',
+        konfirmasiTutupPesan: 'Kunjungan telah selesai, apakah yakin akan melanjutkan pengeditan? Pengeditan akan dicatat pada log.',
         tersimpan: (n) => `${n} bagian tersimpan.`, tanpaPerubahan: 'Tidak ada perubahan untuk disimpan.',
         selesai: 'Pemeriksaan diselesaikan.', tandaVital: 'Tanda vital', tandaVitalKet: 'Tersimpan terpisah dari catatan SOAPIE.', tandaVitalKosong: 'Belum ada tanda vital.', gagal: 'Catatan gagal disimpan.',
         syaratSelesai: 'Subjek dan Diagnosis (ICD-10) wajib diisi sebelum pemeriksaan diselesaikan.',
