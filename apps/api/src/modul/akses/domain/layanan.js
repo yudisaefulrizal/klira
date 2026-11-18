@@ -18,13 +18,17 @@ export function buatLayananAkses(dep) {
     const awal = dep.kredensialAwal ?? kredensialAwal(process.env);
     const hashTiruan = hashKataSandi(randomBytes(16).toString('hex'));
     async function bentukPengguna(akun, t) {
-        const akses = await dep.repo.ambilAkses(akun.id, t);
+        const [akses, praktisi] = await Promise.all([
+            dep.repo.ambilAkses(akun.id, t),
+            dep.repo.adalahPraktisi ? dep.repo.adalahPraktisi(akun.id, akun.fasyankes_id) : Promise.resolve(false),
+        ]);
         return {
             id: akun.id,
             nama: akun.nama,
             username: akun.username,
             fasyankes_id: akun.fasyankes_id,
             wajib_ganti_kredensial: akun.wajib_ganti_kredensial,
+            praktisi,
             jenis_akun: akses.jenis_akun,
             fitur: akses.fitur,
             izin: akses.izin,

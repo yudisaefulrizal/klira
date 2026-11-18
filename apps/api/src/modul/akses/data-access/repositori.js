@@ -15,6 +15,9 @@ export class RepositoriAksesMysql {
         const { jenis_akun, fitur, izin } = hitungAksesEfektif(snap, sekarang);
         return { jenis_akun, fitur, izin };
     }
+    async adalahPraktisi(penggunaId, fasyankesId) {
+        return (await db.hitungPenggunaUntukDpjpSah(penggunaId, fasyankesId, true)) > 0;
+    }
     async buatSesi(data) {
         await db.tambahSesiUntukBuatSesi(data.akun.fasyankes_id, data.akun.id, data.idHash, data.alamat?.slice(0, 64), data.kedaluwarsa);
     }

@@ -9,6 +9,10 @@ export const HALAMAN_PENGATURAN = {
             { id: 'jenis-akun', label: 'Jenis akun', izin: ['akses', 'lihat'] },
             { id: 'peringatan', label: 'Daftar peringatan izin', izin: ['akses', 'lihat'], atau: ['audit', 'lihat'] },
             { id: 'keamanan', label: 'Keamanan', izin: ['akses', 'lihat'] },
+            { id: 'satusehat', label: 'SATUSEHAT', izin: ['satusehat', 'lihat'] },
+            { id: 'test-endpoint', label: 'Test endpoint', izin: ['satusehat', 'lihat'] },
+            { id: 'pelindungan-data', label: 'Pelindungan data', izin: ['pdp', 'lihat'] },
+            { id: 'log-audit', label: 'Log audit', izin: ['audit', 'lihat'] },
         ],
     },
     klinik: {
@@ -16,6 +20,8 @@ export const HALAMAN_PENGATURAN = {
         judul: 'Pengaturan klinik',
         tab: [
             { id: 'profil', label: 'Profil klinik', izin: ['profil-klinik', 'lihat'] },
+            { id: 'poli', label: 'Poli', izin: ['master', 'lihat'] },
+            { id: 'shift', label: 'Shift', izin: ['master', 'lihat'] },
             { id: 'backup', label: 'Backup', izin: ['akses', 'lihat'] },
         ],
     },

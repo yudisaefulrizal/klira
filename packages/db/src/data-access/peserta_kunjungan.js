@@ -24,3 +24,11 @@ export async function daftarPesertaKunjunganUntukRiwayatPasien(fasyankes_id, kun
     const baris = await baca("SELECT t.`kunjungan_id`, t.`pengguna_id` FROM `peserta_kunjungan` t WHERE t.`fasyankes_id` = ? AND t.`kunjungan_id` IN (?) ORDER BY t.`id` ASC", [fasyankes_id, kunjungan_id.length ? kunjungan_id : [null]], koneksi);
     return baris;
 }
+export async function ubahDpjpPesertaKunjungan(kunjungan_id, pengguna_id, koneksi = pool) {
+    const hasil = await tulis("UPDATE `peserta_kunjungan` SET `pengguna_id` = ? WHERE `kunjungan_id` = ? AND `tipe` = 'ATND' AND `selesai` IS NULL", [pengguna_id, kunjungan_id], koneksi);
+    return { count: hasil.affectedRows };
+}
+export async function hapusDpjpPesertaKunjungan(kunjungan_id, koneksi = pool) {
+    const hasil = await tulis("DELETE FROM `peserta_kunjungan` WHERE `kunjungan_id` = ? AND `tipe` = 'ATND' AND `selesai` IS NULL", [kunjungan_id], koneksi);
+    return { count: hasil.affectedRows };
+}

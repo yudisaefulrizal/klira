@@ -100,6 +100,8 @@ export const STATUS_LAYANAN = buat({
     spesimen: { label: 'Spesimen', warna: 'biru' },
     menunggu_lab: { label: 'Menunggu hasil lab', warna: 'kuning' },
     hasil_lab_siap: { label: 'Hasil lab siap', warna: 'hijau' },
+    menunggu_bed: { label: 'Menunggu bed', warna: 'kuning' },
+    dirawat: { label: 'Dirawat', warna: 'biru' },
     diperiksa: { label: 'Pemeriksaan', warna: 'biru' },
     menunggu_obat: { label: 'Menunggu obat', warna: 'ungu' },
     pembayaran: { label: 'Pembayaran', warna: 'kuning' },
@@ -122,6 +124,8 @@ export function statusLayananDari(kunjungan) {
                 if (antrean === 'menunggu' && kunjungan.lab?.selesai)
                     return 'hasil_lab_siap';
             }
+            if (kunjungan.jenis === 'IMP')
+                return kunjungan.status === 'planned' ? 'menunggu_bed' : 'dirawat';
             return antrean === 'dipanggil' ? 'dipanggil' : antrean === 'dilewati' ? 'dilewati' : antrean === 'menunggu' ? 'menunggu' : kunjungan.jenis === 'LAB' ? 'spesimen' : 'diperiksa';
         default: return 'skrining';
     }

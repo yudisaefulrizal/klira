@@ -5,6 +5,10 @@ export function queryDaftarPasien(f) {
         q.set('untuk_kunjungan', 'true');
     if (f.semua)
         q.set('semua', 'true');
+    if (f.pasien_saya)
+        q.set('pasien_saya', 'true');
+    if (f.semua_tanggal)
+        q.set('semua_tanggal', 'true');
     if (f.tanggal)
         q.set('tanggal', f.tanggal);
     if (f.cari?.trim())

@@ -100,6 +100,27 @@ export class RepositoriKunjunganMysql {
     async tahapSekarang(fasyankesId, id) {
         return (await db.cariKunjunganUntukTahapSekarang(id, fasyankesId))?.tahap_layanan ?? null;
     }
+    async detailUntukUbahDpjp(fasyankesId, id) {
+        const k = await db.wajibKunjunganUntukAmbilKunjungan(id, 'ATND', 1);
+        if (!k || k.fasyankes_id !== fasyankesId)
+            return null;
+        return keDto(k);
+    }
+    async ubahDpjp(fasyankesId, id, dpjpId, oleh, sekarang) {
+        return db.transaksi(async (tx) => {
+            const ada = await db.daftarPesertaKunjunganUntukTerapkanDpjp(id, null, tx);
+            const atnd = ada.find((a) => a.tipe === 'ATND');
+            if (dpjpId) {
+                if (atnd)
+                    await db.ubahDpjpPesertaKunjungan(id, dpjpId, tx);
+                else
+                    await db.tambahPesertaKunjunganUntukDaftarkan(fasyankesId, id, dpjpId, 'ATND', sekarang, oleh, tx);
+            } else if (atnd) {
+                await db.hapusDpjpPesertaKunjungan(id, tx);
+            }
+            return keDto(await ambilKunjungan(tx, id));
+        });
+    }
     async ubahTahap(fasyankesId, id, dari, ke) {
         return db.transaksi(async (tx) => {
             const n = await db.ubahKunjunganUntukUbahTahap(ke, id, fasyankesId, dari, tx);

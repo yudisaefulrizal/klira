@@ -37,10 +37,11 @@ function PapanBed() {
   void muat(); el.tutup = () => { aktif = false; versi++; modal?.tutup(); }; return el;
 }
 
-export function HalamanRawatInap() {
+export function HalamanRawatInap({ dasar = '/rawat-inap', paramTab = 'tab' } = {}) {
   const boleh = izinSaatIni(), { search, ganti } = navigasiSaatIni(), daftar = [...(boleh('klinis', 'lihat') ? [{ id: 'papan', label: RAWAT_INAP.tab.papan }] : []), ...(boleh('master', 'lihat') ? [{ id: 'ruang', label: RAWAT_INAP.tab.ruang }, { id: 'bed', label: RAWAT_INAP.tab.bed }] : [])], ids = daftar.map(t => t.id);
   const el = document.createElement('div'), header = document.createElement('header'), title = document.createElement('h1'), isi = document.createElement('div'); el.style.display = isi.style.display = 'contents'; Object.assign(header.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, flexWrap: 'wrap' }); title.textContent = RAWAT_INAP.judul; Object.assign(title.style, { margin: '0', flexGrow: '1', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal }); header.append(title);
-  const tabs = daftar.length > 1 ? tab(daftar, '', RAWAT_INAP.judul, id => ganti(`/rawat-inap?tab=${id}`)) : null; if (tabs) header.append(tabs.el); el.append(header, isi); let courant, page;
-  function perbaruiAlamat(alamat) { const choisi = ids.length ? pilihTab(ids, new URLSearchParams(alamat).get('tab'), bacaTabTerakhir('rawat-inap', ids, sessionStorage)) : undefined; if (!choisi) return; simpanTabTerakhir('rawat-inap', choisi, sessionStorage); tabs?.pilih(choisi); if (courant === choisi) { page?.perbaruiAlamat?.(alamat); return; } page?.tutup(); isi.replaceChildren(); courant = choisi; page = choisi === 'papan' ? PapanBed() : KelolaMasterTab({ jenis: choisi }); isi.append(page); if (choisi !== 'papan') page.perbaruiAlamat(alamat); }
+  const sep = dasar.includes('?') ? '&' : '?';
+  const tabs = daftar.length > 1 ? tab(daftar, '', RAWAT_INAP.judul, id => ganti(`${dasar}${sep}${paramTab}=${id}`)) : null; if (tabs) header.append(tabs.el); el.append(header, isi); let courant, page;
+  function perbaruiAlamat(alamat) { const choisi = ids.length ? pilihTab(ids, new URLSearchParams(alamat).get(paramTab), bacaTabTerakhir('rawat-inap', ids, sessionStorage)) : undefined; if (!choisi) return; simpanTabTerakhir('rawat-inap', choisi, sessionStorage); tabs?.pilih(choisi); if (courant === choisi) { page?.perbaruiAlamat?.(alamat); return; } page?.tutup(); isi.replaceChildren(); courant = choisi; page = choisi === 'papan' ? PapanBed() : KelolaMasterTab({ jenis: choisi }); isi.append(page); if (choisi !== 'papan') page.perbaruiAlamat(alamat); }
   el.perbaruiAlamat = perbaruiAlamat; el.tutup = () => { page?.tutup(); el.replaceChildren(); }; perbaruiAlamat(search); return el;
 }

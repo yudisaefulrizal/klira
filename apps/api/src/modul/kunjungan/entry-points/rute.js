@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { aksiAntrean, filterAntrean, idParam, kunjunganMasukan, ubahTahapMasukan, GALAT } from '@klira/shared';
+import { aksiAntrean, filterAntrean, idParam, kunjunganMasukan, ubahDpjpMasukan, ubahTahapMasukan, GALAT } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -29,6 +29,15 @@ export function buatRuteKunjungan(layananAkses, layananIzin, layanan) {
         if (!m.success)
             return galatValidasi(res, m.error);
         kirimHasil(res, await layanan.ubahTahap(pengguna(res), id.data.id, m.data.tahap, alamatDari(req)));
+    }));
+    rute.patch('/kunjungan/:id/dpjp', masuk, wajibIzin('kunjungan', 'input'), bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        const m = ubahDpjpMasukan.safeParse(req.body ?? {});
+        if (!m.success)
+            return galatValidasi(res, m.error);
+        kirimHasil(res, await layanan.ubahDpjp(pengguna(res), id.data.id, m.data.dpjp_id ?? null, alamatDari(req)));
     }));
     rute.get('/antrean', masuk, wajibIzin('kunjungan', 'lihat'), bungkus(async (req, res) => {
         const f = filterAntrean.safeParse(req.query);

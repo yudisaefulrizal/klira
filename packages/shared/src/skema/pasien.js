@@ -6,7 +6,7 @@ import { idPositif, nik, teksOpsional, teksWajib } from './umum.js';
 export const JALUR_IDENTITAS = ['nik', 'paspor', 'kitas', 'tanpa_identitas'];
 export const BENTUK_PERSETUJUAN = ['tertulis', 'lisan'];
 export const PENANDATANGAN_PERSETUJUAN = ['pasien', 'wali'];
-export const NILAI_TAHAP_FILTER = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup', 'batal'];
+export const NILAI_TAHAP_FILTER = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup', 'batal', 'rawat_inap'];
 const kosongJadiTiada = (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v);
 /** Tanggal kalender YYYY-MM-DD yang sah dan bukan di masa depan (tanggal lahir boleh sebelum 2014). */
 export const tanggalLahir = z
@@ -96,6 +96,8 @@ export const filterPasien = z.object({
     untuk_kunjungan: z.enum(['true']).optional(),
     /** Semua pasien (urut nama) tanpa kata pencarian, bukan hanya yang berkunjung pada tanggal itu. */
     semua: z.enum(['true']).optional(),
+    pasien_saya: z.enum(['true']).optional(),
+    semua_tanggal: z.enum(['true']).optional(),
     tanggal: z.preprocess(kosongJadiTiada, z.iso.date().optional()),
     cari: z.preprocess(kosongJadiTiada, z.string().trim().max(100).optional()),
     tahap: z.preprocess(kosongJadiTiada, z.enum(NILAI_TAHAP_FILTER).default('semua')),

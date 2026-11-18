@@ -84,6 +84,39 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antrea
             await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kunjungan', entitas_id: id, keterangan: `Tahap layanan ${dari} menjadi ${ke}`, alamat });
             return { ok: true, data: k };
         },
+        /** Mengubah dokter (DPJP) kunjungan rawat jalan selama pasien belum diperiksa dokter. */
+        async ubahDpjp(p, id, dpjpId, alamat) {
+            const k = await repo.detailUntukUbahDpjp(p.fasyankes_id, id);
+            if (!k)
+                return gagal('tidak_ditemukan', REGISTRASI.galat.kunjunganTidakAda);
+            const antreanStatus = k.antrean?.status;
+            if (k.jenis !== 'AMB' || !['menunggu_skrining', 'pemeriksaan'].includes(k.tahap_layanan) || ['dilayani', 'selesai', 'batal'].includes(antreanStatus)) {
+                return gagal('konflik', 'Dokter hanya dapat diubah sebelum pasien diperiksa dokter.');
+            }
+            if (dpjpId) {
+                if (!(await repo.dpjpSah(p.fasyankes_id, dpjpId)))
+                    return gagal('tidak_valid', REGISTRASI.galat.dpjpTidakSah, 'dpjp_id');
+                if (k.antrean?.jenis_poli && !(await repo.dokterDiJenis(p.fasyankes_id, dpjpId, k.antrean.jenis_poli)))
+                    return gagal('tidak_valid', REGISTRASI.galat.dokterBukanPoli, 'dpjp_id');
+            }
+            const hasil = await repo.ubahDpjp(p.fasyankes_id, id, dpjpId ?? null, p.id, sekarang());
+            kabarkanLayarPanggilan(p.fasyankes_id);
+            if (k.tahap_layanan === 'pemeriksaan' && dpjpId && dpjpId !== k.dpjp_id) {
+                kabarkanNotifikasi({
+                    tipe: 'skrining_selesai',
+                    fasyankesId: p.fasyankes_id,
+                    pelakuId: p.id,
+                    dpjpId,
+                    kunjunganId: id,
+                    nomorAntrean: k.antrean?.kode ?? null,
+                });
+            }
+            await audit.catat({
+                fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kunjungan', entitas_id: id,
+                keterangan: `Dokter tujuan (DPJP) diubah${dpjpId ? ` menjadi pengguna ${dpjpId}` : ' menjadi tanpa dokter pilihan'}`, alamat,
+            });
+            return { ok: true, data: hasil };
+        },
         /** Panggil, mulai, selesai, atau batalkan antrean sesuai perpindahan status yang sah. */
         async aksiAntrean(p, id, aksi, alamat, lokasiPilihan) {
             const status = await repo.statusAntrean(p.fasyankes_id, id);

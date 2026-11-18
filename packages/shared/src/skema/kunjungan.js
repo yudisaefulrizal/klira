@@ -31,6 +31,7 @@ export const kunjunganMasukan = z
 /** Penyerahan hasil lab kunjungan penunjang saja (di kasir). */
 export const serahHasilMasukan = z.object({ penerima_nama: teksWajib(200), hubungan: teksOpsional(100) });
 export const ubahTahapMasukan = z.object({ tahap: z.enum(NILAI_TAHAP) });
+export const ubahDpjpMasukan = z.object({ dpjp_id: idPositif.nullish() });
 export const aksiAntrean = z.enum(AKSI_ANTREAN);
 const kosongJadiTiada = (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v);
 /** Filter daftar antrean: tanggal (zona Asia/Jakarta, bawaan hari ini), poli, status. */

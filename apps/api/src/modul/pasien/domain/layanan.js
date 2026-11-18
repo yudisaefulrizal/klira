@@ -46,7 +46,7 @@ export function buatLayananPasien({ repo, audit, sinkronIhs }) {
     return {
         /** Daftar minimal (tanpa NIK atau isi rekam medis); tidak dicatat per baris, pembukaan isi dicatat di `detail`. */
         async cari(p, f) {
-            return repo.cari(p.fasyankes_id, { untuk_kunjungan: f.untuk_kunjungan, semua: f.semua, tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
+            return repo.cari(p.fasyankes_id, { untuk_kunjungan: f.untuk_kunjungan, semua: f.semua, dpjpId: f.pasien_saya === 'true' ? p.id : undefined, semua_tanggal: f.semua_tanggal, tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
         },
         /** Isi data pasien: pembukaan dicatat `lihat` sebelum data dilepas (gagal catat berarti tidak dilepas). */
         async detail(p, id, alamat) {

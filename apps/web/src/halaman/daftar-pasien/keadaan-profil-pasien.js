@@ -3,6 +3,7 @@ import { tanggalWaktuPendek } from '../../util/format.js';
 
 /** Tab pendamping di panel kunjungan; yang pertama adalah bawaan. */
 export const SUB_TAB = ['pemeriksaan', 'resep', 'tindakan', 'penunjang', 'penutup'];
+export const SUB_TAB_IMP = ['pemeriksaan', 'bangsal', 'resep', 'tindakan', 'penunjang', 'penutup'];
 /**
  * Daftar lencana status untuk baris atas kanan panel kunjungan (`profil-panel-tanda`),
  * selalu diawali tahap layanan lalu diikuti status sesuai tab yang sedang dibuka.
@@ -62,10 +63,12 @@ export function tandaKepalaPanel({ sub, klinis, data = {}, kasir = null, resepSe
  * Daftar pilihan cetak yang muncul dari tombol ikon printer di kanan atas panel kunjungan.
  * Hanya opsi yang relevan dan boleh dicetak untuk tab/keadaan kunjungan ini yang disertakan.
  */
-export function opsiCetakPanel({ terbatas, bolehKlinis, bolehPenunjang, bolehKasir, bolehRekamMedis, orders = null, kasir = null }) {
+export function opsiCetakPanel({ terbatas, bolehKlinis, bolehPenunjang, bolehKasir, bolehRekamMedis, isImp = false, orders = null, kasir = null }) {
     const daftar = [];
-    if (!terbatas && (bolehKlinis || bolehRekamMedis))
+    if (!terbatas && (bolehKlinis || bolehRekamMedis)) {
         daftar.push({ id: 'rekam-medis', label: PROFIL_PASIEN.soapie.cetak });
+        if (isImp) daftar.push({ id: 'cppt', label: 'Cetak CPPT' });
+    }
     if (bolehPenunjang && Array.isArray(orders) && orders.some((o) => o.status === 'divalidasi' && !!o.hasil))
         daftar.push({ id: 'hasil-lab', label: PENUNJANG.cetak.tombol });
     else if (bolehKasir && kasir?.hasil_lab?.divalidasi > 0)
@@ -106,7 +109,8 @@ const idPositif = (v) => { const n = Number(v); return Number.isInteger(n) && n 
 /** Keadaan halaman Pasien dari alamat: pasien dan kunjungan terpilih serta tab pendamping. */
 export function keadaanAlamat(search) {
     const q = new URLSearchParams(search);
-    return { pasien: idPositif(q.get('pasien')), kunjungan: idPositif(q.get('kunjungan')), sub: SUB_TAB.includes(q.get('bagian')) ? q.get('bagian') : SUB_TAB[0] };
+    const semuaSub = [...SUB_TAB, ...SUB_TAB_IMP];
+    return { pasien: idPositif(q.get('pasien')), kunjungan: idPositif(q.get('kunjungan')), sub: semuaSub.includes(q.get('bagian')) ? q.get('bagian') : SUB_TAB[0] };
 }
 /** Alamat halaman untuk keadaan itu; nilai bawaan tidak ditulis. */
 export function alamatProfil(k) {

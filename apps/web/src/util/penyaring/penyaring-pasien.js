@@ -1,6 +1,6 @@
 import { aksiAntreanTersedia } from '@klira/shared';
 /** Penyaring tahap pada Daftar pasien, berurutan sesuai alur layanan. */
-export const TAHAP_PENYARING = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup', 'batal'];
+export const TAHAP_PENYARING = ['semua', 'menunggu_skrining', 'pemeriksaan', 'resep', 'kasir', 'ditutup', 'batal', 'rawat_inap'];
 /** Penyaring tahap bawaan menurut peran: kasir langsung ke Kasir, farmasi ke Resep; peran klinis dan pendaftaran melihat semua. */
 export function tahapBawaan(boleh) {
     if (boleh('kunjungan', 'input') || boleh('klinis', 'input'))
@@ -87,8 +87,6 @@ export function aksiBaris(baris, boleh) {
     if (!k && boleh('kunjungan', 'input'))
         hasil.push({ jenis: 'daftarkan' });
     const berjalan = !!k && k.tahap_layanan !== 'menunggu_skrining' && k.tahap_layanan !== 'ditutup';
-    if (berjalan && boleh('persetujuan', 'input'))
-        hasil.push({ jenis: 'persetujuan' });
     if (berjalan && boleh('klinis', 'input'))
         hasil.push({ jenis: 'order_lab' });
     // Kunjungan penunjang saja sudah Selesai sebelum hasilnya ada, jadi pengisian hasil tetap tersedia.

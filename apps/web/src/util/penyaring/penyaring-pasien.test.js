@@ -48,7 +48,7 @@ describe('pengelompokan tindakan baris', () => {
         const b = kunjungan();
         const { utama, lainnya } = kelompokAksi(b, aksiBaris(b, semua));
         expect(utama.map((a) => a.jenis)).toEqual(['bayar', 'tutup_kunjungan']);
-        expect(lainnya.map((a) => a.jenis)).toEqual(expect.arrayContaining(['persetujuan', 'order_lab', 'spesimen', 'hasil_lab', 'buka', 'riwayat', 'keluarga']));
+        expect(lainnya.map((a) => a.jenis)).toEqual(expect.arrayContaining(['order_lab', 'spesimen', 'hasil_lab', 'buka', 'riwayat', 'keluarga']));
         expect(lainnya.some((a) => a.jenis === 'bayar')).toBe(false);
     });
     it('Ambil spesimen dan Hasil lab naik ke tombol langsung hanya bila ada order yang menunggu', () => {
@@ -87,7 +87,7 @@ describe('tindakan per baris', () => {
         // Tahap menunggu skrining: pasien langsung diskrining, belum bisa dipanggil dokter.
         expect(jenis(baris(kunj('menunggu')))).toEqual(['batal', 'skrining', 'buka', 'riwayat', 'keluarga']);
         // Sesudah skrining (tahap pemeriksaan) dokter dapat memanggil.
-        expect(jenis(baris({ ...kunj('menunggu'), tahap_layanan: 'pemeriksaan' }))).toEqual(['panggil', 'batal', 'periksa', 'skrining', 'persetujuan', 'order_lab', 'spesimen', 'hasil_lab', 'buka', 'riwayat', 'keluarga']);
+        expect(jenis(baris({ ...kunj('menunggu'), tahap_layanan: 'pemeriksaan' }))).toEqual(['panggil', 'batal', 'periksa', 'skrining', 'order_lab', 'spesimen', 'hasil_lab', 'buka', 'riwayat', 'keluarga']);
         // Sesudah skrining: dipanggil bisa dilewati; yang dilewati bisa dipanggil lagi atau dibatalkan.
         const sesudah = (s) => jenis(baris({ ...kunj(s), tahap_layanan: 'pemeriksaan' })).filter((j) => ['panggil', 'lewati', 'batal'].includes(j));
         expect(sesudah('dipanggil')).toEqual(['panggil', 'lewati', 'batal']);
@@ -107,15 +107,14 @@ describe('tindakan per baris', () => {
         expect(nama('pemeriksaan', tanpaInput)).toEqual([]);
         expect(nama('menunggu_skrining', tanpaInput)).toEqual([]);
     });
-    it('Persetujuan tindakan, Order lab, Ambil spesimen, dan Hasil lab hanya pada kunjungan berjalan sesuai izin', () => {
+    it('Order lab, Ambil spesimen, dan Hasil lab hanya pada kunjungan berjalan sesuai izin', () => {
         const tahap = (t) => ({ ...kunj(null), tahap_layanan: t });
-        const lab = (t, boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => ['persetujuan', 'order_lab', 'spesimen', 'hasil_lab'].includes(j));
-        expect(lab('pemeriksaan')).toEqual(['persetujuan', 'order_lab', 'spesimen', 'hasil_lab']);
+        const lab = (t, boleh = semua) => jenis(baris(tahap(t)), boleh).filter((j) => ['order_lab', 'spesimen', 'hasil_lab'].includes(j));
+        expect(lab('pemeriksaan')).toEqual(['order_lab', 'spesimen', 'hasil_lab']);
         expect(lab('menunggu_skrining')).toEqual([]);
         expect(lab('ditutup')).toEqual([]);
         expect(lab('pemeriksaan', (f, a) => f === 'penunjang' && a === 'input')).toEqual(['spesimen', 'hasil_lab']);
         expect(lab('pemeriksaan', (f, a) => f === 'klinis' && a === 'input')).toEqual(['order_lab']);
-        expect(lab('pemeriksaan', (f, a) => f === 'persetujuan' && a === 'input')).toEqual(['persetujuan']);
     });
     it('Telaah resep hanya pada tahap resep dan untuk pemegang izin farmasi input', () => {
         const tahap = (t) => ({ ...kunj(null), tahap_layanan: t });

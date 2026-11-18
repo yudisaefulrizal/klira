@@ -1,0 +1,327 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1280" width="1920" height="1280" font-family="Inter, system-ui, -apple-system, 'Segoe UI', sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#475569"/>
+    </marker>
+    <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0f766e"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#b45309"/>
+    </marker>
+    <marker id="arrow-indigo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#4338ca"/>
+    </marker>
+    <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#7e22ce"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1920" height="1280" fill="#f8fafc"/>
+
+  <!-- Header -->
+  <rect x="0" y="0" width="1920" height="74" fill="#0f766e"/>
+  <text x="960" y="34" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="700">Alur Pelayanan Pasien &amp; Perubahan Status Klira (Lengkap)</text>
+  <text x="960" y="57" text-anchor="middle" fill="#ccfbf1" font-size="13" font-weight="500">Rawat Jalan (AMB) · Rawat Inap (IMP) · Penunjang Lab (LAB) · Transisi Status &amp; Notifikasi Suara Real-time</text>
+
+  <!-- Column Headers -->
+  <rect x="32" y="92" width="820" height="32" rx="8" fill="#e0f2fe" stroke="#bae6fd"/>
+  <text x="442" y="113" text-anchor="middle" fill="#0369a1" font-size="13" font-weight="700">JALUR RAWAT JALAN (AMB)</text>
+
+  <rect x="876" y="92" width="600" height="32" rx="8" fill="#e0e7ff" stroke="#c7d2fe"/>
+  <text x="1176" y="113" text-anchor="middle" fill="#4338ca" font-size="13" font-weight="700">JALUR RAWAT INAP (IMP)</text>
+
+  <rect x="1500" y="92" width="388" height="32" rx="8" fill="#fef3c7" stroke="#fde68a"/>
+  <text x="1694" y="113" text-anchor="middle" fill="#b45309" font-size="13" font-weight="700">JALUR PENUNJANG SAJA (LAB)</text>
+
+  <!-- Start Node -->
+  <rect x="830" y="140" width="260" height="46" rx="23" fill="#0f766e"/>
+  <text x="960" y="168" text-anchor="middle" fill="#ffffff" font-size="15" font-weight="700">Pendaftaran Pasien</text>
+
+  <!-- Split to 3 Paths -->
+  <path d="M 830 163 L 245 163 L 245 206" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 1050 186 L 1050 206" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+  <path d="M 1090 163 L 1694 163 L 1694 206" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="380" y="150" width="128" height="24" rx="12" fill="#e0f2fe" stroke="#7dd3fc"/>
+  <text x="444" y="166" text-anchor="middle" fill="#0369a1" font-size="12" font-weight="600">Rawat Jalan (AMB)</text>
+
+  <rect x="1106" y="182" width="132" height="22" rx="11" fill="#e0e7ff" stroke="#a5b4fc"/>
+  <text x="1172" y="197" text-anchor="middle" fill="#4338ca" font-size="11.5" font-weight="600">Rawat Inap (IMP)</text>
+
+  <rect x="1500" y="150" width="114" height="24" rx="12" fill="#fef3c7" stroke="#fcd34d"/>
+  <text x="1557" y="166" text-anchor="middle" fill="#b45309" font-size="12" font-weight="600">Lab Saja (LAB)</text>
+
+  <!-- ================= COLUMN 1: RAWAT JALAN (AMB) ================= -->
+  <!-- AMB 1 -->
+  <rect x="35" y="210" width="420" height="74" rx="10" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="245" y="232" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">1. Tahap: menunggu_skrining · Antrean: menunggu</text>
+  <text x="245" y="250" text-anchor="middle" fill="#475569" font-size="11.5">Status UI: Skrining · Alergi otomatis terisi dari riwayat</text>
+  <text x="245" y="268" text-anchor="middle" fill="#0369a1" font-size="11" font-weight="600">Pendaftaran dapat Ubah Dokter (DPJP) selama belum dilayani</text>
+
+  <path d="M 245 284 L 245 312" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AMB 2 -->
+  <rect x="35" y="316" width="420" height="74" rx="10" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="245" y="338" text-anchor="middle" fill="#0369a1" font-size="13" font-weight="700">2. Perawat isi Tanda Vital → Klik: Selesai skrining</text>
+  <text x="245" y="356" text-anchor="middle" fill="#475569" font-size="11.5">Tahap: pemeriksaan · Antrean: menunggu (UI: Menunggu)</text>
+  <rect x="105" y="364" width="280" height="19" rx="9" fill="#dcfce7"/>
+  <text x="245" y="377" text-anchor="middle" fill="#15803d" font-size="10.5" font-weight="700">Notifikasi Suara &amp; Toast → Dokter (DPJP)</text>
+
+  <path d="M 245 390 L 245 418" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AMB 3 -->
+  <rect x="35" y="422" width="420" height="72" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/>
+  <text x="245" y="444" text-anchor="middle" fill="#b45309" font-size="13" font-weight="700">3. Dokter klik ikon Panggil / tombol Panggil pasien</text>
+  <text x="245" y="462" text-anchor="middle" fill="#475569" font-size="11.5">Antrean: dipanggil (UI: Dipanggil) · Poli terpasang</text>
+  <text x="245" y="479" text-anchor="middle" fill="#b91c1c" font-size="10.5">Belum hadir: klik ikon Lewati → dilewati (Poli bebas · bisa Panggil lagi)</text>
+
+  <path d="M 245 494 L 245 522" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AMB 4 -->
+  <rect x="35" y="526" width="420" height="80" rx="10" fill="#ffffff" stroke="#0f766e" stroke-width="1.8"/>
+  <text x="245" y="548" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">4. Klik: Mulai pemeriksaan (atau ketik langsung → Ya)</text>
+  <text x="245" y="566" text-anchor="middle" fill="#475569" font-size="11">Ketik langsung memunculkan modal konfirmasi "Mulai pemeriksaan?"</text>
+  <text x="245" y="583" text-anchor="middle" fill="#0f172a" font-size="11" font-weight="600">Antrean: dilayani (UI: Pemeriksaan · Urutan paling atas)</text>
+  <text x="245" y="599" text-anchor="middle" fill="#0f766e" font-size="10.5">Tombol Simpan &amp; Selesaikan pemeriksaan aktif</text>
+
+  <path d="M 245 606 L 245 638" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AMB Decision: Order Lab -->
+  <rect x="135" y="642" width="220" height="40" rx="20" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="245" y="667" text-anchor="middle" fill="#0f172a" font-size="13" font-weight="700">Perlu Order Lab?</text>
+
+  <!-- Ya -> Lab Box -->
+  <path d="M 355 662 L 478 662" fill="none" stroke="#b45309" stroke-width="2" marker-end="url(#arrow-amber)"/>
+  <text x="416" y="655" text-anchor="middle" fill="#b45309" font-size="11.5" font-weight="700">Ya</text>
+
+  <!-- Subflow Lab AMB -->
+  <rect x="482" y="526" width="364" height="236" rx="12" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="664" y="549" text-anchor="middle" fill="#b45309" font-size="13" font-weight="700">Proses Lab Rawat Jalan (AMB)</text>
+
+  <rect x="496" y="559" width="336" height="56" rx="8" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="664" y="577" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="700">Dokter buat Order Lab (Rutin / Segera)</text>
+  <text x="664" y="593" text-anchor="middle" fill="#475569" font-size="10.5">Antrean: menunggu (Poli bebas) · UI: Menunggu hasil lab</text>
+  <text x="664" y="608" text-anchor="middle" fill="#15803d" font-size="10.5" font-weight="700">Notifikasi Suara &amp; Toast → Petugas Lab</text>
+
+  <rect x="496" y="623" width="336" height="54" rx="8" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="664" y="642" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="700">Petugas Lab: Ambil Spesimen → Input → Validasi</text>
+  <text x="664" y="659" text-anchor="middle" fill="#475569" font-size="10.5">Order: dipesan → spesimen_diambil → menunggu_hasil → divalidasi</text>
+
+  <rect x="496" y="685" width="336" height="62" rx="8" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="664" y="704" text-anchor="middle" fill="#15803d" font-size="11.5" font-weight="700">Semua order selesai → Status UI: Hasil lab siap</text>
+  <text x="664" y="720" text-anchor="middle" fill="#166534" font-size="10.5" font-weight="700">Notifikasi Suara &amp; Toast → Dokter (DPJP)</text>
+  <text x="664" y="736" text-anchor="middle" fill="#166534" font-size="10.5">Dokter Panggil lagi → Mulai pemeriksaan (dilayani)</text>
+
+  <!-- Return from Lab -->
+  <path d="M 664 762 L 664 800 L 459 800" fill="none" stroke="#0f766e" stroke-width="2" marker-end="url(#arrow-teal)"/>
+
+  <!-- Tidak -> Selesaikan Pemeriksaan -->
+  <path d="M 245 682 L 245 768" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="228" y="726" text-anchor="end" fill="#475569" font-size="11.5" font-weight="700">Tidak</text>
+
+  <!-- AMB 5 -->
+  <rect x="35" y="772" width="420" height="64" rx="10" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="245" y="795" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">5. Dokter klik: Selesaikan pemeriksaan</text>
+  <text x="245" y="813" text-anchor="middle" fill="#475569" font-size="11">Wajib Subjek &amp; Diagnosis ICD-10 · Antrean Poli: selesai</text>
+  <text x="245" y="828" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="600">Tindak lanjut: Rawat Jalan / Resep / Kasir / Rujuk Rawat Inap (SPRI)</text>
+
+  <!-- Dashed arrow: AMB -> IMP (Rujuk Rawat Inap) -->
+  <path d="M 455 818 L 864 818 L 864 241 L 892 241" fill="none" stroke="#4338ca" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arrow-indigo)"/>
+  <rect x="610" y="806" width="160" height="22" rx="11" fill="#e0e7ff" stroke="#a5b4fc"/>
+  <text x="690" y="821" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="700">Rujuk Rawat Inap (SPRI)</text>
+
+  <path d="M 245 836 L 245 896" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AMB 6: Resep -->
+  <rect x="35" y="900" width="420" height="58" rx="10" fill="#f3e8ff" stroke="#9333ea" stroke-width="1.5"/>
+  <text x="245" y="924" text-anchor="middle" fill="#7e22ce" font-size="13" font-weight="700">6. Tahap: resep (Bila ada resep · UI: Menunggu obat)</text>
+  <text x="245" y="942" text-anchor="middle" fill="#6b21a8" font-size="11">Farmasi: Telaah &amp; Siapkan obat → tahap maju ke kasir</text>
+
+  <path d="M 245 958 L 245 1012" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- AMB 7: Kasir -->
+  <rect x="35" y="1016" width="420" height="58" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="245" y="1040" text-anchor="middle" fill="#a16207" font-size="13" font-weight="700">7. Tahap: kasir (Status UI: Pembayaran)</text>
+  <text x="245" y="1058" text-anchor="middle" fill="#475569" font-size="11">Kasir: Pembayaran tagihan &amp; Serahkan obat → tutup kunjungan</text>
+
+  <!-- ================= COLUMN 2: RAWAT INAP (IMP) FLOWCHART ================= -->
+  <!-- IMP 1: Admisi -->
+  <rect x="896" y="210" width="308" height="62" rx="10" fill="#ffffff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="1050" y="232" text-anchor="middle" fill="#4338ca" font-size="12.5" font-weight="700">1. Admisi Rawat Inap (Langsung / SPRI)</text>
+  <text x="1050" y="250" text-anchor="middle" fill="#475569" font-size="11">Tahap: pemeriksaan · Tanpa antrean poli</text>
+  <text x="1050" y="264" text-anchor="middle" fill="#475569" font-size="10.5">Tetapkan DPJP Utama</text>
+
+  <path d="M 1050 272 L 1050 292" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+
+  <!-- IMP Decision 0: Bed Sudah Dipilih? -->
+  <rect x="950" y="296" width="200" height="34" rx="17" fill="#f1f5f9" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="1050" y="318" text-anchor="middle" fill="#0f172a" font-size="12" font-weight="700">Bed Sudah Dipilih?</text>
+
+  <!-- Belum -> Menunggu Bed -->
+  <path d="M 1150 313 L 1226 313" fill="none" stroke="#4338ca" stroke-width="1.8" marker-end="url(#arrow-indigo)"/>
+  <text x="1188" y="306" text-anchor="middle" fill="#b45309" font-size="10.5" font-weight="700">Belum</text>
+
+  <rect x="1230" y="290" width="234" height="46" rx="8" fill="#fef3c7" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="1347" y="310" text-anchor="middle" fill="#b45309" font-size="11.5" font-weight="700">Status: planned</text>
+  <text x="1347" y="326" text-anchor="middle" fill="#92400e" font-size="10.5">UI: Menunggu bed</text>
+
+  <path d="M 1347 336 L 1347 386 L 1208 386" fill="none" stroke="#4338ca" stroke-width="1.8" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Sudah -> Penempatan Bed -->
+  <path d="M 1050 330 L 1050 352" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+  <text x="1036" y="345" text-anchor="end" fill="#0f766e" font-size="10.5" font-weight="700">Sudah</text>
+
+  <!-- IMP 2: Penempatan Bed -->
+  <rect x="896" y="356" width="308" height="68" rx="10" fill="#ffffff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="1050" y="377" text-anchor="middle" fill="#4338ca" font-size="12.5" font-weight="700">2. Penempatan Bed / Masuk Bangsal</text>
+  <text x="1050" y="395" text-anchor="middle" fill="#475569" font-size="11">Pilih kamar &amp; bed → in-progress (Dirawat)</text>
+  <rect x="914" y="401" width="272" height="18" rx="9" fill="#dcfce7"/>
+  <text x="1050" y="414" text-anchor="middle" fill="#15803d" font-size="10" font-weight="700">Notif Suara &amp; Toast → DPJP &amp; Perawat Bangsal</text>
+
+  <path d="M 1050 424 L 1050 448" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+
+  <!-- IMP 3: Visite & CPPT -->
+  <rect x="896" y="452" width="308" height="66" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="1.8"/>
+  <text x="1050" y="473" text-anchor="middle" fill="#4338ca" font-size="12.5" font-weight="700">3. Visite Dokter &amp; Asuhan Perawat (CPPT)</text>
+  <text x="1050" y="491" text-anchor="middle" fill="#1e293b" font-size="11">1 Kunjungan IMP · Tanpa Daftar Ulang</text>
+  <text x="1050" y="507" text-anchor="middle" fill="#475569" font-size="10.5">Catat SOAP, Tanda Vital &amp; Instruksi berulang</text>
+
+  <path d="M 1050 518 L 1050 540" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Decision 1: Pindah Bed / Ubah DPJP? -->
+  <rect x="935" y="544" width="230" height="34" rx="17" fill="#f1f5f9" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="1050" y="566" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="700">Pindah Bed / Ubah DPJP?</text>
+
+  <path d="M 1165 561 L 1226 561" fill="none" stroke="#4338ca" stroke-width="1.8" marker-end="url(#arrow-indigo)"/>
+  <text x="1195" y="554" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="700">Ya</text>
+
+  <rect x="1230" y="536" width="234" height="50" rx="8" fill="#ffffff" stroke="#818cf8" stroke-width="1.3"/>
+  <text x="1347" y="556" text-anchor="middle" fill="#0369a1" font-size="11.5" font-weight="700">Mutasi Bed / Ubah DPJP</text>
+  <text x="1347" y="573" text-anchor="middle" fill="#475569" font-size="10.5">Riwayat bed &amp; DPJP tercatat</text>
+
+  <!-- Return to spine -->
+  <path d="M 1347 586 L 1347 596 L 1054 596" fill="none" stroke="#4338ca" stroke-width="1.6" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Tidak -->
+  <path d="M 1050 578 L 1050 610" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+  <text x="1036" y="596" text-anchor="end" fill="#475569" font-size="10.5" font-weight="700">Tidak</text>
+
+  <!-- Decision 2: Perlu Order Lab Ranap? -->
+  <rect x="935" y="614" width="230" height="34" rx="17" fill="#f1f5f9" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="1050" y="636" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="700">Perlu Order Lab Ranap?</text>
+
+  <path d="M 1165 631 L 1226 631" fill="none" stroke="#b45309" stroke-width="1.8" marker-end="url(#arrow-amber)"/>
+  <text x="1195" y="624" text-anchor="middle" fill="#b45309" font-size="10.5" font-weight="700">Ya</text>
+
+  <!-- Subflow Lab Ranap -->
+  <rect x="1230" y="608" width="234" height="114" rx="10" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="1347" y="626" text-anchor="middle" fill="#b45309" font-size="11.5" font-weight="700">Order Lab Ranap → Notif Lab</text>
+  <path d="M 1347 632 L 1347 645" fill="none" stroke="#b45309" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <rect x="1242" y="647" width="210" height="24" rx="6" fill="#ffffff" stroke="#fbbf24"/>
+  <text x="1347" y="663" text-anchor="middle" fill="#475569" font-size="10.5">Ambil Spesimen → Validasi</text>
+  <path d="M 1347 671 L 1347 684" fill="none" stroke="#b45309" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+  <rect x="1242" y="686" width="210" height="24" rx="6" fill="#dcfce7" stroke="#22c55e"/>
+  <text x="1347" y="702" text-anchor="middle" fill="#15803d" font-size="10.5" font-weight="700">Notif DPJP (Hasil Lab Siap)</text>
+
+  <!-- Return from Lab Ranap to spine -->
+  <path d="M 1347 722 L 1347 732 L 1054 732" fill="none" stroke="#0f766e" stroke-width="1.6" marker-end="url(#arrow-teal)"/>
+
+  <!-- Tidak -->
+  <path d="M 1050 648 L 1050 746" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+  <text x="1036" y="698" text-anchor="end" fill="#475569" font-size="10.5" font-weight="700">Tidak</text>
+
+  <!-- Decision 3: Tindakan / Resep Ranap? -->
+  <rect x="935" y="750" width="230" height="34" rx="17" fill="#f1f5f9" stroke="#a855f7" stroke-width="1.5"/>
+  <text x="1050" y="772" text-anchor="middle" fill="#0f172a" font-size="11.5" font-weight="700">Ada Tindakan / Resep?</text>
+
+  <path d="M 1165 767 L 1226 767" fill="none" stroke="#7e22ce" stroke-width="1.8" marker-end="url(#arrow-purple)"/>
+  <text x="1195" y="760" text-anchor="middle" fill="#7e22ce" font-size="10.5" font-weight="700">Ya</text>
+
+  <rect x="1230" y="742" width="234" height="50" rx="8" fill="#f3e8ff" stroke="#a855f7" stroke-width="1.3"/>
+  <text x="1347" y="762" text-anchor="middle" fill="#7e22ce" font-size="11.5" font-weight="700">Tindakan &amp; Resep Ranap</text>
+  <text x="1347" y="779" text-anchor="middle" fill="#6b21a8" font-size="10.5">Farmasi telaah &amp; siapkan obat</text>
+
+  <!-- Return from Resep to spine -->
+  <path d="M 1347 792 L 1347 804 L 1054 804" fill="none" stroke="#7e22ce" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+
+  <!-- Tidak -->
+  <path d="M 1050 784 L 1050 818" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+  <text x="1036" y="803" text-anchor="end" fill="#475569" font-size="10.5" font-weight="700">Tidak</text>
+
+  <!-- Decision 4: Sudah Boleh Pulang? -->
+  <rect x="940" y="822" width="220" height="38" rx="19" fill="#f1f5f9" stroke="#6366f1" stroke-width="1.5"/>
+  <text x="1050" y="846" text-anchor="middle" fill="#0f172a" font-size="12.5" font-weight="700">Sudah Boleh Pulang?</text>
+
+  <!-- Loop Belum -> kembali ke Visite CPPT (kanan, bebas tabrakan) -->
+  <path d="M 1160 841 L 1480 841 L 1480 485 L 1208 485" fill="none" stroke="#4338ca" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arrow-indigo)"/>
+  <rect x="1280" y="830" width="124" height="22" rx="11" fill="#e0e7ff" stroke="#818cf8"/>
+  <text x="1342" y="845" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="700">Belum (Visite Lagi)</text>
+
+  <!-- Ya -> Pemulangan -->
+  <path d="M 1050 860 L 1050 896" fill="none" stroke="#4338ca" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+  <text x="1064" y="882" fill="#0f766e" font-size="11.5" font-weight="700">Ya</text>
+
+  <!-- IMP 4: Pemulangan Pasien -->
+  <rect x="896" y="900" width="440" height="82" rx="10" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="1116" y="921" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">4. Pemulangan Pasien (Discharge)</text>
+  <text x="1116" y="939" text-anchor="middle" fill="#475569" font-size="11">Catat kondisi pulang (Sembuh / Membaik / Rujuk / APS / Meninggal)</text>
+  <text x="1116" y="955" text-anchor="middle" fill="#475569" font-size="11">Bed dibebaskan · Tagihan kamar &amp; layanan dikalkulasi → Tahap: kasir</text>
+  <rect x="966" y="960" width="300" height="18" rx="9" fill="#dcfce7"/>
+  <text x="1116" y="973" text-anchor="middle" fill="#15803d" font-size="10" font-weight="700">Notifikasi Suara &amp; Toast → Kasir (Pasien Pulang)</text>
+
+  <path d="M 1116 982 L 1116 1012" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- IMP 5: Kasir Ranap -->
+  <rect x="896" y="1016" width="440" height="58" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="1116" y="1040" text-anchor="middle" fill="#a16207" font-size="13" font-weight="700">5. Tahap: kasir (Status UI: Pembayaran)</text>
+  <text x="1116" y="1058" text-anchor="middle" fill="#475569" font-size="11">Kasir: Pelunasan / Klaim Ranap &amp; Serah Obat Pulang → tutup</text>
+
+  <!-- ================= COLUMN 3: PENUNJANG SAJA (LAB) ================= -->
+  <!-- LAB 1 -->
+  <rect x="1510" y="210" width="368" height="74" rx="10" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/>
+  <text x="1694" y="232" text-anchor="middle" fill="#b45309" font-size="13" font-weight="700">1. Daftar Lab Saja (+ Pilih Pemeriksaan)</text>
+  <text x="1694" y="250" text-anchor="middle" fill="#475569" font-size="11">Tahap: pemeriksaan · Antrean L-xxx: menunggu</text>
+  <rect x="1564" y="258" width="260" height="19" rx="9" fill="#dcfce7"/>
+  <text x="1694" y="271" text-anchor="middle" fill="#15803d" font-size="10.5" font-weight="700">Notifikasi Suara &amp; Toast → Petugas Lab</text>
+
+  <path d="M 1694 284 L 1694 326" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- LAB 2 -->
+  <rect x="1510" y="330" width="368" height="72" rx="10" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="1694" y="354" text-anchor="middle" fill="#0369a1" font-size="13" font-weight="700">2. Petugas Lab: Panggil &amp; Ambil Spesimen</text>
+  <text x="1694" y="372" text-anchor="middle" fill="#475569" font-size="11">Panggil → dipanggil · Ambil spesimen → dilayani</text>
+  <text x="1694" y="389" text-anchor="middle" fill="#475569" font-size="10.5">Semua spesimen terambil → tahap: kasir · antrean: selesai</text>
+
+  <path d="M 1694 402 L 1694 444" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- LAB 3 -->
+  <rect x="1510" y="448" width="368" height="74" rx="10" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="1694" y="472" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">3. Petugas Lab: Input Hasil &amp; Validasi</text>
+  <text x="1694" y="490" text-anchor="middle" fill="#475569" font-size="11">Semua order selesai (hasil_lab: belum_diserahkan)</text>
+  <rect x="1564" y="496" width="260" height="19" rx="9" fill="#dcfce7"/>
+  <text x="1694" y="509" text-anchor="middle" fill="#15803d" font-size="10.5" font-weight="700">Notifikasi Suara &amp; Toast → Kasir</text>
+
+  <path d="M 1694 522 L 1694 1012" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- LAB 4 -->
+  <rect x="1510" y="1016" width="368" height="58" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="1694" y="1040" text-anchor="middle" fill="#a16207" font-size="13" font-weight="700">4. Kasir: Pembayaran &amp; Serah Hasil Lab</text>
+  <text x="1694" y="1058" text-anchor="middle" fill="#475569" font-size="11">Tagihan lunas · Penyerahan hasil lab tercetak → tutup</text>
+
+  <!-- ================= MERGE TO END ================= -->
+  <path d="M 245 1074 L 245 1126 L 801 1126" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 1116 1074 L 1116 1102 L 1060 1102" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M 1694 1074 L 1694 1126 L 1119 1126" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- End Node -->
+  <rect x="805" y="1102" width="310" height="48" rx="24" fill="#15803d"/>
+  <text x="960" y="1131" text-anchor="middle" fill="#ffffff" font-size="14.5" font-weight="700">Tahap: ditutup (Status UI: Selesai)</text>
+
+  <!-- Footer Notes -->
+  <rect x="32" y="1168" width="1856" height="86" rx="10" fill="#ffffff" stroke="#e2e8f0"/>
+  <text x="54" y="1192" fill="#0f172a" font-size="12.5" font-weight="700">Keterangan Status &amp; Fitur Acuan:</text>
+  <text x="54" y="1213" fill="#475569" font-size="12">• <tspan font-weight="600" fill="#334155">Rawat Jalan (AMB):</tspan> Daftar pasien di panel kiri tanpa filter tanggal (maks. 4 baris + Infinite Scroll, tab Riwayat · Pasien · Pasien saya), urutan: Dilayani → Dipanggil → Aktif lainnya → Selesai → Batal.</text>
+  <text x="54" y="1233" fill="#475569" font-size="12">• <tspan font-weight="600" fill="#334155">Rawat Inap (IMP):</tspan> Diidentifikasi oleh status kunjungan <tspan font-weight="600">planned</tspan> (menunggu bed) → <tspan font-weight="600">in-progress</tspan> (dirawat di bed) → <tspan font-weight="600">finished</tspan> (pulang &amp; ditutup); notifikasi hijau pada IMP adalah acuan desain.</text>
+</svg>

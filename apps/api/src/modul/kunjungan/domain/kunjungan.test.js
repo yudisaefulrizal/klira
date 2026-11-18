@@ -123,6 +123,22 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         await buat({ daftarAntrean }).daftarAntrean(saya, { halaman: 1, ukuran: 50 });
         expect(daftarAntrean).toHaveBeenCalledWith(1, expect.objectContaining({ tanggal: '2026-10-25' }));
     });
+    it('ubahDpjp berhasil sebelum pasien diperiksa dokter dan ditolak jika sudah dilayani atau tidak sesuai poli', async () => {
+        const ubahDpjp = jest.fn(async (_f, id, dpjpId) => ({ id, dpjp_id: dpjpId }));
+        const l = buat({
+            detailUntukUbahDpjp: async () => ({ id: 5, jenis: 'AMB', tahap_layanan: 'menunggu_skrining', dpjp_id: null, antrean: { id: 8, kode: 'A-001', jenis_poli: 'Umum', status: 'menunggu' } }),
+            ubahDpjp,
+        });
+        expect(await l.ubahDpjp(saya, 5, 30)).toMatchObject({ ok: true, data: { id: 5, dpjp_id: 30 } });
+        expect(ubahDpjp).toHaveBeenCalledWith(1, 5, 30, 3, expect.any(Date));
+        expect(await l.ubahDpjp(saya, 5, 32)).toMatchObject({ ok: false, kode: 'tidak_valid', pesan: REGISTRASI.galat.dokterBukanPoli });
+
+        const sudahDilayani = buat({
+            detailUntukUbahDpjp: async () => ({ id: 5, jenis: 'AMB', tahap_layanan: 'pemeriksaan', dpjp_id: 30, antrean: { id: 8, kode: 'A-001', jenis_poli: 'Umum', status: 'dilayani' } }),
+            ubahDpjp,
+        });
+        expect(await sudahDilayani.ubahDpjp(saya, 5, 30)).toMatchObject({ ok: false, kode: 'konflik' });
+    });
 });
 
 describe('bisaDiulang', () => {

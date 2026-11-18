@@ -8,7 +8,7 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   padding: 3px;
   border: 1px solid var(--warna-garis);
   border-radius: 999px;
@@ -21,7 +21,7 @@
   top: 3px;
   bottom: 3px;
   left: 3px;
-  width: calc((100% - 6px) / 3);
+  width: calc((100% - 6px) / 2);
   border-radius: 999px;
   background: var(--warna-permukaan);
   box-shadow: var(--bayangan-kartu), inset 0 0 0 1px var(--warna-garis-halus);
@@ -62,8 +62,9 @@
   .pemilih-tema-opsi { transition: none; }
 }
 
-/* Menu pengguna di sisi kiri bilah atas (nama, peran, Keluar). */
-.menu-pengguna { position: relative; margin-right: auto; }
+/* Logo di sisi kiri dan menu pengguna di sisi kanan bilah atas. */
+.logo-header { display: inline-flex; align-items: center; flex-shrink: 0; text-decoration: none; }
+.menu-pengguna { position: relative; }
 .menu-pengguna-pemicu {
   display: inline-flex; align-items: center; gap: 10px; max-width: 320px; min-height: 40px; padding: 2px 10px 2px 4px;
   border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--warna-teks); font: inherit; cursor: pointer;

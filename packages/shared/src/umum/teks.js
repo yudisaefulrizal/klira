@@ -535,7 +535,7 @@ export const DAFTAR_PASIEN = {
     sebelumnya: 'Sebelumnya',
     berikutnya: 'Berikutnya',
     penyaringTahap: 'Saring menurut tahap layanan',
-    tahap: { semua: 'Semua', menunggu_skrining: 'Skrining', pemeriksaan: 'Pemeriksaan', resep: 'Resep', kasir: 'Kasir', ditutup: 'Selesai', batal: 'Batal' },
+    tahap: { semua: 'Semua', menunggu_skrining: 'Skrining', pemeriksaan: 'Pemeriksaan', resep: 'Resep', kasir: 'Kasir', ditutup: 'Selesai', batal: 'Batal', rawat_inap: 'Rawat inap' },
     hasilLab: 'Hasil',
     labSpesimen: 'Lab: spesimen',
     labHasil: 'Lab: hasil',
@@ -847,7 +847,7 @@ export const ADDENDUM_TEKS = {
 };
 /** Penunjang: halaman, master pemeriksaan, Order lab, Ambil spesimen, Hasil lab, addendum (3.1, 3.3, 4.3). */
 export const PENUNJANG = {
-    judul: 'Penunjang',
+    judul: 'Lab',
     tab: { rekap: 'Rekap lab', master: 'Master pemeriksaan' },
     tabLabel: 'Tab Penunjang',
     rekap: {
@@ -1502,7 +1502,7 @@ export const PROFIL_PASIEN = {
     umur: (n) => `${n} tahun`,
     kepesertaan: { jkn: 'BPJS', asuransi: 'Asuransi', umum: 'Umum' },
     aksi: { ubahData: 'Ubah data pasien', daftarkan: 'Daftarkan kunjungan', keluarga: 'Family folder' },
-    menuKiri: { label: 'Menu samping', riwayat: 'Riwayat', pasien: 'Pasien', tanggal: 'Tanggal', antreanKosong: 'Tidak ada pasien pada penyaring dan tanggal ini.' },
+    menuKiri: { label: 'Menu samping', riwayat: 'Riwayat', pasien: 'Pasien', rawatInap: 'Rawat inap', tanggal: 'Tanggal', antreanKosong: 'Tidak ada pasien pada penyaring dan tanggal ini.' },
     riwayat: {
         judul: 'Riwayat kunjungan', cari: 'Telusuri riwayat', petunjukCari: 'Tanggal, poli, dokter, keluhan, atau diagnosis',
         kosong: 'Pasien ini belum memiliki kunjungan.', tidakCocok: 'Tidak ada kunjungan yang cocok.', gagal: 'Riwayat kunjungan gagal dimuat.',
@@ -1510,7 +1510,7 @@ export const PROFIL_PASIEN = {
         tanpaPoli: 'Tanpa poli', tanpaDokter: 'Dokter belum ditetapkan', jumlah: (n, total) => (n === total ? `${total} kunjungan` : `${n} dari ${total} kunjungan`),
         pilih: 'Pilih kunjungan di sebelah kiri untuk melihat catatan pemeriksaannya.',
     },
-    tab: { pemeriksaan: 'Pemeriksaan', resep: 'Resep', tindakan: 'Tindakan', penunjang: 'Penunjang', dokumen: 'Dokumen', penutup: 'Penutup' },
+    tab: { pemeriksaan: 'Pemeriksaan', cppt: 'CPPT', bangsal: 'Rawat inap', resep: 'Resep', tindakan: 'Tindakan', penunjang: 'Lab', dokumen: 'Dokumen', penutup: 'Penutup' },
     bukanDpjp: (nama) => `Dokter yang dipilih saat pendaftaran: ${nama}. Anda bukan dokter tersebut; isian tetap dapat disimpan dan dicatat atas nama dokter itu, sedangkan nama Anda hanya tercatat di log audit.`,
     pindahDraf: { judul: 'Ada isian yang belum disimpan', pesan: 'Pemeriksaan pasien ini belum disimpan. Jika pindah, isiannya dibuang.', buang: 'Buang draf dan pindah', batal: 'Tetap di sini' },
     soapie: {

@@ -54,7 +54,7 @@ export const HALAMAN_MENU = [
     { path: '/statistik', label: 'Statistik pelayanan', fitur: ['kunjungan', 'rekam-medis'] },
     { path: '/pesan', label: 'Pesan', fitur: ['whatsapp', 'instagram'] },
     { path: '/rawat-inap', label: 'Rawat inap', fitur: ['klinis'] },
-    { path: '/penunjang', label: 'Penunjang', fitur: ['penunjang'] },
+    { path: '/penunjang', label: 'Lab', fitur: ['penunjang'] },
     { path: '/farmasi', label: 'Farmasi', fitur: ['farmasi'] },
     { path: '/kasir-klaim', label: 'Kasir dan klaim', fitur: ['kasir', 'klaim'] },
     { path: '/satusehat', label: 'SATUSEHAT', fitur: ['satusehat'] },
