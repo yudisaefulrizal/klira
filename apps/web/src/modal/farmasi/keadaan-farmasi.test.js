@@ -46,11 +46,27 @@ describe('resep dokter (obat satu per satu + catatan)', () => {
         expect(adaIsianResep(awalResep())).toBe(false);
     });
     it('obat wajib dipilih, aturan pakai wajib, catatan maksimal 1000 karakter dan boleh kosong', () => {
-        expect(galatResep(awalResep())['item.0.master_obat_id']).toBeTruthy();
+        expect(galatResep(awalResep()).item).toBeTruthy();
         expect(galatResep({ baris: [baris({ aturan_pakai: ' ' })], catatan: '' })['item.0.aturan_pakai']).toBeTruthy();
         expect(galatResep({ baris: [baris()], catatan: '' })).toEqual({});
         expect(galatResep({ baris: [baris()], catatan: 'x'.repeat(1001) }).catatan).toBeTruthy();
         expect(galatResep({ baris: [], catatan: '' }).item).toBeTruthy();
+    });
+    it('baris yang sepenuhnya kosong diabaikan: tidak divalidasi dan tidak dikirim', () => {
+        const kosong = { master_obat_id: '', jumlah: '1', aturan_pakai: '', bentuk: '', rute: 'Oral' };
+        const r = { baris: [baris(), kosong], catatan: '' };
+        expect(galatResep(r)).toEqual({});
+        expect(bentukResep(r).item).toHaveLength(1);
+        expect(galatResep({ baris: [kosong, baris(), kosong], catatan: '' })).toEqual({});
+        expect(galatResep({ baris: [kosong, kosong], catatan: '' }).item).toBeTruthy();
+    });
+    it('baris setengah terisi: pesan “Pilih obat dari daftar.” pada baris yang benar di layar', () => {
+        const kosong = { master_obat_id: '', jumlah: '1', aturan_pakai: '', bentuk: '', rute: 'Oral' };
+        const g = galatResep({ baris: [kosong, baris(), baris({ master_obat_id: '', aturan_pakai: '2 x 1' })], catatan: '' });
+        expect(g['item.2.master_obat_id']).toBe('Pilih obat dari daftar.');
+        expect(g['item.0.master_obat_id']).toBeUndefined();
+        const g2 = galatResep({ baris: [kosong, baris({ aturan_pakai: ' ' })], catatan: '' });
+        expect(g2['item.1.aturan_pakai']).toBeTruthy();
     });
     it('bentuk kiriman: item dan catatan; obat sama boleh lebih dari sekali', () => {
         const r = { baris: [baris(), baris({ aturan_pakai: 'racikan' })], catatan: 'Dibuat puyer' };

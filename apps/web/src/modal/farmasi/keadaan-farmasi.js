@@ -76,14 +76,20 @@ export const barisResepDokter = () => ({ ...barisResepKosong(), aturan_pakai: ''
 export const awalResep = () => ({ baris: [barisResepDokter()], catatan: '' });
 /** Resep hanya diajukan bila ada obat yang dipilih. */
 export const adaIsianResep = (r) => r.baris.some((b) => b.master_obat_id);
-export const bentukResep = (r) => ({ item: bentukItemResep(r.baris), catatan: r.catatan });
-/** Galat resep per bidang: `item` (belum ada obat), `item.n.bidang` per baris, dan `catatan`. */
+/** Baris yang belum disentuh (tanpa obat, aturan pakai, dan bentuk; jumlah dan rute hanya nilai bawaan): tidak ikut divalidasi dan tidak dikirim. */
+export const barisSepenuhnyaKosong = (x) => !x.master_obat_id && !x.aturan_pakai.trim() && !x.bentuk.trim();
+export const bentukResep = (r) => ({ item: bentukItemResep(r.baris.filter((x) => !barisSepenuhnyaKosong(x))), catatan: r.catatan });
+/** Galat resep per bidang: `item` (belum ada obat), `item.n.bidang` per baris di layar (baris kosong dilewati), dan `catatan`. */
 export function galatResep(r) {
-    const g = petakan(resepMasukan.safeParse(bentukResep(r)).error?.issues ?? []);
-    r.baris.forEach((x, n) => {
-        if (!x.master_obat_id)
-            g[`item.${n}.master_obat_id`] = FARMASI.galat.obatTidakAda;
-    });
+    const terisi = r.baris.flatMap((x, n) => (barisSepenuhnyaKosong(x) ? [] : [n]));
+    const g = {};
+    for (const [kunci, pesan] of Object.entries(petakan(resepMasukan.safeParse(bentukResep(r)).error?.issues ?? []))) {
+        const m = /^item\.(\d+)(\..+)$/.exec(kunci);
+        g[m ? `item.${terisi[Number(m[1])]}${m[2]}` : kunci] = pesan;
+    }
+    for (const n of terisi)
+        if (!r.baris[n].master_obat_id)
+            g[`item.${n}.master_obat_id`] = FARMASI.galat.pilihObat;
     return g;
 }
 /** Isian formulir dari resep tersimpan (item menjadi baris editor, kolom `catatan` dari server). */
