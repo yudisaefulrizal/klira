@@ -2,6 +2,7 @@ import * as db from '@klira/db';
 import { selesaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
 import { hargaTarif, TAHAP_BERJALAN, tanggalRetensi } from '@klira/shared';
 import { tambahItemTagihanDalam } from '../../kasir/data-access/repositori.js';
+import { hitungHariKamar } from '../domain/hari-kamar.js';
 import { tulisPengesahanDalam } from '../../rekam-medis/data-access/repositori.js';
 export class GalatRi extends Error {
     kode;
@@ -264,9 +265,10 @@ export class RepositoriRawatInapMysql {
             await db.ubahPesertaKunjunganUntukPulangkan(sekarang, kunjunganId, null, tx);
             const semua = await db.daftarPenempatanUntukPulangkan2(kunjunganId, null, tx);
             const tarif = new Map((await db.daftarTarifLayananUntukPulangkan(semua.flatMap((x) => (x.tarif_id ? [x.tarif_id] : [])), tx)).map((t) => [t.id, t]));
-            const item = semua.map((x) => {
+            // Hari kamar per blok 24 jam sejak masuk, bukan per penempatan: pindah bed di hari yang sama tidak ditagih dua kali.
+            const item = hitungHariKamar(semua, sekarang).map(({ id: penempatanId, hari }) => {
+                const x = semua.find((s) => s.id === penempatanId);
                 const t = tarif.get(x.tarif_id);
-                const hari = Math.max(1, Math.ceil(((x.selesai ?? sekarang).getTime() - x.mulai.getTime()) / 86_400_000));
                 return { jenis: 'kamar', tarifId: t.id, kode: t.kode, nama: `${t.nama} (${hari} hari)`, harga: hargaTarif(t, k.cara_pembayaran), orderPenunjangId: null, jumlah: hari };
             });
             if (item.length)
