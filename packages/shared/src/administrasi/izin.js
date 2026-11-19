@@ -17,7 +17,7 @@ export const JENIS_AKUN_AWAL = [
     { nama: 'Perekam Medis dan Informasi Kesehatan', fitur: ['pasien', 'kunjungan', 'rekam-medis', 'pendaftaran'], lihat_saja: ['persetujuan'] },
     { nama: 'Petugas pendaftaran', fitur: ['whatsapp', 'pasien', 'kunjungan', 'pendaftaran'] },
     { nama: 'Petugas klaim/kasir', fitur: ['kasir', 'klaim'], lihat_saja: ['pasien'] },
-    { nama: 'Apoteker/tenaga kefarmasian', syarat_profesi: 'tenaga kefarmasian', fitur: ['farmasi'], lihat_saja: ['pasien'] },
+    { nama: 'Apoteker/tenaga kefarmasian', syarat_profesi: 'tenaga kefarmasian', fitur: ['farmasi'], lihat_saja: ['pasien', 'klinis'] },
     { nama: 'Analis lab', fitur: ['penunjang'], lihat_saja: ['pasien'] },
     { nama: 'Admin IT fasyankes', fitur: ['satusehat'] },
     { nama: 'Petugas PDP (PPDP)', fitur: ['pdp'] },

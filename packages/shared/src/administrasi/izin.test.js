@@ -40,6 +40,14 @@ describe('paket awal: izin pasien', () => {
     });
 });
 
+describe('paket awal: apoteker', () => {
+    it('Apoteker memegang farmasi utuh dan boleh melihat klinis (tab Resep untuk telaah dan serah obat), tanpa input klinis', () => {
+        const apoteker = JENIS_AKUN_AWAL.find((j) => j.nama === 'Apoteker/tenaga kefarmasian');
+        expect(apoteker.fitur).toEqual(['farmasi']);
+        expect(apoteker.lihat_saja).toEqual(expect.arrayContaining(['pasien', 'klinis']));
+    });
+});
+
 describe('paket awal: penunjang dan persetujuan', () => {
     it('Analis lab memegang penunjang utuh; Dokter hanya melihat penunjang dan memegang persetujuan utuh', () => {
         const jenis = (nama) => JENIS_AKUN_AWAL.find((j) => j.nama === nama);
