@@ -132,7 +132,7 @@ export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekara
             if (rencana.data.jenis === 'sama')
                 return gagal('konflik', PENUNJANG.galat.sudahValidasi);
             const k = await repo.kunjungan(p.fasyankes_id, o.data.kunjungan_id);
-            const jadiAddendum = !!k && hasilJadiAddendum({ tahap: k.tahap_layanan, bagianDisahkan: await repo.bagianDisahkan(p.fasyankes_id, k.id) });
+            const jadiAddendum = !!k && hasilJadiAddendum({ jenis: k.jenis, tahap: k.tahap_layanan, bagianDisahkan: await repo.bagianDisahkan(p.fasyankes_id, k.id) });
             try {
                 const ok = await repo.validasi({
                     fasyankesId: p.fasyankes_id, orderId, kunjunganId: o.data.kunjungan_id, oleh: p.id, waktu: rencana.data.rencana.waktu, pengesahan: rencana.data.rencana,

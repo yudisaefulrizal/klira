@@ -42,32 +42,41 @@ describe('Order lab', () => {
 });
 describe('Ambil spesimen', () => {
     const orders = [order(1), order(2, { jenis_spesimen: 'Urin' }), order(3, { status: 'spesimen_diambil' })];
-    it('hanya order dipesan; semuanya terpilih awal dan asal dari pemeriksaan pertama', () => {
+    it('hanya order dipesan; semuanya terpilih awal; asal terisi hanya bila semua jenis spesimennya sama', () => {
         expect(menungguSpesimen(orders).map((o) => o.id)).toEqual([1, 2]);
         const k = awalSpesimen(orders, new Date('2026-10-25T03:00:00Z'));
         expect(k.terpilih).toEqual([1, 2]);
-        expect(k.asal).toBe('Darah vena');
+        expect(k.asal).toBe('');
         expect(k.waktu).toMatch(/^2026-10-25T\d\d:00$/);
+        expect(awalSpesimen([order(1), order(4)]).asal).toBe('Darah vena');
     });
-    it('melepas dan memilih order; asal kosong diisi dari order terpilih pertama tetapi tidak menimpa isian', () => {
-        let k = { ...awalSpesimen(orders), asal: '', terpilih: [] };
+    it('melepas dan memilih order: asal mengikuti jenis spesimen terpilih selama belum diketik petugas', () => {
+        let k = awalSpesimen(orders);
         k = gantiOrderSpesimen(k, orders, 2);
-        expect(k).toMatchObject({ terpilih: [2], asal: 'Urin' });
-        expect(gantiOrderSpesimen({ ...k, asal: 'Darah kapiler' }, orders, 1).asal).toBe('Darah kapiler');
+        expect(k).toMatchObject({ terpilih: [1], asal: 'Darah vena' });
+        k = gantiOrderSpesimen(k, orders, 2);
+        expect(k).toMatchObject({ terpilih: [1, 2], asal: '' });
+        expect(gantiOrderSpesimen({ ...k, asal: 'Darah kapiler', asalManual: true }, orders, 1).asal).toBe('Darah kapiler');
     });
-    it('galat: order, asal, dan waktu (tidak di masa depan)', () => {
+    it('galat: order, asal, dan waktu (tidak di masa depan); asal boleh kosong bila tiap order punya jenis spesimen', () => {
         const k = awalSpesimen(orders);
-        expect(galatSpesimen(k)).toEqual({});
+        expect(galatSpesimen(k, orders)).toEqual({});
+        expect(galatSpesimen(k).asal).toBeDefined();
+        expect(Object.keys(galatSpesimen({ ...k, terpilih: [], asal: ' ', waktu: '' }, orders)).sort()).toEqual(['terpilih', 'waktu']);
         expect(Object.keys(galatSpesimen({ ...k, terpilih: [], asal: ' ', waktu: '' })).sort()).toEqual(['asal', 'terpilih', 'waktu']);
-        expect(galatSpesimen({ ...k, waktu: '2999-01-01T10:00' }).waktu).toBeDefined();
+        const tanpaJenis = [order(5, { jenis_spesimen: '' })];
+        expect(galatSpesimen({ ...awalSpesimen(tanpaJenis) }, tanpaJenis).asal).toBeDefined();
+        expect(galatSpesimen({ ...k, waktu: '2999-01-01T10:00' }, orders).waktu).toBeDefined();
     });
-    it('bentuk kiriman: waktu ISO dan petugas hanya bila dipilih', () => {
+    it('bentuk kiriman: asal ketikan berlaku untuk semua, kosong memakai jenis tiap order; waktu ISO; petugas hanya bila dipilih', () => {
         const k = { ...awalSpesimen(orders), asal: ' Darah vena ', waktu: '2026-10-25T10:30' };
         const b = bentukSpesimen(k);
         expect(b.asal).toBe('Darah vena');
         expect(b.waktu_ambil).toMatch(/^2026-10-25T\d\d:30:00\.000Z$/);
         expect('petugas_id' in b).toBe(false);
         expect(bentukSpesimen({ ...k, petugas: '9' }).petugas_id).toBe(9);
+        expect(bentukSpesimen({ ...k, asal: '' }, orders[1]).asal).toBe('Urin');
+        expect(bentukSpesimen({ ...k, asal: '' }, orders[0]).asal).toBe('Darah vena');
     });
 });
 describe('Hasil lab (Hasil, Interpretasi, Validasi)', () => {

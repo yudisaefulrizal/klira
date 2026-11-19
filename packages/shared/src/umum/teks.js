@@ -894,7 +894,7 @@ export const PENUNJANG = {
     memuat: 'Memuat...',
     spesimen: {
         judul: 'Ambil spesimen', pilihOrder: 'Order yang diambil spesimennya', asal: 'Asal spesimen', waktu: 'Waktu pengambilan', petugas: 'Petugas', petugasSaya: 'Saya sendiri', simpan: 'Catat spesimen', menyimpan: 'Mencatat...',
-        kosong: 'Tidak ada order yang menunggu spesimen pada kunjungan ini.', gagal: 'Spesimen gagal dicatat.', tersimpan: (n) => `${n} spesimen dicatat.`, asalPetunjuk: 'Mis. darah vena, urin porsi tengah, usap tenggorok.',
+        kosong: 'Tidak ada order yang menunggu spesimen pada kunjungan ini.', gagal: 'Spesimen gagal dicatat.', tersimpan: (n) => `${n} spesimen dicatat.`, asalPetunjuk: 'Mis. darah vena, urin porsi tengah, usap tenggorok.', asalPlaceholderPerTes: 'Kosongkan untuk memakai jenis spesimen tiap pemeriksaan',
     },
     hasil: {
         judul: 'Hasil lab', langkah: { hasil: 'Hasil', interpretasi: 'Interpretasi', validasi: 'Validasi' },

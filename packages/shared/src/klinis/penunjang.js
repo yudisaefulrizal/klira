@@ -51,8 +51,13 @@ export function hargaTarif(tarif, caraPembayaran) {
         return null;
     return caraPembayaran === 'jkn' && tarif.harga_jkn !== null ? tarif.harga_jkn : tarif.harga_umum;
 }
-/** Hasil susulan menjadi addendum bila catatan sudah disahkan (bagian 7): bagian diagnosis atau tindak lanjut sudah disahkan, atau pemeriksaan sudah selesai. */
+/**
+ * Hasil susulan menjadi addendum bila catatan sudah disahkan (bagian 7): bagian diagnosis atau tindak lanjut sudah disahkan, atau pemeriksaan sudah selesai.
+ * Kunjungan penunjang saja (LAB) tidak punya catatan dokter, jadi hasilnya tidak pernah menjadi addendum.
+ */
 export function hasilJadiAddendum(d) {
+    if (d.jenis === 'LAB')
+        return false;
     return ['resep', 'kasir', 'ditutup'].includes(d.tahap) || d.bagianDisahkan.some((b) => b === 'diagnosis' || b === 'tindak_lanjut');
 }
 /** Nomor order tampil di rekap, mis. 31 menjadi L-031. */

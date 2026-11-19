@@ -66,6 +66,9 @@ describe('harga tarif dan addendum', () => {
         expect(hasilJadiAddendum({ tahap: 'pemeriksaan', bagianDisahkan: ['tindak_lanjut'] })).toBe(true);
         expect(hasilJadiAddendum({ tahap: 'kasir', bagianDisahkan: [] })).toBe(true);
         expect(hasilJadiAddendum({ tahap: 'menunggu_skrining', bagianDisahkan: [] })).toBe(false);
+        expect(hasilJadiAddendum({ jenis: 'LAB', tahap: 'kasir', bagianDisahkan: [] })).toBe(false);
+        expect(hasilJadiAddendum({ jenis: 'LAB', tahap: 'ditutup', bagianDisahkan: ['diagnosis'] })).toBe(false);
+        expect(hasilJadiAddendum({ jenis: 'AMB', tahap: 'kasir', bagianDisahkan: [] })).toBe(true);
     });
 });
 
