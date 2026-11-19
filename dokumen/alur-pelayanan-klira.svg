@@ -125,12 +125,12 @@
   <rect x="35" y="772" width="420" height="64" rx="10" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
   <text x="245" y="795" text-anchor="middle" fill="#0f766e" font-size="13" font-weight="700">5. Dokter klik: Selesaikan pemeriksaan</text>
   <text x="245" y="813" text-anchor="middle" fill="#475569" font-size="11">Wajib Subjek &amp; Diagnosis ICD-10 · Antrean Poli: selesai</text>
-  <text x="245" y="828" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="600">Tindak lanjut: Rawat Jalan / Resep / Kasir / Rujuk Rawat Inap (SPRI)</text>
+  <text x="245" y="828" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="600">Lanjut: Rawat Jalan / Resep / Kasir · Rujuk inap lewat tombol Admisi</text>
 
   <!-- Dashed arrow: AMB -> IMP (Rujuk Rawat Inap) -->
   <path d="M 455 818 L 864 818 L 864 241 L 892 241" fill="none" stroke="#4338ca" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arrow-indigo)"/>
   <rect x="610" y="806" width="160" height="22" rx="11" fill="#e0e7ff" stroke="#a5b4fc"/>
-  <text x="690" y="821" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="700">Rujuk Rawat Inap (SPRI)</text>
+  <text x="690" y="821" text-anchor="middle" fill="#4338ca" font-size="10.5" font-weight="700">Admisi rawat inap (SPRI)</text>
 
   <path d="M 245 836 L 245 896" fill="none" stroke="#475569" stroke-width="2" marker-end="url(#arrow)"/>
 
@@ -144,7 +144,7 @@
   <!-- AMB 7: Kasir -->
   <rect x="35" y="1016" width="420" height="58" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
   <text x="245" y="1040" text-anchor="middle" fill="#a16207" font-size="13" font-weight="700">7. Tahap: kasir (Status UI: Pembayaran)</text>
-  <text x="245" y="1058" text-anchor="middle" fill="#475569" font-size="11">Kasir: Pembayaran tagihan &amp; Serahkan obat → tutup kunjungan</text>
+  <text x="245" y="1058" text-anchor="middle" fill="#475569" font-size="11">Farmasi: Serahkan obat · Kasir: Pembayaran → tutup kunjungan</text>
 
   <!-- ================= COLUMN 2: RAWAT INAP (IMP) FLOWCHART ================= -->
   <!-- IMP 1: Admisi -->
@@ -276,7 +276,7 @@
   <!-- IMP 5: Kasir Ranap -->
   <rect x="896" y="1016" width="440" height="58" rx="10" fill="#ffffff" stroke="#ca8a04" stroke-width="1.5"/>
   <text x="1116" y="1040" text-anchor="middle" fill="#a16207" font-size="13" font-weight="700">5. Tahap: kasir (Status UI: Pembayaran)</text>
-  <text x="1116" y="1058" text-anchor="middle" fill="#475569" font-size="11">Kasir: Pelunasan / Klaim Ranap &amp; Serah Obat Pulang → tutup</text>
+  <text x="1116" y="1058" text-anchor="middle" fill="#475569" font-size="11">Farmasi: Serah obat pulang · Kasir: Pelunasan / Klaim → tutup</text>
 
   <!-- ================= COLUMN 3: PENUNJANG SAJA (LAB) ================= -->
   <!-- LAB 1 -->
