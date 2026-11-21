@@ -105,8 +105,20 @@ const direktoriWebBawaan = direktoriWebNative;
 const JALUR_BADAN_BESAR = /^\/api\/(?:whatsapp|instagram)\/percakapan\/\d+\/pesan\/?$/i;
 export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     const app = express();
+    app.disable('x-powered-by');
     // Hanya proxy yang disebut TRUST_PROXY (bawaan: loopback) yang dipercaya mengisi X-Forwarded-*; alamat klien di pembatas masuk dan log audit bergantung pada ini.
     app.set('trust proxy', opsi.trustProxy ?? bacaTrustProxy(process.env.TRUST_PROXY));
+    app.use((req, res, next) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+        res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+        res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+        if (req.secure) {
+            res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+        next();
+    });
     const repoKeamanan = new RepositoriKeamananMysql();
     const layananAkses = opsi.layananAkses ??
         buatLayananAkses({

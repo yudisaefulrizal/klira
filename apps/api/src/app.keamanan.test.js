@@ -79,3 +79,24 @@ describe('pulihkan dan reset lewat web', () => {
         expect(await res.json()).toHaveProperty('galat.kode', 'tidak_berizin');
     });
 });
+
+describe('header keamanan HTTP', () => {
+    it('menyertakan header keamanan dasar tanpa x-powered-by', async () => {
+        const { app } = siapkan();
+        const res = await panggilTanpaPort(app, { metode: 'GET', url: '/api/kesehatan' });
+        expect(res.status).toBe(200);
+        expect(res.headers['x-powered-by']).toBeUndefined();
+        expect(res.headers['x-content-type-options']).toBe('nosniff');
+        expect(res.headers['x-frame-options']).toBe('SAMEORIGIN');
+        expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+        expect(res.headers['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()');
+        expect(res.headers['cross-origin-opener-policy']).toBe('same-origin');
+        expect(res.headers['strict-transport-security']).toBeUndefined();
+    });
+    it('mengirim HSTS saat permintaan datang melalui HTTPS di proxy tepercaya', async () => {
+        const { app } = siapkan({ trustProxy: 'loopback' });
+        const res = await panggilTanpaPort(app, { metode: 'GET', url: '/api/kesehatan', alamatSoket: '127.0.0.1', headers: { 'x-forwarded-proto': 'https' } });
+        expect(res.status).toBe(200);
+        expect(res.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains');
+    });
+});
