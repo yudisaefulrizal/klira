@@ -189,7 +189,7 @@ export function TabPasien({ search, pindah, ganti }) {
     // --- Menu kiri: Pasien (antrean hari itu; mengetik di pencarian mencari semua pasien) ---
     let kontenKiri;
     function lukisPasienKiri() {
-        const f = bidang({ id: 'cari-pasien-kiri', label: T.cari, jenis: 'search', nilai: cariKiri, autoComplete: 'off', ubah(v) { clearTimeout(timerKiri); timerKiri = setTimeout(() => { if (!aktif) return; const baru = v.trim(); if (baru === cariKiri) return; cariKiri = baru; halamanKiri = 1; hasilKiri = null; lukisKontenKiri(); }, 300); } });
+        const f = bidang({ id: 'cari-pasien-kiri', label: T.cari, jenis: 'search', nilai: cariKiri, autoComplete: 'off', ubah(v) { clearTimeout(timerKiri); timerKiri = setTimeout(() => { if (!aktif) return; const baru = v.trim(); if (baru === cariKiri || baru.length === 1) return; cariKiri = baru; halamanKiri = 1; hasilKiri = null; lukisKontenKiri(); }, 300); } });
         f.kontrol.placeholder = T.petunjukCari;
         kontenKiri = buat('div', 'profil-kiri-konten');
         kotakRiwayat.append(f.el, kontenKiri);

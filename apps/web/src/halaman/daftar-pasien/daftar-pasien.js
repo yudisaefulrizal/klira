@@ -53,7 +53,7 @@ export function HalamanDaftarPasien() {
         cari = value;
         clearTimeout(timer);
         timer = setTimeout(() => {
-            if (actif)
+            if (actif && value.trim().length !== 1)
                 terapkan({ cari: value.trim() });
         }, 300);
     }

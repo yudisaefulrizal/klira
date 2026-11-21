@@ -91,7 +91,7 @@ export const cekDuplikatMasukan = z.object({
     tanggal_lahir: z.preprocess(kosongJadiTiada, tanggalLahir.optional()),
     ibu_kandung: z.preprocess(kosongJadiTiada, z.string().trim().max(200).optional()),
 });
-/** Filter Daftar pasien (query string): pencarian nama/nomor RM/NIK, tahap layanan, paginasi. */
+/** Filter Daftar pasien (query string): pencarian nama (huruf) atau NIK/nomor JKN (angka, dari awal), minimal 2 karakter, tahap layanan, paginasi. */
 export const filterPasien = z.object({
     untuk_kunjungan: z.enum(['true']).optional(),
     /** Semua pasien (urut nama) tanpa kata pencarian, bukan hanya yang berkunjung pada tanggal itu. */
@@ -99,7 +99,7 @@ export const filterPasien = z.object({
     pasien_saya: z.enum(['true']).optional(),
     semua_tanggal: z.enum(['true']).optional(),
     tanggal: z.preprocess(kosongJadiTiada, z.iso.date().optional()),
-    cari: z.preprocess(kosongJadiTiada, z.string().trim().max(100).optional()),
+    cari: z.preprocess(kosongJadiTiada, z.string().trim().min(2).max(100).optional()),
     tahap: z.preprocess(kosongJadiTiada, z.enum(NILAI_TAHAP_FILTER).default('semua')),
     halaman: z.coerce.number().int().min(1).default(1),
     ukuran: z.coerce.number().int().min(1).max(100).default(20),

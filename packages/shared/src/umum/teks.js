@@ -524,7 +524,7 @@ export const DAFTAR_PASIEN = {
     judul: 'Daftar pasien',
     tab: { antrean: 'Antrean', pasien: 'Pasien', poli: 'Poli', praktisi: 'Praktisi', shift: 'Shift', jadwal: 'Jadwal' },
     cari: 'Cari pasien',
-    petunjukCari: 'Cari nama, nomor RM, NIK, atau nomor JKN',
+    petunjukCari: 'Cari nama, NIK, atau nomor JKN',
     registrasi: 'Registrasi pasien baru',
     daftarkanKunjungan: 'Daftarkan kunjungan',
     aksiLainnya: 'Aksi lainnya',
@@ -534,7 +534,7 @@ export const DAFTAR_PASIEN = {
     kolom: { antrean: 'Antrean', pasien: 'Pasien', nomorRm: 'Nomor RM', poliDpjp: 'Poli / DPJP', pembayaran: 'Pembayaran', menunggu: 'Menunggu', tindakan: 'Tindakan' },
     tanpaKunjungan: 'Tidak ada kunjungan berjalan',
     tanpaAntrean: '-',
-    kosong: 'Tidak ada pasien yang cocok. Cari dengan nama, nomor RM, NIK, atau nomor JKN.',
+    kosong: 'Tidak ada pasien yang cocok. Cari dengan nama, NIK, atau nomor JKN.',
     kosongTahap: 'Belum ada pasien pada tahap ini.',
     gagalMuat: 'Daftar pasien gagal dimuat.',
     catatan: 'Daftar hanya menampilkan data minimal. Isi data pasien terbuka saat pasien dipilih dan pembukaannya tercatat di audit.',
@@ -677,7 +677,7 @@ export const REGISTRASI = {
 export const KUNJUNGAN = {
     judul: 'Pendaftaran kunjungan',
     pasien: 'Pasien',
-    cariPasien: 'Cari nama, nomor RM, NIK, atau nomor JKN',
+    cariPasien: 'Cari nama, NIK, atau nomor JKN',
     pilihPasien: 'Pilih pasien',
     mencari: 'Mencari...',
     pasienTidakAda: 'Tidak ada pasien yang cocok.',
@@ -1097,7 +1097,7 @@ export const REKAM_MEDIS = {
     tab: { berkas: 'Berkas pasien', perbaikan: 'Antrean perbaikan' },
     memuat: 'Memuat...',
     berkas: {
-        cari: 'Cari nama, nomor RM, atau NIK', kolom: { pasien: 'Pasien', ditutup: 'Ditutup', diagnosis: 'Diagnosis', perbaikan: 'Perbaikan', arsip: 'Arsip', tindakan: 'Tindakan' }, kosong: 'Tidak ada kunjungan pada penyaring ini.', gagalMuat: 'Berkas gagal dimuat.',
+        cari: 'Cari nama, NIK, atau nomor JKN', kolom: { pasien: 'Pasien', ditutup: 'Ditutup', diagnosis: 'Diagnosis', perbaikan: 'Perbaikan', arsip: 'Arsip', tindakan: 'Tindakan' }, kosong: 'Tidak ada kunjungan pada penyaring ini.', gagalMuat: 'Berkas gagal dimuat.',
         dari: 'Ditutup dari', sampai: 'Ditutup sampai', terapkan: 'Terapkan', aturUlang: 'Atur ulang', riwayat: 'Riwayat', perbaiki: 'Perbaiki catatan',
         diarsipkan: (retensi) => `Diarsipkan, retensi sampai ${retensi}`, belumArsip: 'Belum diarsipkan', rawat: { AMB: 'Rawat jalan', IMP: 'Rawat inap' }, perbaikanMenunggu: (n) => `${n} perbaikan menunggu`,
         catatan: 'Kunjungan yang sudah ditutup langsung diarsipkan dan disimpan 25 tahun.',
@@ -1508,8 +1508,8 @@ export const UJI_ENDPOINT = {
 export const TEKS = { satusehat: PENGATURAN_SATUSEHAT, pcare: PENGATURAN_PCARE, antreanJkn: ANTREAN_JKN, ujiEndpoint: UJI_ENDPOINT, beranda: BERANDA, pdp: PDP, klaim: KLAIM, rawatInap: RAWAT_INAP, rekamMedis: REKAM_MEDIS, kasir: KASIR, farmasi: FARMASI, addendum: ADDENDUM_TEKS, penunjang: PENUNJANG, persetujuanTindakan: PERSETUJUAN_TINDAKAN, daftarPasien: DAFTAR_PASIEN, registrasi: REGISTRASI, kunjungan: KUNJUNGAN, klinis: KLINIS, master: MASTER, profilKlinik: PROFIL_KLINIK, aturIzin: ATUR_IZIN, modal: MODAL, akunBaru: AKUN_BARU, pengguna: PENGGUNA, navigasi: NAVIGASI, tombol: TOMBOL, galat: GALAT, masuk: MASUK, gantiKredensial: GANTI_KREDENSIAL, izin: IZIN, peringatanIzin: PERINGATAN_IZIN, jenisAkun: JENIS_AKUN, daftarPeringatan: DAFTAR_PERINGATAN, audit: AUDIT, keamanan: KEAMANAN };
 /** Halaman Pasien (tab di Daftar pasien): profil, riwayat kunjungan, dan catatan pemeriksaan SOAPIE per kunjungan. */
 export const PROFIL_PASIEN = {
-    judul: 'Pasien', pilihPasien: 'Pilih pasien dari daftar di kiri, atau cari dengan nama, nomor RM, NIK, atau nomor JKN.',
-    cari: 'Cari pasien', petunjukCari: 'Nama, nomor RM, NIK, atau nomor JKN',
+    judul: 'Pasien', pilihPasien: 'Pilih pasien dari daftar di kiri, atau cari dengan nama, NIK, atau nomor JKN.',
+    cari: 'Cari pasien', petunjukCari: 'Nama, NIK, atau nomor JKN',
     memuat: 'Memuat…', gagalDaftar: 'Daftar pasien gagal dimuat.', kosong: 'Tidak ada pasien yang cocok.',
     kembali: 'Antrean',
     gagalPasien: 'Data pasien gagal dimuat.',
