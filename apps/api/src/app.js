@@ -16,6 +16,7 @@ import { bacaTrustProxy } from './config/lingkungan.js';
 import { blokirSelamaWajibGanti } from './middleware/auth.js';
 import { pasangCsp } from './middleware/csp.js';
 import { buatBatasLaju } from './middleware/batas-laju.js';
+import { tolakAsalLintasSitus } from './middleware/asal.js';
 import { pool } from '@klira/db';
 import { PenampungAuditMysql } from './middleware/audit.js';
 import { buatLayananAkses } from './modul/akses/domain/layanan.js';
@@ -123,6 +124,7 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
         next();
     });
     app.use(pasangCsp({ direktoriWeb, tegakkan: opsi.tegakkanCsp }));
+    app.use(tolakAsalLintasSitus());
     // Batas umum longgar karena staf satu klinik berbagi alamat; jalur publik dan jalur berat dibatasi lebih ketat.
     const laju = opsi.batasLaju ?? {
         umum: buatBatasLaju({ jendelaMs: 60_000, maks: 1200 }),
@@ -283,7 +285,6 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.get(/^\/layar-panggilan(?:\/|$)/, (_req, res, next) => {
         res.sendFile(path.join(direktoriWebNative, 'index.html'), galat => { if (galat) next(galat); });
     });
-    app.use(express.static(direktoriWeb));
     app.use((req, res, next) => {
         if (req.method !== 'GET' && req.method !== 'HEAD')
             return next();
