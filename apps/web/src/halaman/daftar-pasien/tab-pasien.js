@@ -18,6 +18,7 @@ import { TAHAP_PENYARING, lamaMenunggu, tahapBawaan } from '../../util/penyaring
 import { tanggalLengkapSah } from '../../util/tanggal-tiga.js';
 import { alamatProfil, keadaanAlamat, kepesertaan, saringRiwayat, umurTahun } from './keadaan-profil-pasien.js';
 import { PanelKunjungan } from './panel-kunjungan.js';
+import { TabelHistoriRawatJalan } from './histori-rawat-jalan.js';
 
 const T = PROFIL_PASIEN, UKURAN = 20, BATAS_RIWAYAT = 200;
 const buat = (tag, kelas, teks) => { const el = document.createElement(tag); if (kelas) el.className = kelas; if (teks !== undefined) el.textContent = teks; return el; };
@@ -33,36 +34,33 @@ export function TabPasien({ search, pindah, ganti }) {
     const el = buat('section', 'halaman-pasien profil-pasien');
     let aktif = true, a = keadaanAlamat(search), versi = 0, timer, modal, panel, ikonAksi = [], ikonChip = [];
     // Profil
-    let pasien = null, riwayat = null, galatPasien = null, galatRiwayat = null, cariRiwayat = '', kotakIdentitas, kotakRiwayat, kotakPanel;
+    let pasien = null, riwayat = null, galatPasien = null, galatRiwayat = null, cariRiwayat = '', kotakIdentitas, kotakRiwayat, kotakPanel, kotakHistori, historiRj = null, historiKunci = '', subAktif;
+    const bolehHistori = boleh('klinis', 'lihat') || boleh('rekam-medis', 'lihat');
     // Menu kiri: Riwayat kunjungan pasien ini, atau Daftar pasien untuk berpindah ke pasien lain tanpa kembali ke pencarian. Pilihan bertahan antar pasien.
     // Yang memeriksa pasien (izin klinis) bekerja dari antrean: menu itu menjadi bawaannya.
     let menuKiri = boleh('klinis', 'input') ? 'pasien' : 'riwayat', cariKiri = '', halamanKiri = 1, hasilKiri = null, galatKiri = null, memuatKiri = false, versiKiri = 0, timerKiri, isiKiri;
     // Menu Antrean: kunjungan pada satu tanggal (bawaan hari ini) dengan penyaring tahap, nomor antrean, dan tombol Panggil; dimuat ulang berkala.
-    let antTanggal = tanggalWib(new Date()), antTahap = tahapBawaan(boleh), antHalaman = 1, antHasil = null, antGalat = null, antMemuat = false, antMemuatTambah = false, antMemproses = false, antVersi = 0, antIsi, antInterval, antManual = false;
-    let scrollRiwayat = 0, riwayatBatas = 10, scrollAnt = 0, scrollKiri = 0, memuatKiriTambah = false;
+    let antTanggal = tanggalWib(new Date()), antTahap = tahapBawaan(boleh), antHalaman = 1, antHasil = null, antGalat = null, antMemuat = false, antMemuatTambah = false, antMemproses = false, antVersi = 0, antIsi, antInterval, antManual = false, antHabis = false;
+    let scrollRiwayat = 0, riwayatBatas = 10, scrollAnt = 0, scrollKiri = 0, memuatKiriTambah = false, kiriHabis = false;
 
-    function batasiDaftarKiri(daftar) {
-        requestAnimationFrame(() => {
-            if (!aktif) return;
-            const batasItem = daftar.children.length > 4 ? daftar.children[3] : null;
-            const tinggiItem = batasItem?.offsetHeight ? (batasItem.offsetTop - daftar.offsetTop + batasItem.offsetHeight) : Infinity;
-            const sisaLayar = Math.max(220, window.innerHeight - daftar.getBoundingClientRect().top - 49);
-            const tinggi = Math.min(tinggiItem, sisaLayar);
-            if (Number.isFinite(tinggi) && tinggi > 0) daftar.style.maxHeight = `${tinggi}px`;
-        });
-    }
-
-    function pasangInfiniteScroll(daftar, { adaLagi, sedangMemuat, muatLagi, simpanScroll, scrollAwal }) {
-        batasiDaftarKiri(daftar);
-        requestAnimationFrame(() => {
-            if (scrollAwal > 0) daftar.scrollTop = scrollAwal;
-        });
+    function pasangInfiniteScroll(daftar, _wadahDaftar, { adaLagi, sedangMemuat, muatLagi, simpanScroll, scrollAwal }) {
+        let memulihkan = scrollAwal > 0;
+        const pulihkan = () => {
+            sesuaikanTinggiPanel();
+            requestAnimationFrame(() => {
+                if (scrollAwal > 0) daftar.scrollTop = scrollAwal;
+                requestAnimationFrame(() => { memulihkan = false; });
+            });
+        };
+        pulihkan();
         daftar.addEventListener('scroll', () => {
+            if (memulihkan) return;
             simpanScroll(daftar.scrollTop);
             if (!sedangMemuat() && adaLagi() && daftar.scrollTop + daftar.clientHeight >= daftar.scrollHeight - 48) {
                 muatLagi();
             }
         });
+        return pulihkan;
     }
 
     const tutupModal = () => { modal?.tutup(); modal = undefined; };
@@ -80,11 +78,17 @@ export function TabPasien({ search, pindah, ganti }) {
     // --- Profil pasien ---
     function bangunProfil() {
         pasien = null; riwayat = null; galatPasien = null; galatRiwayat = null; cariRiwayat = ''; panel?.tutup(); panel = undefined;
-        if (!a.pasien) menuKiri = 'pasien';
+        if (!a.pasien && menuKiri === 'riwayat') menuKiri = 'pasien';
         kotakIdentitas = kartu({ susun: 'md' }); kotakIdentitas.classList.add('profil-identitas');
         const badan = buat('div', 'profil-badan'); kotakRiwayat = kartu({ susun: 'sm' }); kotakRiwayat.classList.add('profil-riwayat'); kotakPanel = kartu(); kotakPanel.classList.add('profil-kanan');
-        badan.append(kotakRiwayat, kotakPanel);
-        el.replaceChildren(kotakIdentitas, badan);
+        // Di bawah panel Riwayat/Pasien dan panel kunjungan: kartu histori pemeriksaan rawat jalan penuh selebar halaman (hanya kunjungan rawat jalan, tab Pemeriksaan).
+        kotakHistori = kartu({ susun: 'sm' }); kotakHistori.classList.add('profil-histori'); kotakHistori.style.display = 'none';
+        const kolomKanan = buat('div', 'profil-kolom-kanan'); kolomKanan.append(kotakPanel);
+        badan.append(kotakRiwayat, kolomKanan);
+        el.replaceChildren(kotakIdentitas, badan, kotakHistori);
+        pengamatTinggiPanel?.disconnect();
+        pengamatTinggiPanel = typeof ResizeObserver === 'function' ? new ResizeObserver(() => sesuaikanTinggiPanel()) : null;
+        pengamatTinggiPanel?.observe(kotakPanel);
         lukisIdentitas(); lukisRiwayat(); pasangPanel(); void muatProfil();
     }
     // Alergi pasien pada kunjungan terpilih (undefined = belum diketahui), dilaporkan panel kunjungan untuk kepala pasien.
@@ -142,14 +146,17 @@ export function TabPasien({ search, pindah, ganti }) {
         ];
         if (menuKiri === 'pasien_saya' && !adalahPraktisi) menuKiri = 'pasien';
         const menu = tab(opsiMenu, `kiri-${menuKiri}`, M.label, (id) => {
-            const target = a.pasien ? id.replace('kiri-', '') : 'pasien';
-            if (target !== menuKiri && (target === 'pasien' || target === 'pasien_saya')) { antHasil = null; antHalaman = 1; }
+            const target = id.replace('kiri-', '');
+            if (target !== menuKiri && (target === 'pasien' || target === 'pasien_saya')) {
+                antVersi++; antMemuat = false; antMemuatTambah = false; antHasil = null; antHalaman = 1; antHabis = false; antGalat = null; scrollAnt = 0;
+            }
             menuKiri = target;
             lukisRiwayat();
         });
         kotakRiwayat.replaceChildren(menu.el);
         if (modeAntrean()) return void lukisPasienKiri();
         kotakRiwayat.append(judul);
+        if (!a.pasien) return void kotakRiwayat.append(buat('span', 'profil-redup', T.pilihPasien));
         if (!bolehRiwayat) return void kotakRiwayat.append(peringatan(R.tanpaIzin, 'biru'));
         if (galatRiwayat) return void kotakRiwayat.append(peringatan(galatRiwayat));
         if (!riwayat) return void kotakRiwayat.append(buat('span', 'profil-redup', T.memuat));
@@ -168,7 +175,7 @@ export function TabPasien({ search, pindah, ganti }) {
             li.append(b); daftar.append(li);
         }
         if (riwayatBatas < cocok.length) daftar.append(buat('li', 'profil-redup', T.memuat));
-        pasangInfiniteScroll(daftar, {
+        const pulihkan = pasangInfiniteScroll(daftar, kotakRiwayat, {
             adaLagi: () => riwayatBatas < cocok.length,
             sedangMemuat: () => false,
             muatLagi: () => { riwayatBatas += 10; lukisRiwayat(); },
@@ -176,6 +183,7 @@ export function TabPasien({ search, pindah, ganti }) {
             scrollAwal: scrollRiwayat,
         });
         kotakRiwayat.append(f.el, cocok.length ? daftar : buat('span', 'profil-redup', R.tidakCocok));
+        pulihkan();
         if (fokus) { const k = document.getElementById('cari-riwayat-pasien'); k?.focus({ preventScroll: true }); k?.setSelectionRange?.(cariRiwayat.length, cariRiwayat.length); }
     }
     // --- Menu kiri: Pasien (antrean hari itu; mengetik di pencarian mencari semua pasien) ---
@@ -243,7 +251,7 @@ export function TabPasien({ search, pindah, ganti }) {
                 varian: t === antTahap ? 'utama' : 'sekunder',
                 'aria-pressed': String(t === antTahap),
                 children: angka,
-                onClick: () => { antTahap = t; antHalaman = 1; antHasil = null; lukisIsiAntrean(); void muatAntrean(); },
+                onClick: () => { antTahap = t; antHalaman = 1; antHasil = null; antHabis = false; scrollAnt = 0; lukisIsiAntrean(); void muatAntrean(); },
             });
             ikonChip.push(b);
             chips.append(b);
@@ -291,17 +299,18 @@ export function TabPasien({ search, pindah, ganti }) {
             daftar.append(li);
         }
         if (antMemuatTambah) daftar.append(buat('li', 'profil-redup', T.memuat));
-        pasangInfiniteScroll(daftar, {
-            adaLagi: () => antHasil.data.length < antHasil.total,
+        const pulihkan = pasangInfiniteScroll(daftar, antIsi, {
+            adaLagi: () => !antHabis && antHasil.data.length < antHasil.total,
             sedangMemuat: () => antMemuat || antMemuatTambah,
             muatLagi: () => void muatAntrean(false, true),
             simpanScroll: (s) => { scrollAnt = s; },
             scrollAwal: scrollAnt,
         });
         antIsi.replaceChildren(chips, ...(antHasil.data.length ? [daftar] : [buat('span', 'profil-redup', T.menuKiri.antreanKosong)]));
+        pulihkan();
     }
     async function muatAntrean(diam = false, tambah = false) {
-        if (tambah && (antMemuat || antMemuatTambah || !antHasil || antHasil.data.length >= antHasil.total)) return;
+        if (tambah && (antMemuat || antMemuatTambah || antHabis || !antHasil || antHasil.data.length >= antHasil.total)) return;
         const saat = ++antVersi;
         if (tambah) antMemuatTambah = true; else antMemuat = true;
         if (!diam && !tambah) antGalat = null;
@@ -313,10 +322,13 @@ export function TabPasien({ search, pindah, ganti }) {
             if (aktif && saat === antVersi) {
                 if (tambah && antHasil) {
                     const sudah = new Set(antHasil.data.map((x) => x.id));
-                    antHasil = { ...h, data: [...antHasil.data, ...h.data.filter((x) => !sudah.has(x.id))] };
+                    const baru = h.data.filter((x) => !sudah.has(x.id));
+                    antHasil = { ...h, data: [...antHasil.data, ...baru] };
                     antHalaman = halaman;
+                    if (!baru.length || h.data.length < UKURAN) antHabis = true;
                 } else {
                     antHasil = h;
+                    antHabis = h.data.length >= h.total;
                 }
                 antGalat = null;
             }
@@ -348,20 +360,21 @@ export function TabPasien({ search, pindah, ganti }) {
             li.append(tombolPasien); daftar.append(li);
         }
         if (memuatKiriTambah) daftar.append(buat('li', 'profil-redup', T.memuat));
-        pasangInfiniteScroll(daftar, {
-            adaLagi: () => hasilKiri.data.length < hasilKiri.total,
+        const pulihkan = pasangInfiniteScroll(daftar, isiKiri, {
+            adaLagi: () => !kiriHabis && hasilKiri.data.length < hasilKiri.total,
             sedangMemuat: () => memuatKiri || memuatKiriTambah,
             muatLagi: () => void muatKiri(true),
             simpanScroll: (s) => { scrollKiri = s; },
             scrollAwal: scrollKiri,
         });
         isiKiri.replaceChildren(...(hasilKiri.data.length ? [daftar] : [buat('span', 'profil-redup', T.kosong)]));
+        pulihkan();
     }
     async function muatKiri(tambah = false) {
-        if (tambah && (memuatKiri || memuatKiriTambah || !hasilKiri || hasilKiri.data.length >= hasilKiri.total)) return;
+        if (tambah && (memuatKiri || memuatKiriTambah || kiriHabis || !hasilKiri || hasilKiri.data.length >= hasilKiri.total)) return;
         const saat = ++versiKiri;
         if (tambah) memuatKiriTambah = true; else memuatKiri = true;
-        if (!tambah) galatKiri = null;
+        if (!tambah) { galatKiri = null; kiriHabis = false; }
         if (tambah) lukisIsiKiri();
         try {
             const halaman = tambah ? halamanKiri + 1 : 1;
@@ -369,10 +382,13 @@ export function TabPasien({ search, pindah, ganti }) {
             if (aktif && saat === versiKiri) {
                 if (tambah && hasilKiri) {
                     const sudah = new Set(hasilKiri.data.map((x) => x.id));
-                    hasilKiri = { ...h, data: [...hasilKiri.data, ...h.data.filter((x) => !sudah.has(x.id))] };
+                    const baru = h.data.filter((x) => !sudah.has(x.id));
+                    hasilKiri = { ...h, data: [...hasilKiri.data, ...baru] };
                     halamanKiri = halaman;
+                    if (!baru.length || h.data.length < UKURAN) kiriHabis = true;
                 } else {
                     hasilKiri = h;
+                    kiriHabis = h.data.length >= h.total;
                 }
             }
         }
@@ -382,30 +398,58 @@ export function TabPasien({ search, pindah, ganti }) {
             if (aktif && saat === versiKiri) lukisIsiKiri();
         }
     }
+    let pengamatTinggiPanel;
+    function tinggiMinimalKiri() {
+        const padBawah = parseFloat(getComputedStyle(kotakRiwayat).paddingBottom) || 16;
+        const daftar = kotakRiwayat.querySelector('.profil-riwayat-daftar');
+        if (!daftar) return 460;
+        const kepala = Math.max(0, daftar.getBoundingClientRect().top - kotakRiwayat.getBoundingClientRect().top);
+        const tinggi4 = daftar.children.length >= 4
+            ? (daftar.children[3].offsetTop + daftar.children[3].offsetHeight - daftar.children[0].offsetTop)
+            : ((daftar.children[0]?.offsetHeight || 84) * 4 + 8 * 3);
+        return Math.ceil(kepala + tinggi4 + padBawah);
+    }
     function sesuaikanTinggiPanel() {
-        if (!aktif || !kotakPanel) return;
-        if (window.innerWidth <= 900) { kotakPanel.style.maxHeight = ''; return; }
+        if (!aktif || !kotakRiwayat || !kotakPanel) return;
+        if (window.innerWidth <= 900) { kotakRiwayat.style.minHeight = ''; kotakRiwayat.style.maxHeight = ''; return; }
         requestAnimationFrame(() => {
-            if (!aktif || !kotakPanel) return;
-            const sisa = Math.max(320, window.innerHeight - kotakPanel.getBoundingClientRect().top - 24);
-            kotakPanel.style.maxHeight = `${sisa}px`;
+            if (!aktif || !kotakRiwayat || !kotakPanel) return;
+            const minimal = tinggiMinimalKiri();
+            const tinggi = Math.max(minimal, kotakPanel.offsetHeight);
+            kotakRiwayat.style.minHeight = `${minimal}px`;
+            kotakRiwayat.style.maxHeight = `${tinggi}px`;
         });
     }
 
+    function bersihkanHistori() {
+        historiRj?.tutup(); historiRj = null; historiKunci = '';
+        if (kotakHistori) { kotakHistori.replaceChildren(); kotakHistori.style.display = 'none'; }
+    }
+    /** Kartu histori tampil hanya untuk kunjungan rawat jalan yang tab aktifnya Pemeriksaan; dimuat sekali per pasien dan kunjungan. */
+    function perbaruiHistori(r) {
+        if (!kotakHistori) return;
+        if (!bolehHistori || !pasien || !r || r.jenis !== 'AMB' || subAktif !== 'pemeriksaan') { kotakHistori.style.display = 'none'; return; }
+        const kunci = `${pasien.id}:${r.id}`;
+        if (historiKunci !== kunci) { historiRj?.tutup(); historiRj = TabelHistoriRawatJalan({ pasienId: pasien.id, kunjunganId: r.id }); historiKunci = kunci; kotakHistori.replaceChildren(historiRj); }
+        kotakHistori.style.display = '';
+    }
     function pasangPanel() {
         if (!kotakPanel) return;
         panel?.tutup(); panel = undefined;
         const r = riwayat?.find((x) => x.id === a.kunjungan);
+        subAktif = a.sub;
+        if (historiKunci && historiKunci !== `${pasien?.id}:${r?.id}`) bersihkanHistori();
         if (!a.pasien) { kotakPanel.replaceChildren(buat('p', 'profil-redup', T.pilihPasien)); sesuaikanTinggiPanel(); return; }
         if (!bolehRiwayat || !pasien || !r) { kotakPanel.replaceChildren(buat('p', 'profil-redup', bolehRiwayat ? (riwayat && !riwayat.length ? T.riwayat.kosong : riwayat ? T.riwayat.pilih : T.memuat) : T.riwayat.tanpaIzin)); sesuaikanTinggiPanel(); return; }
         panel = PanelKunjungan({
             kunjunganId: r.id, pasien, ringkas: r, sub: a.sub,
             onAlergi: (alergi) => { if (alergi !== alergiPasien) { alergiPasien = alergi; lukisIdentitas(); } },
-            onSub: (sub) => ganti(alamatProfil({ ...a, sub })),
+            onSub: (sub) => { subAktif = sub; perbaruiHistori(r); ganti(alamatProfil({ ...a, sub })); },
             // Perubahan di panel kanan (resep, telaah, selesai) menggeser tahap kunjungan: riwayat dan daftar antrean di kiri ikut disegarkan.
             onBerubah: () => { void muatRiwayat(); if (modeAntrean() && !cariKiri) void muatAntrean(true); },
         });
         kotakPanel.replaceChildren(panel);
+        perbaruiHistori(r);
         sesuaikanTinggiPanel();
     }
     /** Menu Antrean mengikuti tanggal kunjungan yang dibuka (kecuali tanggalnya sudah diubah manual), supaya pasien itu dan rekannya pada hari yang sama terlihat. */
@@ -439,7 +483,7 @@ export function TabPasien({ search, pindah, ganti }) {
         if (!panel) pasangPanel();
     }
 
-    function bangun() { clearTimeout(timer); tutupModal(); panel?.tutup(); panel = undefined; kotakIdentitas = kotakRiwayat = kotakPanel = undefined; versi++; bangunProfil(); }
+    function bangun() { clearTimeout(timer); tutupModal(); panel?.tutup(); panel = undefined; bersihkanHistori(); pengamatTinggiPanel?.disconnect(); pengamatTinggiPanel = undefined; kotakIdentitas = kotakRiwayat = kotakPanel = kotakHistori = undefined; versi++; bangunProfil(); }
     el.jenisTab = 'pasien';
     el.perbaruiAlamat = (baru) => {
         const lama = a; a = keadaanAlamat(baru);
@@ -447,7 +491,7 @@ export function TabPasien({ search, pindah, ganti }) {
         if (a.kunjungan !== lama.kunjungan) { ikutiTanggalKunjungan(); lukisRiwayat(); pasangPanel(); }
         else if (a.sub !== lama.sub) panel?.pilihSub(a.sub);
     };
-    el.tutup = () => { window.removeEventListener('resize', sesuaikanTinggiPanel); konfirmasiPindah?.tutup(); aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); lepasSinyal?.(); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); for (const i of ikonChip) i.tutup?.(); };
+    el.tutup = () => { window.removeEventListener('resize', sesuaikanTinggiPanel); pengamatTinggiPanel?.disconnect(); pengamatTinggiPanel = undefined; konfirmasiPindah?.tutup(); aktif = false; versi++; versiKiri++; antVersi++; clearTimeout(timer); clearTimeout(timerKiri); clearInterval(antInterval); lepasSinyal?.(); tutupModal(); panel?.tutup(); for (const i of ikonAksi) i.tutup?.(); for (const i of ikonChip) i.tutup?.(); };
     window.addEventListener('resize', sesuaikanTinggiPanel);
     // Antrean dimuat ulang berkala selama menunya terbuka dan tidak ada modal: pendaftaran dari Mobile JKN masuk tanpa tindakan petugas.
     const bolehMuatAntrean = () => aktif && modeAntrean() && !cariKiri && !modal && !document.hidden;

@@ -172,8 +172,13 @@ export class RepositoriPenunjangMysql {
             db.kelompokOrderPenunjangUntukRekap(fasyankesId, ((awal || akhir) && (awal)) ? (awal) : undefined, ((awal || akhir) && (akhir)) ? (akhir) : undefined),
         ]);
         const pasienIds = [...new Set(baris.map((b) => b.pasien_id))];
-        const pasien = pasienIds.length ? await db.daftarPasienUntukRekap(pasienIds, fasyankesId) : [];
+        const pemesanIds = [...new Set(baris.map((b) => b.dibuat_oleh).filter(Boolean))];
+        const [pasien, pemesan] = await Promise.all([
+            pasienIds.length ? db.daftarPasienUntukRekap(pasienIds, fasyankesId) : [],
+            pemesanIds.length ? db.daftarPenggunaUntukRiwayat(pemesanIds, fasyankesId) : [],
+        ]);
         const peta = new Map(pasien.map((p) => [p.id, p]));
+        const petaPemesan = new Map(pemesan.map((u) => [u.id, u.nama]));
         const jumlah = { dipesan: 0, spesimen_diambil: 0, menunggu_hasil: 0, divalidasi: 0 };
         for (const r of g)
             jumlah[r.status] = r._count._all;
@@ -181,6 +186,7 @@ export class RepositoriPenunjangMysql {
             data: baris.map((b) => ({
                 id: b.id, kunjungan_id: b.kunjungan_id, pasien_nama: peta.get(b.pasien_id)?.nama ?? '-', pasien_nomor_rm: peta.get(b.pasien_id)?.nomor_rm ?? '-', nama: b.nama,
                 prioritas: b.prioritas, status: b.status, dibuat_pada: iso(b.dibuat_pada),
+                dibuat_oleh_nama: b.dibuat_oleh ? petaPemesan.get(b.dibuat_oleh) ?? null : null,
                 hasil_singkat: b.hasil ? `${b.hasil.nilai}${b.hasil.satuan ? ` ${b.hasil.satuan}` : ''}` : null, interpretasi: b.hasil ? b.hasil.interpretasi : null,
             })),
             halaman: f.halaman, ukuran: f.ukuran, total, jumlah_status: jumlah,

@@ -9,7 +9,9 @@ import { createServer } from 'node:http';
 import { pasangWebsocketWhatsapp } from './modul/whatsapp/entry-points/websocket.js';
 import { buatApp } from './app.js';
 import { bacaKonfigurasi } from './config/lingkungan.js';
-import { GalatFasyankesGanda, pastikanFasyankesTunggal } from '@klira/db';
+import { GalatFasyankesGanda, pastikanFasyankesTunggal, tutupPool } from '@klira/db';
+
+const BATAS_TUTUP_MS = 10_000;
 /** Satu instalasi satu fasyankes: menolak mulai bila database berisi lebih dari satu. Database yang belum siap atau tidak terjangkau tidak menahan proses. */
 async function periksaFasyankesTunggal() {
     try {
@@ -27,10 +29,12 @@ async function mulai() {
     const server = createServer();
     const app = buatApp(undefined, { trustProxy });
     server.on('request', app);
-    pasangWebsocketWhatsapp(server, app.locals.layananAkses, baseUrl);
-    pasangWebsocketInstagram(server, app.locals.layananAkses, baseUrl);
-    pasangWebsocketLayarPanggilan(server, baseUrl, 20000, app.locals.layananAkses);
-    pasangWebsocketNotifikasi(server, app.locals.layananAkses, baseUrl);
+    const tutupWebsocket = [
+        pasangWebsocketWhatsapp(server, app.locals.layananAkses, baseUrl),
+        pasangWebsocketInstagram(server, app.locals.layananAkses, baseUrl),
+        pasangWebsocketLayarPanggilan(server, baseUrl, 20000, app.locals.layananAkses),
+        pasangWebsocketNotifikasi(server, app.locals.layananAkses, baseUrl),
+    ];
     let memulihkanInstagram = false;
     const pulihkanInstagram = async () => {
         if (memulihkanInstagram)
@@ -59,5 +63,21 @@ async function mulai() {
     server.listen(port, () => {
         console.log(`Klira berjalan di port ${port} (${baseUrl})`);
     });
+    // Penutupan anggun: berhenti menerima sambungan, putuskan WebSocket (yang menahan server.close), lalu tutup database.
+    let berhenti = false;
+    const berhentiAnggun = (sinyal) => {
+        if (berhenti)
+            return;
+        berhenti = true;
+        console.log(`${sinyal} diterima; menutup Klira.`);
+        setTimeout(() => { console.error('Penutupan melewati batas waktu; keluar paksa.'); process.exit(1); }, BATAS_TUTUP_MS).unref();
+        for (const tutup of tutupWebsocket)
+            tutup();
+        server.close(() => void tutupPool().catch(() => undefined).finally(() => process.exit(0)));
+        server.closeIdleConnections();
+        setTimeout(() => server.closeAllConnections(), 3000).unref();
+    };
+    process.once('SIGTERM', () => berhentiAnggun('SIGTERM'));
+    process.once('SIGINT', () => berhentiAnggun('SIGINT'));
 }
 void mulai().catch((galat) => { console.error(galat instanceof GalatFasyankesGanda ? galat.message : galat); process.exit(1); });

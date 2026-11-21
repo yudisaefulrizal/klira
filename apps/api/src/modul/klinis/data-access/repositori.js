@@ -298,6 +298,24 @@ export class RepositoriKlinisMysql {
             };
         });
     }
+    /**
+     * Histori pemeriksaan rawat jalan pasien: kunjungan AMB yang pemeriksaannya sudah selesai (tahap resep, kasir, atau ditutup), terbaru dahulu,
+     * beserta SOAP, tanda vital, diagnosis, dan tindak lanjut versi terbaru. `kecualiKunjunganId` membuang kunjungan yang sedang dibuka.
+     */
+    async historiRawatJalan(fasyankesId, pasienId, kecualiKunjunganId, batas) {
+        const riwayat = await this.riwayatPasien(fasyankesId, pasienId, kecualiKunjunganId, 100);
+        if (!riwayat)
+            return null;
+        const selesai = ['resep', 'kasir', 'ditutup'];
+        const dipilih = riwayat.filter((k) => k.jenis === 'AMB' && selesai.includes(k.tahap_layanan)).slice(0, batas);
+        return Promise.all(dipilih.map(async (k) => {
+            const [tandaVital, subjek, objek, asesmen, plan] = await Promise.all(['tanda_vital', 'subjek', 'objek', 'asesmen', 'plan'].map((b) => bacaTerbaru(db.pool, b, fasyankesId, k.id)));
+            return {
+                id: k.id, mulai: k.mulai, poli_nama: k.poli_nama, dpjp_nama: k.dpjp_nama, keluhan_utama: k.keluhan_utama, diagnosis: k.diagnosis, tindak_lanjut: k.tindak_lanjut,
+                tanda_vital: tandaVital, subjek: subjek?.isi ?? null, objek: objek?.isi ?? null, asesmen: asesmen?.isi ?? null, plan: plan?.isi ?? null,
+            };
+        }));
+    }
     async salinan(fasyankesId, sumberId) {
         const k = await db.cariKunjunganUntukSalinan(sumberId, fasyankesId);
         if (!k)

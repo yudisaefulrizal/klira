@@ -193,6 +193,14 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             await catatLihat(p, 'pasien', pasienId, 'Membuka riwayat kunjungan pasien', alamat);
             return { ok: true, data: d };
         },
+        /** Histori pemeriksaan rawat jalan pasien (SOAP, tanda vital, diagnosis) untuk tabel di bawah formulir Pemeriksaan; dicatat sebagai lihat. */
+        async historiRawatJalan(p, pasienId, kecualiKunjunganId, alamat, batas = 20) {
+            const d = await repo.historiRawatJalan(p.fasyankes_id, pasienId, kecualiKunjunganId, batas);
+            if (!d)
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            await catatLihat(p, 'pasien', pasienId, 'Membuka histori pemeriksaan rawat jalan pasien', alamat);
+            return { ok: true, data: d };
+        },
         /** Isi kunjungan sebelumnya (anamnesis, diagnosis, tindakan) untuk disalin sebagai draf; tidak menyimpan apa pun. */
         async salinan(p, kunjunganId, sumberId, alamat) {
             const [k, s] = await Promise.all([repo.kunjungan(p.fasyankes_id, kunjunganId), repo.kunjungan(p.fasyankes_id, sumberId)]);

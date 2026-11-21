@@ -14,6 +14,9 @@ import express from 'express';
 import { GALAT } from '@klira/shared';
 import { bacaTrustProxy } from './config/lingkungan.js';
 import { blokirSelamaWajibGanti } from './middleware/auth.js';
+import { pasangCsp } from './middleware/csp.js';
+import { buatBatasLaju } from './middleware/batas-laju.js';
+import { pool } from '@klira/db';
 import { PenampungAuditMysql } from './middleware/audit.js';
 import { buatLayananAkses } from './modul/akses/domain/layanan.js';
 import { PembatasPercobaan } from './modul/akses/domain/pembatas.js';
@@ -119,6 +122,16 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
         }
         next();
     });
+    app.use(pasangCsp({ direktoriWeb, tegakkan: opsi.tegakkanCsp }));
+    // Batas umum longgar karena staf satu klinik berbagi alamat; jalur publik dan jalur berat dibatasi lebih ketat.
+    const laju = opsi.batasLaju ?? {
+        umum: buatBatasLaju({ jendelaMs: 60_000, maks: 1200 }),
+        publik: buatBatasLaju({ jendelaMs: 60_000, maks: 300 }),
+        berat: buatBatasLaju({ jendelaMs: 60_000, maks: 10 }),
+    };
+    app.use('/api', laju.umum);
+    app.use('/api/publik', laju.publik);
+    app.use(['/api/cadangan/unduh', '/api/audit/ekspor'], laju.berat);
     const repoKeamanan = new RepositoriKeamananMysql();
     const layananAkses = opsi.layananAkses ??
         buatLayananAkses({
@@ -135,6 +148,16 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     const layananIzin = opsi.layananIzin ?? buatLayananIzin({ repo: new RepositoriIzinMysql(), audit: new PenampungAuditMysql() });
     app.get('/api/kesehatan', (_req, res) => {
         res.json({ status: 'ok' });
+    });
+    // Kesiapan: proses hidup DAN database terjangkau (kesehatan hanya menandakan proses hidup).
+    app.get('/api/kesiapan', async (_req, res) => {
+        try {
+            await (opsi.periksaDatabase ?? (() => pool.query({ sql: 'SELECT 1', timeout: 3000 })))();
+            res.json({ status: 'siap' });
+        }
+        catch {
+            res.status(503).json({ status: 'database_tidak_terjangkau' });
+        }
     });
     app.use('/api', buatRuteAkses(layananAkses, opsi.baseUrl ?? process.env.BASE_URL ?? 'http://localhost'));
     app.use('/api', buatRuteLayarPanggilan());

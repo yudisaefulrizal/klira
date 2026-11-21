@@ -141,12 +141,18 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
     }, heartbeatMs);
     timer.unref();
 
-    server.once('close', () => {
+    let ditutup = false;
+    const tutup = () => {
+        if (ditutup)
+            return;
+        ditutup = true;
         clearInterval(timer);
         lepas();
         server.off('upgrade', upgrade);
         for (const ws of klien.keys())
             ws.terminate();
         wss.close();
-    });
+    };
+    server.once('close', tutup);
+    return tutup;
 }

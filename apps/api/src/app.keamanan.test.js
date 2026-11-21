@@ -100,3 +100,36 @@ describe('header keamanan HTTP', () => {
         expect(res.headers['strict-transport-security']).toBe('max-age=31536000; includeSubDomains');
     });
 });
+
+describe('Content-Security-Policy', () => {
+    it('bawaannya menegakkan, dan hanya melapor bila dimatikan', async () => {
+        const lapor = await panggilTanpaPort(siapkan({ tegakkanCsp: false }).app, { metode: 'GET', url: '/api/kesehatan' });
+        expect(lapor.headers['content-security-policy-report-only']).toContain("script-src 'self'");
+        expect(lapor.headers['content-security-policy']).toBeUndefined();
+        const tegak = await panggilTanpaPort(siapkan().app, { metode: 'GET', url: '/api/kesehatan' });
+        expect(tegak.headers['content-security-policy']).toContain("object-src 'none'");
+        expect(tegak.headers['content-security-policy-report-only']).toBeUndefined();
+    });
+});
+
+describe('kesiapan', () => {
+    it('siap bila database menjawab, 503 bila tidak, sementara kesehatan tetap ok', async () => {
+        const siap = await panggilTanpaPort(siapkan({ periksaDatabase: async () => { } }).app, { metode: 'GET', url: '/api/kesiapan' });
+        expect(siap.status).toBe(200);
+        const mati = siapkan({ periksaDatabase: async () => { throw new Error('putus'); } }).app;
+        expect((await panggilTanpaPort(mati, { metode: 'GET', url: '/api/kesiapan' })).status).toBe(503);
+        expect((await panggilTanpaPort(mati, { metode: 'GET', url: '/api/kesehatan' })).status).toBe(200);
+    });
+});
+
+describe('pembatasan laju', () => {
+    it('jalur berat dibatasi per alamat dan menjawab 429', async () => {
+        const { buatBatasLaju } = await import('./middleware/batas-laju.js');
+        const { app } = siapkan({ pengguna: pimpinan, batasLaju: { umum: (_q, _s, n) => n(), publik: (_q, _s, n) => n(), berat: buatBatasLaju({ jendelaMs: 60_000, maks: 1 }) } });
+        const unduh = () => panggilTanpaPort(app, { metode: 'POST', url: '/api/audit/ekspor', badan: {} });
+        expect((await unduh()).status).not.toBe(429);
+        const kedua = await unduh();
+        expect(kedua.status).toBe(429);
+        expect(kedua.headers['retry-after']).toBeDefined();
+    });
+});

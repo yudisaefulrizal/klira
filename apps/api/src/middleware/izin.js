@@ -20,10 +20,10 @@ export function buatWajibIzin(layanan) {
             layanan.catatPenolakan(pengguna, f, a, alamat).then(() => galat403(res), next);
             return;
         }
-        layanan
+        void layanan
             .catatTindakan(pengguna, cocok[0], opsi.konteks?.(req), alamat)
-            .catch((e) => console.error('Gagal mencatat peringatan izin', e))
-            .then(() => next());
+            .catch((e) => console.error('Gagal mencatat peringatan izin', e));
+        next();
     };
     return {
         /** wajibIzin(fitur, aksi): wajib punya izin fitur x aksi (cakupan apa pun). */

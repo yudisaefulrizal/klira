@@ -101,6 +101,16 @@ export function buatRuteKlinis(layananAkses, layananIzin, layanan) {
         const klinis = punyaIzin(pengguna(res), 'klinis', 'lihat') || punyaIzin(pengguna(res), 'rekam-medis', 'lihat');
         kirimHasil(res, !klinis && hasil.ok ? { ...hasil, data: hasil.data.map((k) => ({ ...k, keluhan_utama: null, diagnosis: [], tindak_lanjut: null })) } : hasil);
     }));
+    // Histori pemeriksaan rawat jalan memuat isi catatan klinis: hanya akun dengan izin lihat klinis atau rekam medis.
+    rute.get('/pasien/:id/histori-rawat-jalan', masuk, lihatKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        const q = queryRiwayat.safeParse(req.query);
+        if (!id.success)
+            return tidakAda(res);
+        if (!q.success)
+            return galatValidasi(res, q.error);
+        kirimHasil(res, await layanan.historiRawatJalan(pengguna(res), id.data.id, q.data.kecuali ?? null, alamatDari(req), q.data.batas));
+    }));
     // Kamus terminologi adalah referensi tanpa data pasien: juga dibuka pengelola master (form tarif tindakan memilih kode ICD-9-CM).
     const lihatTerminologi = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['master', 'input'], ['master', 'perbaikan']);
     rute.get('/terminologi/kamus', masuk, lihatTerminologi, bungkus(async (req, res) => {

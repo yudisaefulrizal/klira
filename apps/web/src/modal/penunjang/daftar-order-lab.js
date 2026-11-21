@@ -1,59 +1,118 @@
 import { h, Fragment } from '../../util/h.js';
 import { INTERPRETASI_HASIL, PENUNJANG, STATUS_ORDER_PENUNJANG, STATUS_PENGESAHAN } from '@klira/shared';
-                                                       
+
 import { token } from '../../gaya/token.js';
 import { TampilanAddendum } from '../../komponen/klinis/tampilan-addendum.js';
 import { Bingkai } from '../../komponen/ui/kartu.js';
 import { Lencana } from '../../komponen/ui/lencana.js';
-import { Kolom, Sebaris, Tumbuh } from '../../komponen/ui/susunan.js';
+import { Kolom, Sebaris } from '../../komponen/ui/susunan.js';
+import { BarisTabel, SelTabel, Tabel } from '../../komponen/ui/tabel.js';
 import { tanggalWaktuPendek } from '../../util/format.js';
+
 const redup = {
   color: token.warna.teksRedup,
-  fontSize: token.huruf.ukuran.kecil
-}         ;
+  fontSize: token.huruf.ukuran.kecil,
+};
+
+const selKecil = {
+  fontSize: token.huruf.ukuran.kecil,
+};
+
+const KOLOM = [
+  { judul: PENUNJANG.cetak.kolom.pemeriksaan },
+  { judul: 'Status' },
+  { judul: PENUNJANG.daftar.hasil },
+  { judul: PENUNJANG.daftar.rujukan },
+  { judul: PENUNJANG.cetak.kolom.interpretasi },
+  { judul: PENUNJANG.daftar.pengesahan },
+];
+
+const waktuMs = (v) => {
+  const t = v ? Date.parse(v) : NaN;
+  return Number.isFinite(t) ? t : 0;
+};
 
 /**
- * Order lab satu kunjungan beserta status, spesimen, hasil (bila sudah divalidasi atau menunggu validasi), pengesahan, dan addendum.
- * Dokter melihat hasil yang sudah divalidasi di sini selama pemeriksaan (7); hasil susulan tampil sebagai addendum.
+ * Order lab satu kunjungan dalam format tabel ringkas (urutan terbaru di atas): pemeriksaan, status, hasil, rujukan, interpretasi, dan pengesahan;
+ * addendum ditampilkan sebagai baris anak di bawah pemeriksaan terkait.
  */
-export function DaftarOrderLab({
-  orders
-}   
-                                       
- ) {
+export function DaftarOrderLab({ orders }) {
+  if (!orders?.length) return h(Fragment, null);
   const D = PENUNJANG.daftar;
-  return h(Kolom, {
-    jarak: "sm"
-  }, orders.map(o => h(Bingkai, {
-    key: o.id,
-    arah: "kolom",
-    padding: "md"
-  }, h(Sebaris, {
-    bungkus: true
-  }, h("strong", null, o.nama), o.kode_loinc && h("span", {
-    style: redup
-  }, `${D.kodeLoinc} ${o.kode_loinc}`), h(Tumbuh, null), h(Lencana, {
-    warna: STATUS_ORDER_PENUNJANG.warna(o.status)
-  }, STATUS_ORDER_PENUNJANG.label(o.status))), h("span", {
-    style: redup
-  }, `${PENUNJANG.order.dipesanOleh(o.dibuat_oleh_nama ?? '-')} · ${tanggalWaktuPendek(o.dibuat_pada)}`), o.catatan && h("span", null, `${D.catatan}: ${o.catatan}`), o.spesimen && h("span", {
-    style: redup
-  }, `${D.spesimen}: ${D.spesimenInfo(o.spesimen.asal, o.spesimen.petugas_nama)}, ${tanggalWaktuPendek(o.spesimen.waktu_ambil)}`), o.hasil && h(Kolom, {
-    jarak: "xs"
-  }, h(Sebaris, {
-    bungkus: true
-  }, h("strong", null, `${o.hasil.nilai}${o.hasil.satuan ? ` ${o.hasil.satuan}` : ''}`), h(Lencana, {
-    warna: INTERPRETASI_HASIL.warna(o.hasil.interpretasi)
-  }, INTERPRETASI_HASIL.label(o.hasil.interpretasi)), o.status !== 'divalidasi' && h(Lencana, {
-    warna: "kuning"
-  }, D.menungguValidasi)), o.hasil.rujukan_teks && h("span", {
-    style: redup
-  }, `${D.rujukan}: ${o.hasil.rujukan_teks}`), o.hasil.catatan && h("span", null, `${D.catatan}: ${o.hasil.catatan}`), o.hasil.validator_nama && h(Sebaris, {
-    bungkus: true,
-    style: redup
-  }, h("span", null, `${D.validator} ${o.hasil.validator_nama}`), h(Lencana, {
-    warna: STATUS_PENGESAHAN.warna(o.verifikasi)
-  }, STATUS_PENGESAHAN.label(o.verifikasi)))), h(TampilanAddendum, {
-    daftar: o.addendum
-  }))));
+  const terurut = [...orders].sort((a, b) => (waktuMs(b.dibuat_pada) - waktuMs(a.dibuat_pada)) || ((Number(b.id) || 0) - (Number(a.id) || 0)));
+
+  return h(Bingkai, {
+    arah: 'kolom',
+    style: { padding: '0', overflow: 'hidden' },
+  }, h(Tabel, {
+    kolom: KOLOM,
+    label: PENUNJANG.cetak.kolom.pemeriksaan,
+  }, terurut.map((o) => {
+    const hasil = o.hasil;
+    const tidakNormal = !!hasil?.interpretasi && hasil.interpretasi !== 'normal';
+
+    return h(Fragment, { key: o.id },
+      h(BarisTabel, null,
+        h(SelTabel, null,
+          h(Kolom, { jarak: 'xs' },
+            h(Sebaris, { bungkus: true, jarak: 'xs' },
+              h('strong', null, o.nama),
+              o.kode_loinc && h('span', { style: redup }, `${D.kodeLoinc} ${o.kode_loinc}`),
+            ),
+            h('span', { style: redup }, `${PENUNJANG.order.dipesanOleh(o.dibuat_oleh_nama ?? '-')} · ${tanggalWaktuPendek(o.dibuat_pada)}`),
+            o.spesimen && h('span', { style: redup }, `${D.spesimen}: ${D.spesimenInfo(o.spesimen.asal, o.spesimen.petugas_nama)}, ${tanggalWaktuPendek(o.spesimen.waktu_ambil)}`),
+            o.catatan && h('span', { style: selKecil }, `${D.catatan}: ${o.catatan}`),
+          ),
+        ),
+        h(SelTabel, null,
+          h(Kolom, { jarak: 'xs' },
+            h(Lencana, {
+              warna: STATUS_ORDER_PENUNJANG.warna(o.status),
+            }, STATUS_ORDER_PENUNJANG.label(o.status)),
+            hasil && o.status !== 'divalidasi' && h(Lencana, {
+              warna: 'kuning',
+            }, D.menungguValidasi),
+          ),
+        ),
+        h(SelTabel, null,
+          hasil ? h(Kolom, { jarak: 'xs' },
+            h('span', {
+              style: {
+                fontWeight: tidakNormal ? token.huruf.berat.tebal : token.huruf.berat.sedang,
+              },
+            }, `${hasil.nilai}${hasil.satuan ? ` ${hasil.satuan}` : ''}`),
+            hasil.catatan && h('span', { style: redup }, `${D.catatan}: ${hasil.catatan}`),
+          ) : h('span', { style: redup }, '-'),
+        ),
+        h(SelTabel, null,
+          hasil?.rujukan_teks
+            ? h('span', { style: selKecil }, hasil.rujukan_teks)
+            : h('span', { style: redup }, '-'),
+        ),
+        h(SelTabel, null,
+          hasil?.interpretasi
+            ? h(Lencana, {
+                warna: INTERPRETASI_HASIL.warna(hasil.interpretasi),
+              }, INTERPRETASI_HASIL.label(hasil.interpretasi))
+            : h('span', { style: redup }, '-'),
+        ),
+        h(SelTabel, null,
+          hasil?.validator_nama ? h(Kolom, { jarak: 'xs' },
+            h('span', { style: selKecil }, hasil.validator_nama),
+            h(Lencana, {
+              warna: STATUS_PENGESAHAN.warna(o.verifikasi),
+            }, STATUS_PENGESAHAN.label(o.verifikasi)),
+          ) : h('span', { style: redup }, '-'),
+        ),
+      ),
+      o.addendum?.length > 0 && h('tr', {
+        key: `${o.id}-addendum`,
+      }, h('td', {
+        colSpan: KOLOM.length,
+        style: {
+          padding: `0 ${token.jarak.md} ${token.jarak.md}`,
+        },
+      }, h(TampilanAddendum, { daftar: o.addendum }))),
+    );
+  })));
 }

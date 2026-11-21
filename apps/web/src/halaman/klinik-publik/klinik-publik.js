@@ -20,8 +20,14 @@ function warnaTulisan(warna) {
   return .2126 * rgb[0] + .7152 * rgb[1] + .0722 * rgb[2] > .18 ? '#000000' : '#ffffff';
 }
 
+/** Identitas publik dari blok JSON yang disisipkan server (bukan skrip, jadi tidak terblokir CSP); null bila tidak ada atau rusak. */
+function bacaDataAwalKlinik() {
+  try { return JSON.parse(document.getElementById('data-klinik-publik')?.textContent ?? 'null'); } catch { return null; }
+}
+
 export function pasangKlinikPublik(wadah, slug) {
-  let data = !slug || window.__KLINIK_PUBLIK__?.slug === slug ? window.__KLINIK_PUBLIK__ ?? null : null;
+  const awal = bacaDataAwalKlinik();
+  let data = !slug || awal?.slug === slug ? awal : null;
   let galat = '', menu = false, poli = '', semua = false, logoRusak = false;
   let hari = new Date(Date.now() + 7 * 3600000).getUTCDay() || 7;
   let aktif = true, controller, timer, pulihkanMeta;

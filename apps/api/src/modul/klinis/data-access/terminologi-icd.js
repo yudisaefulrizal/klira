@@ -8,6 +8,16 @@ const padanan = indonesia.sha256_berkas_primer === icd10.sha256_primer ? indones
 const namaKptl = kptl.sha256_berkas_primer === icd9cm.sha256_primer ? kptl.padanan : {};
 const buatDaftar = (sistem, data) => data.kode.map((k) => ({ sistem, kode: k.kode, nama: k.nama, contoh: false, ...(sistem === 'icd10' && padanan[k.kode] ? { nama_indonesia: padanan[k.kode], status_padanan: 'komunitas' } : {}), ...(sistem === 'icd9cm' && namaKptl[k.kode] ? { nama_tindakan_kptl: namaKptl[k.kode] } : {}) }));
 const referensi = { icd10: buatDaftar('icd10', icd10), icd9cm: buatDaftar('icd9cm', icd9cm) };
+const buatIndeksCari = (daftar) => daftar.map((dto) => ({
+    dto,
+    kodeLower: dto.kode.toLowerCase(),
+    namaLower: dto.nama.toLowerCase(),
+    aliasLower: [
+        ...(dto.nama_indonesia ? [dto.nama_indonesia.toLowerCase()] : []),
+        ...(dto.nama_tindakan_kptl ? dto.nama_tindakan_kptl.map((n) => n.nama.toLowerCase()) : []),
+    ],
+}));
+const indeksCari = { icd10: buatIndeksCari(referensi.icd10), icd9cm: buatIndeksCari(referensi.icd9cm) };
 export function kamusIcd(q) {
     const awalan = q.awalan?.toUpperCase();
     const daftar = awalan ? referensi[q.sistem].filter((k) => k.kode.startsWith(awalan)) : referensi[q.sistem];
@@ -17,18 +27,21 @@ export function kamusIcd(q) {
 /** Urutan saran tetap: awalan kode, awalan nama, lalu nama memuat kata. */
 export function cariIcd(sistem, kata, batas) {
     const q = kata.trim().toLowerCase();
-    if (!q)
+    if (!q || batas <= 0)
         return [];
     const kode = [], namaAwal = [], namaMemuat = [];
-    for (const k of referensi[sistem]) {
-        const nama = k.nama.toLowerCase();
-        const alias = [k.nama_indonesia ?? '', ...(k.nama_tindakan_kptl?.map((n) => n.nama) ?? [])].map((n) => n.toLowerCase());
-        if (k.kode.toLowerCase().startsWith(q))
-            kode.push(k);
-        else if (nama.startsWith(q) || alias.some((n) => n.startsWith(q)))
-            namaAwal.push(k);
-        else if (nama.includes(q) || alias.some((n) => n.includes(q)))
-            namaMemuat.push(k);
+    for (const item of indeksCari[sistem]) {
+        if (item.kodeLower.startsWith(q)) {
+            kode.push(item.dto);
+            if (kode.length >= batas)
+                break;
+        }
+        else if (item.namaLower.startsWith(q) || item.aliasLower.some((n) => n.startsWith(q))) {
+            namaAwal.push(item.dto);
+        }
+        else if (kode.length + namaAwal.length < batas && (item.namaLower.includes(q) || item.aliasLower.some((n) => n.includes(q)))) {
+            namaMemuat.push(item.dto);
+        }
     }
     return [...kode, ...namaAwal, ...namaMemuat].slice(0, batas);
 }

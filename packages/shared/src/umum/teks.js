@@ -29,13 +29,23 @@ export const GALAT = {
 };
 export const MASUK = {
     judul: 'klira',
-    keterangan: 'Sistem rekam medis elektronik untuk klinik.',
+    lencana: 'Portal Internal Klinik',
+    keterangan: 'Sistem rekam medis elektronik untuk pengelolaan layanan klinik yang aman dan terpadu.',
+    sorotan: [
+        'Rekam medis elektronik terpadu',
+        'Pengelolaan antrean dan layanan pasien',
+        'Keamanan data dan jejak audit klinis',
+    ],
     judulForm: 'Masuk',
+    subjudulForm: 'Masuk dengan akun petugas klinik Anda.',
     username: 'Nama pengguna',
     kataSandi: 'Kata sandi',
+    tampilkanSandi: 'Tampilkan kata sandi',
+    sembunyikanSandi: 'Sembunyikan kata sandi',
     tombol: 'Masuk',
     tombolProses: 'Memproses...',
     catatanGanti: 'Akun awal klinik wajib mengganti nama pengguna dan kata sandi saat masuk pertama kali.',
+    bantuan: 'Kendala akses atau lupa kata sandi? Hubungi administrator klinik.',
     gagal: 'Nama pengguna atau kata sandi salah.',
     terlaluBanyak: 'Terlalu banyak percobaan masuk. Coba lagi beberapa menit lagi.',
     keluar: 'Keluar',
@@ -512,7 +522,7 @@ export const PROFIL_KLINIK = {
 /** Daftar pasien (3.1): halaman awal akun klinis dan administrasi. */
 export const DAFTAR_PASIEN = {
     judul: 'Daftar pasien',
-    tab: { antrean: 'Antrean pasien', pasien: 'Pasien', poli: 'Poli', praktisi: 'Praktisi', shift: 'Shift', jadwal: 'Jadwal praktik' },
+    tab: { antrean: 'Antrean', pasien: 'Pasien', poli: 'Poli', praktisi: 'Praktisi', shift: 'Shift', jadwal: 'Jadwal' },
     cari: 'Cari pasien',
     petunjukCari: 'Cari nama, nomor RM, NIK, atau nomor JKN',
     registrasi: 'Registrasi pasien baru',
@@ -848,12 +858,12 @@ export const ADDENDUM_TEKS = {
 /** Penunjang: halaman, master pemeriksaan, Order lab, Ambil spesimen, Hasil lab, addendum (3.1, 3.3, 4.3). */
 export const PENUNJANG = {
     judul: 'Lab',
-    tab: { rekap: 'Rekap lab', master: 'Master pemeriksaan' },
+    tab: { rekap: 'Order lab', master: 'Master pemeriksaan' },
     tabLabel: 'Tab Penunjang',
     rekap: {
-        kolom: { pasien: 'Pasien', pemeriksaan: 'Pemeriksaan', prioritas: 'Prioritas', status: 'Status', hasil: 'Hasil', waktu: 'Dipesan' },
+        kolom: { pasien: 'Pasien', pemeriksaan: 'Pemeriksaan', pemesan: 'Pemesan', prioritas: 'Prioritas', status: 'Status', hasil: 'Hasil', waktu: 'Dipesan', tindakan: 'Tindakan' },
         filterStatus: 'Status', semuaStatus: 'Semua status', dari: 'Dari tanggal', sampai: 'Sampai tanggal', kosong: 'Tidak ada order lab pada penyaring ini.',
-        gagalMuat: 'Rekap lab gagal dimuat.', catatan: 'Pekerjaan per pasien (ambil spesimen, hasil) dikerjakan di tab Penunjang pada halaman Pasien.', bukaDaftar: 'Buka Daftar pasien',
+        gagalMuat: 'Order lab gagal dimuat.', catatan: 'Pekerjaan per pasien (ambil spesimen, hasil) dikerjakan di tab Penunjang pada halaman Pasien.', bukaDaftar: 'Buka Daftar pasien',
     },
     master: {
         judul: 'Master pemeriksaan', tambah: 'Tambah pemeriksaan', ubah: 'Ubah', cari: 'Cari pemeriksaan', kosong: 'Belum ada pemeriksaan.', gagalMuat: 'Master pemeriksaan gagal dimuat.',
@@ -1147,6 +1157,11 @@ export const REKAM_MEDIS = {
         buktiWajib: 'Bukti persetujuan pasien wajib untuk keluarga atau pihak lain.', jenisLaporan: 'Pilih jenis laporan.', rentangTerbalik: 'Tanggal akhir tidak boleh sebelum tanggal awal.', belumDitutup2: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
         pembukaanTidakAda: 'Permintaan pembukaan tidak ditemukan.', pasienTidakAda: 'Pasien tidak ditemukan.', suratTidakAda: 'Surat tidak ditemukan.', alasanWajibUbah: 'Alasan wajib untuk mengubah resume yang sudah disahkan.',
     },
+};
+/** Tabel histori pemeriksaan rawat jalan di bawah formulir Pemeriksaan (hanya baca). */
+export const HISTORI_RAWAT_JALAN = {
+    judul: 'Histori pemeriksaan rawat jalan', entri: (n) => `${n} entri`, kosong: 'Belum ada pemeriksaan rawat jalan sebelumnya.', gagal: 'Histori pemeriksaan gagal dimuat.', memuat: 'Memuat histori...',
+    kolom: { waktu: 'Waktu', pemeriksa: 'Dokter / poli', tandaVital: 'Tanda Vital', subjektif: 'S (Subjektif)', objektif: 'O (Objektif)', asesmen: 'A (Asesmen)', plan: 'P (Plan)', diagnosis: 'Diagnosis (ICD-10)', tindakLanjut: 'Tindak lanjut' },
 };
 export const RAWAT_INAP = {
     tab: { papan: 'Papan bed', ruang: 'Daftar ruang', bed: 'Daftar bed' },

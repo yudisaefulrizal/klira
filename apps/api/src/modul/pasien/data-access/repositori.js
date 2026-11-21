@@ -84,35 +84,44 @@ export class RepositoriPasienMysql {
     async petakan(fasyankesId, isi) {
         const lokasiIds = [...new Set(isi.flatMap((i) => (i.kunjungan?.lokasi_id ? [i.kunjungan.lokasi_id] : [])))];
         const penggunaIds = [...new Set(isi.flatMap((i) => i.kunjungan?.peserta.map((p) => p.pengguna_id) ?? []))];
-        const [lokasi, pengguna] = await Promise.all([
-            lokasiIds.length ? db.daftarLokasiUntukPetakan(lokasiIds, fasyankesId) : [],
-            penggunaIds.length ? db.daftarPenggunaUntukRiwayat(penggunaIds, fasyankesId) : [],
-        ]);
+        const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
         // Aksi Panggil ditahan bila poli yang memegang antrean ini masih melayani pasien lain (panggil ulang), atau bila antrean
         // belum punya poli dan semua poli sejenis (atau poli dokter pilihan) sedang melayani.
         const hariIni = tglDb(tanggalWib(new Date()));
+        const kandidatPenuh = [];
+        const kunciPenuhSet = new Set();
+        for (const { kunjungan: k } of isi) {
+            if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && k.antrean.jenis_poli !== ANTREAN_LAB.jenis_poli) {
+                const dpjp = k.peserta[0]?.pengguna_id;
+                const kunci = `${k.antrean.jenis_poli}|${dpjp ?? ''}`;
+                if (!kunciPenuhSet.has(kunci)) {
+                    kunciPenuhSet.add(kunci);
+                    kandidatPenuh.push({ kunci, jenis: k.antrean.jenis_poli, dpjp });
+                }
+            }
+        }
+        const [lokasi, pengguna, antreanSibuk, ringkasanLabBaris, lab, resepBaris, sumberAntreanBaris, ...hasilJenisPenuh] = await Promise.all([
+            lokasiIds.length ? db.daftarLokasiUntukPetakan(lokasiIds, fasyankesId) : [],
+            penggunaIds.length ? db.daftarPenggunaUntukRiwayat(penggunaIds, fasyankesId) : [],
+            lokasiIds.length ? db.daftarAntreanSibukUntukPetakan(fasyankesId, lokasiIds, hariIni) : [],
+            kunjunganIds.length ? db.ringkasanHasilLabUntukKunjungan(fasyankesId, kunjunganIds) : [],
+            kunjunganIds.length ? db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi') : [],
+            kunjunganIds.length ? db.daftarResepUntukPetakan(fasyankesId, kunjunganIds) : [],
+            kunjunganIds.length ? db.daftarSumberAntreanUntukKunjungan(fasyankesId, kunjunganIds) : [],
+            ...kandidatPenuh.map(async (p) => [p.kunci, (await db.daftarPoliBebasUntukPanggil(fasyankesId, p.jenis, hariIni, p.dpjp ?? undefined)).length === 0]),
+        ]);
         const sibukPoli = new Map();
-        for (const a of await db.daftarAntreanSibukUntukPetakan(fasyankesId, lokasiIds, hariIni))
+        for (const a of antreanSibuk)
             if (!sibukPoli.has(a.lokasi_id))
                 sibukPoli.set(a.lokasi_id, a);
-        const jenisSibuk = new Map();
-        const jenisPenuh = async (jenis, dpjp) => {
-            const kunci = `${jenis}|${dpjp ?? ''}`;
-            if (!jenisSibuk.has(kunci))
-                jenisSibuk.set(kunci, (await db.daftarPoliBebasUntukPanggil(fasyankesId, jenis, hariIni, dpjp ?? undefined)).length === 0);
-            return jenisSibuk.get(kunci);
-        };
+        const jenisSibuk = new Map(hasilJenisPenuh);
         const penuh = new Map();
         for (const { kunjungan: k } of isi)
-            if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && k.antrean.jenis_poli !== ANTREAN_LAB.jenis_poli && await jenisPenuh(k.antrean.jenis_poli, k.peserta[0]?.pengguna_id))
+            if (k?.antrean?.status === 'menunggu' && !k.lokasi_id && k.antrean.jenis_poli && k.antrean.jenis_poli !== ANTREAN_LAB.jenis_poli && jenisSibuk.get(`${k.antrean.jenis_poli}|${k.peserta[0]?.pengguna_id ?? ''}`))
                 penuh.set(k.id, k.antrean.jenis_poli);
-        const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
         // Ringkasan order lab untuk seluruh kunjungan hari ini: dipakai status hasil lab (`LAB`) dan penanda hasil lab siap (`AMB`).
-        const ringkasanLab = new Map((await db.ringkasanHasilLabUntukKunjungan(fasyankesId, kunjunganIds)).map((r) => [r.kunjungan_id, r]));
-        const lab = kunjunganIds.length
-            ? await db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi')
-            : [];
-        const resepAda = new Set(kunjunganIds.length ? (await db.daftarResepUntukPetakan(fasyankesId, kunjunganIds)).map((r) => r.kunjungan_id) : []);
+        const ringkasanLab = new Map(ringkasanLabBaris.map((r) => [r.kunjungan_id, r]));
+        const resepAda = new Set(resepBaris.map((r) => r.kunjungan_id));
         const hitungLab = (kunjunganId) => {
             let perluSpesimen = 0;
             let perluHasil = 0;
@@ -129,7 +138,7 @@ export class RepositoriPasienMysql {
             return { perlu_spesimen: perluSpesimen, perlu_hasil: perluHasil, selesai };
         };
         // Asal antrean (loket atau Mobile JKN) dan hasil pengiriman status antrean ke BPJS.
-        const sumberAntrean = new Map((await db.daftarSumberAntreanUntukKunjungan(fasyankesId, kunjunganIds)).map((r) => [r.kunjungan_id, r]));
+        const sumberAntrean = new Map(sumberAntreanBaris.map((r) => [r.kunjungan_id, r]));
         const namaPoli = new Map(lokasi.map((l) => [l.id, l.nama]));
         const namaDpjp = new Map(pengguna.map((p) => [p.id, p.nama]));
         return isi.map(({ pasien: p, kunjungan: k }) => {

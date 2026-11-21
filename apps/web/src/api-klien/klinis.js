@@ -7,6 +7,8 @@ export const ambilKonteksKlinis = (kunjunganId) => panggilApi('GET', `/kunjungan
 export const simpanBagian = (kunjunganId, bagian, isi, alasan) => panggilApi('PUT', `/kunjungan/${kunjunganId}/klinis/${bagian}`, { isi, ...(alasan?.trim() ? { alasan: alasan.trim() } : {}) });
 export const selesaikanPemeriksaan = (kunjunganId, tahap = 'kasir') => panggilApi('POST', `/kunjungan/${kunjunganId}/klinis/selesai`, { tahap });
 export const riwayatKunjungan = (pasienId, kecualiKunjunganId, batas) => panggilApi('GET', `/pasien/${pasienId}/riwayat-kunjungan?${new URLSearchParams({ ...(kecualiKunjunganId ? { kecuali: String(kecualiKunjunganId) } : {}), ...(batas ? { batas: String(batas) } : {}) })}`);
+/** Histori pemeriksaan rawat jalan pasien (kunjungan AMB selesai, terbaru dahulu) di luar kunjungan yang sedang dibuka. */
+export const historiRawatJalan = (pasienId, kecualiKunjunganId, batas) => panggilApi('GET', `/pasien/${pasienId}/histori-rawat-jalan?${new URLSearchParams({ ...(kecualiKunjunganId ? { kecuali: String(kecualiKunjunganId) } : {}), ...(batas ? { batas: String(batas) } : {}) }).toString()}`);
 export const salinanKunjungan = (kunjunganId, sumberId) => panggilApi('GET', `/kunjungan/${kunjunganId}/salinan/${sumberId}`);
 export const cariTerminologi = (sistem, q, batas = 10) => panggilApi('GET', `/terminologi?${new URLSearchParams({ sistem, q, batas: String(batas) }).toString()}`);
 /** Daftar tindakan klinik (tarif tindakan aktif) untuk langkah Tindakan. */

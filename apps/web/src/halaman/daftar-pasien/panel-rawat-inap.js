@@ -1,4 +1,4 @@
-import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT, KLINIS, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
+import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT, RAWAT_INAP } from '@klira/shared';
 import { daftarCatatanHarian, ambilRawatInap } from '../../api-klien/rawat-inap.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
@@ -6,22 +6,9 @@ import { kartu, lencana, peringatan, tombol } from '../../komponen/ui/primitif.j
 import { bukaPemulanganRawatInap } from '../../modal/rawat-inap/pemulangan-rawat-inap.js';
 import { bukaUbahPenempatan } from '../../modal/rawat-inap/ubah-penempatan.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { ringkasTandaVital } from './keadaan-histori-rawat-jalan.js';
 
 const pesanGalat = (e, bawaan) => (e instanceof GalatApi ? e.message : bawaan);
-
-function ringkasTandaVital(tv) {
-    if (!tv) return '-';
-    const bagian = [];
-    if (tv.sistolik != null && tv.diastolik != null) bagian.push(`TD ${tv.sistolik}/${tv.diastolik}`);
-    if (tv.nadi != null) bagian.push(`N ${tv.nadi}`);
-    if (tv.respirasi != null) bagian.push(`R ${tv.respirasi}`);
-    if (tv.suhu != null) bagian.push(`S ${tv.suhu}°C`);
-    if (tv.spo2 != null) bagian.push(`SpO2 ${tv.spo2}%`);
-    if (tv.gcs != null) bagian.push(`GCS ${tv.gcs}`);
-    if (tv.tinggi_badan != null || tv.berat_badan != null) bagian.push(`TB/BB ${tv.tinggi_badan ?? '-'}/${tv.berat_badan ?? '-'}`);
-    if (bagian.length) return bagian.join(' · ');
-    return TANDA_VITAL.filter((t) => tv[t.kunci] != null).map((t) => `${KLINIS.tandaVital[t.kunci]} ${tv[t.kunci]}`).join(' · ') || '-';
-}
 
 /** Tabel histori pemeriksaan Rawat Inap (CPPT) bergaya spreadsheet/Excel di bawah formulir Pemeriksaan. */
 export function TabelHistoriCppt({ kunjunganId }) {

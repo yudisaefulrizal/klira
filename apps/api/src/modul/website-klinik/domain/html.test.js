@@ -10,7 +10,8 @@ test('HTML awal berisi identitas publik, metadata, dan data bootstrap yang aman 
     const html = htmlKlinikPublik(template, data);
     expect(html).toContain('<title>Klinik &lt;B&gt;');
     expect(html).toContain('type="application/ld+json"');
-    expect(html).toContain('window.__KLINIK_PUBLIK__=');
+    expect(html).toContain('<script type="application/json" id="data-klinik-publik">');
+    expect(html).not.toContain('window.__KLINIK_PUBLIK__');
     expect(html).not.toContain('</script><script>alert(1)');
     expect(html).toContain('\\u003c/script>');
     expect(html).toContain('Poli &lt;Umum&gt;');
@@ -19,5 +20,5 @@ test('HTML awal berisi identitas publik, metadata, dan data bootstrap yang aman 
 test('halaman yang tidak diterbitkan tidak memiliki bootstrap profil dan tidak diindeks', () => {
     const html = htmlKlinikPublik(template, null);
     expect(html).toContain('noindex');
-    expect(html).not.toContain('__KLINIK_PUBLIK__');
+    expect(html).not.toContain('data-klinik-publik');
 });

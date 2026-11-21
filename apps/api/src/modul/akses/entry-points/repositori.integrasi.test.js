@@ -3,7 +3,6 @@ import { jest } from '@jest/globals';
 const uji = await import("@klira/db/uji");
 const kliraRequired0 = await import("../data-access/repositori.js");
 
-/* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
 const urlUji = (process.env.KLIRA_UJI_DB === '1' ? process.env.DATABASE_URL : undefined);
 
 const d = urlUji ? describe : describe.skip;

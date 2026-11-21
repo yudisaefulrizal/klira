@@ -26,12 +26,18 @@ export function galat401(res) {
 /** Mewajibkan sesi sah; menaruh pengguna di res.locals.pengguna. */
 export function wajibMasuk(layanan) {
     return (req, res, next) => {
+        if (res.locals._sesiDiperiksa) {
+            if (!res.locals.pengguna)
+                return galat401(res);
+            return next();
+        }
         layanan
             .saya(idSesiDariPermintaan(req))
             .then((pengguna) => {
+            res.locals._sesiDiperiksa = true;
+            res.locals.pengguna = pengguna;
             if (!pengguna)
                 return galat401(res);
-            res.locals.pengguna = pengguna;
             next();
         })
             .catch(next);
@@ -47,6 +53,8 @@ export function blokirSelamaWajibGanti(layanan) {
         layanan
             .saya(idSesiDariPermintaan(req))
             .then((pengguna) => {
+            res.locals._sesiDiperiksa = true;
+            res.locals.pengguna = pengguna;
             if (!pengguna?.wajib_ganti_kredensial)
                 return next();
             const badan = { galat: { kode: 'wajib_ganti_kredensial', pesan: GANTI_KREDENSIAL.wajib } };
