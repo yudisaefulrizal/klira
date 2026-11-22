@@ -77,6 +77,7 @@ export * from './riwayat_klaim.js';
 export * from './riwayat_profil.js';
 export * from './ropa.js';
 export * from './sesi.js';
+export * from './sesi_antrean.js';
 export * from './shift_kasir.js';
 export * from './spesimen.js';
 export * from './stok_obat.js';

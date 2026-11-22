@@ -2,7 +2,7 @@ const HARI_MS = 86_400_000;
 
 /**
  * Hari kamar per penempatan. Satu hari kamar = satu blok 24 jam sejak penempatan pertama (minimal satu blok untuk seluruh rawat inap).
- * Tiap blok ditagihkan ke penempatan yang aktif pada awal blok itu, jadi pindah bed atau kelas pada hari yang sama tidak menambah hari.
+ * Tiap blok ditagihkan ke penempatan yang aktif pada awal blok itu, jadi pindah bed pada hari yang sama tidak menambah hari.
  * Penempatan tanpa blok awal tidak menghasilkan baris. Kembalian: [{ id, hari }] berurutan menurut waktu mulai.
  */
 export function hitungHariKamar(penempatan, sekarang) {

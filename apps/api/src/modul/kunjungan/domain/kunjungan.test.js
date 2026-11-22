@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 
 const { REGISTRASI } = await import("@klira/shared");
 const { buatLayananKunjungan } = await import("./layanan.js");
-const { bisaDiulang } = await import("../data-access/repositori.js");
+const { AntreanDitutupError, bisaDiulang } = await import("../data-access/repositori.js");
 
 describe('layanan kunjungan dengan repositori tiruan', () => {
     const catatan = [];
@@ -37,13 +37,13 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
     });
     it('mencari IHS Number pasien saat pendaftaran dan melampirkan hasilnya; kunjungan tetap tersimpan walau hasilnya gagal', async () => {
         const sinkronIhs = jest.fn(async () => ({ status: 'gagal', pesan: 'x' }));
-        const h = await buatLayananKunjungan({ repo: dasarRepo, orderLab, sinkronIhs, audit: { catat: async () => {} }, sekarang: () => new Date('2026-10-25T01:00:00Z') }).daftarkan(saya, masukan, '::1');
+        const h = await buatLayananKunjungan({ repo: dasarRepo, orderLab, sinkronIhs, audit: { catat: async () => { } }, sekarang: () => new Date('2026-10-25T01:00:00Z') }).daftarkan(saya, masukan, '::1');
         expect(h).toMatchObject({ ok: true, data: { id: 5, satusehat: { status: 'gagal' } } });
         expect(sinkronIhs).toHaveBeenCalledWith(saya, 10, { alamat: '::1' });
     });
     it('pendaftaran yang ditolak tidak mencari IHS Number', async () => {
         const sinkronIhs = jest.fn();
-        const l = buatLayananKunjungan({ repo: { ...dasarRepo, pasienAda: async () => false }, orderLab, sinkronIhs, audit: { catat: async () => {} } });
+        const l = buatLayananKunjungan({ repo: { ...dasarRepo, pasienAda: async () => false }, orderLab, sinkronIhs, audit: { catat: async () => { } } });
         expect((await l.daftarkan(saya, masukan)).ok).toBe(false);
         expect(sinkronIhs).not.toHaveBeenCalled();
     });
@@ -138,6 +138,35 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
             ubahDpjp,
         });
         expect(await sudahDilayani.ubahDpjp(saya, 5, 30)).toMatchObject({ ok: false, kode: 'konflik' });
+    });
+    it('daftarkan menolak AMB/LAB saat antrean ditutup, tetapi tetap mengizinkan rawat inap langsung (IMP)', async () => {
+        const l = buat({ daftarkan: async (_f, _o, d) => (d.jenis === 'IMP' ? { id: 9, id_layanan: 'LY-261025-0001', antrean: null } : Promise.reject(new AntreanDitutupError())) });
+        expect(await l.daftarkan(saya, masukan)).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('ditutup') });
+        expect(await l.daftarkan(saya, { pasien_id: 10, jenis: 'IMP', cara_pembayaran: 'umum' })).toMatchObject({ ok: true, data: { id: 9, id_layanan: 'LY-261025-0001' } });
+    });
+    it('tutupAntrean menolak jika masih ada antrean belum selesai dan menutup jika semua selesai', async () => {
+        const ditolak = buat({
+            tutupSesiAntrean: async () => ({
+                galat: 'belum_selesai',
+                belum_selesai: [{ id: 1, nomor: 1, awalan: 'A', pasien_nama: 'Budi', tahap_layanan: 'pemeriksaan' }],
+            }),
+        });
+        expect(await ditolak.tutupAntrean(saya)).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('A-001 Budi') });
+
+        const diterima = buat({ tutupSesiAntrean: async () => ({ ok: true, sesi_id: 7 }) });
+        expect(await diterima.tutupAntrean(saya)).toMatchObject({ ok: true, data: { status: 'tutup' } });
+    });
+    it('bukaAntrean membuka sesi baru dan memindahkan antrean sementara Mobile JKN ke antrean aktif', async () => {
+        const tandaiSementaraJknDipindahkan = jest.fn(async () => ({ count: 1 }));
+        const l = buat({
+            bukaSesiAntrean: async () => ({
+                sesi: { id: 10, status: 'buka', dibuka_pada: new Date('2026-10-25T01:00:00Z') },
+                sementara: [{ id: 3, pasien_id: 10, jenis_poli: 'umum', pcare_no_urut: '001', keluhan_singkat: 'Demam' }],
+            }),
+            tandaiSementaraJknDipindahkan,
+        });
+        expect(await l.bukaAntrean(saya)).toMatchObject({ ok: true, data: { sesi: { id: 10, status: 'buka' }, dipindahkan: 1 } });
+        expect(tandaiSementaraJknDipindahkan).toHaveBeenCalledWith(3, 1, 5, expect.any(Date));
     });
 });
 

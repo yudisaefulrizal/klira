@@ -73,4 +73,19 @@ export class RepositoriAntreanJknMysql {
     async catatSinkron(fasyankesId, antreanId, status, pesan) {
         await db.catatSinkronAntreanBpjs(antreanId, fasyankesId, status, pesan);
     }
+    sesiAntreanAktif(fasyankesId) {
+        return db.ambilSesiAntreanAktif(fasyankesId);
+    }
+    daftarSementaraJkn(fasyankesId) {
+        return db.daftarAntreanSementaraJkn(fasyankesId, 'menunggu');
+    }
+    cariSementaraJkn(fasyankesId, jenisPoli, noUrut, nomorKartu) {
+        return db.cariAntreanSementaraJkn(fasyankesId, jenisPoli, noUrut, nomorKartu);
+    }
+    tambahSementaraJkn(d) {
+        return db.tambahAntreanSementaraJkn({ ...d, tanggal_daftar: tglDb(d.tanggal_daftar) });
+    }
+    batalkanSementaraJkn(id, fasyankesId, waktu) {
+        return db.batalkanAntreanSementaraJkn(id, fasyankesId, waktu);
+    }
 }

@@ -45,13 +45,22 @@ export function buatRuteKunjungan(layananAkses, layananIzin, layanan) {
             return galatValidasi(res, f.error);
         res.json({ data: await layanan.daftarAntrean(pengguna(res), f.data) });
     }));
+    rute.get('/antrean/sesi', masuk, wajibIzin('kunjungan', 'lihat'), bungkus(async (_req, res) => {
+        res.json({ data: await layanan.keadaanSesi(pengguna(res)) });
+    }));
+    rute.post('/antrean/buka', masuk, wajibIzin('kunjungan', 'input'), bungkus(async (req, res) => {
+        kirimHasil(res, await layanan.bukaAntrean(pengguna(res), alamatDari(req)));
+    }));
+    rute.post('/antrean/tutup', masuk, wajibIzin('kunjungan', 'input'), bungkus(async (req, res) => {
+        kirimHasil(res, await layanan.tutupAntrean(pengguna(res), alamatDari(req)));
+    }));
     rute.post('/antrean/:id/:aksi', masuk, wajibIzin('kunjungan', 'perbaikan'), bungkus(async (req, res) => {
         const id = idParam.safeParse({ id: req.params.id });
         const aksi = aksiAntrean.safeParse(req.params.aksi);
         if (!id.success || !aksi.success)
             return tidakAda(res);
-        // `lokasi_id` (opsional): poli yang memanggil; bila kosong, sistem memilih poli sejenis yang bebas.
-        const pilihan = Number.isInteger(req.body?.lokasi_id) && req.body.lokasi_id > 0 ? req.body.lokasi_id : undefined;
+        // `ruang_id` (opsional): ruang periksa yang memanggil; bila kosong, sistem memilih ruang poli itu yang bebas.
+        const pilihan = Number.isInteger(req.body?.ruang_id) && req.body.ruang_id > 0 ? req.body.ruang_id : undefined;
         kirimHasil(res, await layanan.aksiAntrean(pengguna(res), id.data.id, aksi.data, alamatDari(req), pilihan));
     }));
     return rute;

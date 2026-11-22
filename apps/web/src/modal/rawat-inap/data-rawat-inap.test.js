@@ -3,8 +3,8 @@ import { bagianRawatInap } from './data-rawat-inap.js';
 const detail = (lebih = {}) => ({
     kunjungan: { spri: 'SPRI/1', mulai: '2026-11-13T11:00:00.000Z' },
     penempatan: [
-        { ruang_nama: 'Observasi', bed_nama: 'Bed 1', kelas: 'tiga', indikator: 'kelas_tetap', tarif_nama: 'Kamar', mulai: '2026-11-13T11:00:00.000Z', selesai: '2026-11-13T12:00:00.000Z' },
-        { ruang_nama: 'Observasi', bed_nama: 'Bed 2', kelas: 'dua', indikator: 'naik_kelas', tarif_nama: null, mulai: '2026-11-13T12:00:00.000Z', selesai: null },
+        { ruang_nama: 'Observasi', bed_nama: 'Bed 1', tarif_nama: 'Kamar', mulai: '2026-11-13T11:00:00.000Z', selesai: '2026-11-13T12:00:00.000Z' },
+        { ruang_nama: 'Observasi', bed_nama: 'Bed 2', tarif_nama: null, mulai: '2026-11-13T12:00:00.000Z', selesai: null },
     ],
     dpjp: [],
     dpjp_riwayat: [{ nama: 'dr. A', tipe: 'ATND', mulai: '2026-11-13T11:00:00.000Z', selesai: '2026-11-13T12:00:00.000Z' }, { nama: 'Bd. B', tipe: 'SPRF', mulai: null, selesai: null }],
@@ -21,7 +21,7 @@ describe('bagianRawatInap', () => {
         const [admisi, harian] = bagianRawatInap({ detail: detail(), cppt });
         expect(admisi.baris[0]).toEqual({ label: 'Surat perintah rawat inap (SPRI)', nilai: 'SPRI/1' });
         expect(admisi.baris.filter((b) => b.label.startsWith('DPJP')).map((b) => b.label)).toEqual(['DPJP utama', 'DPJP bersama']);
-        expect(admisi.baris.some((b) => b.label === 'Observasi · Bed 2' && b.nilai.includes('Naik kelas') && b.nilai.includes('sekarang'))).toBe(true);
+        expect(admisi.baris.some((b) => b.label === 'Observasi · Bed 2' && b.nilai.includes('sekarang'))).toBe(true);
         expect(harian.baris).toHaveLength(2);
         expect(harian.baris[0].nilai).toContain('S: s1');
         expect(harian.baris[0].nilai).toContain('Instruksi: ins');

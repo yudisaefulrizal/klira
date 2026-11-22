@@ -3,7 +3,7 @@ import { AKSI_IZIN, CAKUPAN_IZIN } from '../administrasi/izin.js';
 import { alasan, idPositif, jejak, nik, tanggal, teksOpsional, teksWajib } from './umum.js';
 export const jenisFasyankes = z.enum(['klinik_pratama_rawat_jalan', 'klinik_pratama_rawat_inap']);
 export const environmentSatusehat = z.enum(['sandbox', 'produksi']);
-export const jenisLokasi = z.enum(['poli', 'ruang', 'bed']);
+export const jenisLokasi = z.enum(['poli', 'ruang_periksa', 'ruang', 'bed']);
 export const statusOperasional = z.enum(['U', 'O']);
 export const jenisKelamin = z.enum(['laki_laki', 'perempuan']);
 export const aksiIzin = z.enum(AKSI_IZIN);

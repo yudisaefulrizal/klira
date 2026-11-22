@@ -43,7 +43,7 @@ export function galatMaster(jenis, nilai, ubah) {
             delete galat[k];
     for (const b of bidangAktif(jenis, ubah, nilai)) {
         if (wajibSaatIni(b, nilai) && kosong(nilai[b.kunci] ?? '')) {
-            galat[b.kunci] = jenis === 'bed' && b.kunci === 'induk_id' ? MASTER.galat.indukBed : b.tipe === 'icd9cm' ? MASTER.galat.icd9Wajib : MASTER.galat.wajib;
+            galat[b.kunci] = jenis === 'bed' && b.kunci === 'induk_id' ? MASTER.galat.indukBed : jenis === 'ruang_periksa' && b.kunci === 'induk_id' ? MASTER.galat.indukRuangPeriksa : b.tipe === 'icd9cm' ? MASTER.galat.icd9Wajib : MASTER.galat.wajib;
         }
     }
     return galat;

@@ -3,14 +3,16 @@ import { jest } from '@jest/globals';
 const { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, kodeTindakanBerikut, profilKlinikMasukan, shiftUbah, teksSelMaster } = await import("../index.js");
 
 describe('skema master', () => {
-    it('poli: nama dan jenis wajib, status bawaan operasional', () => {
-        expect(SKEMA_MASTER.poli.safeParse({ nama: '', jenis_poli: 'Umum' }).success).toBe(false);
-        expect(SKEMA_MASTER.poli.safeParse({ nama: 'Poli Umum 1' }).success).toBe(false);
-        expect(SKEMA_MASTER.poli.parse({ nama: 'Poli Umum 1', jenis_poli: 'Umum' }).status_operasional).toBe('O');
+    it('poli: nama layanan wajib (maks 60), status bawaan operasional', () => {
+        expect(SKEMA_MASTER.poli.safeParse({ nama: '' }).success).toBe(false);
+        expect(SKEMA_MASTER.poli.safeParse({ nama: 'U'.repeat(61) }).success).toBe(false);
+        expect(SKEMA_MASTER.poli.parse({ nama: 'Umum' }).status_operasional).toBe('O');
     });
-    it('bed wajib induk; ruang induk opsional', () => {
+    it('ruang periksa wajib poli; ruang rawat inap tanpa induk; bed wajib ruang', () => {
+        expect(SKEMA_MASTER.ruang_periksa.safeParse({ nama: 'Ruang 1' }).success).toBe(false);
+        expect(SKEMA_MASTER.ruang_periksa.safeParse({ nama: 'Ruang 1', induk_id: 3 }).success).toBe(true);
+        expect(SKEMA_MASTER.ruang.parse({ nama: 'Dahlia', induk_id: 3 })).not.toHaveProperty('induk_id');
         expect(SKEMA_MASTER.bed.safeParse({ nama: 'B' }).success).toBe(false);
-        expect(SKEMA_MASTER.ruang.safeParse({ nama: 'R' }).success).toBe(true);
     });
     it('praktisi: pengguna wajib saat tambah, tidak saat ubah', () => {
         const profil = { profesi: 'Dokter', nomor_sip: 'S1', masa_berlaku_sip: '2027-01-01' };

@@ -1,4 +1,4 @@
-import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT, KLINIS, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
+import { DISPOSISI_PULANG, KLINIS, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
 import { ambilRawatInap, daftarCatatanHarian } from '../../api-klien/rawat-inap.js';
 import { tanggalWaktuPendek } from '../../util/format.js';
 
@@ -16,7 +16,7 @@ export function bagianRawatInap({ detail, cppt }) {
   const P = RAWAT_INAP, C = RAWAT_INAP.cppt, U = RAWAT_INAP.pulang;
   const penempatan = detail.penempatan.map((x) => ({
     label: [x.ruang_nama, x.bed_nama].filter(Boolean).join(' · ') || P.penempatan.belumAda,
-    nilai: [KELAS_RAWAT.label(x.kelas), INDIKATOR_KELAS.label(x.indikator), x.tarif_nama, periode(x.mulai, x.selesai)].filter(Boolean).join(' · '),
+    nilai: [x.tarif_nama, periode(x.mulai, x.selesai)].filter(Boolean).join(' · '),
   }));
   const dpjp = (detail.dpjp_riwayat ?? detail.dpjp).map((x) => ({
     label: x.tipe === 'ATND' ? P.admisi.dpjpUtama : P.admisi.dpjpBersama,

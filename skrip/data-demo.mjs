@@ -93,20 +93,17 @@ async function masterAda(jenis, nama, badan) {
 
 async function siapkanMaster(id) {
   console.log('\n[2] Master data (poli, ruang, bed, tarif, jadwal)');
-  // Poli punya jenis; Poli Umum 1 dan 2 sejenis (Umum) dan berbagi satu antrean, sehingga dua pasien umum dapat dilayani bersamaan.
-  const poliUmum = (await cariMaster('poli', 'Poli Umum 1')) ?? (await cariMaster('poli', 'Poli Umum')) ?? (await cariMaster('poli', 'umum'));
-  const poliJenis = async (nama, jenis_poli, ada) => {
-    const id = ada?.id ?? (await masterAda('poli', nama, { nama, jenis_poli }));
-    if (id) await wajib(`poli ${nama} (jenis ${jenis_poli})`, 'admin', 'PATCH', `/master/poli/${id}`, { nama, jenis_poli, status_operasional: 'O' });
+  // Poli = layanan (satu antrean per poli). Poli Umum punya dua ruang periksa, sehingga dua pasien umum dapat dilayani bersamaan.
+  const poliAktif = async (nama) => {
+    const id = await masterAda('poli', nama, { nama });
+    if (id) await wajib(`poli ${nama}`, 'admin', 'PATCH', `/master/poli/${id}`, { nama, status_operasional: 'O' });
     return id;
   };
-  const poli = {
-    umum: await poliJenis('Poli Umum 1', 'Umum', poliUmum),
-    umum2: await poliJenis('Poli Umum 2', 'Umum'),
-    gigi: await poliJenis('Poli Gigi', 'Gigi', await cariMaster('poli', 'Poli Gigi')),
-    kia: await poliJenis('Poli KIA', 'KIA', await cariMaster('poli', 'Poli KIA')),
-  };
-  const ruang = await masterAda('ruang', 'Ruang Observasi', { nama: 'Ruang Observasi', induk_id: poli.umum });
+  const poli = { umum: await poliAktif('Umum'), gigi: await poliAktif('Gigi'), kia: await poliAktif('KIA') };
+  for (const [nama, induk_id] of [['Ruang Periksa Umum 1', poli.umum], ['Ruang Periksa Umum 2', poli.umum], ['Ruang Periksa Gigi', poli.gigi], ['Ruang Periksa KIA', poli.kia]])
+    await masterAda('ruang_periksa', nama, { nama, induk_id });
+  // Ruang rawat inap berdiri sendiri (tanpa poli); bed di dalamnya.
+  const ruang = await masterAda('ruang', 'Ruang Observasi', { nama: 'Ruang Observasi' });
   for (const b of ['Bed 1', 'Bed 2', 'Bed 3']) await masterAda('bed', b, { nama: b, induk_id: ruang });
 
   // [kode, nama, jenis, harga umum, harga JKN, kode ICD-9-CM (tindakan)]. Tindakan klinik boleh tanpa harga (kasir melengkapi per kunjungan).

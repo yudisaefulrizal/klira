@@ -85,8 +85,13 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
         const peta = bacaPemetaan(await repo.pemetaan(fasyankesId));
         // Nomor kartu ikut menjadi kunci: nomor urut yang dilepas peserta lain tidak boleh menutupi pendaftaran baru.
         const kunci = (jenis, noUrut, nomorKartu) => `${String(jenis).toLowerCase()}|${noUrut}|${nomorKartu ?? ''}`;
-        const sudah = await repo.antreanPcare(fasyankesId, tanggal);
-        const dikenal = new Set(sudah.map((a) => kunci(a.jenis_poli, a.pcare_no_urut, a.jkn_nomor_kartu)));
+        const sesiAktif = repo.sesiAntreanAktif ? await repo.sesiAntreanAktif(fasyankesId) : true;
+        const sudah = sesiAktif ? await repo.antreanPcare(fasyankesId, tanggal) : [];
+        const sementaraSudah = !sesiAktif && repo.daftarSementaraJkn ? await repo.daftarSementaraJkn(fasyankesId) : [];
+        const dikenal = new Set([
+            ...sudah.map((a) => kunci(a.jenis_poli, a.pcare_no_urut, a.jkn_nomor_kartu)),
+            ...sementaraSudah.map((a) => kunci(a.jenis_poli, a.pcare_no_urut, a.jkn_nomor_kartu)),
+        ]);
         const diPcare = new Set();
         const dilewati = [];
         let baru = 0;
@@ -122,6 +127,19 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
                 dilewati.push(A.tarik.dataPesertaKurang(noUrut));
                 continue;
             }
+            if (!sesiAktif && repo.tambahSementaraJkn) {
+                const adaSementara = await repo.cariSementaraJkn?.(fasyankesId, poli.jenis_poli, noUrut.slice(0, 10), nomorKartu);
+                if (!adaSementara) {
+                    await repo.tambahSementaraJkn({
+                        fasyankes_id: fasyankesId, pasien_id: pasien.id, lokasi_id: poli.lokasi_id ?? null,
+                        jenis_poli: poli.jenis_poli, awalan: poli.awalan ?? 'A', pcare_no_urut: noUrut.slice(0, 10),
+                        jkn_nomor_kartu: nomorKartu.slice(0, 50), keluhan_singkat: teks(d.keluhan).slice(0, 500) || A.tarik.keluhanBawaan,
+                        tanggal_daftar: tanggal,
+                    });
+                    baru += 1;
+                }
+                continue;
+            }
             // Peserta yang sudah didaftarkan petugas di loket untuk poli yang sama: antreannya dikaitkan, tidak dibuat ganda.
             const lama = await repo.antreanPasien(fasyankesId, pasien.id, poli.jenis_poli, tanggal);
             if (lama && lama.status !== 'batal' && lama.status !== 'selesai') {
@@ -144,6 +162,12 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
             if (a.sumber !== 'mobile_jkn' || a.status !== 'menunggu' || diPcare.has(kunci(a.jenis_poli, a.pcare_no_urut, a.jkn_nomor_kartu)))
                 continue;
             if ((await kunjungan.aksiAntrean(pelaku(fasyankesId), a.id, 'batal', alamat)).ok)
+                batal += 1;
+        }
+        for (const s of sementaraSudah) {
+            if (diPcare.has(kunci(s.jenis_poli, s.pcare_no_urut, s.jkn_nomor_kartu)))
+                continue;
+            if (repo.batalkanSementaraJkn && (await repo.batalkanSementaraJkn(s.id, fasyankesId, waktu)).count > 0)
                 batal += 1;
         }
         return selesai({ status: 'ok', pesan: A.tarik.ringkas(baru, batal), baru, batal, dilewati });

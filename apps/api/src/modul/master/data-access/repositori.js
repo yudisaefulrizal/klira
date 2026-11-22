@@ -3,7 +3,9 @@ import { awalanUntukJenis } from '@klira/shared';
 import { dataWilayah } from '../../wilayah/data-access/data.js';
 import { AWALAN_KODE_TINDAKAN } from '@klira/shared';
 const tgl = (d) => (d ? d.toISOString().slice(0, 10) : null);
-const LOKASI = ['poli', 'ruang', 'bed'];
+const LOKASI = ['poli', 'ruang_periksa', 'ruang', 'bed'];
+/** Lokasi yang berinduk: ruang periksa di bawah poli, bed di dalam ruang rawat inap. */
+const BERINDUK = ['ruang_periksa', 'bed'];
 const UKURAN_OPSI = 500;
 const barisLokasi = (l) => ({
     id: l.id, aktif: l.status_operasional === 'O', nama: l.nama, induk_id: l.induk_id, induk_nama: l.induk?.nama ?? null,
@@ -28,12 +30,12 @@ export class RepositoriMasterMysql {
         const halaman = { skip: (f.halaman - 1) * f.ukuran, take: f.ukuran };
         const cari = f.cari;
         const aktif = f.status === 'semua' ? undefined : f.status === 'aktif';
-        if (jenis === 'poli' || jenis === 'ruang' || jenis === 'bed') {
+        if (LOKASI.includes(jenis)) {
             const [total, data] = await Promise.all([
                 db.hitungLokasiUntukDaftar(fasyankesId, jenis, (!(aktif === undefined)) ? (aktif ? 'O' : 'U') : undefined, cari, cari, cari),
                 db.daftarLokasiUntukDaftar(fasyankesId, jenis, (!(aktif === undefined)) ? (aktif ? 'O' : 'U') : undefined, cari, cari, cari, f.ukuran, (f.halaman - 1) * f.ukuran),
             ]);
-            return { total, baris: await this.sertakanJenisPoli(fasyankesId, jenis, data.map(barisLokasi)) };
+            return { total, baris: await this.sertakanRincian(fasyankesId, jenis, data.map(barisLokasi)) };
         }
         if (jenis === 'praktisi') {
             const [total, data] = await Promise.all([
@@ -66,25 +68,35 @@ export class RepositoriMasterMysql {
         })).filter((w) => (!f.tingkat || w.tingkat === f.tingkat) && (!kata || w.kode.includes(kata) || w.nama.toLocaleLowerCase('id').includes(kata)));
         return { total: data.length, baris: data.slice(halaman.skip, halaman.skip + halaman.take) };
     }
-    /** Poli membawa jenis dan awalan antrean (tabel lokasi menyimpannya terpisah dari daftar kolom umum). */
-    async sertakanJenisPoli(fasyankesId, jenis, baris) {
-        if (jenis !== 'poli' || !baris.length)
+    /** Poli membawa awalan antrean dan jumlah ruang periksa; ruang rawat inap membawa jumlah bed dan tarif kamar bawaan. */
+    async sertakanRincian(fasyankesId, jenis, baris) {
+        if ((jenis !== 'poli' && jenis !== 'ruang') || !baris.length)
             return baris;
-        const peta = new Map((await db.daftarJenisPoliUntukLokasi(baris.map((b) => b.id), fasyankesId)).map((x) => [x.id, x]));
-        return baris.map((b) => ({ ...b, jenis_poli: peta.get(b.id)?.jenis_poli ?? null, awalan_antrean: peta.get(b.id)?.awalan_antrean ?? null }));
+        const ids = baris.map((b) => b.id);
+        const [anak, awalan, tarifRuang] = await Promise.all([
+            db.hitungAnakLokasi(ids, fasyankesId),
+            jenis === 'poli' ? db.daftarAwalanPoli(ids, fasyankesId) : [],
+            jenis === 'ruang' ? db.daftarTarifRuang(fasyankesId, ids) : [],
+        ]);
+        const jumlah = new Map(anak.map((x) => [x.induk_id, Number(x.jumlah)]));
+        const peta = new Map(awalan.map((x) => [x.id, x.awalan_antrean]));
+        const petaTarif = new Map(tarifRuang.map((x) => [x.id, x]));
+        return baris.map((b) => {
+            if (jenis === 'poli')
+                return { ...b, awalan_antrean: peta.get(b.id) ?? null, jumlah_ruang: jumlah.get(b.id) ?? 0 };
+            const t = petaTarif.get(b.id);
+            return { ...b, jumlah_bed: jumlah.get(b.id) ?? 0, tarif_id: t?.tarif_id ?? null, tarif_nama: t?.tarif_nama ?? null, harga_umum: t?.harga_umum ?? null, harga_jkn: t?.harga_jkn ?? null };
+        });
     }
-    /** Simpan jenis poli; poli sejenis berbagi nama baku dan awalan, jenis baru mendapat awalan yang belum dipakai jenis lain. */
-    async tetapkanJenisPoli(fasyankesId, id, jenisPoli) {
-        const kunci = jenisPoli.trim().toLowerCase();
-        const semua = (await db.daftarPoliUntukJenis(fasyankesId)).filter((x) => x.id !== id);
-        const sama = semua.find((x) => x.jenis_poli?.trim().toLowerCase() === kunci && x.awalan_antrean);
-        const terpakai = semua.filter((x) => x.jenis_poli?.trim().toLowerCase() !== kunci).map((x) => x.awalan_antrean).filter(Boolean);
-        await db.ubahLokasiUntukJenisPoli(id, fasyankesId, sama ? sama.jenis_poli : jenisPoli.trim(), sama ? sama.awalan_antrean : awalanUntukJenis(jenisPoli, terpakai));
+    /** Poli baru mendapat awalan antrean dari namanya yang belum dipakai poli lain. */
+    async tetapkanAwalan(fasyankesId, id, nama) {
+        const terpakai = (await db.daftarPoli(fasyankesId)).filter((x) => x.id !== id).map((x) => x.awalan_antrean).filter(Boolean);
+        await db.ubahAwalanPoli(id, fasyankesId, awalanUntukJenis(nama, terpakai));
     }
     async ambil(fasyankesId, jenis, id) {
         if (LOKASI.includes(jenis)) {
             const l = await db.cariLokasiUntukAmbil(id, fasyankesId, jenis);
-            return l ? (await this.sertakanJenisPoli(fasyankesId, jenis, [barisLokasi(l)]))[0] : null;
+            return l ? (await this.sertakanRincian(fasyankesId, jenis, [barisLokasi(l)]))[0] : null;
         }
         if (jenis === 'praktisi') {
             const p = await db.cariProfilProfesiUntukAmbil(id, fasyankesId);
@@ -98,12 +110,18 @@ export class RepositoriMasterMysql {
         return t ? barisTarif(t) : null;
     }
     async buat(fasyankesId, jenis, data, oleh) {
-        if (jenis === 'poli' || jenis === 'ruang' || jenis === 'bed') {
+        if (LOKASI.includes(jenis)) {
             const d = data;
-            const l = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahLokasiUntukBuat(fasyankesId, d.nama, jenis, jenis === 'poli' ? null : (d.induk_id ?? null), d.status_operasional, d.ihs_location_id ?? null, oleh, koneksiBaru); return db.tambahLokasiUntukBuatHasil(_hasil.id, koneksiBaru); });
+            const l = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahLokasiUntukBuat(fasyankesId, d.nama, jenis, BERINDUK.includes(jenis) ? d.induk_id : null, d.status_operasional, d.ihs_location_id ?? null, oleh, koneksiBaru); return db.tambahLokasiUntukBuatHasil(_hasil.id, koneksiBaru); });
             if (jenis === 'poli')
-                await this.tetapkanJenisPoli(fasyankesId, l.id, d.jenis_poli);
-            return (await this.sertakanJenisPoli(fasyankesId, jenis, [barisLokasi(l)]))[0];
+                await this.tetapkanAwalan(fasyankesId, l.id, d.nama);
+            if (jenis === 'ruang') {
+                if (d.harga_umum !== undefined)
+                    await this.simpanHargaRuang(fasyankesId, l.id, d.nama, null, d.harga_umum, d.harga_jkn, oleh);
+                else if (d.tarif_id !== undefined)
+                    await db.ubahTarifLokasi(l.id, fasyankesId, d.tarif_id ?? null);
+            }
+            return (await this.sertakanRincian(fasyankesId, jenis, [barisLokasi(l)]))[0];
         }
         if (jenis === 'praktisi') {
             const d = data;
@@ -122,9 +140,18 @@ export class RepositoriMasterMysql {
         // Kunci fasyankes_id di where agar tidak pernah melintasi klinik, walau pemanggil lupa memeriksa.
         if (LOKASI.includes(jenis)) {
             const d = data;
-            await db.ubahLokasiUntukUbah(d.nama, (!(jenis === 'poli')) ? (d.induk_id ?? null) : (undefined), d.status_operasional, d.ihs_location_id ?? null, id, fasyankesId);
-            if (jenis === 'poli' && d.jenis_poli)
-                await this.tetapkanJenisPoli(fasyankesId, id, d.jenis_poli);
+            // Awalan antrean poli tidak berubah saat poli diganti nama (nomor hari ini tetap berurutan); pemetaan kode BPJS ikut nama baru.
+            const lama = jenis === 'poli' ? await db.cariLokasiUntukAmbil(id, fasyankesId, 'poli') : null;
+            if (lama && d.nama && lama.nama !== d.nama)
+                await db.ubahKunciPemetaanPoli(fasyankesId, lama.nama, d.nama);
+            const lamaRuang = jenis === 'ruang' ? (await this.sertakanRincian(fasyankesId, 'ruang', [{ id }]))[0] : null;
+            await db.ubahLokasiUntukUbah(d.nama, BERINDUK.includes(jenis) ? d.induk_id : undefined, d.status_operasional, d.ihs_location_id ?? null, id, fasyankesId);
+            if (jenis === 'ruang') {
+                if (d.harga_umum !== undefined)
+                    await this.simpanHargaRuang(fasyankesId, id, d.nama, lamaRuang?.tarif_id ?? null, d.harga_umum, d.harga_jkn, null);
+                else if (d.tarif_id !== undefined)
+                    await db.ubahTarifLokasi(id, fasyankesId, d.tarif_id ?? null);
+            }
         }
         else if (jenis === 'praktisi') {
             const d = data;
@@ -149,10 +176,51 @@ export class RepositoriMasterMysql {
             await db.ubahTarifLayananUntukSetAktif(aktif, id, fasyankesId);
         return (await this.ambil(fasyankesId, jenis, id));
     }
+    async bedSedangDihuni(fasyankesId, id) {
+        return (await db.hitungPenempatanLokasi(fasyankesId, id, true)) > 0;
+    }
+    async ruangAdaBedDihuni(fasyankesId, id) {
+        return (await db.hitungBedAktifDalamRuang(fasyankesId, id)) > 0;
+    }
+    async lokasiPunyaAnak(fasyankesId, id) {
+        const baris = await db.hitungAnakLokasi([id], fasyankesId);
+        return Number(baris[0]?.jumlah ?? 0) > 0;
+    }
+    async hapusLokasi(fasyankesId, id) {
+        await db.hapusLokasi(id, fasyankesId);
+    }
+    async simpanHargaRuang(fasyankesId, ruangId, namaRuang, tarifIdLama, hargaUmum, hargaJkn, oleh) {
+        if (hargaUmum === null) {
+            await db.ubahTarifLokasi(ruangId, fasyankesId, null);
+            return;
+        }
+        const namaTarif = `Kamar ${namaRuang}`.slice(0, 200);
+        const nilaiJkn = hargaJkn ?? hargaUmum;
+        if (tarifIdLama) {
+            await db.ubahTarifLayananUntukUbah(undefined, namaTarif, 'kamar', hargaUmum, nilaiJkn, null, tarifIdLama, fasyankesId);
+            await db.ubahTarifLayananUntukSetAktif(true, tarifIdLama, fasyankesId);
+            return;
+        }
+        let kode = `KMR-${ruangId}`;
+        if (await this.tarifKodeAda(fasyankesId, kode))
+            kode = `KMR-${ruangId}-${Date.now().toString().slice(-4)}`;
+        const t = await db.tambahTarifLayananUntukBuat(fasyankesId, kode, namaTarif, 'kamar', hargaUmum, nilaiJkn, null, oleh);
+        await db.ubahTarifLokasi(ruangId, fasyankesId, t.id);
+    }
+    async tarifKamarSah(fasyankesId, id) {
+        return (await db.hitungTarifLayananUntukTarifKamarSah(id, fasyankesId, 'kamar', true)) > 0;
+    }
     async opsi(fasyankesId, sumber, cari) {
         if (sumber === 'poli' || sumber === 'ruang') {
             const l = await db.daftarLokasiUntukOpsi(fasyankesId, sumber, 'O', (cari) ? (cari) : undefined, UKURAN_OPSI);
             return l.map((x) => ({ nilai: String(x.id), label: x.nama }));
+        }
+        if (sumber === 'tarif-kamar') {
+            const t = await db.daftarTarifLayananUntukOpsi(fasyankesId, 'kamar', true, 200);
+            const q = cari?.trim().toLowerCase();
+            return t
+                .filter((x) => !q || x.nama.toLowerCase().includes(q) || x.kode.toLowerCase().includes(q))
+                .map((x) => ({ nilai: String(x.id), label: `${x.nama} (Rp ${Number(x.harga_umum).toLocaleString('id-ID')})` }));
         }
         if (sumber === 'praktisi') {
             const p = await db.daftarPenggunaUntukOpsi(fasyankesId, true, (cari) ? (cari) : undefined, UKURAN_OPSI);

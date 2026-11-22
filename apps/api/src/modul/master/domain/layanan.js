@@ -1,7 +1,7 @@
 import { GALAT, MASTER, kodeTindakanBerikut, ringkasPerubahanHarga } from '@klira/shared';
 import { entriIcd } from '../../klinis/data-access/terminologi-icd.js';
 const ENTITAS = {
-    poli: 'lokasi', ruang: 'lokasi', bed: 'lokasi', praktisi: 'profil_profesi', jadwal: 'jadwal_praktik', tarif: 'tarif_layanan',
+    poli: 'lokasi', ruang_periksa: 'lokasi', ruang: 'lokasi', bed: 'lokasi', praktisi: 'profil_profesi', jadwal: 'jadwal_praktik', tarif: 'tarif_layanan',
 };
 const tidakValid = (jalur, pesan) => ({ ok: false, kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: [{ jalur, pesan }] });
 const tidakDitemukan = { ok: false, kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan };
@@ -22,13 +22,17 @@ export function ringkasanSip(sebelum, sesudah) {
 export function buatLayananMaster({ repo, audit }) {
     /** Rujukan harus milik fasyankes yang sama (lintas klinik ditolak). */
     async function periksaRujukan(f, jenis, d, id) {
-        // Poli dipanggil lewat suara dan layar dengan namanya, jadi nama harus membedakan poli (mis. Poli Umum 1, Poli Umum 2).
+        // Satu layanan satu poli; ruang periksa dan ruang rawat inap diumumkan dengan namanya, jadi nama harus membedakan.
         if (jenis === 'poli' && d.nama && (await repo.namaLokasiAda(f, 'poli', d.nama, id)))
             return { ok: false, kode: 'konflik', pesan: MASTER.galat.namaPoliKembar };
-        if (jenis === 'ruang' && d.induk_id && !(await repo.lokasiAda(f, d.induk_id, 'poli')))
+        if ((jenis === 'ruang_periksa' || jenis === 'ruang') && d.nama && (await repo.namaLokasiAda(f, jenis, d.nama, id)))
+            return { ok: false, kode: 'konflik', pesan: MASTER.galat.namaLokasiKembar };
+        if (jenis === 'ruang_periksa' && !(await repo.lokasiAda(f, d.induk_id, 'poli')))
             return tidakValid('induk_id', MASTER.galat.bukanMilikKlinik);
         if (jenis === 'bed' && !(await repo.lokasiAda(f, d.induk_id, 'ruang')))
             return tidakValid('induk_id', MASTER.galat.bukanMilikKlinik);
+        if (jenis === 'ruang' && d.tarif_id && !(await repo.tarifKamarSah(f, d.tarif_id)))
+            return tidakValid('tarif_id', MASTER.galat.bukanMilikKlinik);
         if (jenis === 'jadwal') {
             if (!(await repo.penggunaAda(f, d.pengguna_id)) || !(await repo.punyaProfil(f, d.pengguna_id)))
                 return tidakValid('pengguna_id', MASTER.galat.bukanMilikKlinik);
@@ -108,6 +112,8 @@ export function buatLayananMaster({ repo, audit }) {
             const lama = await repo.ambil(f, jenis, id);
             if (!lama)
                 return tidakDitemukan;
+            if (jenis === 'bed' && data.status_operasional !== undefined && data.status_operasional !== lama.status_operasional && (await repo.bedSedangDihuni(f, id)))
+                return { ok: false, kode: 'konflik', pesan: 'Status bed tidak dapat diubah karena sedang ditempati pasien.' };
             data = await lengkapiKodeTarif(f, jenis, data, lama);
             const salah = await periksaRujukan(f, jenis, data, id);
             if (salah)
@@ -132,6 +138,19 @@ export function buatLayananMaster({ repo, audit }) {
             await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS.jadwal, entitas_id: id, keterangan: `Hapus jadwal ${lama.pengguna_nama}, ${lama.lokasi_nama}, hari ${lama.hari}, shift ${lama.shift_nama}`, alamat });
             return { ok: true, data: { id } };
         },
+        async hapusLokasi(p, jenis, id, alamat) {
+            const f = p.fasyankes_id;
+            const lama = await repo.ambil(f, jenis, id);
+            if (!lama)
+                return tidakDitemukan;
+            if (jenis === 'bed' && (await repo.bedSedangDihuni(f, id)))
+                return { ok: false, kode: 'konflik', pesan: 'Bed sedang ditempati pasien dan tidak dapat dihapus.' };
+            if (jenis === 'ruang' && (await repo.lokasiPunyaAnak(f, id)))
+                return { ok: false, kode: 'konflik', pesan: 'Ruang masih memiliki bed; hapus semua bed di ruang ini terlebih dahulu.' };
+            await repo.hapusLokasi(f, id);
+            await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Hapus master ${jenis} ${lama.nama}`, alamat });
+            return { ok: true, data: { id } };
+        },
         async ubahAktif(p, jenis, id, aktif, alamat) {
             const f = p.fasyankes_id;
             if (jenis === 'jadwal')
@@ -139,6 +158,10 @@ export function buatLayananMaster({ repo, audit }) {
             const lama = await repo.ambil(f, jenis, id);
             if (!lama)
                 return tidakDitemukan;
+            if (jenis === 'bed' && (await repo.bedSedangDihuni(f, id)))
+                return { ok: false, kode: 'konflik', pesan: 'Bed sedang ditempati pasien sehingga status aktifnya tidak dapat diubah.' };
+            if (jenis === 'ruang' && !aktif && (await repo.ruangAdaBedDihuni(f, id)))
+                return { ok: false, kode: 'konflik', pesan: 'Ruang tidak dapat dinonaktifkan karena masih ada bed yang ditempati pasien.' };
             const baris = lama.aktif === aktif ? lama : await repo.setAktif(f, jenis, id, aktif);
             if (lama.aktif !== aktif) {
                 await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `${aktif ? 'Aktifkan' : 'Nonaktifkan'} master ${jenis}`, alamat });

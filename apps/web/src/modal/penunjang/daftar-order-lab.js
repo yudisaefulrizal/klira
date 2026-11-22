@@ -1,8 +1,7 @@
 import { h, Fragment } from '../../util/h.js';
-import { INTERPRETASI_HASIL, PENUNJANG, STATUS_ORDER_PENUNJANG, STATUS_PENGESAHAN } from '@klira/shared';
+import { INTERPRETASI_HASIL, PENUNJANG, STATUS_ORDER_PENUNJANG } from '@klira/shared';
 
 import { token } from '../../gaya/token.js';
-import { TampilanAddendum } from '../../komponen/klinis/tampilan-addendum.js';
 import { Bingkai } from '../../komponen/ui/kartu.js';
 import { Lencana } from '../../komponen/ui/lencana.js';
 import { Kolom, Sebaris } from '../../komponen/ui/susunan.js';
@@ -24,7 +23,7 @@ const KOLOM = [
   { judul: PENUNJANG.daftar.hasil },
   { judul: PENUNJANG.daftar.rujukan },
   { judul: PENUNJANG.cetak.kolom.interpretasi },
-  { judul: PENUNJANG.daftar.pengesahan },
+  { judul: 'Petugas Lab' },
 ];
 
 const waktuMs = (v) => {
@@ -92,27 +91,16 @@ export function DaftarOrderLab({ orders }) {
         h(SelTabel, null,
           hasil?.interpretasi
             ? h(Lencana, {
-                warna: INTERPRETASI_HASIL.warna(hasil.interpretasi),
-              }, INTERPRETASI_HASIL.label(hasil.interpretasi))
+              warna: INTERPRETASI_HASIL.warna(hasil.interpretasi),
+            }, INTERPRETASI_HASIL.label(hasil.interpretasi))
             : h('span', { style: redup }, '-'),
         ),
         h(SelTabel, null,
-          hasil?.validator_nama ? h(Kolom, { jarak: 'xs' },
-            h('span', { style: selKecil }, hasil.validator_nama),
-            h(Lencana, {
-              warna: STATUS_PENGESAHAN.warna(o.verifikasi),
-            }, STATUS_PENGESAHAN.label(o.verifikasi)),
-          ) : h('span', { style: redup }, '-'),
+          (hasil?.validator_nama || hasil?.dientri_oleh)
+            ? h('span', { style: selKecil }, hasil.validator_nama ?? hasil.dientri_oleh)
+            : h('span', { style: redup }, '-'),
         ),
       ),
-      o.addendum?.length > 0 && h('tr', {
-        key: `${o.id}-addendum`,
-      }, h('td', {
-        colSpan: KOLOM.length,
-        style: {
-          padding: `0 ${token.jarak.md} ${token.jarak.md}`,
-        },
-      }, h(TampilanAddendum, { daftar: o.addendum }))),
     );
   })));
 }

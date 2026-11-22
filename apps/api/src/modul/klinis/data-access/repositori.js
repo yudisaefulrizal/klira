@@ -258,7 +258,7 @@ export class RepositoriKlinisMysql {
         return {
             pasien: { id: k.pasien.id, nama: k.pasien.nama, nomor_rm: k.pasien.nomor_rm, jenis_kelamin: k.pasien.jenis_kelamin, umur_tahun: umurTahun(k.pasien.tanggal_lahir.toISOString().slice(0, 10)) },
             kunjungan: {
-                id: k.id, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, poli_nama: poli?.nama ?? null, dpjp_id: k.peserta[0]?.pengguna_id ?? null, dpjp_nama: dpjp?.nama ?? null, keluhan_singkat: k.keluhan_singkat,
+                id: k.id, id_layanan: k.id_layanan ?? null, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, poli_nama: poli?.nama ?? null, dpjp_id: k.peserta[0]?.pengguna_id ?? null, dpjp_nama: dpjp?.nama ?? null, keluhan_singkat: k.keluhan_singkat,
                 pasien_baru: kunjunganSebelumnya === 0,
             },
             // Default "tidak ada" berarti tanpa alergi.
@@ -290,7 +290,7 @@ export class RepositoriKlinisMysql {
             const dx = diagnosis.filter((d) => d.kunjungan_id === k.id);
             const versiDx = dx[0]?.versi;
             return {
-                id: k.id, mulai: k.mulai.toISOString(), jenis: k.jenis, poli_nama: poli.find((p) => p.id === k.lokasi_id)?.nama ?? null,
+                id: k.id, id_layanan: k.id_layanan ?? null, mulai: k.mulai.toISOString(), jenis: k.jenis, poli_nama: poli.find((p) => p.id === k.lokasi_id)?.nama ?? null,
                 dpjp_id: dpjp.get(k.id) ?? null, dpjp_nama: namaDokter.get(dpjp.get(k.id)) ?? null, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran,
                 keluhan_utama: anamnesis.find((a) => a.kunjungan_id === k.id)?.keluhan_utama ?? null,
                 diagnosis: dx.filter((d) => d.versi === versiDx).map((d) => ({ kode: d.kode_icd10, nama: d.nama, peran: d.peran })),

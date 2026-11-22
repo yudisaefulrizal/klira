@@ -1,6 +1,6 @@
 import * as db from '@klira/db';
 import { selesaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
-import { hargaTarif, TAHAP_BERJALAN, tanggalRetensi } from '@klira/shared';
+import { formatIdLayanan, hargaTarif, TAHAP_BERJALAN, tanggalRetensi, tanggalWib } from '@klira/shared';
 import { tambahItemTagihanDalam } from '../../kasir/data-access/repositori.js';
 import { hitungHariKamar } from '../domain/hari-kamar.js';
 import { tulisPengesahanDalam } from '../../rekam-medis/data-access/repositori.js';
@@ -44,33 +44,48 @@ export class RepositoriRawatInapMysql {
             this.praktisiDpjp(fasyankesId),
         ]);
         return {
-            bed_kosong: bed.filter((b) => b.status === 'kosong').map((b) => ({ id: b.id, nama: b.nama, ruang_nama: b.ruang_nama })),
+            bed_kosong: bed.filter((b) => b.status === 'kosong').map((b) => ({ id: b.id, nama: b.nama, ruang_nama: b.ruang_nama, ruang_tarif_id: b.ruang_tarif_id ?? null, ruang_harga_umum: b.ruang_harga_umum ?? null })),
             tarif_kamar: tarif.map((t) => ({ id: t.id, kode: t.kode, nama: t.nama, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn })),
             dpjp: praktisi.map((p) => ({ id: p.id, nama: p.nama, profesi: p.profil_profesi[0]?.profesi ?? '' })),
         };
     }
     async bedSemua(fasyankesId) {
         const lokasi = await db.daftarLokasiUntukBedSemua(fasyankesId, 'bed', 1000);
-        const ruang = new Map((await db.daftarLokasiUntukPetakanAntrean(fasyankesId, lokasi.flatMap((l) => (l.induk_id ? [l.induk_id] : [])))).map((r) => [r.id, r.nama]));
+        const ruangIds = [...new Set(lokasi.flatMap((l) => (l.induk_id ? [l.induk_id] : [])))];
+        const [ruangBaris, tarifRuangBaris] = await Promise.all([
+            db.daftarLokasiUntukPetakanAntrean(fasyankesId, ruangIds),
+            db.daftarTarifRuang(fasyankesId, ruangIds),
+        ]);
+        const ruang = new Map(ruangBaris.map((r) => [r.id, r.nama]));
+        const tarifRuang = new Map(tarifRuangBaris.map((t) => [t.id, t]));
         const aktif = await db.daftarPenempatanUntukBedSemua(fasyankesId, null);
         const kunj = await db.daftarKunjunganUntukBedSemua(aktif.map((a) => a.kunjungan_id), 'ATND', null, 1);
         const orang = new Map((await db.daftarPenggunaUntukNamaPengguna(kunj.flatMap((k) => k.peserta.map((p) => p.pengguna_id)))).map((u) => [u.id, u.nama]));
         return lokasi.map((l) => {
             const a = aktif.find((x) => x.lokasi_id === l.id);
             const k = a && kunj.find((x) => x.id === a.kunjungan_id);
+            const tr = l.induk_id ? tarifRuang.get(l.induk_id) : null;
             return {
                 id: l.id, nama: l.nama, ruang_id: l.induk_id, ruang_nama: l.induk_id ? ruang.get(l.induk_id) ?? null : null,
+                ruang_tarif_id: tr?.tarif_id ?? null, ruang_tarif_nama: tr?.tarif_nama ?? null, ruang_harga_umum: tr?.harga_umum ?? null,
                 status: a ? 'terisi' : l.status_operasional === 'O' ? 'kosong' : 'tidak_operasional',
-                penghuni: a && k ? { kunjungan_id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, kelas: a.kelas, indikator: a.indikator, mulai: a.mulai.toISOString(), dpjp_nama: k.peserta[0] ? orang.get(k.peserta[0].pengguna_id) ?? null : null } : null,
+                penghuni: a && k ? { kunjungan_id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, mulai: a.mulai.toISOString(), dpjp_nama: k.peserta[0] ? orang.get(k.peserta[0].pengguna_id) ?? null : null } : null,
             };
         });
     }
     async papan(fasyankesId) {
-        const bed = await this.bedSemua(fasyankesId);
+        const [bed, ruang] = await Promise.all([this.bedSemua(fasyankesId), db.daftarLokasiUntukOpsi2(fasyankesId, 'ruang', 'O', 500)]);
+        const tanpaBed = ruang.filter((r) => !bed.some((b) => b.ruang_id === r.id));
+        const tarifTanpa = new Map((await db.daftarTarifRuang(fasyankesId, tanpaBed.map((r) => r.id))).map((t) => [t.id, t]));
         const menunggu = await db.daftarKunjunganUntukPapan(fasyankesId, 'IMP', 'planned', tahapBerjalan, 200, 'ATND', null, 1);
         const orang = new Map((await db.daftarPenggunaUntukNamaPengguna(menunggu.flatMap((k) => k.peserta.map((p) => p.pengguna_id)))).map((u) => [u.id, u.nama]));
         return {
             bed,
+            // Ruang rawat inap aktif yang belum punya bed tetap ditampilkan agar admin tahu langkah berikutnya.
+            ruang_tanpa_bed: tanpaBed.map((r) => {
+                const tr = tarifTanpa.get(r.id);
+                return { id: r.id, nama: r.nama, tarif_id: tr?.tarif_id ?? null, tarif_nama: tr?.tarif_nama ?? null, harga_umum: tr?.harga_umum ?? null };
+            }),
             menunggu: menunggu.map((k) => ({ kunjungan_id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, mulai: k.mulai.toISOString(), dpjp_nama: k.peserta[0] ? orang.get(k.peserta[0].pengguna_id) ?? null : null })),
             ringkasan: { total: bed.length, terisi: bed.filter((b) => b.status === 'terisi').length, kosong: bed.filter((b) => b.status === 'kosong').length, tidak_operasional: bed.filter((b) => b.status === 'tidak_operasional').length },
         };
@@ -106,7 +121,11 @@ export class RepositoriRawatInapMysql {
             if (d.bed_id)
                 await this.pastikanBedBebas(tx, p.fasyankesId, d.bed_id);
             const tl = asal && (await db.cariTindakLanjutUntukAsal(asal.id, 'rawat_inap', tx));
-            const k = await (async () => { const _hasil = await db.tambahKunjunganUntukAdmisi(p.fasyankesId, d.pasien_id, 'IMP', d.bed_id ? 'in-progress' : 'planned', 'pemeriksaan', asal?.id ?? null, asal?.cara_pembayaran ?? d.cara_pembayaran, asal?.nomor_sep ?? null, d.spri ?? tl?.spri ?? null, d.keluhan_singkat ?? asal?.keluhan_singkat ?? null, sekarang, p.oleh, tx); return db.tambahKunjunganUntukDaftarkanHasil(_hasil.id, tx); })();
+            const tglWib = tanggalWib(sekarang);
+            const awalanId = formatIdLayanan(tglWib, 1).slice(0, 9);
+            const maksLayanan = await db.hitungMaksUrutanIdLayanan(p.fasyankesId, awalanId, tx);
+            const idLayanan = formatIdLayanan(tglWib, maksLayanan + 1);
+            const k = await (async () => { const _hasil = await db.tambahKunjunganUntukAdmisi(p.fasyankesId, idLayanan, d.pasien_id, 'IMP', d.bed_id ? 'in-progress' : 'planned', 'pemeriksaan', asal?.id ?? null, asal?.cara_pembayaran ?? d.cara_pembayaran, asal?.nomor_sep ?? null, d.spri ?? tl?.spri ?? null, d.keluhan_singkat ?? asal?.keluhan_singkat ?? null, sekarang, p.oleh, tx); return db.tambahKunjunganUntukDaftarkanHasil(_hasil.id, tx); })();
             await db.tambahPesertaKunjunganUntukDaftarkan(p.fasyankesId, k.id, d.dpjp_id, 'ATND', sekarang, p.oleh, tx);
             for (const id of d.dpjp_bersama)
                 await db.tambahPesertaKunjunganUntukDaftarkan(p.fasyankesId, k.id, id, 'SPRF', sekarang, p.oleh, tx);
@@ -130,9 +149,21 @@ export class RepositoriRawatInapMysql {
             throw new GalatRi('bed_tidak_sah');
     }
     async tempatkan(tx, p, kunjunganId, bedId, d, sekarang) {
-        if (d.tarif_id && !(await db.hitungTarifLayananUntukTarifKamarSah(d.tarif_id, p.fasyankesId, 'kamar', true, tx)))
+        const bed = await db.cariLokasiUntukPastikanBedBebas(bedId, p.fasyankesId, 'bed', tx);
+        let tarifId = d.tarif_id ?? null;
+        let ruangNama = null;
+        if (bed?.induk_id) {
+            const [[tr], [ruang]] = await Promise.all([
+                db.daftarTarifRuang(p.fasyankesId, [bed.induk_id], tx),
+                db.daftarLokasiUntukPetakanAntrean(p.fasyankesId, [bed.induk_id], tx),
+            ]);
+            ruangNama = ruang?.nama ?? null;
+            if (!tarifId)
+                tarifId = tr?.tarif_id ?? null;
+        }
+        if (tarifId && !(await db.hitungTarifLayananUntukTarifKamarSah(tarifId, p.fasyankesId, 'kamar', true, tx)))
             throw new GalatRi('tarif_tidak_sah');
-        await db.tambahPenempatanUntukTempatkan(p.fasyankesId, kunjunganId, bedId, d.kelas, d.indikator, d.tarif_id ?? null, sekarang, p.oleh, tx);
+        await db.tambahPenempatanUntukTempatkan(p.fasyankesId, kunjunganId, bedId, tarifId, sekarang, p.oleh, tx, ruangNama, bed?.nama ?? null);
         await db.ubahLokasiUntukTempatkan('U', bedId, tx);
     }
     async teruskanDariRawatJalan(tx, p, asalId, baruId, sekarang) {
@@ -164,7 +195,7 @@ export class RepositoriRawatInapMysql {
         return {
             kunjungan: { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, status: k.status, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, mulai: k.mulai.toISOString(), spri: k.spri },
             penempatan: pen.map((x) => ({
-                id: x.id, bed_id: x.lokasi_id, bed_nama: bed.get(x.lokasi_id)?.nama ?? null, ruang_nama: ruang.get(bed.get(x.lokasi_id)?.induk_id ?? 0) ?? null, kelas: x.kelas, indikator: x.indikator,
+                id: x.id, bed_id: x.lokasi_id, bed_nama: x.bed_nama ?? bed.get(x.lokasi_id)?.nama ?? null, ruang_nama: x.ruang_nama ?? ruang.get(bed.get(x.lokasi_id)?.induk_id ?? 0) ?? null,
                 tarif_id: x.tarif_id, tarif_nama: x.tarif_id ? tarif.get(x.tarif_id) ?? null : null, mulai: x.mulai.toISOString(), selesai: x.selesai?.toISOString() ?? null,
             })),
             dpjp: peserta.filter((x) => !x.selesai).map((x) => ({ id: x.pengguna_id, nama: orang.get(x.pengguna_id) ?? '-', tipe: x.tipe })),
@@ -173,7 +204,7 @@ export class RepositoriRawatInapMysql {
             pemulangan: pulang && { disposisi: pulang.disposisi, kondisi_pulang: pulang.kondisi_pulang, diagnosis_akhir: pulang.diagnosis_akhir, ringkasan: pulang.ringkasan, tindak_lanjut: pulang.tindak_lanjut, waktu: pulang.waktu.toISOString(), dibuat_oleh_nama: orang.get(pulang.dibuat_oleh) ?? null },
         };
     }
-    /** Pindah bed/kelas (menutup periode lama, membuka yang baru) dan/atau ganti DPJP; kunjungan dikunci agar perubahan serempak berurutan. */
+    /** Pindah bed (menutup periode lama, membuka yang baru) dan/atau ganti DPJP; kunjungan dikunci agar perubahan serempak berurutan. */
     async ubahPenempatan(p, kunjunganId, d, sekarang) {
         await db.transaksi(async (tx) => {
             await kunci(tx, 'kunjungan', p.fasyankesId, kunjunganId);
@@ -188,8 +219,8 @@ export class RepositoriRawatInapMysql {
             const bedTujuan = d.bed_id ?? sekarangAktif?.lokasi_id ?? null;
             if (bedTujuan) {
                 const sama = sekarangAktif && sekarangAktif.lokasi_id === bedTujuan;
-                const kelasSama = sama && sekarangAktif.kelas === d.kelas && sekarangAktif.indikator === d.indikator && (sekarangAktif.tarif_id ?? null) === (d.tarif_id ?? null);
-                if (!kelasSama) {
+                const penempatanSama = sama && (sekarangAktif.tarif_id ?? null) === (d.tarif_id ?? null);
+                if (!penempatanSama) {
                     if (sekarangAktif && !d.alasan?.trim())
                         throw new GalatRi('alasan_pindah');
                     if (!sama)
@@ -200,7 +231,9 @@ export class RepositoriRawatInapMysql {
                             await db.ubahLokasiUntukTempatkan('O', sekarangAktif.lokasi_id, tx);
                     }
                     if (sama) {
-                        await db.tambahPenempatanUntukTempatkan(p.fasyankesId, kunjunganId, bedTujuan, d.kelas, d.indikator, d.tarif_id ?? null, sekarang, p.oleh, tx);
+                        const bed = await db.cariLokasiUntukPastikanBedBebas(bedTujuan, p.fasyankesId, 'bed', tx);
+                        const [ruang] = bed?.induk_id ? await db.daftarLokasiUntukPetakanAntrean(p.fasyankesId, [bed.induk_id], tx) : [];
+                        await db.tambahPenempatanUntukTempatkan(p.fasyankesId, kunjunganId, bedTujuan, d.tarif_id ?? null, sekarang, p.oleh, tx, ruang?.nama ?? null, bed?.nama ?? null);
                     }
                     else {
                         await this.tempatkan(tx, p, kunjunganId, bedTujuan, d, sekarang);

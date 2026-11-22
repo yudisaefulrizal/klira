@@ -25,7 +25,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
   const boleh = izinSaatIni();
   const bolehKasir = boleh('kasir', 'lihat') || boleh('kasir', 'input') || boleh('kasir', 'perbaikan'), bolehBayar = boleh('kasir', 'input'), bolehTutup = boleh('kasir', 'perbaikan'), bolehObat = boleh('farmasi', 'input');
   const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
-  let g = null, bayar = awalBayar(), galatMuat = null, galat = null, info = null, dicoba = false, memproses = false, alasan = '', ditutup = null, aktif = true, anak = [], modalHarga, modalSerah;
+  let g = null, bayar = awalBayar(), galatMuat = null, galat = null, info = null, dicoba = false, memproses = false, alasan = '', ditutup = null, aktif = true, anak = [], modalHarga, modalSerah, bukaTambahItem = false;
   const tahap = () => g?.kunjungan.tahap_layanan ?? klinis().kunjungan.tahap_layanan;
   // Setelah obat diserahkan, syarat tutup (resep sudah diserahkan) berubah di server: data kasir dimuat ulang sekali per penyerahan.
   let serahSegar = true;
@@ -78,9 +78,25 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
       const sub = sel(i.harga === null ? '-' : rupiah(i.harga * i.jumlah)); sub.style.textAlign = 'right'; tbl.tbody.append(baris(nama, sel(i.jumlah), harga, sub));
     }
     e.append(tbl.el);
-    // Baris tambah item dari tarif tepat di bawah daftar item (seperti baris tambah obat di resep), sebelum total.
-    if (bolehBayar && tahap() !== 'ditutup') { const tambah = TambahItemTarif({ kunjunganId, gambaran: g, onUbah: terapkan, ringkas: true }); anak.push(tambah); e.append(tambah); }
-    e.append(ringkas([{ label: B.total, nilai: rupiah(t.total) }, { label: B.dibayar, nilai: rupiah(t.dibayar) }, { label: B.sisa, nilai: t.sisa === 0 ? B.lunas : rupiah(t.sisa) }]));
+    // Tombol + Tambah item ditampilkan lebih dulu; form pilih item baru muncul setelah ditekan.
+    if (bolehBayar && tahap() !== 'ditutup') {
+      if (!bukaTambahItem) {
+        const btnTambah = tombol(`+ ${KASIR.tambah.tambahBaris}`, () => { bukaTambahItem = true; lukis(); }, 'sekunder');
+        btnTambah.disabled = memproses;
+        btnTambah.style.alignSelf = 'flex-start';
+        e.append(btnTambah);
+      } else {
+        const wadahTambah = document.createElement('div');
+        Object.assign(wadahTambah.style, { display: 'flex', gap: token.jarak.sm, alignItems: 'center', flexWrap: 'wrap' });
+        const tambah = TambahItemTarif({ kunjunganId, gambaran: g, onUbah(h) { bukaTambahItem = false; terapkan(h); }, ringkas: true });
+        tambah.style.flex = '1 1 320px';
+        anak.push(tambah);
+        const btnBatal = tombol('Batal', () => { bukaTambahItem = false; lukis(); }, 'teks');
+        wadahTambah.append(tambah, btnBatal);
+        e.append(wadahTambah);
+      }
+    }
+    e.append(ringkas([{ label: B.total, nilai: rupiah(t.total) }]));
     if (g.hasil_lab?.status === 'diserahkan') e.append(teks(KASIR.serahHasil.diserahkanPada(formatWaktu(g.hasil_lab.diserahkan_pada), g.hasil_lab.penerima_nama ?? '-'), true));
     else if (g.hasil_lab?.status === 'menunggu') e.append(teks(KASIR.serahHasil.menunggu, true));
     return bagian(P.tagihan, e);
@@ -123,7 +139,6 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     if (!g.shift_terbuka) e.append(peringatan(B.tanpaShift));
     for (const p of t.pembayaran) { const r = document.createElement('div'); Object.assign(r.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' }); const jumlah = teks(rupiah(p.jumlah)); jumlah.style.flexGrow = '1'; r.append(lencana(METODE_BAYAR.label(p.metode), METODE_BAYAR.warna(p.metode)), jumlah, teks(`${p.kasir_nama ?? '-'} · ${formatWaktu(p.waktu)}`, true)); e.append(r); }
     {
-      if (metodeBawaan(g) !== 'tunai') e.append(peringatan(KASIR.jkn.petunjukBayar, 'biru'));
       const opsiMetode = NILAI_METODE_BAYAR.map((m) => ({ nilai: m, label: METODE_BAYAR.label(m) }));
       const erreur = document.createElement('div'), ringk = document.createElement('div'), fields = [];
       const hitung = () => {
@@ -136,11 +151,11 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
         const r = document.createElement('div'); Object.assign(r.style, { display: 'flex', gap: token.jarak.md, flexWrap: 'wrap', alignItems: 'flex-end' });
         const metode = bidang({ id: `bayar-metode-${i}`, label: i === 0 ? B.metode : B.metodeKe(i + 1), opsi: opsiMetode, nilai: b.metode, ubah(v) { bayar = ubahBaris(bayar, i, { metode: v }); hitung(); } });
         const jumlah = bidang({ id: `bayar-jumlah-${i}`, label: i === 0 ? B.diterima : B.diterimaKe(i + 1), nilai: b.jumlah, autoComplete: 'off', ubah(v) { bayar = ubahBaris(bayar, i, { jumlah: v }); hitung(); } });
-        jumlah.kontrol.inputMode = 'numeric'; jumlah.el.style.flexGrow = '1'; metode.kontrol.disabled = jumlah.kontrol.disabled = memproses; fields.push([i, metode, jumlah]); r.append(metode.el, jumlah.el);
+        jumlah.kontrol.inputMode = 'numeric'; jumlah.el.style.flex = '0 0 200px'; jumlah.el.style.maxWidth = '100%'; metode.kontrol.disabled = jumlah.kontrol.disabled = memproses; fields.push([i, metode, jumlah]); r.append(metode.el, jumlah.el);
         if (i > 0) { const h = tombol(B.hapusMetode, () => { bayar = hapusBaris(bayar, i); lukis(); }, 'teks'); h.disabled = memproses; h.setAttribute('aria-label', `${B.hapusMetode} ${B.metodeKe(i + 1)}`); r.append(h); }
         e.append(r);
       });
-      if (bayar.baris.length < MAKS_BARIS_BAYAR) { const b = tombol(B.tambahMetode, () => { bayar = tambahBaris(bayar, t.sisa); lukis(); }, 'sekunder'); b.disabled = memproses; e.append(b); }
+      if (bayar.baris.length < MAKS_BARIS_BAYAR) { const b = tombol(B.tambahMetode, () => { bayar = tambahBaris(bayar, t.sisa); lukis(); }, 'sekunder'); b.disabled = memproses; b.style.alignSelf = 'flex-start'; e.append(b); }
       e.append(erreur, ringk);
       if (bolehTutup) e.append(teks(P.diprosesSaatTutup, true));
       else {
@@ -214,7 +229,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
       // Galat serah obat sudah tampil di bagiannya sendiri (mis. stok kurang menunggu persetujuan); tidak diulang.
       galat = `${langkah === P.serahObat ? '' : `${e instanceof GalatApi || e instanceof Error ? e.message : B.gagal} `}${P.berhentiDi(langkah)}`;
       // Data kasir dimuat ulang supaya tampilan mengikuti langkah yang sudah tersimpan.
-      void kasirKunjungan(kunjunganId).then((h) => { if (aktif) { g = h; lukis(); onKepala?.(); } }).catch(() => {});
+      void kasirKunjungan(kunjunganId).then((h) => { if (aktif) { g = h; lukis(); onKepala?.(); } }).catch(() => { });
     }
     finally { memproses = false; if (aktif) { onBerubah(); lukis(); onKepala?.(); } }
   }

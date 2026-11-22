@@ -18,6 +18,11 @@ export const AWALAN_ANTREAN = 'A';
 export const ANTREAN_LAB = { jenis_poli: 'Laboratorium', awalan: 'L' };
 /** Nomor antrean tampil, mis. 1 menjadi A-001. */
 export const kodeAntrean = (nomor, awalan = AWALAN_ANTREAN) => `${awalan}-${String(nomor).padStart(3, '0')}`;
+/** ID Layanan permanen per kunjungan, mis. 2026-11-22 urutan 1 menjadi LY-261122-0001. */
+export function formatIdLayanan(tanggalYmd, urutan) {
+    const [y, m, d] = String(tanggalYmd).split('-');
+    return `LY-${y.slice(-2)}${m}${d}-${String(urutan).padStart(4, '0')}`;
+}
 /** Awalan nomor antrean untuk jenis poli: huruf pertama nama jenis; bila sudah dipakai jenis lain, huruf berikutnya dari nama, lalu A sampai Z. `terpakai` adalah awalan jenis lain. */
 export function awalanUntukJenis(jenis, terpakai) {
     const pakai = new Set(terpakai);

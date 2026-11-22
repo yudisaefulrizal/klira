@@ -6,8 +6,8 @@ import { peringatan } from '../../komponen/ui/primitif.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { barisHistori } from './keadaan-histori-rawat-jalan.js';
 
-/** Tabel histori pemeriksaan rawat jalan pasien (hanya baca, gaya sama dengan histori CPPT); dipasang di kartu tersendiri di bawah panel kunjungan. */
-export function TabelHistoriRawatJalan({ pasienId, kunjunganId }) {
+/** Tabel histori pemeriksaan rawat jalan pasien (bisa diklik untuk membuka/mengedit kunjungan terkait); dipasang di kartu tersendiri di bawah panel kunjungan. */
+export function TabelHistoriRawatJalan({ pasienId, kunjunganId, onPilih }) {
     const H = HISTORI_RAWAT_JALAN;
     const el = document.createElement('section');
     Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm });
@@ -36,7 +36,7 @@ export function TabelHistoriRawatJalan({ pasienId, kunjunganId }) {
         const saat = ++versi;
         status.replaceChildren(); bungkusTabel.replaceChildren(); jumlah.textContent = H.memuat;
         try {
-            const daftar = (await historiRawatJalan(pasienId, kunjunganId)).map(barisHistori);
+            const daftar = (await historiRawatJalan(pasienId)).map(barisHistori);
             if (!aktif || saat !== versi) return;
             jumlah.textContent = H.entri(daftar.length);
             if (!daftar.length) {
@@ -54,6 +54,17 @@ export function TabelHistoriRawatJalan({ pasienId, kunjunganId }) {
             const tbody = document.createElement('tbody');
             for (const b of daftar) {
                 const tr = document.createElement('tr');
+                const terpilih = b.id === kunjunganId;
+                if (terpilih) {
+                    tr.style.background = 'rgba(13, 148, 136, 0.12)';
+                    tr.setAttribute('aria-current', 'true');
+                }
+                if (onPilih) {
+                    tr.style.cursor = 'pointer';
+                    tr.tabIndex = 0;
+                    tr.addEventListener('click', () => onPilih(b.id));
+                    tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPilih(b.id); } });
+                }
                 tr.append(
                     sel('td', formatWaktu(b.mulai), { whiteSpace: 'nowrap' }), sel('td', b.pemeriksa), sel('td', b.tandaVital, { whiteSpace: 'pre-wrap' }),
                     sel('td', b.subjektif, { whiteSpace: 'pre-wrap' }), sel('td', b.objektif, { whiteSpace: 'pre-wrap' }), sel('td', b.asesmen, { whiteSpace: 'pre-wrap' }),

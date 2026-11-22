@@ -1,8 +1,13 @@
 import { jest } from '@jest/globals';
 
-const { awalanUntukJenis, aksiAntreanTersedia, bolehAksiAntrean, CARA_PEMBAYARAN, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan, statusIdentitasDari, tanggalWib, umurTahun } = await import("../index.js");
+const { awalanUntukJenis, aksiAntreanTersedia, bolehAksiAntrean, CARA_PEMBAYARAN, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatIdLayanan, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan, statusIdentitasDari, tanggalWib, umurTahun } = await import("../index.js");
 
 describe('antrean', () => {
+    it('formatIdLayanan menghasilkan LY-YYMMDD-0001 dan seterusnya', () => {
+        expect(formatIdLayanan('2026-11-22', 1)).toBe('LY-261122-0001');
+        expect(formatIdLayanan('2026-11-22', 42)).toBe('LY-261122-0042');
+        expect(formatIdLayanan('2026-11-22', 12345)).toBe('LY-261122-12345');
+    });
     it('kode nomor A-001 dan seterusnya', () => {
         expect(kodeAntrean(1)).toBe('A-001');
         expect(kodeAntrean(42)).toBe('A-042');

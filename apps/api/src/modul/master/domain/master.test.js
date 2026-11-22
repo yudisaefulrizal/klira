@@ -48,7 +48,7 @@ describe('layanan master dengan repositori tiruan', () => {
     };
     const layanan = buatLayananMaster({ repo, audit: { catat: async (e) => void catatan.push(e) } });
     it('rujukan di luar fasyankes ditolak tanpa menyimpan atau mencatat audit', async () => {
-        const h = await layanan.buat({ id: 1, fasyankes_id: 2 }, 'ruang', { nama: 'R', induk_id: 10, status_operasional: 'O' });
+        const h = await layanan.buat({ id: 1, fasyankes_id: 2 }, 'ruang_periksa', { nama: 'R', induk_id: 10, status_operasional: 'O' });
         expect(h).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(catatan).toHaveLength(0);
     });

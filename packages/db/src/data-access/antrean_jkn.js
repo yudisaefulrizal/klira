@@ -71,3 +71,8 @@ export async function isiNomorUrutPcareAntrean(id, fasyankes_id, pcare_no_urut, 
     const hasil = await tulis('UPDATE `antrean` t SET t.`pcare_no_urut` = ? WHERE t.`id` = ? AND t.`fasyankes_id` = ?', [pcare_no_urut, id, fasyankes_id], koneksi);
     return { count: hasil.affectedRows };
 }
+/** Pemetaan kode poli BPJS berkunci nama poli: ikut diganti saat poli diganti nama. */
+export async function ubahKunciPemetaanPoli(fasyankes_id, lama, baru, koneksi = pool) {
+    const hasil = await tulis("UPDATE `pemetaan_bpjs` SET `kunci` = ? WHERE `fasyankes_id` = ? AND `jenis` = 'poli' AND LOWER(`kunci`) = LOWER(?)", [baru, fasyankes_id, lama], koneksi);
+    return { count: hasil.affectedRows };
+}

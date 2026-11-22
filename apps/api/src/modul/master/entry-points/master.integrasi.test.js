@@ -99,15 +99,25 @@ d('master data dan profil klinik terhadap database pengujian', () => {
         expect(poli.status).toBe(201);
         expect(poli.badan.data).toMatchObject({ nama: 'Poli Umum', aktif: true, status_operasional: 'O' });
         const poliId = poli.badan.data.id;
-        // Bed wajib induk ruang; ruang induk harus poli milik klinik sendiri.
+        expect(poli.badan.data).toMatchObject({ awalan_antrean: 'P', jumlah_ruang: 0 });
+        // Satu layanan satu poli: nama poli kembar ditolak.
+        expect((await panggil('POST', '/master/poli', 'pimpinan', { nama: 'poli umum' })).status).toBe(409);
+        // Ruang periksa wajib berinduk poli milik klinik sendiri; bed wajib berinduk ruang rawat inap.
         expect((await panggil('POST', '/master/bed', 'pimpinan', { nama: 'Bed 1' })).status).toBe(400);
+        expect((await panggil('POST', '/master/ruang_periksa', 'pimpinan', { nama: 'Ruang Periksa 1' })).status).toBe(400);
         const lain = await panggil('POST', '/master/poli', 'lain', { nama: 'Poli Lain' });
-        const tolak = await panggil('POST', '/master/ruang', 'pimpinan', { nama: 'Ruang X', induk_id: lain.badan.data.id });
+        const tolak = await panggil('POST', '/master/ruang_periksa', 'pimpinan', { nama: 'Ruang X', induk_id: lain.badan.data.id });
         expect(tolak.status).toBe(400);
         expect(tolak.badan.galat.rincian[0].jalur).toBe('induk_id');
+        const periksa = await panggil('POST', '/master/ruang_periksa', 'pimpinan', { nama: 'Ruang Periksa 1', induk_id: poliId });
+        expect(periksa.status).toBe(201);
+        expect(periksa.badan.data.induk_nama).toBe('Poli Umum');
+        expect((await panggil('GET', `/master/poli?cari=umum`, 'pelihat')).badan.data.data[0].jumlah_ruang).toBe(1);
+        // Ruang rawat inap berdiri sendiri: induk yang dikirim diabaikan.
         const ruang = await panggil('POST', '/master/ruang', 'pimpinan', { nama: 'Ruang Mawar', induk_id: poliId });
         expect(ruang.status).toBe(201);
-        expect(ruang.badan.data.induk_nama).toBe('Poli Umum');
+        expect(ruang.badan.data.induk_id).toBeNull();
+        expect((await panggil('POST', '/master/bed', 'pimpinan', { nama: 'Bed X', induk_id: periksa.badan.data.id })).status).toBe(400); // induk bed harus ruang rawat inap
         expect((await panggil('POST', '/master/bed', 'pimpinan', { nama: 'Bed 1', induk_id: poliId })).status).toBe(400); // induk bed harus ruang
         const bed = await panggil('POST', '/master/bed', 'pimpinan', { nama: 'Bed 1', induk_id: ruang.badan.data.id });
         expect(bed.status).toBe(201);
@@ -119,9 +129,9 @@ d('master data dan profil klinik terhadap database pengujian', () => {
         expect(non.badan.data).toMatchObject({ aktif: false, status_operasional: 'U' });
         expect((await panggil('GET', '/master/ruang?status=aktif', 'pelihat')).badan.data.total).toBe(0);
         expect((await panggil('GET', '/master/ruang?status=nonaktif', 'pelihat')).badan.data.total).toBe(1);
-        expect((await uji.hitungLokasiUntukMasterMasterIntegrasiTest(fas))).toBe(3); // tidak ada hapus permanen
+        expect((await uji.hitungLokasiUntukMasterMasterIntegrasiTest(fas))).toBe(4); // tidak ada hapus permanen
         const audit = await uji.daftarLogAuditUntukMasterMasterIntegrasiTest(fas, 'lokasi');
-        expect(audit.map((a) => a.aksi)).toEqual(['input', 'input', 'input', 'perbaikan', 'perbaikan']);
+        expect(audit.map((a) => a.aksi)).toEqual(['input', 'input', 'input', 'input', 'perbaikan', 'perbaikan']);
         expect(audit.every((a) => a.pengguna_id === id.pimpinan)).toBe(true);
     });
     it('lintas fasyankes: ubah, nonaktifkan, dan baca milik klinik lain ditolak', async () => {

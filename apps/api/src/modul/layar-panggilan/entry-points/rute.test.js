@@ -3,14 +3,18 @@ import { jest } from '@jest/globals';
 const kliraActual0 = await import("@klira/db");
 jest.unstable_mockModule('@klira/db', () => {
     const ambilFasyankesUntukBuatRuteLayarPanggilan = jest.fn();
-    const daftarPoliUntukJenis = jest.fn();
+    const ambilSesiAntreanAktif = jest.fn();
+    const daftarPoli = jest.fn();
+    const daftarRuangPeriksaOperasional = jest.fn().mockResolvedValue([]);
     const daftarAntreanUntukBuatRuteLayarPanggilan = jest.fn();
     const daftarEventPanggilanUntukBuatRuteLayarPanggilan = jest.fn();
     const cariEventPanggilanUntukBuatRuteLayarPanggilan = jest.fn();
     return { ...kliraActual0,
         pool: {},
         ambilFasyankesUntukBuatRuteLayarPanggilan: ambilFasyankesUntukBuatRuteLayarPanggilan,
-        daftarPoliUntukJenis: daftarPoliUntukJenis,
+        ambilSesiAntreanAktif: ambilSesiAntreanAktif,
+        daftarPoli: daftarPoli,
+        daftarRuangPeriksaOperasional: daftarRuangPeriksaOperasional,
         daftarAntreanUntukBuatRuteLayarPanggilan: daftarAntreanUntukBuatRuteLayarPanggilan,
         daftarEventPanggilanUntukBuatRuteLayarPanggilan: daftarEventPanggilanUntukBuatRuteLayarPanggilan,
         cariEventPanggilanUntukBuatRuteLayarPanggilan: cariEventPanggilanUntukBuatRuteLayarPanggilan,
@@ -38,6 +42,7 @@ afterAll(() => new Promise(resolve => server.close(() => resolve())));
 
 beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(db.ambilSesiAntreanAktif).mockResolvedValue({ id: 99, status: 'buka' });
     jest.mocked(db.daftarEventPanggilanUntukBuatRuteLayarPanggilan).mockResolvedValue([]);
     jest.mocked(db.cariEventPanggilanUntukBuatRuteLayarPanggilan).mockResolvedValue(null);
 });
@@ -58,17 +63,21 @@ test('fasilitas tidak ada menghasilkan 404', async () => {
 
 test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa identitas pasien', async () => {
     jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mockResolvedValue({ nama: 'Klinik Uji', website_klinik: { logo_url: '/asset/brand/bhakti-rahayu.png' } });
-    jest.mocked(db.daftarPoliUntukJenis).mockResolvedValue([
-        { id: 9, nama: 'Poli Umum 1', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
-        { id: 10, nama: 'Poli Umum 2', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
-        { id: 11, nama: 'Poli Gigi', jenis_poli: 'Gigi', awalan_antrean: 'G', status_operasional: 'O' },
-        { id: 12, nama: 'Poli Tutup', jenis_poli: 'Mata', awalan_antrean: 'M', status_operasional: 'U' },
+    // Poli = layanan; Umum punya dua ruang periksa, Gigi tanpa ruang periksa (dipanggil atas nama poli), Mata tidak aktif.
+    jest.mocked(db.daftarPoli).mockResolvedValue([
+        { id: 2, nama: 'Gigi', awalan_antrean: 'G', status_operasional: 'O' },
+        { id: 1, nama: 'Umum', awalan_antrean: 'U', status_operasional: 'O' },
+        { id: 3, nama: 'Mata', awalan_antrean: 'M', status_operasional: 'U' },
+    ]);
+    jest.mocked(db.daftarRuangPeriksaOperasional).mockResolvedValue([
+        { id: 9, nama: 'Poli Umum 1', induk_id: 1 },
+        { id: 10, nama: 'Ruang 2', induk_id: 1 },
     ]);
     jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mockResolvedValue([
-        { id: 4, lokasi_id: 9, jenis_poli: 'Umum', awalan: 'U', nomor: 23, status: 'dipanggil', waktu_panggil: new Date('2026-10-29T03:00:00Z') },
-        { id: 5, lokasi_id: null, jenis_poli: 'Umum', awalan: 'U', nomor: 25, status: 'menunggu', waktu_panggil: null },
-        { id: 3, lokasi_id: null, jenis_poli: 'Umum', awalan: 'U', nomor: 24, status: 'menunggu', waktu_panggil: null },
-        { id: 2, lokasi_id: 11, jenis_poli: 'Gigi', awalan: 'G', nomor: 12, status: 'dilayani', waktu_panggil: new Date('2026-10-29T02:00:00Z') },
+        { id: 4, lokasi_id: 1, ruang_id: 9, jenis_poli: 'Umum', awalan: 'U', nomor: 23, status: 'dipanggil', waktu_panggil: new Date('2026-10-29T03:00:00Z') },
+        { id: 5, lokasi_id: 1, ruang_id: null, jenis_poli: 'Umum', awalan: 'U', nomor: 25, status: 'menunggu', waktu_panggil: null },
+        { id: 3, lokasi_id: 1, ruang_id: null, jenis_poli: 'Umum', awalan: 'U', nomor: 24, status: 'menunggu', waktu_panggil: null },
+        { id: 2, lokasi_id: 2, ruang_id: null, jenis_poli: 'Gigi', awalan: 'G', nomor: 12, status: 'dilayani', waktu_panggil: new Date('2026-10-29T02:00:00Z') },
     ]);
     const res = await ambil('7');
     expect(res.status).toBe(200);
@@ -78,19 +87,20 @@ test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa ide
     expect(jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7 })]));
     expect(data.panggilan).toEqual({ kode: 'U-023', poli_id: 9, poli_nama: 'Poli Umum 1', waktu_panggil: '2026-10-29T03:00:00.000Z' });
     expect(data.panggilan_aktif).toEqual([data.panggilan]);
-    // Poli tidak operasional tidak tampil; antrean menunggu dibagi per jenis poli (satu nomor berikutnya untuk poli sejenis).
-    expect(data.poli.map((p) => p.nama)).toEqual(['Poli Umum 1', 'Poli Umum 2', 'Poli Gigi']);
-    expect(data.poli[0].sekarang).toEqual({ kode: 'U-023', status: 'dipanggil' });
-    expect(data.poli[1].sekarang).toBeNull();
-    expect(data.poli[2].sekarang).toEqual({ kode: 'G-012', status: 'dilayani' });
+    // Poli tidak aktif tidak tampil; tempat panggilan = ruang periksa (atau poli tanpa ruang); antrean menunggu dibagi per poli.
+    expect(data.poli.map((p) => p.nama)).toEqual(['Poli Gigi', 'Poli Umum 1', 'Ruang 2 · Poli Umum']);
+    expect(data.poli[0].sekarang).toEqual({ kode: 'G-012', status: 'dilayani' });
+    expect(data.poli[1].sekarang).toEqual({ kode: 'U-023', status: 'dipanggil' });
+    expect(data.poli[2].sekarang).toBeNull();
     expect(data.jenis).toEqual([{ nama: 'Gigi', berikutnya: null, menunggu: 0 }, { nama: 'Umum', berikutnya: 'U-024', menunggu: 2 }]);
-    expect(jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: new Date(`${tanggalWib(new Date())}T00:00:00Z`), 2: [9, 10, 11] })]));
+    expect(jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 99, 2: [2, 1] })]));
     expect(JSON.stringify(data)).not.toMatch(/pasien|nomor_rm|kunjungan_id/);
 });
 
 test('antrean kosong tetap mengembalikan poli dan status kosong', async () => {
     jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mockResolvedValue({ nama: 'Klinik Uji' });
-    jest.mocked(db.daftarPoliUntukJenis).mockResolvedValue([{ id: 9, nama: 'Poli Umum', jenis_poli: 'Umum', awalan_antrean: 'U', status_operasional: 'O' }]);
+    jest.mocked(db.daftarPoli).mockResolvedValue([{ id: 9, nama: 'Umum', awalan_antrean: 'U', status_operasional: 'O' }]);
+    jest.mocked(db.daftarRuangPeriksaOperasional).mockResolvedValue([]);
     jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mockResolvedValue([]);
     const { data } = await (await ambil('7')).json();
     expect(data.fasyankes_logo_url).toBeNull();
@@ -121,7 +131,7 @@ test('event dipulihkan per fasilitas dan hari, termasuk panggil ulang dengan wak
     expect(data.kursor).toBe(44);
     expect(data.event_panggilan.map((e) => e.event_id)).toEqual([43, 44]);
     expect(data.ada_lanjutan).toBe(false);
-    expect(jest.mocked(db.daftarEventPanggilanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: new Date(`${tanggalWib(new Date())}T00:00:00Z`), 2: 42 })]));
+    expect(jest.mocked(db.daftarEventPanggilanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 99, 2: 42 })]));
     expect(JSON.stringify(data.event_panggilan)).not.toMatch(/pasien|nomor_rm|kunjungan/);
 });
 
@@ -131,4 +141,15 @@ test('pemulihan bertahap mempertahankan cursor terakhir yang benar-benar dikirim
     expect(data.event_panggilan).toHaveLength(100);
     expect(data.kursor).toBe(142);
     expect(data.ada_lanjutan).toBe(true);
+});
+
+test('saat sesi antrean ditutup layar panggilan mengembalikan sesi_status tutup tanpa antrean', async () => {
+    jest.mocked(db.ambilFasyankesUntukBuatRuteLayarPanggilan).mockResolvedValue({ nama: 'Klinik Uji', website_klinik: null });
+    jest.mocked(db.ambilSesiAntreanAktif).mockResolvedValue(null);
+    jest.mocked(db.daftarPoli).mockResolvedValue([{ id: 1, nama: 'Umum', awalan_antrean: 'U', status_operasional: 'O' }]);
+    jest.mocked(db.daftarRuangPeriksaOperasional).mockResolvedValue([]);
+    const { data } = await (await ambil('7')).json();
+    expect(data.sesi_status).toBe('tutup');
+    expect(data.panggilan).toBeNull();
+    expect(db.daftarAntreanUntukBuatRuteLayarPanggilan).not.toHaveBeenCalled();
 });

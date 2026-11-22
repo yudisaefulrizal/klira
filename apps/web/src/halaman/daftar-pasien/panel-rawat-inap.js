@@ -1,8 +1,9 @@
-import { DISPOSISI_PULANG, INDIKATOR_KELAS, KELAS_RAWAT, RAWAT_INAP } from '@klira/shared';
+import { DISPOSISI_PULANG, RAWAT_INAP } from '@klira/shared';
 import { daftarCatatanHarian, ambilRawatInap } from '../../api-klien/rawat-inap.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { kartu, lencana, peringatan, tombol } from '../../komponen/ui/primitif.js';
+import { bukaCatatanHarian } from '../../modal/rawat-inap/catatan-harian.js';
 import { bukaPemulanganRawatInap } from '../../modal/rawat-inap/pemulangan-rawat-inap.js';
 import { bukaUbahPenempatan } from '../../modal/rawat-inap/ubah-penempatan.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
@@ -160,13 +161,13 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
             Object.assign(atas.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' });
             const judul = document.createElement('strong');
             judul.textContent = bedAktif
-                ? `${[bedAktif.ruang_nama, bedAktif.bed_nama].filter(Boolean).join(' · ')} · ${KELAS_RAWAT.label(bedAktif.kelas)}`
+                ? `${[bedAktif.ruang_nama, bedAktif.bed_nama].filter(Boolean).join(' · ')}`
                 : P.belumAda;
             atas.append(judul, lencana(sudahPulang ? 'Selesai dirawat' : bedAktif ? 'Dirawat' : 'Menunggu bed', sudahPulang ? 'hijau' : bedAktif ? 'biru' : 'kuning'));
             ringkasKartu.append(atas);
 
             if (bedAktif) {
-                ringkasKartu.append(kecil(`${INDIKATOR_KELAS.label(bedAktif.indikator)} · ${PB.sejak(formatWaktu(bedAktif.mulai))}`));
+                ringkasKartu.append(kecil(PB.sejak(formatWaktu(bedAktif.mulai))));
             }
             const utama = d.dpjp?.find((x) => x.tipe === 'ATND') ?? d.dpjp?.[0] ?? null;
             const rekan = (d.dpjp ?? []).filter((x) => x !== utama);
@@ -179,14 +180,22 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
                 Object.assign(aksi.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap', marginTop: token.jarak.xs });
                 const onSelesai = () => { tutupModal(); void muat(); onBerubah?.(); };
                 aksi.append(
+                    tombol('+ Tambah CPPT', () => {
+                        tutupModal();
+                        modal = bukaCatatanHarian({
+                            kunjunganId,
+                            pasien: { nama: pasien.nama, nomor_rm: pasien.nomor_rm },
+                            onTutup: () => { tutupModal(); histori.muatUlang(); onBerubah?.(); },
+                        });
+                    }),
                     tombol(bedAktif ? PB.penempatan : PB.tempatkan, () => {
                         tutupModal();
                         modal = bukaUbahPenempatan({ kunjunganId, onTutup: tutupModal, onSelesai });
                     }, 'sekunder'),
                     tombol(PB.pemulangan, () => {
                         tutupModal();
-                        modal = bukaPemulanganRawatInap({ kunjunganId, pasien: { nama: pasien.nama, nomor_rm: pasien.nomor_rm }, onTutup: tutupModal, onSelesai });
-                    }),
+                        modal = bukaPemulanganRawatInap({ kunjunganId, pasien: { pasien_id: pasien.id, nama: pasien.nama, nomor_rm: pasien.nomor_rm }, onTutup: tutupModal, onSelesai });
+                    }, 'sekunder'),
                 );
                 ringkasKartu.append(aksi);
             }
@@ -199,7 +208,8 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
                 pulangKartu.append(
                     jPulang,
                     kecil(`${d.pemulangan.disposisi ? DISPOSISI_PULANG.label(d.pemulangan.disposisi) : (d.pemulangan.kondisi_pulang ?? '-')}${d.pemulangan.waktu ? ` · ${formatWaktu(d.pemulangan.waktu)}` : ''}`),
-                    ...(d.pemulangan.catatan ? [kecil(d.pemulangan.catatan)] : []),
+                    ...(d.pemulangan.diagnosis_akhir ? [kecil(`Diagnosis akhir: ${d.pemulangan.diagnosis_akhir}`)] : []),
+                    ...(d.pemulangan.ringkasan ? [kecil(d.pemulangan.ringkasan)] : []),
                 );
                 isi.append(pulangKartu);
             }
@@ -210,7 +220,7 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
                 jRiwayat.textContent = P.riwayat;
                 riwayatKartu.append(jRiwayat);
                 for (const x of [...d.penempatan].reverse()) {
-                    riwayatKartu.append(kecil(`${[x.ruang_nama, x.bed_nama].filter(Boolean).join(' · ')} · ${KELAS_RAWAT.label(x.kelas)} · ${INDIKATOR_KELAS.label(x.indikator)} · ${formatWaktu(x.mulai)}${x.selesai ? ` - ${formatWaktu(x.selesai)}` : ' (aktif)'}`));
+                    riwayatKartu.append(kecil(`${[x.ruang_nama, x.bed_nama].filter(Boolean).join(' · ')} · ${formatWaktu(x.mulai)}${x.selesai ? ` - ${formatWaktu(x.selesai)}` : ' (aktif)'}`));
                 }
                 riwayatBed.append(riwayatKartu);
             }

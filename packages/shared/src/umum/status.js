@@ -243,19 +243,6 @@ export const STATUS_BED = buat({
     terisi: { label: 'Terisi', warna: 'biru' },
     tidak_operasional: { label: 'Tidak operasional', warna: 'abu' },
 });
-export const KELAS_RAWAT = buat({
-    satu: { label: 'Kelas 1', warna: 'biru' },
-    dua: { label: 'Kelas 2', warna: 'biru' },
-    tiga: { label: 'Kelas 3', warna: 'biru' },
-    vip: { label: 'VIP', warna: 'ungu' },
-    vvip: { label: 'VVIP', warna: 'ungu' },
-});
-export const INDIKATOR_KELAS = buat({
-    kelas_tetap: { label: 'Kelas tetap', warna: 'abu' },
-    naik_kelas: { label: 'Naik kelas', warna: 'kuning' },
-    turun_kelas: { label: 'Turun kelas', warna: 'kuning' },
-    titip_rawat: { label: 'Titip rawat', warna: 'kuning' },
-});
 export const DISPOSISI_PULANG = buat({
     home: { label: 'Pulang ke rumah', warna: 'hijau' },
     aadvice: { label: 'Pulang atas permintaan sendiri', warna: 'kuning' },

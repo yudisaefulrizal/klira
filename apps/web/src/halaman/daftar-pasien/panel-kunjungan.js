@@ -2,12 +2,12 @@ import { BAGIAN_SOAPIE, alergiTercatat, FARMASI, GALAT, KESADARAN, KLINIS, LABEL
 import { GalatApi } from '../../api-klien/klien.js';
 import { ambilKlinis, ambilKonteksKlinis, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis.js';
 import { tambahCatatanHarian } from '../../api-klien/rawat-inap.js';
-import { aksiAntrean } from '../../api-klien/kunjungan.js';
+import { aksiAntrean, opsiKunjungan, ubahDpjpKunjungan } from '../../api-klien/kunjungan.js';
 import { resepKunjungan, semuaMasterObatAktif, siapkanResep, simpanResep, telaahResep } from '../../api-klien/farmasi.js';
 import { kasirKunjungan } from '../../api-klien/kasir.js';
 import { ordersKunjungan } from '../../api-klien/penunjang.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
-import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
+import { bukaKonfirmasi, bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { bidang, lencana, peringatan, tab, tabel, baris, sel, tombol } from '../../komponen/ui/primitif.js';
 import { adaIsianResep, awalResep, awalTelaah, barisDariItem, bentukResep, galatResep, perbaruiPlan, resepDariServer, teksPlanResep } from '../../modal/farmasi/keadaan-farmasi.js';
@@ -60,7 +60,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const subSah = terbatas ? subTerbatas : (isImp ? SUB_TAB_IMP : SUB_TAB);
     let aktif = true, sub = subSah.includes(subAwal) ? subAwal : subSah[0], klinis = null, konteks = null, galatMuat = null, k = null, awal = null, tensiTeks = '', modal;
     let bangsalPanel = null;
-    let tampilGalat = false, galat = null, pesan = null, memproses = false, alasan = '', konfirmasiUbahTutup = false, konfirmasiMulaiPemeriksaan = false;
+    let tampilGalat = false, tampilWajib = false, galat = null, pesan = null, memproses = false, alasan = '', konfirmasiUbahTutup = false, konfirmasiMulaiPemeriksaan = false, konfirmasiBukanDpjp = false;
     let resep = awalResep(), resepGalat = null, resepPesan = null, resepProses = false, resepTampilGalat = false, obatMaster = null, obatGalat = null, obatMemuat = false, resepSinkron = false;
     let penutup = null;
     let modeResep = 'telaah';
@@ -149,6 +149,33 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             });
             return;
         }
+        const pengguna = penggunaSaatIni().pengguna;
+        const bukanDpjp = mode().ubah && klinis.kunjungan.tahap_layanan === 'pemeriksaan' && klinis.kunjungan.dpjp_id && pengguna?.id && klinis.kunjungan.dpjp_id !== pengguna.id;
+        if (bukanDpjp && !konfirmasiBukanDpjp) {
+            const fokusId = document.activeElement?.id ?? '';
+            const tensiBaru = tensiTeks;
+            tensiTeks = teksTensi(k.tanda_vital);
+            lukis();
+            tutupModal();
+            modal = bukaKonfirmasi({
+                judul: 'Anda bukan dokter (DPJP) terpilih',
+                pesan: T.bukanDpjp(dpjpNama() ?? '-'),
+                labelYa: 'Lanjutkan mengedit',
+                onYa() {
+                    tutupModal();
+                    konfirmasiBukanDpjp = true;
+                    tensiTeks = tensiBaru;
+                    terapkanUbah(p);
+                    if (fokusId) document.getElementById(fokusId)?.focus({ preventScroll: true });
+                },
+                onTidak() {
+                    tutupModal();
+                    tensiTeks = teksTensi(k.tanda_vital);
+                    lukis();
+                },
+            });
+            return;
+        }
         if (mode().tutup && !konfirmasiUbahTutup) {
             const fokusId = document.activeElement?.id ?? '';
             const tensiBaru = tensiTeks;
@@ -208,10 +235,10 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         if (menuCetakTerbuka) lukisKepala();
         const kj = klinis.kunjungan, tugas = [];
         if (boleh('penunjang', 'lihat') && !data.penunjang) {
-            tugas.push(ordersKunjungan(kunjunganId).then((nilai) => { data.penunjang = { nilai }; }).catch(() => {}));
+            tugas.push(ordersKunjungan(kunjunganId).then((nilai) => { data.penunjang = { nilai }; }).catch(() => { }));
         }
         if (boleh('kasir', 'lihat') && !penutup?.keadaanKepala().kasir && !kasirKepala && !['menunggu_skrining', 'pemeriksaan'].includes(kj.tahap_layanan)) {
-            tugas.push(kasirKunjungan(kunjunganId).then((h) => { kasirKepala = h; }).catch(() => {}));
+            tugas.push(kasirKunjungan(kunjunganId).then((h) => { kasirKepala = h; }).catch(() => { }));
         }
         await Promise.all(tugas);
         cetakMemuat = false; cetakSiap = true;
@@ -347,15 +374,90 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         el.append(lencana(STATUS_PENGESAHAN.label(b.verifikasi), STATUS_PENGESAHAN.warna(b.verifikasi)), buat('small', 'profil-redup', KLINIS.status.versi(p.versi)));
         return el;
     };
-    const galatDi = (bagian) => (tampilGalat ? rencana().find((r) => r.bagian === bagian)?.galat ?? null : null);
+    const galatDi = (bagian) => {
+        if (!tampilGalat) return null;
+        const g = rencana().find((r) => r.bagian === bagian)?.galat;
+        if (g) return g;
+        if (tampilWajib && (bagian === 'subjek' || bagian === 'diagnosis') && klinis.bagian[bagian].verifikasi !== 'sah' && !rencana().some((x) => x.bagian === bagian))
+            return `${bagian === 'subjek' ? 'Subjek' : 'Diagnosis (ICD-10)'} wajib diisi sebelum pemeriksaan diselesaikan.`;
+        return null;
+    };
     const kecil = (teks, kelas = 'profil-redup') => buat('small', kelas, teks);
+    const blokDiagnosis = (daftar) => (daftar?.length
+        ? `Diagnosis:\n${daftar.map((d) => `${d.kode} ${d.nama}${d.peran === 'utama' ? ' (Utama)' : ''}`).join('\n')}`
+        : '');
+    function bukaModalDiagnosis(m) {
+        modal?.tutup();
+        let mDx;
+        const tutupModalDx = () => {
+            const target = mDx;
+            mDx = undefined;
+            modal = undefined;
+            target?.tutup();
+            lukis();
+        };
+        mDx = bukaModal1({
+            judul: 'Diagnosis (ICD-10)',
+            lebar: 'modalSedang',
+            onTutup: tutupModalDx,
+        });
+        modal = mDx;
+        mDx.isi.style.minHeight = '320px';
+        const info = document.createElement('small');
+        info.style.color = 'var(--warna-teks-redup)';
+        mDx.konteks.append(info);
+        const lukisModalDx = (fokusCari = false) => {
+            info.textContent = k.diagnosis.length ? `${k.diagnosis.length} diagnosis dipilih` : 'Belum ada diagnosis';
+            mDx.isi.replaceChildren(EditorDiagnosis({
+                diagnosis: k.diagnosis,
+                disabled: !m.ubah,
+                galat: galatDi('diagnosis'),
+                onUbah(diagnosis) {
+                    const lama = blokDiagnosis(k.diagnosis), baru = blokDiagnosis(diagnosis);
+                    const asesmen = baru
+                        ? (perbaruiPlan(k.asesmen, lama, baru, MAKS_NARASI.asesmen) ?? k.asesmen)
+                        : (lama && k.asesmen.includes(lama) ? k.asesmen.replace(lama, '').replace(/\n{3,}/g, '\n\n').trim() : k.asesmen);
+                    ubah({ diagnosis, asesmen });
+                    lukisModalDx(true);
+                },
+            }));
+            if (fokusCari) document.getElementById('diagnosis-cari')?.focus();
+        };
+        lukisModalDx(false);
+        mDx.aksi.append(tombol('Selesai', tutupModalDx));
+        document.getElementById('diagnosis-cari')?.focus();
+    }
     function teksSoapie(bagian, m, rows) {
-        const g = galatDi(bagian), sah = penandaSah(klinis.bagian[bagian]);
-        const c = isian(`narasi-${bagian}`, k[bagian], { boleh: m.ubah, baris: rows, maxLength: MAKS_NARASI[bagian], onInput: (v) => ubah({ [bagian]: v }) });
+        const g = galatDi(bagian) ?? (bagian === 'asesmen' ? galatDi('diagnosis') : null), sah = penandaSah(klinis.bagian[bagian]);
+        const galatEl = g ? kecil(g, 'profil-galat') : null;
+        const c = isian(`narasi-${bagian}`, k[bagian], {
+            boleh: m.ubah, baris: rows, maxLength: MAKS_NARASI[bagian],
+            onInput(v) {
+                ubah({ [bagian]: v });
+                if (tampilWajib && v.trim()) {
+                    c.removeAttribute('aria-invalid');
+                    galatEl?.remove();
+                }
+            },
+        });
         if (g) c.setAttribute('aria-invalid', 'true');
-        // Diagnosis ICD-10 berada di baris Asesmen, di bawah teks bebasnya.
-        const dx = bagian === 'asesmen' ? EditorDiagnosis({ diagnosis: k.diagnosis, disabled: !m.ubah, galat: galatDi('diagnosis'), onUbah(diagnosis) { ubah({ diagnosis }); } }) : null;
-        const baris = barisForm(LABEL_NARASI[bagian], c, g && kecil(g, 'profil-galat'), sah, dx);
+        const baris = barisForm(LABEL_NARASI[bagian], c, galatEl, sah);
+        if (bagian === 'asesmen') {
+            const sisiDx = baris.querySelector('.profil-form-sisi');
+            if (sisiDx) {
+                sisiDx.style.position = 'relative';
+                c.style.paddingBottom = '34px';
+                const btnDx = tombol(k.diagnosis.length ? `Diagnosis (${k.diagnosis.length}) →` : 'Diagnosis (ICD-10) →', () => bukaModalDiagnosis(m), 'teks');
+                btnDx.style.cssText = 'position:absolute;right:8px;padding:2px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                // Posisi mengikuti dasar textarea (di atas ringkasDx/galatEl jika ada).
+                btnDx.style.top = 'auto';
+                const bungkusArea = document.createElement('div');
+                bungkusArea.style.position = 'relative';
+                c.replaceWith(bungkusArea);
+                bungkusArea.append(c, btnDx);
+                btnDx.style.bottom = '8px';
+            }
+        }
         // Plan mengisi sisa tinggi kolom kanan (sampai sejajar dengan bagian terbawah kolom kiri).
         if (bagian === 'plan') baris.classList.add('profil-form-tumbuh');
         return baris;
@@ -385,30 +487,73 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         kotak.append(...[grid, g && kecil(g, 'profil-galat'), sah].filter(Boolean));
         return kotak;
     }
-    // Dokter lain boleh mengisi, tetapi catatan tetap atas nama dokter pendaftaran; pengisi sebenarnya hanya tercatat di log audit.
-    const dpjpNama = () => klinis.kunjungan.dpjp_nama ?? konteks?.kunjungan?.dpjp_nama ?? ringkas?.dpjp_nama ?? null, namaDpjp = () => dpjpNama() ?? '-';
-    function bukanDpjp() {
-        const dpjpId = klinis.kunjungan.dpjp_id ?? ringkas?.dpjp_id ?? konteks?.kunjungan?.dpjp_id, saya = penggunaSaatIni().pengguna;
-        return !!dpjpId && !!saya && /dokter/i.test(saya.jenis_akun ?? '') && saya.id !== dpjpId;
-    }
+    const dpjpNama = () => klinis.kunjungan.dpjp_nama ?? konteks?.kunjungan?.dpjp_nama ?? ringkas?.dpjp_nama ?? null;
     function isiPemeriksaan() {
-        const m = mode(), bungkus = buat('div', 'profil-soapie');
+        const m = mode(), bungkus = buat('div', 'profil-soapie'), pengguna = penggunaSaatIni().pengguna;
         if (!m.ubah) bungkus.append(peringatan(S.bacaSaja[m.alasan], 'biru'));
-        if (m.ubah && bukanDpjp()) bungkus.append(peringatan(T.bukanDpjp(namaDpjp()), 'kuning'));
         if (m.alasan !== 'lab') {
             const form = buat('div', 'profil-form'), kiri = buat('div', 'profil-form-kolom'), kanan = buat('div', 'profil-form-kolom profil-form-kanan');
-            const p = pelaksana(klinis.bagian, ['tanda_vital', ...BAGIAN_SOAPIE]), pengguna = penggunaSaatIni().pengguna;
-            const dilakukan = isian('profil-dilakukan', dpjpNama() ?? p?.nama ?? (m.ubah || m.ubahVital ? pengguna?.nama ?? '' : '-'), { boleh: false });
-            const profesi = isian('profil-profesi', [p?.jenis_akun, ringkas?.poli_nama].filter(Boolean).join(' · ') || '-', { boleh: false });
+            const p = pelaksana(klinis.bagian, ['tanda_vital', ...BAGIAN_SOAPIE]);
+            const bisaUbahDokter = boleh('kunjungan', 'input') && klinis.kunjungan.jenis === 'AMB' && ['menunggu_skrining', 'pemeriksaan'].includes(klinis.kunjungan.tahap_layanan) && !['dilayani', 'selesai', 'batal'].includes(klinis.kunjungan.antrean?.status);
+            const dokter = document.createElement('select');
+            dokter.id = 'profil-dilakukan'; dokter.className = 'profil-form-isian';
+            const isiOpsiDokter = (daftar) => {
+                const saatIni = klinis.kunjungan.dpjp_id ? String(klinis.kunjungan.dpjp_id) : '';
+                const namaSaatIni = dpjpNama() ?? p?.nama ?? (m.ubah || m.ubahVital ? pengguna?.nama ?? '' : '-');
+                const poli = klinis.kunjungan.poli_nama?.toLowerCase();
+                const cocokPoli = poli ? daftar.filter((d) => !d.jenis_poli?.length || d.jenis_poli.some((j) => j.toLowerCase() === poli)) : daftar;
+                const opsi = [...cocokPoli];
+                if (saatIni && !opsi.some((d) => String(d.id) === saatIni))
+                    opsi.unshift({ id: saatIni, nama: namaSaatIni || '-' });
+                dokter.replaceChildren();
+                const optKosong = document.createElement('option');
+                optKosong.value = ''; optKosong.textContent = saatIni || !namaSaatIni || namaSaatIni === '-' ? 'Belum ditentukan' : namaSaatIni;
+                dokter.append(optKosong);
+                for (const d of opsi) {
+                    const opt = document.createElement('option');
+                    opt.value = String(d.id); opt.textContent = d.nama;
+                    dokter.append(opt);
+                }
+                dokter.value = saatIni;
+            };
+            isiOpsiDokter([]);
+            dokter.disabled = !bisaUbahDokter;
+            if (bisaUbahDokter) {
+                opsiKunjungan().then((o) => { if (aktif && o?.dpjp) isiOpsiDokter(o.dpjp); }).catch(() => { });
+                dokter.addEventListener('change', async () => {
+                    dokter.disabled = true;
+                    try {
+                        await ubahDpjpKunjungan(kunjunganId, dokter.value ? Number(dokter.value) : null);
+                        if (!aktif) return;
+                        await muat(true);
+                        onBerubah?.();
+                    }
+                    catch (e) {
+                        if (aktif) { galat = pesanGalat(e, 'Gagal mengubah dokter.'); lukis(); }
+                    }
+                    finally { if (aktif) dokter.disabled = !bisaUbahDokter; }
+                });
+            }
             const alergi = isian('profil-alergi', k.keperawatan.alergi, { boleh: m.ubahVital, maxLength: 500, onInput: (v) => ubah({ keperawatan: { ...k.keperawatan, alergi: v } }) });
             alergi.placeholder = konteks?.alergi ? S.alergiTercatat(konteks.alergi) : S.tanpaAlergi;
-            const nomor = isian('profil-nomor-dokumen', klinis.kunjungan.nomor_dokumen ?? '-', { boleh: false });
-            nomor.title = S.nomorDokumen; nomor.setAttribute('aria-label', S.nomorDokumen); nomor.classList.add('profil-form-nomor');
-            const ganda = buat('div', 'profil-form-ganda'); ganda.append(nomor, dilakukan);
-            const barisDilakukan = barisForm(S.dilakukan, ganda); barisDilakukan.querySelector('label').htmlFor = 'profil-dilakukan';
+            const idLayanan = buat('span', 'profil-form-teks', klinis.kunjungan.id_layanan ?? '-');
+            idLayanan.id = 'profil-nomor-dokumen';
+            Object.assign(idLayanan.style, { fontWeight: '600', padding: '6px 0', display: 'inline-block', userSelect: 'all' });
             const galatAlergi = galatDi('keperawatan');
-            kiri.append(barisDilakukan, barisForm(S.profesi, profesi), teksSoapie('subjek', m, 3), teksSoapie('objek', m, 3), tandaVital(m));
-            kanan.append(barisForm(S.alergi, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')), teksSoapie('asesmen', m, 3), teksSoapie('plan', m, 3), teksSoapie('instruksi', m, 3), teksSoapie('evaluasi', m, 3));
+            const planEl = teksSoapie('plan', m, 3);
+            if (m.ubah && subSah.includes('resep')) {
+                const sisiPlan = planEl.querySelector('.profil-form-sisi');
+                const areaPlan = sisiPlan?.querySelector('textarea');
+                if (sisiPlan && areaPlan) {
+                    sisiPlan.style.position = 'relative';
+                    areaPlan.style.paddingBottom = '34px';
+                    const btnResep = tombol('Tulis resep →', () => { el.pilihSub('resep'); onSub?.('resep'); }, 'teks');
+                    btnResep.style.cssText = 'position:absolute;right:8px;bottom:8px;padding:2px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                    sisiPlan.append(btnResep);
+                }
+            }
+            kiri.append(barisForm('ID Layanan', idLayanan), barisForm('Dokter (DPJP)', dokter), teksSoapie('subjek', m, 3), teksSoapie('objek', m, 3), tandaVital(m));
+            kanan.append(barisForm(S.alergi, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')), teksSoapie('asesmen', m, 3), planEl, teksSoapie('instruksi', m, 3), teksSoapie('evaluasi', m, 3));
             form.append(kiri, kanan); bungkus.append(form);
         }
         bungkus.append(aksiPemeriksaan(m));
@@ -553,10 +698,15 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         const r = rencana(), masalah = r.find((x) => x.galat);
         if (masalah) return void sebut(masalah.galat, idKolom(masalah.bagian));
         if (mode().tutup && r.length && !alasan.trim()) return void sebut(S.alasanWajib);
-        const tahap = klinis.kunjungan.tahap_layanan, kurang = ['subjek', 'diagnosis'].find((b) => klinis.bagian[b].verifikasi !== 'sah' && !r.some((x) => x.bagian === b));
+        const tahap = klinis.kunjungan.tahap_layanan;
+        const kurangSemua = ['subjek', 'diagnosis'].filter((b) => klinis.bagian[b].verifikasi !== 'sah' && !r.some((x) => x.bagian === b));
         // Di tahap pemeriksaan Selesaikan pemeriksaan menuntut Subjek dan Diagnosis ICD-10; tombol Simpan menyimpan sebagian tanpa mengakhiri pemeriksaan.
         const akanSelesai = akhiri && mode().ubah && tahap === 'pemeriksaan';
-        if (akanSelesai && kurang) return void sebut(S.syaratSelesai, idKolom(kurang));
+        if (akanSelesai && kurangSemua.length) {
+            tampilWajib = true;
+            return void sebut(null, idKolom(kurangSemua[0]));
+        }
+        tampilWajib = false;
         memproses = true; galat = null; pesan = null; lukis();
         let disimpan = 0, pesanTagihan = null, berjalan = null, berhasil = false;
         try {
@@ -705,8 +855,10 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         const kotak = buat('div', 'profil-kotak');
         const simpan = tombol(tindakanProses ? R.menyimpan : R.simpanTindakan, () => void kirimTindakan());
         simpan.disabled = tindakanProses; simpan.style.alignSelf = 'flex-start';
-        const editor = EditorTindakan({ idAwal: 'tindakan', baris: tindakan, galat: galatTindakan(tindakan), tampilGalat: tindakanTampilGalat, disabled: tindakanProses,
-            onUbah(b) { tindakan = b; tindakanPesan = null; if (tindakanTampilGalat) editor.perbarui({ galat: galatTindakan(b) }); } });
+        const editor = EditorTindakan({
+            idAwal: 'tindakan', baris: tindakan, galat: galatTindakan(tindakan), tampilGalat: tindakanTampilGalat, disabled: tindakanProses,
+            onUbah(b) { tindakan = b; tindakanPesan = null; if (tindakanTampilGalat) editor.perbarui({ galat: galatTindakan(b) }); }
+        });
         kotak.append(editor, redup(R.tindakanUbahKet));
         if (tindakanGalat) kotak.append(peringatan(tindakanGalat));
         if (tindakanPesan) kotak.append(peringatan(tindakanPesan, 'hijau'));
@@ -745,6 +897,11 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             resepSinkron = false; resepTampilGalat = false; data.resep = null;
             resepPesan = lama ? (plan !== null ? T.resep.diperbarui : T.resep.diperbaruiPlanPenuh) : (plan !== null ? T.resep.diajukan : T.resep.diajukanPlanPenuh);
             onBerubah();
+            if (subSah.includes('pemeriksaan')) {
+                pesan = resepPesan;
+                el.pilihSub('pemeriksaan');
+                onSub?.('pemeriksaan');
+            }
         }
         catch (e) { if (aktif) resepGalat = pesanGalat(e, GALAT.umum); }
         finally { resepProses = false; if (aktif) { lukis(); lukisKepala(); } }
@@ -780,6 +937,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         }
     }
     async function muat() {
+        const awalKosong = !klinis;
         if (terbatas) { klinis = { kunjungan: ringkas, bagian: {} }; galatMuat = null; lukis(); lukisKepala(); return; }
         try {
             const [hasilKlinis, ctx] = await Promise.all([ambilKlinis(kunjunganId), ambilKonteksKlinis(kunjunganId).catch(() => null)]);
@@ -787,13 +945,20 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             klinis = hasilKlinis; konteks = ctx; galatMuat = null; setelKeadaan(); mulaiDraf(); data.resep = data.penunjang = null; kasirKepala = null; cetakSiap = false; resepSinkron = false; tindakanSinkron = false; telaahSinkron = false;
         }
         catch (e) { if (aktif) galatMuat = pesanGalat(e, KLINIS.detail.gagal); }
-        if (aktif) { lukis(); lukisKepala(); }
+        if (aktif) {
+            lukis(); lukisKepala();
+            if (awalKosong && klinis) { isi.classList.remove('profil-masuk'); void isi.offsetWidth; isi.classList.add('profil-masuk'); }
+        }
     }
 
     /** Ada isian pemeriksaan yang belum disimpan (selain yang sudah ada di server). */
     el.adaDraf = () => !!klinis && bisaDraf() && JSON.stringify(bentukDraf(k, tensiTeks)) !== JSON.stringify(awalDraf);
     el.buangDraf = () => draf?.hapus();
-    el.pilihSub = (baru) => { if (!subSah.includes(baru) || baru === sub) return; sub = baru; tabs.pilih(`kunjungan-${sub}`); lukis(); lukisKepala(); };
+    el.pilihSub = (baru) => {
+        if (!subSah.includes(baru) || baru === sub) return;
+        sub = baru; tabs.pilih(`kunjungan-${sub}`); lukis(); lukisKepala();
+        isi.classList.remove('profil-masuk'); void isi.offsetWidth; isi.classList.add('profil-masuk');
+    };
     el.tutup = () => { aktif = false; tutupMenuCetak(); penutup?.tutup(); bangsalPanel?.tutup(); draf?.tutup(); tutupModal(); };
     lukis(); void muat();
     return el;

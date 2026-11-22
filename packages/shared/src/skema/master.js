@@ -4,7 +4,7 @@ import { MASTER } from '../umum/teks.js';
 import { profilProfesiMasukan, statusOperasional } from './entitas.js';
 import { idPositif, tanggal, teksOpsional, teksWajib } from './umum.js';
 /** Jenis master pada tab Master data (3.1); Wilayah hanya baca. SIP tenaga ada di Praktisi. */
-export const JENIS_MASTER_UBAH = ['poli', 'ruang', 'bed', 'praktisi', 'jadwal', 'tarif'];
+export const JENIS_MASTER_UBAH = ['poli', 'ruang_periksa', 'ruang', 'bed', 'praktisi', 'jadwal', 'tarif'];
 export const JENIS_MASTER = [...JENIS_MASTER_UBAH, 'wilayah'];
 export const jenisMasterUbah = z.enum(JENIS_MASTER_UBAH, { error: MASTER.galat.jenisTakDikenal });
 export const jenisMaster = z.enum(JENIS_MASTER, { error: MASTER.galat.jenisTakDikenal });
@@ -17,9 +17,18 @@ const lokasiDasar = z.object({
     ihs_location_id: teksOpsional(100),
     status_operasional: statusOperasional.default('O'),
 });
-/** Poli punya jenis (mis. Umum, Gigi); poli sejenis berbagi satu antrean dan awalan nomor. */
-export const poliMasukan = lokasiDasar.extend({ jenis_poli: teksWajib(60) });
-export const ruangMasukan = lokasiDasar.extend({ induk_id: idPositif.nullish() });
+/** Poli = layanan (mis. Umum, Gigi): satu antrean dan satu awalan nomor per poli. */
+export const poliMasukan = lokasiDasar.extend({ nama: teksWajib(60) });
+/** Ruang periksa = tempat periksa fisik milik satu poli; pasien poli itu dipanggil ke ruang yang bebas. */
+export const ruangPeriksaMasukan = lokasiDasar.extend({
+    induk_id: z.number({ error: MASTER.galat.indukRuangPeriksa }).int(MASTER.galat.indukRuangPeriksa).positive(MASTER.galat.indukRuangPeriksa),
+});
+/** Ruang rawat inap berdiri sendiri (tanpa poli); bed berada di dalamnya dan dapat memiliki harga/tarif kamar bawaan. */
+export const ruangMasukan = lokasiDasar.extend({
+    tarif_id: idPositif.nullish(),
+    harga_umum: harga.nullish(),
+    harga_jkn: harga.nullish(),
+});
 export const bedMasukan = lokasiDasar.extend({
     induk_id: z.number({ error: MASTER.galat.indukBed }).int(MASTER.galat.indukBed).positive(MASTER.galat.indukBed),
 });
@@ -77,7 +86,7 @@ export const tarifMasukan = z
     kode_icd9cm: d.jenis === 'tindakan' ? (d.kode_icd9cm ?? null) : null,
 }));
 export const SKEMA_MASTER = {
-    poli: poliMasukan, ruang: ruangMasukan, bed: bedMasukan, praktisi: praktisiMasukan, jadwal: jadwalMasukan, tarif: tarifMasukan,
+    poli: poliMasukan, ruang_periksa: ruangPeriksaMasukan, ruang: ruangMasukan, bed: bedMasukan, praktisi: praktisiMasukan, jadwal: jadwalMasukan, tarif: tarifMasukan,
 };
 /** Skema saat mengubah: praktisi tidak memuat pengguna (profil milik pengguna yang sama). */
 export const SKEMA_MASTER_UBAH = { ...SKEMA_MASTER, praktisi: praktisiUbah };
@@ -91,28 +100,33 @@ export const filterMaster = z.object({
     halaman: z.coerce.number().int().min(1).default(1),
     ukuran: z.coerce.number().int().min(1).max(100).default(20),
 });
-export const SUMBER_OPSI_MASTER = ['poli', 'ruang', 'praktisi', 'pengguna-tanpa-profil', 'shift'];
+export const SUMBER_OPSI_MASTER = ['poli', 'ruang', 'tarif-kamar', 'praktisi', 'pengguna-tanpa-profil', 'shift'];
 export const sumberOpsiMaster = z.enum(SUMBER_OPSI_MASTER);
 const opsiDari = (peta) => Object.entries(peta).map(([nilai, label]) => ({ nilai, label }));
 const B = MASTER.bidang;
 const K = MASTER.kolom;
 const P = MASTER.petunjuk;
 const SYARAT_TINDAKAN = { kunci: 'jenis', nilai: 'tindakan' };
-const bidangLokasi = (induk) => [
-    { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 },
+const bidangLokasi = (induk, nama = { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200 }) => [
+    nama,
     ...induk,
     { kunci: 'status_operasional', label: B.status_operasional, tipe: 'pilihan', wajib: true, opsi: opsiDari(MASTER.operasional), nilaiAwal: 'O', petunjuk: P.status_operasional },
     { kunci: 'ihs_location_id', label: B.ihs_location_id, tipe: 'teks', maks: 100, petunjuk: P.ihs_location_id },
 ];
 export const DEFINISI_MASTER = {
     poli: {
-        bidang: bidangLokasi([{ kunci: 'jenis_poli', label: B.jenis_poli, tipe: 'teks', wajib: true, maks: 60, petunjuk: P.jenis_poli }]),
-        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'jenis_poli', label: K.jenisPoli }, { kunci: 'awalan_antrean', label: K.awalanAntrean }, { kunci: 'ihs_location_id', label: K.ihs }],
+        bidang: bidangLokasi([], { kunci: 'nama', label: B.nama_poli, tipe: 'teks', wajib: true, maks: 60, petunjuk: P.nama_poli }),
+        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'awalan_antrean', label: K.awalanAntrean }, { kunci: 'jumlah_ruang', label: K.jumlahRuang }, { kunci: 'ihs_location_id', label: K.ihs }],
+        punyaStatus: true,
+    },
+    ruang_periksa: {
+        bidang: bidangLokasi([{ kunci: 'induk_id', label: B.induk_poli, tipe: 'rujukan', rujukan: 'poli', wajib: true, petunjuk: P.induk_ruang_periksa }], { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200, petunjuk: P.nama_ruang_periksa }),
+        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'induk_nama', label: K.indukPoli }, { kunci: 'ihs_location_id', label: K.ihs }],
         punyaStatus: true,
     },
     ruang: {
-        bidang: bidangLokasi([{ kunci: 'induk_id', label: B.induk_poli, tipe: 'rujukan', rujukan: 'poli' }]),
-        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'induk_nama', label: K.indukPoli }, { kunci: 'ihs_location_id', label: K.ihs }],
+        bidang: bidangLokasi([{ kunci: 'tarif_id', label: 'Tarif kamar', tipe: 'rujukan', rujukan: 'tarif-kamar', numerik: true }], { kunci: 'nama', label: B.nama, tipe: 'teks', wajib: true, maks: 200, petunjuk: P.nama_ruang }),
+        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'tarif_nama', label: 'Tarif kamar' }, { kunci: 'jumlah_bed', label: K.jumlahBed }, { kunci: 'ihs_location_id', label: K.ihs }],
         punyaStatus: true,
     },
     bed: {

@@ -1,7 +1,8 @@
 import { DEFINISI_MASTER, MASTER, STATUS_FILTER_MASTER, teksSelMaster } from '@klira/shared';
-import { daftarMaster, ubahAktifMaster } from '../../api-klien/master.js';
+import { daftarMaster, hapusMaster, ubahAktifMaster } from '../../api-klien/master.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../izin/izin-saja.js';
+import { bukaKonfirmasi } from '../modal-1/modal-1.js';
 import { buatSakelar } from '../ui/sakelar.js';
 import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab, paginasi } from '../ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -27,7 +28,21 @@ export function DaftarMaster({ search, ubahAlamat, jenisDaftar }) {
     if (jenis !== 'wilayah' && boleh('master', 'input')) toolbar.append(tombol(MASTER.tambah, () => ouvre()));
     const table = tabel([...def.kolom.map(k => ({ judul: k.label })), ...(def.punyaStatus ? [{ judul: MASTER.status }, { judul: MASTER.tindakan, rataKanan: true }] : [])], MASTER.jenis[jenis]); box.append(toolbar, status, table.el, vide, pages); el.append(box);
     if (jenis === 'praktisi') el.append(peringatan(MASTER.catatanPraktisi, 'biru')); if (jenis === 'wilayah') el.append(peringatan(MASTER.catatanWilayah, 'kuning'));
-    daftarMaster(jenis, saringanMaster({ nilai: { jenis, cari: keadaan.nilai.cari, status: keadaan.nilai.status, tingkat: keadaan.nilai.tingkat }, halaman: keadaan.halaman }, 20)).then(h => { if (!aktif || saat !== versi) return; for (const b of h.data) { const row = baris(...def.kolom.map((k, i) => { const td = sel(teksSelMaster(k.kunci, b)); if (!i) td.style.fontWeight = token.huruf.berat.tebal; return td; })); if (def.punyaStatus) { const bisaUbah = boleh('master', 'perbaikan'), nama = String(b.nama ?? b.pengguna_nama ?? b.kode ?? b.id); const sak = buatSakelar({ nilai: b.aktif, teks: v => v ? MASTER.statusAktif : MASTER.statusNonaktif, label: MASTER.statusUntuk(nama), disabled: !bisaUbah, async onUbah(v) { sak.setMemproses(true); try { await ubahAktifMaster(jenis, b.id, v); b.aktif = v; sak.setNilai(v); status.replaceChildren(); } catch (e) { sak.setNilai(b.aktif); status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalUbahStatus)); } finally { sak.setMemproses(false); } } }); const actions = sel(); actions.style.textAlign = 'right'; if (bisaUbah) actions.append(tombol(MASTER.ubah, () => ouvre(b), 'teks')); row.append(sel(sak.el), actions); } table.tbody.append(row); } if (!h.data.length) { vide.textContent = MASTER.kosong; vide.style.padding = token.jarak.md; vide.style.color = token.warna.teksRedup; } const p = paginasi(keadaan.halaman, h.total, h.ukuran, n => ubahAlamat(queryPenyaring('master', { nilai: { ...keadaan.nilai, jenis }, halaman: n }, bawaan))); if (p) pages.append(p); }).catch(e => { if (aktif && saat === versi) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalMuat)); });
+    function hapusBaris(b) {
+      const nama = String(b.nama ?? b.kode ?? b.id);
+      const konf = bukaKonfirmasi({
+        judul: `Hapus ${MASTER.jenis[jenis]}`,
+        pesan: `Hapus "${nama}"? Riwayat kunjungan pasien yang pernah menempati tetap tersimpan.`,
+        labelYa: 'Hapus',
+        onTidak() { konf.tutup(); },
+        async onYa() {
+          konf.perbarui({ memproses: true });
+          try { await hapusMaster(jenis, b.id); konf.tutup(); status.replaceChildren(); afficher(); }
+          catch (e) { konf.tutup(); status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalMuat)); }
+        },
+      });
+    }
+    daftarMaster(jenis, saringanMaster({ nilai: { jenis, cari: keadaan.nilai.cari, status: keadaan.nilai.status, tingkat: keadaan.nilai.tingkat }, halaman: keadaan.halaman }, 20)).then(h => { if (!aktif || saat !== versi) return; for (const b of h.data) { const row = baris(...def.kolom.map((k, i) => { const td = sel(teksSelMaster(k.kunci, b)); if (!i) td.style.fontWeight = token.huruf.berat.tebal; return td; })); if (def.punyaStatus) { const bisaUbah = boleh('master', 'perbaikan'), nama = String(b.nama ?? b.pengguna_nama ?? b.kode ?? b.id); const sak = buatSakelar({ nilai: b.aktif, teks: v => v ? MASTER.statusAktif : MASTER.statusNonaktif, label: MASTER.statusUntuk(nama), disabled: !bisaUbah, async onUbah(v) { sak.setMemproses(true); try { await ubahAktifMaster(jenis, b.id, v); b.aktif = v; sak.setNilai(v); status.replaceChildren(); } catch (e) { sak.setNilai(b.aktif); status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalUbahStatus)); } finally { sak.setMemproses(false); } } }); const actions = sel(); actions.style.textAlign = 'right'; actions.style.whiteSpace = 'nowrap'; if (bisaUbah) { actions.append(tombol(MASTER.ubah, () => ouvre(b), 'teks')); if (jenis === 'ruang' || jenis === 'bed') actions.append(' ', tombol('Hapus', () => hapusBaris(b), 'teks')); } row.append(sel(sak.el), actions); } table.tbody.append(row); } if (!h.data.length) { vide.textContent = MASTER.kosong; vide.style.padding = token.jarak.md; vide.style.color = token.warna.teksRedup; } const p = paginasi(keadaan.halaman, h.total, h.ukuran, n => ubahAlamat(queryPenyaring('master', { nilai: { ...keadaan.nilai, jenis }, halaman: n }, bawaan))); if (p) pages.append(p); }).catch(e => { if (aktif && saat === versi) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalMuat)); });
   }
   el.perbaruiAlamat = alamat => { search = alamat; afficher(); }; el.tutup = () => { aktif = false; versi++; clearTimeout(timer); modal?.(); }; afficher(); return el;
 }

@@ -209,4 +209,18 @@ describe('klinik mengabarkan antrean ke BPJS', () => {
         const d = await asing.kunjungan.daftarkan(PETUGAS, { pasien_id: 1, jenis: 'AMB', jenis_poli: 'Umum', cara_pembayaran: 'jkn' }, '');
         expect(d.data.antrean_bpjs).toEqual({ status: 'gagal', pesan: A.galat.ditolak('Peserta tidak ditemukan') });
     });
+    it('saat sesi antrean ditutup, pendaftaran Mobile JKN masuk ke antrean sementara (bukan antrean aktif)', async () => {
+        const r = await rakit();
+        const sementara = [];
+        r.mem.repoJkn.sesiAntreanAktif = async () => null;
+        r.mem.repoJkn.daftarSementaraJkn = async () => sementara;
+        r.mem.repoJkn.cariSementaraJkn = async (_f, jp, no, nk) => sementara.find((x) => x.jenis_poli === jp && x.pcare_no_urut === no && x.jkn_nomor_kartu === nk) ?? null;
+        r.mem.repoJkn.tambahSementaraJkn = async (d) => { sementara.push({ id: sementara.length + 1, ...d }); return { id: sementara.length, count: 1 }; };
+        await r.hp('ambil', { noKartu: BUDI, kodepoli: '001' });
+        const h = await r.tarik();
+        expect(h).toMatchObject({ status: 'ok', baru: 1 });
+        expect(r.mem.s.antrean).toHaveLength(0);
+        expect(sementara).toHaveLength(1);
+        expect(sementara[0]).toMatchObject({ jenis_poli: 'Umum', pcare_no_urut: '001', jkn_nomor_kartu: BUDI });
+    });
 });

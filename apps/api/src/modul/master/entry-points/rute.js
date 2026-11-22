@@ -97,6 +97,17 @@ export function buatRuteMaster(layananAkses, layananIzin, layanan) {
             return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
         kirimHasil(res, await layanan.hapusJadwal(pengguna(res), id, alamatDari(req)));
     }));
+    rute.delete('/master/:jenis/:id', masuk, wajibIzin('master', 'perbaikan'), bungkus(async (req, res) => {
+        const j = jenisUbah(req, res);
+        const id = idRute(req);
+        if (!j)
+            return;
+        if (j !== 'ruang' && j !== 'bed')
+            return void res.status(400).json({ galat: { kode: 'tidak_valid', pesan: MASTER.galat.jenisTakDikenal } });
+        if (!id)
+            return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
+        kirimHasil(res, await layanan.hapusLokasi(pengguna(res), j, id, alamatDari(req)));
+    }));
     rute.patch('/master/:jenis/:id/aktif', masuk, wajibIzin('master', 'perbaikan'), bungkus(async (req, res) => {
         const j = jenisUbah(req, res);
         const id = idRute(req);

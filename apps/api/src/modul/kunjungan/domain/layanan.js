@@ -1,8 +1,8 @@
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { kabarkanNotifikasi } from '../../notifikasi/domain/kanal.js';
-import { ANTREAN_LAB, REGISTRASI, bolehAksiAntrean, bolehPindahTahap, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
+import { ANTREAN_LAB, REGISTRASI, TAHAP_LAYANAN, bolehAksiAntrean, bolehPindahTahap, kodeAntrean, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
-import { KunjunganBerjalanError } from '../data-access/repositori.js';
+import { AntreanDitutupError, KunjunganBerjalanError } from '../data-access/repositori.js';
 const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
 /** `antreanBpjs` (opsional): mengabarkan antrean pasien JKN ke BPJS setelah daftar, panggil, dan batal; tidak pernah menggagalkan tindakan. */
 export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antreanBpjs, sekarang = () => new Date() }) {
@@ -42,6 +42,8 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antrea
             catch (e) {
                 if (e instanceof KunjunganBerjalanError)
                     return gagal('konflik', REGISTRASI.galat.kunjunganBerjalan);
+                if (e instanceof AntreanDitutupError)
+                    return gagal('konflik', 'Antrean poli sedang ditutup. Buka antrean terlebih dahulu untuk mendaftarkan pasien rawat jalan atau penunjang.');
                 throw e;
             }
             if (m.jenis === 'LAB') {
@@ -133,12 +135,14 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antrea
                 return gagal('konflik', REGISTRASI.galat.antreanTidakSah);
             if (hasil.galat === 'poli_sibuk')
                 return gagal('konflik', REGISTRASI.galat.poliSibuk(hasil.poli, hasil.kode));
-            if (hasil.galat === 'jenis_sibuk')
+            if (hasil.galat === 'ruang_sibuk')
                 return gagal('konflik', REGISTRASI.galat.poliSibukJenis(hasil.jenis));
-            if (hasil.galat === 'dokter_poli_sibuk')
-                return gagal('konflik', REGISTRASI.galat.dokterTanpaPoliKosong(hasil.jenis));
-            if (hasil.galat === 'poli_pilihan_tidak_tersedia')
-                return gagal('konflik', REGISTRASI.galat.poliBukanJenis);
+            if (hasil.galat === 'dokter_sibuk')
+                return gagal('konflik', REGISTRASI.galat.dokterSibuk(hasil.kode));
+            if (hasil.galat === 'ruang_pilihan_tidak_tersedia')
+                return gagal('konflik', REGISTRASI.galat.ruangBukanPoli);
+            if (hasil.galat === 'ruang_tidak_operasional')
+                return gagal('konflik', REGISTRASI.galat.ruangTidakOperasional(hasil.jenis));
             if (hasil.galat === 'poli_tidak_operasional')
                 return gagal('konflik', REGISTRASI.galat.poliTidakOperasional(hasil.poli));
             kabarkanLayarPanggilan(p.fasyankes_id);
@@ -151,6 +155,59 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antrea
             const tanggal = f.tanggal ?? tanggalWib(sekarang());
             const { total, baris } = await repo.daftarAntrean(p.fasyankes_id, { ...f, tanggal });
             return { data: baris, halaman: f.halaman, ukuran: f.ukuran, total };
+        },
+        /** Status sesi antrean saat ini (buka/tutup) dan daftar tunggu sementara Mobile JKN. */
+        async keadaanSesi(p) {
+            const [sesi, sementara] = await Promise.all([
+                repo.sesiAntreanTerakhir(p.fasyankes_id),
+                repo.daftarAntreanSementaraJkn(p.fasyankes_id),
+            ]);
+            return {
+                sesi: sesi ? { id: sesi.id, status: sesi.status, dibuka_pada: sesi.dibuka_pada.toISOString(), ditutup_pada: sesi.ditutup_pada?.toISOString() ?? null } : { id: null, status: 'tutup', dibuka_pada: null, ditutup_pada: null },
+                antrean_sementara_jkn: sementara.map((s) => ({
+                    id: s.id, pasien_id: s.pasien_id, pasien_nama: s.pasien_nama, pasien_nomor_rm: s.pasien_nomor_rm,
+                    jenis_poli: s.jenis_poli, pcare_no_urut: s.pcare_no_urut, jkn_nomor_kartu: s.jkn_nomor_kartu,
+                    tanggal_daftar: s.tanggal_daftar instanceof Date ? s.tanggal_daftar.toISOString().slice(0, 10) : String(s.tanggal_daftar),
+                    dibuat_pada: s.dibuat_pada.toISOString(),
+                })),
+            };
+        },
+        /** Membuka sesi antrean baru dan otomatis memindahkan antrean sementara Mobile JKN ke antrean aktif. */
+        async bukaAntrean(p, alamat) {
+            const waktu = sekarang();
+            const h = await repo.bukaSesiAntrean(p.fasyankes_id, p.id, waktu);
+            if (h.galat === 'sudah_buka')
+                return gagal('konflik', 'Antrean sudah dalam keadaan dibuka.');
+            let dipindahkan = 0;
+            for (const s of h.sementara ?? []) {
+                const res = await this.daftarkan(
+                    { ...p, sistem: 'mobile_jkn' },
+                    { pasien_id: s.pasien_id, jenis: 'AMB', jenis_poli: s.jenis_poli, cara_pembayaran: 'jkn', keluhan_singkat: s.keluhan_singkat ?? undefined, sumber: 'mobile_jkn', pcare_no_urut: s.pcare_no_urut },
+                    alamat,
+                );
+                if (res.ok) {
+                    await repo.tandaiSementaraJknDipindahkan(s.id, p.fasyankes_id, res.data.id, waktu);
+                    dipindahkan += 1;
+                }
+            }
+            kabarkanLayarPanggilan(p.fasyankes_id);
+            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'sesi_antrean', entitas_id: h.sesi.id, keterangan: `Buka sesi antrean (${dipindahkan} antrean sementara Mobile JKN dipindahkan)`, alamat });
+            return { ok: true, data: { sesi: { id: h.sesi.id, status: h.sesi.status, dibuka_pada: h.sesi.dibuka_pada.toISOString(), ditutup_pada: null }, dipindahkan } };
+        },
+        /** Menutup sesi antrean aktif; ditolak jika masih ada pasien yang belum selesai atau dibatalkan. */
+        async tutupAntrean(p, alamat) {
+            const waktu = sekarang();
+            const h = await repo.tutupSesiAntrean(p.fasyankes_id, p.id, waktu);
+            if (h.galat === 'sudah_tutup')
+                return gagal('konflik', 'Antrean sudah dalam keadaan ditutup.');
+            if (h.galat === 'belum_selesai') {
+                const contoh = h.belum_selesai.slice(0, 5).map((b) => `${kodeAntrean(b.nomor, b.awalan)} ${b.pasien_nama} (${TAHAP_LAYANAN.label(b.tahap_layanan)})`).join(', ');
+                const sisa = h.belum_selesai.length > 5 ? ` dan ${h.belum_selesai.length - 5} lainnya` : '';
+                return gagal('konflik', `Antrean belum dapat ditutup karena masih ada ${h.belum_selesai.length} pasien belum selesai: ${contoh}${sisa}. Koordinasikan dengan petugas terkait untuk menyelesaikan atau membatalkannya.`);
+            }
+            kabarkanLayarPanggilan(p.fasyankes_id);
+            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'sesi_antrean', entitas_id: h.sesi_id, keterangan: 'Tutup sesi antrean', alamat });
+            return { ok: true, data: { status: 'tutup', ditutup_pada: waktu.toISOString() } };
         },
     };
 }

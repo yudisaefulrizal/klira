@@ -18,11 +18,11 @@ describe('keadaan admisi', () => {
 });
 describe('keadaan penempatan', () => {
     const d = {
-        kunjungan: { id: 1 }, penempatan: [{ id: 1, bed_id: 2, kelas: 'dua', indikator: 'naik_kelas', tarif_id: 9, selesai: null }], dpjp: [{ id: 5, nama: 'A', tipe: 'ATND' }, { id: 6, nama: 'B', tipe: 'SPRF' }],
+        kunjungan: { id: 1 }, penempatan: [{ id: 1, bed_id: 2, tarif_id: 9, selesai: null }], dpjp: [{ id: 5, nama: 'A', tipe: 'ATND' }, { id: 6, nama: 'B', tipe: 'SPRF' }],
     };
     it('isian awal dari penempatan dan DPJP sekarang', () => {
         const k = awalPenempatan(d);
-        expect(k).toMatchObject({ kelas: 'dua', indikator: 'naik_kelas', tarif_id: '9', dpjp_id: '5', dpjp_bersama: ['6'] });
+        expect(k).toMatchObject({ tarif_id: '9', dpjp_id: '5', dpjp_bersama: ['6'] });
         expect(galatPenempatan(k)).toEqual({});
         expect(galatPenempatan({ ...k, dpjp_id: '' }).dpjp_id).toBeDefined();
     });

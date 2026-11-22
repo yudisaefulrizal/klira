@@ -51,7 +51,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
     };
     let tarifId = 0;
     const KLINIS = [['klinis', 'lihat'], ['klinis', 'input'], ['pasien', 'lihat']];
-    const admisi = (pasienId, extra = {}, siapa = 'dokter') => panggil('POST', '/rawat-inap/admisi', siapa, { pasien_id: pasienId, kelas: 'dua', dpjp_id: id.dokter, ...extra });
+    const admisi = (pasienId, extra = {}, siapa = 'dokter') => panggil('POST', '/rawat-inap/admisi', siapa, { pasien_id: pasienId, dpjp_id: id.dokter, ...extra });
     const ringkasanPulang = { disposisi: 'home', kondisi_pulang: 'Membaik', diagnosis_akhir: 'I10 Hipertensi', ringkasan: 'Dirawat 2 hari, tekanan darah terkendali.', tindak_lanjut: 'Kontrol 1 minggu', terapi: 'Amlodipin' };
     beforeAll(async () => {
         fas = await buatFasyankes(kode, 'Uji Rawat Inap');
@@ -67,7 +67,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         for (const k of ['dokter', 'dokter2', 'kasir', 'lainDokter'])
             await login(k);
         ruang = (await buatLokasi(fas, `${kode}-Ruang Mawar`, 'ruang')).id;
-        tarifId = (await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahTarifLayananUntukPenunjangPenunjangIntegrasiTest(fas, `KAMAR-${kode}`, 'Kamar kelas 2', 'kamar', 150_000, 100_000, koneksiBaru); return uji.tambahTarifLayananUntukPenunjangPenunjangIntegrasiTestHasil(_hasil.id, koneksiBaru); })).id;
+        tarifId = (await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahTarifLayananUntukPenunjangPenunjangIntegrasiTest(fas, `KAMAR-${kode}`, 'Kamar Dahlia', 'kamar', 150_000, 100_000, koneksiBaru); return uji.tambahTarifLayananUntukPenunjangPenunjangIntegrasiTestHasil(_hasil.id, koneksiBaru); })).id;
     });
     afterAll(async () => {
         server?.close();
@@ -98,7 +98,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         const bed = await bedBaru('A1');
         const p1 = await pasienBaru();
         expect((await admisi(p1, { bed_id: bed }, 'kasir')).status).toBe(403);
-        expect((await admisi(p1, { bed_id: bed, kelas: 'salah' })).status).toBe(400);
+        expect((await admisi(p1, { bed_id: bed, tarif_id: 'salah' })).status).toBe(400);
         expect((await admisi(p1, { bed_id: bed, dpjp_bersama: [id.dokter] })).status).toBe(400);
         expect((await admisi(p1, { bed_id: bed, dpjp_id: id.kasir })).status).toBe(400);
         expect((await admisi(99999999, { bed_id: bed })).status).toBe(404);
@@ -126,7 +126,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         const kid = h.badan.data.kunjungan_id;
         expect((await panggil('GET', '/rawat-inap/papan', 'dokter')).badan.data.menunggu.some((x) => x.kunjungan_id === kid)).toBe(true);
         const bed = await bedBaru('C1');
-        const ubah = (badan, siapa = 'dokter') => panggil('PUT', `/kunjungan/${kid}/penempatan`, siapa, { kelas: 'dua', dpjp_id: id.dokter, ...badan });
+        const ubah = (badan, siapa = 'dokter') => panggil('PUT', `/kunjungan/${kid}/penempatan`, siapa, { dpjp_id: id.dokter, ...badan });
         expect((await ubah({ bed_id: bed }, 'kasir')).status).toBe(403);
         const r = await ubah({ bed_id: bed, tarif_id: tarifId });
         expect(r.status).toBe(200);
@@ -135,14 +135,14 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         // pindah butuh alasan; setelah pindah bed lama kosong dan riwayat bertambah
         const bed2 = await bedBaru('C2');
         expect((await ubah({ bed_id: bed2, tarif_id: tarifId })).status).toBe(400);
-        const pindah = await ubah({ bed_id: bed2, kelas: 'vip', indikator: 'naik_kelas', tarif_id: tarifId, alasan: 'Permintaan keluarga' });
+        const pindah = await ubah({ bed_id: bed2, tarif_id: tarifId, alasan: 'Permintaan keluarga' });
         expect(pindah.status).toBe(200);
         expect(pindah.badan.data.penempatan).toHaveLength(2);
         expect(pindah.badan.data.penempatan[0].selesai).not.toBeNull();
         expect((await uji.tambahLokasiUntukKlinisKlinisIntegrasiTestHasil(bed)).status_operasional).toBe('O');
         expect((await uji.tambahLokasiUntukKlinisKlinisIntegrasiTestHasil(bed2)).status_operasional).toBe('U');
         // ganti DPJP utama dan bersama
-        const g = await ubah({ kelas: 'vip', indikator: 'naik_kelas', tarif_id: tarifId, dpjp_id: id.dokter2, dpjp_bersama: [id.dokter] });
+        const g = await ubah({ tarif_id: tarifId, dpjp_id: id.dokter2, dpjp_bersama: [id.dokter] });
         expect(g.status).toBe(200);
         expect(g.badan.data.dpjp.find((x) => x.tipe === 'ATND').id).toBe(id.dokter2);
         expect(g.badan.data.dpjp.find((x) => x.tipe === 'SPRF').id).toBe(id.dokter);
@@ -151,7 +151,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         const lain = await pasienBaru();
         const bed3 = await bedBaru('C3');
         expect((await admisi(lain, { bed_id: bed3 })).status).toBe(201);
-        expect((await ubah({ bed_id: bed3, kelas: 'dua', alasan: 'x' })).status).toBe(409);
+        expect((await ubah({ bed_id: bed3, alasan: 'x' })).status).toBe(409);
     });
     it('CPPT: tiap catatan disahkan, terverifikasi, dibatasi izin, ditutup setelah pemulangan', async () => {
         const p = await pasienBaru();
@@ -190,7 +190,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         expect(item.harga).toBe(150_000);
         expect(await uji.hitungResumeMedisUntukRawatInapRawatInapIntegrasiTest(kid)).toBe(1);
         expect((await panggil('POST', `/kunjungan/${kid}/pemulangan`, 'dokter', ringkasanPulang)).status).toBe(409);
-        expect((await panggil('PUT', `/kunjungan/${kid}/penempatan`, 'dokter', { kelas: 'dua', dpjp_id: id.dokter })).status).toBe(409);
+        expect((await panggil('PUT', `/kunjungan/${kid}/penempatan`, 'dokter', { dpjp_id: id.dokter })).status).toBe(409);
         expect((await panggil('GET', `/kunjungan/${kid}/rawat-inap`, 'dokter')).badan.data.pemulangan.disposisi).toBe('home');
     });
     it('admisi dari rawat jalan: kunjungan asal ditutup, tagihan dan resep digabung; ada pembayaran ditolak', async () => {
