@@ -11,6 +11,7 @@ export function ringkasTandaVital(tv) {
     if (tv.spo2 != null) bagian.push(`SpO2 ${tv.spo2}%`);
     if (tv.gcs != null) bagian.push(`GCS ${tv.gcs}`);
     if (tv.tinggi_badan != null || tv.berat_badan != null) bagian.push(`TB/BB ${tv.tinggi_badan ?? '-'}/${tv.berat_badan ?? '-'}`);
+    if (tv.lingkar_perut != null) bagian.push(`LP ${tv.lingkar_perut} cm`);
     if (bagian.length) return bagian.join(' · ');
     return TANDA_VITAL.filter((t) => tv[t.kunci] != null).map((t) => `${KLINIS.tandaVital[t.kunci]} ${tv[t.kunci]}`).join(' · ') || '-';
 }

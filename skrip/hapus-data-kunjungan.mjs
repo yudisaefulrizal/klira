@@ -9,7 +9,7 @@ const ya = process.argv.includes('--ya');
 /** Tabel data kunjungan: yang bertautan langsung (kunjungan_id) dan anak-anaknya. Urutan tidak penting (pemeriksaan kunci asing dimatikan sementara). */
 const TABEL = [
     'event_panggilan', 'antrean', 'peserta_kunjungan', 'penempatan', 'riwayat_tahap_layanan',
-    'anamnesis', 'keperawatan', 'observasi', 'diagnosis', 'tindakan', 'tindak_lanjut', 'narasi_klinis', 'catatan_harian', 'addendum', 'versi_catatan', 'pengesahan_catatan', 'draf',
+    'pemeriksaan', 'observasi', 'diagnosis', 'tindakan', 'tindak_lanjut', 'narasi_klinis', 'addendum', 'versi_catatan', 'pengesahan_catatan', 'draf',
     'resep', 'item_resep', 'telaah_resep', 'pengeluaran_obat',
     'tagihan', 'item_tagihan', 'pembayaran', 'klaim', 'riwayat_klaim',
     'order_penunjang', 'hasil_penunjang', 'spesimen', 'penyerahan_hasil',

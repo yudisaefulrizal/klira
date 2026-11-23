@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { GALAT, KLINIS } from '../umum/teks.js';
-import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, KESADARAN, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, SKRINING_VISUAL, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL, } from '../klinis/klinis.js';
+import { BAGIAN_KLINIS, BAGIAN_NARASI, BAGIAN_TEMPLAT, KESADARAN, JENIS_FAVORIT, JENIS_NYERI, JENIS_TINDAK_LANJUT, MAKS_NARASI, SKALA_NYERI_MAKS, PERAN_DIAGNOSIS, POLA_ICD10, POLA_ICD9CM, SISTEM_TERMINOLOGI, TANDA_VITAL, } from '../klinis/klinis.js';
 import { BIDANG_TEKS_PEMERIKSAAN } from '../klinis/default-klinis.js';
 import { idPositif, tanggal, teksWajib } from './umum.js';
 const kosongJadiNull = (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? null : v);
@@ -39,7 +39,6 @@ export const keperawatanIsi = z
     nyeri_hilang_bila: teksNull(200),
     gizi_bb_turun: yaTidak,
     gizi_asupan_kurang: yaTidak,
-    skrining_visual: z.preprocess(kosongJadiNull, z.enum(SKRINING_VISUAL).nullable()),
 })
     .superRefine((d, ctx) => {
     if (d.nyeri_jenis !== 'tidak' && d.nyeri_skala === null)

@@ -260,11 +260,11 @@ export class RepositoriRawatInapMysql {
     }
     // ---- Catatan harian (CPPT) ----
     async daftarCatatan(fasyankesId, kunjunganId) {
-        const baris = await db.daftarCatatanHarianUntukDaftarCatatan(fasyankesId, kunjunganId, 200);
+        const baris = await db.daftarCppt(fasyankesId, kunjunganId, 200);
         return baris.map((b) => ({ id: b.id, isi: isiCatatan(b), dibuat_oleh: b.dibuat_oleh, dibuat_pada: b.dibuat_pada }));
     }
     async isiCatatan(fasyankesId, id) {
-        const b = await db.cariCatatanHarianUntukIsiCatatan(id, fasyankesId);
+        const b = await db.cariCppt(id, fasyankesId);
         return b && isiCatatan(b);
     }
     async namaPengguna(ids) {
@@ -272,9 +272,33 @@ export class RepositoriRawatInapMysql {
     }
     async tambahCatatan(fasyankesId, kunjunganId, isi, oleh, pengesahan) {
         return db.transaksi(async (tx) => {
-            const b = await (async () => { const _hasil = await db.tambahCatatanHarianUntukTambahCatatan(fasyankesId, kunjunganId, isi.subjektif, isi.objektif, isi.asesmen, isi.rencana, isi.instruksi, isi.tanda_vital ? isi.tanda_vital : undefined, oleh, tx); return db.tambahCatatanHarianUntukTambahCatatanHasil(_hasil.id, tx); })();
-            await tulisPengesahanDalam(tx, { ...pengesahan(b.id), fasyankesId, entitas: 'cppt', entitasId: b.id });
-            return b.id;
+            const tv = isi.tanda_vital ?? {};
+            const { id } = await db.tambahPemeriksaan({
+                fasyankes_id: fasyankesId,
+                kunjungan_id: kunjunganId,
+                jenis: 'cppt',
+                bagian: 'cppt',
+                versi: 1,
+                subjek: isi.subjektif,
+                objek: isi.objektif,
+                asesmen: isi.asesmen,
+                plan: isi.rencana,
+                instruksi: isi.instruksi,
+                suhu: tv.suhu ?? null,
+                tensi_sistol: tv.sistolik ?? null,
+                tensi_diastol: tv.diastolik ?? null,
+                nadi: tv.nadi ?? null,
+                respirasi: tv.respirasi ?? null,
+                tinggi: tv.tinggi_badan ?? null,
+                berat: tv.berat_badan ?? null,
+                lingkar_perut: tv.lingkar_perut ?? null,
+                spo2: tv.spo2 ?? null,
+                gcs: tv.gcs ?? null,
+                kesadaran: tv.kesadaran ?? null,
+                dibuat_oleh: oleh,
+            }, tx);
+            await tulisPengesahanDalam(tx, { ...pengesahan(id), fasyankesId, entitas: 'cppt', entitasId: id });
+            return id;
         });
     }
     // ---- Pemulangan ----
@@ -312,5 +336,15 @@ export class RepositoriRawatInapMysql {
     }
 }
 function isiCatatan(b) {
-    return { subjektif: b.subjektif, objektif: b.objektif, asesmen: b.asesmen, rencana: b.rencana, instruksi: b.instruksi, tanda_vital: b.tanda_vital ?? null };
+    const tv = {
+        suhu: b.suhu, sistolik: b.tensi_sistol, diastolik: b.tensi_diastol,
+        nadi: b.nadi, respirasi: b.respirasi, tinggi_badan: b.tinggi,
+        berat_badan: b.berat, lingkar_perut: b.lingkar_perut,
+        spo2: b.spo2, gcs: b.gcs, kesadaran: b.kesadaran,
+    };
+    const adaVital = Object.values(tv).some((v) => v !== null && v !== undefined);
+    return {
+        subjektif: b.subjek, objektif: b.objek, asesmen: b.asesmen, rencana: b.plan, instruksi: b.instruksi,
+        tanda_vital: adaVital ? tv : null,
+    };
 }

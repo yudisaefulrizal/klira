@@ -17,11 +17,12 @@ describe('skema catatan klinis', () => {
         expect(tandaVitalIsi.safeParse({}).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ suhu: 80 }).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ nadi: 'abc' }).success).toBe(false);
-        // SpO2, GCS, dan kesadaran ikut sebagai tanda vital.
-        expect(tandaVitalIsi.parse({ spo2: '98', gcs: 15, kesadaran: 'compos_mentis' })).toMatchObject({ spo2: 98, gcs: 15, kesadaran: 'compos_mentis', suhu: null });
+        // SpO2, GCS, lingkar perut, dan kesadaran ikut sebagai tanda vital.
+        expect(tandaVitalIsi.parse({ spo2: '98', gcs: 15, lingkar_perut: '80,5', kesadaran: 'compos_mentis' })).toMatchObject({ spo2: 98, gcs: 15, lingkar_perut: 80.5, kesadaran: 'compos_mentis', suhu: null });
         expect(tandaVitalIsi.parse({ suhu: 36, kesadaran: '' }).kesadaran).toBeNull();
         expect(tandaVitalIsi.safeParse({ gcs: 16 }).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ spo2: 101 }).success).toBe(false);
+        expect(tandaVitalIsi.safeParse({ lingkar_perut: 10 }).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ suhu: 36, kesadaran: 'pingsan' }).success).toBe(false);
         expect(tandaVitalIsi.safeParse({ kesadaran: 'koma' }).success).toBe(true);
     });

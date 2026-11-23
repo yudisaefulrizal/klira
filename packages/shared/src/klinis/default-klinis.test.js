@@ -41,7 +41,7 @@ describe('default keadaan baik (util bersama)', () => {
 describe('skrining keperawatan (P6)', () => {
     it('default lolos skema; isian kosong menjadi null dan boolean false', () => {
         const h = keperawatanIsi.parse(DEFAULT_KEPERAWATAN);
-        expect(h).toMatchObject({ kajian_keperawatan: 'keadaan umum baik', alergi: 'tidak ada', nyeri_jenis: 'tidak', nyeri_skala: null, gizi_bb_turun: false, diagnosa_keperawatan: null, skrining_visual: null });
+        expect(h).toMatchObject({ kajian_keperawatan: 'keadaan umum baik', alergi: 'tidak ada', nyeri_jenis: 'tidak', nyeri_skala: null, gizi_bb_turun: false, diagnosa_keperawatan: null });
         expect(keperawatanIsi.parse({})).toMatchObject({ nyeri_jenis: 'tidak', gizi_bb_turun: false, alergi: null });
     });
     it('nyeri bersyarat: skala wajib bila nyeri; tidak nyeri menyimpan isian nyeri lain null', () => {
@@ -49,7 +49,6 @@ describe('skrining keperawatan (P6)', () => {
         expect(keperawatanIsi.safeParse({ nyeri_jenis: 'akut', nyeri_skala: '11' }).success).toBe(false);
         expect(keperawatanIsi.parse({ nyeri_jenis: 'kronis', nyeri_skala: '6', nyeri_lokasi: 'Lutut' })).toMatchObject({ nyeri_skala: 6, nyeri_lokasi: 'Lutut' });
         expect(keperawatanIsi.parse({ nyeri_jenis: 'tidak', nyeri_skala: 6, nyeri_lokasi: 'Lutut' })).toMatchObject({ nyeri_skala: null, nyeri_lokasi: null });
-        expect(keperawatanIsi.safeParse({ skrining_visual: 'ungu' }).success).toBe(false);
         expect(keperawatanIsi.safeParse({ alergi: 'x'.repeat(501) }).success).toBe(false);
     });
     it('hasil risiko gizi dihitung', () => {

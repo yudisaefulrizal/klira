@@ -271,6 +271,8 @@ export function ringkasTandaVital(tv) {
         bagian.push(`${s.spo2} ${angkaId(tv.spo2)}`);
     if (tv.gcs != null)
         bagian.push(`${s.gcs} ${angkaId(tv.gcs)}`);
+    if (tv.lingkar_perut != null)
+        bagian.push(`${s.lingkar_perut} ${angkaId(tv.lingkar_perut)}`);
     return bagian.join(' · ');
 }
 // --- Diagnosis dan tindakan ---

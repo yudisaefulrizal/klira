@@ -1,7 +1,7 @@
 import * as db from '@klira/db';
 import { cariIcd, kamusIcd, sistemIcd } from './terminologi-icd.js';
 import { mulaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
-import { alergiTercatat, LOINC_KESADARAN, nomorDokumen, PEMERIKSAAN_BIDANG, samarNomor, TANDA_VITAL, umurTahun } from '@klira/shared';
+import { alergiTercatat, nomorDokumen, PEMERIKSAAN_BIDANG, samarNomor, TANDA_VITAL, umurTahun } from '@klira/shared';
 import { sinkronItemTindakanDalam } from '../../kasir/data-access/repositori.js';
 import { ambilKunjungan, keDto } from '../../kunjungan/data-access/repositori.js';
 import { tulisPengesahanDalam } from '../../rekam-medis/data-access/repositori.js';
@@ -11,13 +11,24 @@ export class BentrokVersiError extends Error {
         super('bentrok versi catatan');
     }
 }
-const angka = (v) => (Number.isFinite(Number(v)) ? Number(v) : null);
+/** Pemetaan kunci tanda_vital API <-> kolom tabel pemeriksaan. */
+const PETA_VITAL_KE_KOLOM = {
+    suhu: 'suhu', sistolik: 'tensi_sistol', diastolik: 'tensi_diastol',
+    nadi: 'nadi', respirasi: 'respirasi', tinggi_badan: 'tinggi',
+    berat_badan: 'berat', lingkar_perut: 'lingkar_perut',
+    spo2: 'spo2', gcs: 'gcs', kesadaran: 'kesadaran',
+};
+const bacaVitalDariBaris = (b) => Object.fromEntries(
+    Object.entries(PETA_VITAL_KE_KOLOM).map(([kunciApi, kolomDb]) => [kunciApi, b[kolomDb] ?? null]),
+);
+const tulisVitalKeKolom = (tv = {}) => Object.fromEntries(
+    Object.entries(PETA_VITAL_KE_KOLOM).map(([kunciApi, kolomDb]) => [kolomDb, tv[kunciApi] ?? null]),
+);
 /** Versi aktif suatu bagian = versi pengesahan terakhir (versi kosong, mis. daftar tindakan dikosongkan, tetap terwakili). */
 async function versiTerbaru(c, bagian, fasyankesId, kunjunganId) {
     const p = await db.cariPengesahanCatatanUntukVersiTerbaru(fasyankesId, bagian, kunjunganId, c);
     return p?.versi ?? null;
 }
-const kosongTandaVital = () => ({ ...Object.fromEntries(TANDA_VITAL.map((t) => [t.kunci, null])), kesadaran: null });
 const kosongPemeriksaan = () => Object.fromEntries(PEMERIKSAAN_BIDANG.map((b) => [b, null]));
 /** Isi bagian pada versi tertentu. */
 async function bacaVersi(c, bagian, fasyankesId, kunjunganId, versi) {
@@ -28,41 +39,37 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
-        case 'obat_poli':
+        case 'obat_poli': {
+            const n = await db.cariNarasiKlinisUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, bagian, c);
+            return n ? { isi: n.isi } : null;
+        }
         case 'evaluasi':
         case 'subjek':
         case 'objek':
         case 'asesmen':
         case 'plan':
         case 'instruksi': {
-            const n = await db.cariNarasiKlinisUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, bagian, c);
-            return n ? { isi: n.isi } : null;
+            const p = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, bagian, c);
+            return p ? { isi: p[bagian] } : null;
         }
         case 'anamnesis': {
-            const a = await db.cariAnamnesisUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, c);
+            const a = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, 'anamnesis', c);
             return a ? {
                 keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_sekarang: a.riwayat_sekarang, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, kajian_sosial: a.kajian_sosial,
             } : null;
         }
         case 'keperawatan': {
-            const p = await db.cariKeperawatanUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, c);
+            const p = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, 'keperawatan', c);
             return p ? {
                 kajian_keperawatan: p.kajian_keperawatan, telah_diobati: p.telah_diobati, alergi: p.alergi, obat_dikonsumsi: p.obat_dikonsumsi,
                 diagnosa_keperawatan: p.diagnosa_keperawatan, rencana_asuhan: p.rencana_asuhan,
                 nyeri_jenis: p.nyeri_jenis, nyeri_skala: p.nyeri_skala, nyeri_lokasi: p.nyeri_lokasi, nyeri_durasi: p.nyeri_durasi, nyeri_frekuensi: p.nyeri_frekuensi, nyeri_hilang_bila: p.nyeri_hilang_bila,
                 gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
-                skrining_visual: p.skrining_visual,
             } : null;
         }
         case 'tanda_vital': {
-            const baris = await db.daftarObservasiUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, 'tanda_vital', c);
-            if (!baris.length)
-                return null;
-            const isi = kosongTandaVital();
-            for (const b of baris)
-                if (b.bidang in isi)
-                    isi[b.bidang] = b.bidang === 'kesadaran' ? b.nilai : angka(b.nilai);
-            return isi;
+            const p = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, 'tanda_vital', c);
+            return p ? bacaVitalDariBaris(p) : null;
         }
         case 'pemeriksaan': {
             const baris = await db.daftarObservasiUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, 'pemeriksaan', c);
@@ -107,34 +114,44 @@ async function tulisIsi(tx, bagian, isi, fasyankesId, kunjunganId, versi, oleh, 
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
-        case 'obat_poli':
+        case 'obat_poli': {
+            await db.tambahNarasiKlinisUntukTulisIsi(fasyankesId, kunjunganId, bagian, isi.isi, versi, oleh, tx);
+            return;
+        }
         case 'evaluasi':
         case 'subjek':
         case 'objek':
         case 'asesmen':
         case 'plan':
         case 'instruksi': {
-            await db.tambahNarasiKlinisUntukTulisIsi(fasyankesId, kunjunganId, bagian, isi.isi, versi, oleh, tx);
+            await db.tambahPemeriksaan({ ...dasar, jenis: 'ralan', bagian, [bagian]: isi.isi }, tx);
             return;
         }
         case 'anamnesis': {
             const a = isi;
-            await db.tambahAnamnesisUntukTulisIsi(fasyankesId, kunjunganId, versi, a.keluhan_utama, a.penyerta, a.riwayat_sekarang, a.riwayat_pribadi, a.riwayat_keluarga, a.kajian_sosial, oleh, tx);
+            await db.tambahPemeriksaan({
+                ...dasar, jenis: 'ralan', bagian: 'anamnesis',
+                keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_sekarang: a.riwayat_sekarang,
+                riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, kajian_sosial: a.kajian_sosial,
+            }, tx);
             return;
         }
         case 'keperawatan': {
             const dataKeperawatan = isi;
-            await db.tambahKeperawatanUntukTulisIsi(fasyankesId, kunjunganId, versi, (dataKeperawatan)?.kajian_keperawatan, (dataKeperawatan)?.telah_diobati, (dataKeperawatan)?.alergi, (dataKeperawatan)?.obat_dikonsumsi, (dataKeperawatan)?.diagnosa_keperawatan, (dataKeperawatan)?.rencana_asuhan, (dataKeperawatan)?.nyeri_jenis, (dataKeperawatan)?.nyeri_skala, (dataKeperawatan)?.nyeri_lokasi, (dataKeperawatan)?.nyeri_durasi, (dataKeperawatan)?.nyeri_frekuensi, (dataKeperawatan)?.nyeri_hilang_bila, (dataKeperawatan)?.gizi_bb_turun, (dataKeperawatan)?.gizi_asupan_kurang, (dataKeperawatan)?.skrining_visual, oleh, tx);
+            await db.tambahPemeriksaan({
+                ...dasar, jenis: 'ralan', bagian: 'keperawatan',
+                kajian_keperawatan: dataKeperawatan?.kajian_keperawatan, telah_diobati: dataKeperawatan?.telah_diobati,
+                alergi: dataKeperawatan?.alergi, obat_dikonsumsi: dataKeperawatan?.obat_dikonsumsi,
+                diagnosa_keperawatan: dataKeperawatan?.diagnosa_keperawatan, rencana_asuhan: dataKeperawatan?.rencana_asuhan,
+                nyeri_jenis: dataKeperawatan?.nyeri_jenis ?? 'tidak', nyeri_skala: dataKeperawatan?.nyeri_skala,
+                nyeri_lokasi: dataKeperawatan?.nyeri_lokasi, nyeri_durasi: dataKeperawatan?.nyeri_durasi,
+                nyeri_frekuensi: dataKeperawatan?.nyeri_frekuensi, nyeri_hilang_bila: dataKeperawatan?.nyeri_hilang_bila,
+                gizi_bb_turun: dataKeperawatan?.gizi_bb_turun ?? false, gizi_asupan_kurang: dataKeperawatan?.gizi_asupan_kurang ?? false,
+            }, tx);
             return;
         }
         case 'tanda_vital': {
-            const tv = isi;
-            const data = TANDA_VITAL.filter((t) => tv[t.kunci] !== null).map((t) => ({
-                ...dasar, kelompok: 'tanda_vital', bidang: t.kunci, kode_loinc: t.loinc, nilai: String(tv[t.kunci]), satuan_ucum: t.satuan, waktu,
-            }));
-            if (tv.kesadaran !== null)
-                data.push({ ...dasar, kelompok: 'tanda_vital', bidang: 'kesadaran', kode_loinc: LOINC_KESADARAN, nilai: tv.kesadaran, satuan_ucum: null, waktu });
-            await db.tambahBanyakObservasiUntukTulisIsi(data, tx);
+            await db.tambahPemeriksaan({ ...dasar, jenis: 'ralan', bagian: 'tanda_vital', ...tulisVitalKeKolom(isi) }, tx);
             return;
         }
         case 'pemeriksaan': {
@@ -250,7 +267,7 @@ export class RepositoriKlinisMysql {
             // Alergi adalah data pasien (dikaji perawat, P6): ambil skrining keperawatan terbaru yang terisi, jangan tertimpa kunjungan baru yang tidak mengisinya.
             db.cariKeperawatanUntukKonteks(fasyankesId, k.pasien_id, null, ''),
             db.cariDiagnosisUntukKonteks(fasyankesId, k.pasien_id),
-            db.cariObservasiUntukKonteks(fasyankesId, 'tanda_vital', k.pasien_id),
+            db.cariTandaVitalUntukKonteks(fasyankesId, k.pasien_id),
             db.hitungKunjunganUntukKonteks(fasyankesId, k.pasien_id, k.id),
         ]);
         const diagnosis = diagnosisTerbaru ? await bacaVersi(db.pool, 'diagnosis', fasyankesId, diagnosisTerbaru.kunjungan_id, diagnosisTerbaru.versi) : null;

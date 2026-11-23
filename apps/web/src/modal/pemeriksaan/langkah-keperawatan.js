@@ -1,5 +1,5 @@
 import { h, Fragment } from '../../util/h.js';
-import { hasilRisikoGizi, JENIS_KUNJUNGAN, KLINIS, SKALA_NYERI_MAKS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, STATUS_SKRINING_VISUAL } from '@klira/shared';
+import { hasilRisikoGizi, JENIS_KUNJUNGAN, KLINIS, SKALA_NYERI_MAKS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI } from '@klira/shared';
                                                                       
 import { token } from '../../gaya/token.js';
 import { InfoPengesahan } from '../../komponen/klinis/info-pengesahan.js';
@@ -31,10 +31,6 @@ const OPSI_SKALA = Array.from({
   nilai: String(i),
   label: String(i)
 }));
-const OPSI_VISUAL = [{
-  nilai: ''         ,
-  label: t.tidakDiisi
-}, ...STATUS_SKRINING_VISUAL.opsi];
 
 /** Jenis kunjungan (baru/lama) dan jenis rawat: baca saja, tidak disimpan. */
 export function InfoKunjunganSkrining({
@@ -168,15 +164,7 @@ export function BagianKeperawatan({
     onChange: e => set({
       diagnosa_keperawatan: e.target.value
     })
-  }), teksIsian('rencana_asuhan', 1000), h(PilihanPil, {
-    id: "kp-skrining-visual",
-    label: t.skrining_visual,
-    opsi: OPSI_VISUAL,
-    nilai: kp.skrining_visual,
-    onUbah: v => set({
-      skrining_visual: v
-    })
-  })));
+  }), teksIsian('rencana_asuhan', 1000)));
 }
                                             
                                                                           

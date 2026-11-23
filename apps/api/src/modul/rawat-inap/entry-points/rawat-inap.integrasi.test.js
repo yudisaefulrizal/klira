@@ -78,7 +78,7 @@ d('rawat inap (admisi, penempatan, CPPT, pemulangan) terhadap database pengujian
         await uji.hapusPembayaranUntukRawatInapRawatInapIntegrasiTest([fas, fasLain]);
         await uji.hapusShiftKasirUntukRawatInapRawatInapIntegrasiTest([fas, fasLain]);
         await uji.hapusTagihanUntukRawatInapRawatInapIntegrasiTest([fas, fasLain]);
-        for (const m of [uji.hapusPenempatanFasyankesUji, uji.hapusCatatanHarianFasyankesUji, uji.hapusPemulanganFasyankesUji, uji.hapusResumeMedisFasyankesUji, uji.hapusVersiCatatanFasyankesUji, uji.hapusPengesahanCatatanFasyankesUji, uji.hapusPesertaKunjunganFasyankesUji, uji.hapusPeringatanIzinFasyankesUji, uji.hapusIzinPerAkunFasyankesUji, uji.hapusAntreanFasyankesUji])
+        for (const m of [uji.hapusPenempatanFasyankesUji, uji.hapusPemeriksaanFasyankesUji, uji.hapusPemulanganFasyankesUji, uji.hapusResumeMedisFasyankesUji, uji.hapusVersiCatatanFasyankesUji, uji.hapusPengesahanCatatanFasyankesUji, uji.hapusPesertaKunjunganFasyankesUji, uji.hapusPeringatanIzinFasyankesUji, uji.hapusIzinPerAkunFasyankesUji, uji.hapusAntreanFasyankesUji])
             await m(where.fasyankes_id.in);
         await uji.ubahKunjunganUntukRawatInapRawatInapIntegrasiTest(null, [fas, fasLain]);
         await uji.hapusKunjunganUntukFarmasiFarmasiIntegrasiTest([fas, fasLain]);

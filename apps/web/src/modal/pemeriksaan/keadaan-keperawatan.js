@@ -1,8 +1,8 @@
-import { DEFAULT_KEPERAWATAN, hasilRisikoGizi, isiDefault, isianDiubah, KLINIS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, STATUS_SKRINING_VISUAL, } from '@klira/shared';
+import { DEFAULT_KEPERAWATAN, hasilRisikoGizi, isiDefault, isianDiubah, KLINIS, STATUS_JENIS_NYERI, STATUS_RISIKO_GIZI, } from '@klira/shared';
 export const kosongKeperawatan = () => ({
     kajian_keperawatan: '', telah_diobati: '', alergi: '', obat_dikonsumsi: '', diagnosa_keperawatan: '', rencana_asuhan: '',
     nyeri_jenis: '', nyeri_skala: '', nyeri_lokasi: '', nyeri_durasi: '', nyeri_frekuensi: '', nyeri_hilang_bila: '',
-    gizi_bb_turun: false, gizi_asupan_kurang: false, skrining_visual: '',
+    gizi_bb_turun: false, gizi_asupan_kurang: false,
 });
 /** Form keperawatan baru: terisi default keadaan baik (satu sumber: DEFAULT_KEPERAWATAN di packages/shared). */
 export const defaultKeperawatan = () => isiDefault(kosongKeperawatan(), DEFAULT_KEPERAWATAN);
@@ -12,7 +12,7 @@ export const KELOMPOK_KEPERAWATAN = [
     { id: 'kajian', kunci: ['kajian_keperawatan', 'telah_diobati', 'alergi', 'obat_dikonsumsi'] },
     { id: 'nyeri', kunci: ['nyeri_jenis', ...ISIAN_NYERI_LAIN] },
     { id: 'gizi', kunci: ['gizi_bb_turun', 'gizi_asupan_kurang'] },
-    { id: 'asuhan', kunci: ['diagnosa_keperawatan', 'rencana_asuhan', 'skrining_visual'] },
+    { id: 'asuhan', kunci: ['diagnosa_keperawatan', 'rencana_asuhan'] },
 ];
 const kunciKelompok = (id) => KELOMPOK_KEPERAWATAN.find((g) => g.id === id)?.kunci ?? [];
 /** Kelompok punya isian berdefault (tombol "Semua normal" tampil). */
@@ -30,12 +30,11 @@ export const keperawatanDariIsi = (p) => ({
     nyeri_jenis: p.nyeri_jenis, nyeri_skala: p.nyeri_skala === null ? '' : String(p.nyeri_skala), nyeri_lokasi: teks(p.nyeri_lokasi), nyeri_durasi: teks(p.nyeri_durasi),
     nyeri_frekuensi: teks(p.nyeri_frekuensi), nyeri_hilang_bila: teks(p.nyeri_hilang_bila),
     gizi_bb_turun: p.gizi_bb_turun, gizi_asupan_kurang: p.gizi_asupan_kurang,
-    skrining_visual: p.skrining_visual ?? '',
 });
 /** Isi kirim ke API (server menormalkan: kosong menjadi null, nyeri lain null bila tidak nyeri). */
 export const isiKeperawatan = (k) => ({ ...k });
 /** Belum ada isian sama sekali (form tanpa default). */
-export const keperawatanKosong = (k) => k.nyeri_jenis === '' && k.skrining_visual === '' && Object.values(k).every((v) => v === '' || v === false);
+export const keperawatanKosong = (k) => k.nyeri_jenis === '' && Object.values(k).every((v) => v === '' || v === false);
 const yaTidak = (v) => (v ? KLINIS.keperawatan.ya : KLINIS.keperawatan.tidak);
 /** Ringkasan baca saja (ringkasan dokter di atas langkah Anamnesa, ringkasan akhir, detail kunjungan). */
 export function ringkasanKeperawatan(k) {
@@ -54,7 +53,6 @@ export function ringkasanKeperawatan(k) {
         { label: t.kelompok.gizi, nilai: `${STATUS_RISIKO_GIZI.label(hasilRisikoGizi(k))} (${yaTidak(k.gizi_bb_turun)}/${yaTidak(k.gizi_asupan_kurang)})` },
         { label: t.diagnosa_keperawatan, nilai: nilai(k.diagnosa_keperawatan) },
         { label: t.rencana_asuhan, nilai: nilai(k.rencana_asuhan) },
-        { label: t.skrining_visual, nilai: k.skrining_visual ? STATUS_SKRINING_VISUAL.label(k.skrining_visual) : '-' },
     ];
     return { judul: t.judul, baris };
 }

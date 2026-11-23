@@ -64,7 +64,7 @@ export function tab(daftar, aktif, label, onPilih) {
   Object.assign(el.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm });
   const tombolTab = new Map();
   for (const item of daftar) {
-    const button = document.createElement('button'); button.type = 'button'; button.id = `tab-${item.id}`; button.setAttribute('role', 'tab'); button.setAttribute('aria-controls', `panel-${item.id}`); button.textContent = item.label;
+    const button = document.createElement('button'); button.type = 'button'; button.id = `tab-${item.id}`; button.setAttribute('role', 'tab'); button.textContent = item.label;
     Object.assign(button.style, { height: token.ukuran.tab, padding: `0 ${token.jarak.md}`, borderRadius: token.radius.pil, cursor: 'pointer', fontFamily: token.huruf.keluarga, fontSize: token.huruf.ukuran.dasar });
     button.addEventListener('click', () => onPilih(item.id)); tombolTab.set(item.id, button); el.append(button);
   }

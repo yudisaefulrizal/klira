@@ -5,6 +5,7 @@ export const BAGIAN_KLINIS = ['anamnesis', 'tanda_vital', 'keperawatan', 'pemeri
 export const TANDA_VITAL = [
     { kunci: 'tinggi_badan', loinc: '8302-2', satuan: 'cm', min: 20, max: 250 },
     { kunci: 'berat_badan', loinc: '29463-7', satuan: 'kg', min: 0.2, max: 500 },
+    { kunci: 'lingkar_perut', loinc: '56115-9', satuan: 'cm', min: 20, max: 250 },
     { kunci: 'sistolik', loinc: '8480-6', satuan: 'mm[Hg]', min: 30, max: 300 },
     { kunci: 'diastolik', loinc: '8462-4', satuan: 'mm[Hg]', min: 20, max: 200 },
     { kunci: 'respirasi', loinc: '9279-1', satuan: '/min', min: 5, max: 80 },

@@ -46,6 +46,14 @@ const AKUN = AKUN_DEMO.filter(a => a.kunci !== 'admin');
 async function siapkanAkun() {
   console.log('\n[1] Akun per peran');
   const jenis = (await api('admin', 'GET', '/jenis-akun')).data ?? [];
+  const pimpinanJenis = jenis.find((j) => j.nama === 'Pimpinan fasyankes' || j.nama === 'Pimpinan');
+  const semuaIzin = (await api('admin', 'GET', '/izin')).data ?? [];
+  if (pimpinanJenis && semuaIzin.length) {
+    await wajib('pimpinan akses penuh', 'admin', 'PATCH', `/jenis-akun/${pimpinanJenis.id}`, {
+      izin_ids: semuaIzin.map((i) => i.id),
+      alasan_perubahan: 'Data demo: pimpinan akses penuh',
+    });
+  }
   const idJenis = Object.fromEntries(jenis.map((j) => [j.nama, j.id]));
   const id = {};
   for (const a of AKUN) {
@@ -319,6 +327,7 @@ const TARGET = ['ditutup', 'ditutup', 'ditutup', 'kasir', 'resep', 'lab', 'pemer
 
 async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
   console.log('\n[6] Kunjungan rawat jalan hari ini dengan berbagai tahap');
+  await api('daftar', 'POST', '/antrean/buka');
   const sudah = (await api('daftar', 'GET', `/pasien?tanggal=${hariIni}&ukuran=100`)).data?.data?.filter((p) => p.kunjungan) ?? [];
   if (sudah.length) { console.log(`  • ${sudah.length} kunjungan hari ini sudah ada, dilewati`); return; }
   const opsi = (await api('daftar', 'GET', '/kunjungan/opsi')).data;
@@ -349,7 +358,6 @@ async function jalankanKunjungan(pasien, poli, idObat, idLab, idTarif) {
         ...DEFAULT_KEPERAWATAN,
         ...(i === 1 ? { alergi: 'Penisilin' } : {}),
         ...(i % 3 === 2 ? { nyeri_jenis: 'akut', nyeri_skala: 4, nyeri_lokasi: 'Kepala', nyeri_durasi: '2 hari', nyeri_frekuensi: 'Hilang timbul', nyeri_hilang_bila: 'Istirahat' } : {}),
-        skrining_visual: 'hijau',
       },
     });
     if (target === 'skrining') continue;

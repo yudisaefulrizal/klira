@@ -90,7 +90,7 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         await uji.hapusLogAuditUntukFarmasiFarmasiIntegrasiTest([fas, fasLain]);
         await uji.hapusSesiUntukAksesIzinIntegrasiTest(Object.values(id));
         await uji.hapusPeringatanIzinUntukKlinisKlinisIntegrasiTest([fas, fasLain]);
-        for (const m of [uji.hapusNarasiKlinisFasyankesUji, uji.hapusAnamnesisFasyankesUji, uji.hapusKeperawatanFasyankesUji, uji.hapusObservasiFasyankesUji, uji.hapusDiagnosisFasyankesUji, uji.hapusTindakanFasyankesUji, uji.hapusTindakLanjutFasyankesUji, uji.hapusVersiCatatanFasyankesUji, uji.hapusPengesahanCatatanFasyankesUji, uji.hapusFavoritDokterFasyankesUji, uji.hapusTemplatCatatanFasyankesUji, uji.hapusKeluargaPasienFasyankesUji, uji.hapusDrafFasyankesUji]) {
+        for (const m of [uji.hapusNarasiKlinisFasyankesUji, uji.hapusPemeriksaanFasyankesUji, uji.hapusObservasiFasyankesUji, uji.hapusDiagnosisFasyankesUji, uji.hapusTindakanFasyankesUji, uji.hapusTindakLanjutFasyankesUji, uji.hapusVersiCatatanFasyankesUji, uji.hapusPengesahanCatatanFasyankesUji, uji.hapusFavoritDokterFasyankesUji, uji.hapusTemplatCatatanFasyankesUji, uji.hapusKeluargaPasienFasyankesUji, uji.hapusDrafFasyankesUji]) {
             await m(where.fasyankes_id.in);
         }
         await uji.hapusKodeTerminologiUntukKlinisKlinisIntegrasiTest(awalan);
@@ -132,20 +132,20 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         expect(r.badan.data.kunjungan).toMatchObject({ status: 'in-progress', antrean: { status: 'dilayani' } });
         expect((await uji.wajibAntreanUntukKlinisKlinisIntegrasiTest(kunjA1)).waktu_mulai).not.toBeNull();
         expect(r.badan.data.bagian.pengesahan.hash).toMatch(/^[0-9a-f]{64}$/);
-        // kode LOINC dan satuan UCUM tersimpan pada baris observasi
-        const baris = await uji.wajibObservasiUntukKlinisKlinisIntegrasiTest(kunjA1, 'sistolik');
-        expect(baris).toMatchObject({ kode_loinc: '8480-6', satuan_ucum: 'mm[Hg]', nilai: '150', kelompok: 'tanda_vital', versi: 1 });
+        // tanda vital tersimpan di kolom pemeriksaan
+        const baris = await uji.wajibPemeriksaanTandaVitalUji(kunjA1);
+        expect(baris).toMatchObject({ tensi_sistol: 150, tensi_diastol: 95, suhu: '36.7', bagian: 'tanda_vital', versi: 1 });
     });
     it('API verifikasi: sah, lalu berubah setelah isi diubah langsung di basis data', async () => {
         expect((await panggil('GET', `/pengesahan/tanda_vital/${kunjA1}`, 'dokter')).badan.data).toMatchObject({ status: 'sah', versi: 1 });
         expect((await panggil('GET', `/pengesahan/anamnesis/${kunjA1}`, 'dokter')).badan.data).toMatchObject({ status: 'belum_disahkan', versi: null });
         expect((await panggil('GET', `/pengesahan/tidak-dikenal/${kunjA1}`, 'dokter')).status).toBe(404);
         expect((await panggil('GET', `/pengesahan/tanda_vital/${kunjA1}`, 'biasa')).status).toBe(403);
-        await uji.ubahObservasiUntukKlinisKlinisIntegrasiTest('110', kunjA1, 'sistolik');
+        await uji.ubahPemeriksaanTandaVitalSistolUji(110, kunjA1);
         expect((await panggil('GET', `/pengesahan/tanda_vital/${kunjA1}`, 'perekam')).badan.data).toMatchObject({ status: 'berubah' });
         expect((await ambilBagian(kunjA1, 'tanda_vital')).verifikasi).toBe('berubah');
         // memulihkan: simpan isi yang disahkan lagi butuh alasan karena isi tersimpan tidak lagi sama
-        await uji.ubahObservasiUntukKlinisKlinisIntegrasiTest('150', kunjA1, 'sistolik');
+        await uji.ubahPemeriksaanTandaVitalSistolUji(150, kunjA1);
         expect((await panggil('GET', `/pengesahan/tanda_vital/${kunjA1}`, 'dokter')).badan.data.status).toBe('sah');
     });
     it('anamnesis, perbaikan berversi: alasan wajib, versi catatan, hanya pembuat dalam 2x24 jam', async () => {
@@ -167,7 +167,7 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         expect(versi[0]).toMatchObject({ versi: 1, alasan: 'Durasi salah', disetujui_oleh: null });
         expect(versi[0].isi_lama.keluhan_utama).toBe('Batuk 3 hari');
         // baris lama tetap ada (tanpa DELETE)
-        expect(await uji.hitungAnamnesisUntukKlinisKlinisIntegrasiTest(kunjA1)).toBe(2);
+        expect(await uji.hitungPemeriksaanBagianUji(kunjA1, 'anamnesis')).toBe(2);
         expect((await panggil('GET', `/pengesahan/anamnesis/${kunjA1}/versi`, 'dokter')).badan.data).toHaveLength(1);
         // setelah lewat 2x24 jam pembuat pun tidak boleh memperbaiki sendiri
         await uji.ubahPengesahanCatatanUntukKlinisKlinisIntegrasiTest(new Date(Date.now() - 49 * 3_600_000), 'anamnesis', kunjA1);
@@ -208,21 +208,21 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         expect(r.status).toBe(200);
         expect(r.badan.data.bagian).toMatchObject({
             verifikasi: 'sah', pengesahan: { versi: 1 },
-            isi: { kajian_keperawatan: 'keadaan umum baik', alergi: 'Tidak Ada', nyeri_jenis: 'tidak', nyeri_lokasi: null, gizi_bb_turun: false, skrining_visual: null },
+            isi: { kajian_keperawatan: 'keadaan umum baik', alergi: 'Tidak Ada', nyeri_jenis: 'tidak', nyeri_lokasi: null, gizi_bb_turun: false },
         });
         expect(await konteksAlergi()).toBeNull();
-        const ubah = { ...DEFAULT_KEPERAWATAN, alergi: 'Penisilin', nyeri_jenis: 'kronis', nyeri_skala: '6', nyeri_lokasi: 'Lutut', gizi_bb_turun: true, skrining_visual: 'kuning' };
+        const ubah = { ...DEFAULT_KEPERAWATAN, alergi: 'Penisilin', nyeri_jenis: 'kronis', nyeri_skala: '6', nyeri_lokasi: 'Lutut', gizi_bb_turun: true };
         expect((await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: ubah })).status).toBe(400); // perbaikan tanpa alasan
         const v2 = await panggil('PUT', klinis(kunjA1, 'keperawatan'), 'dokter', { isi: ubah, alasan: 'Alergi terlewat' });
-        expect(v2.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { alergi: 'Penisilin', nyeri_skala: 6, nyeri_lokasi: 'Lutut', gizi_bb_turun: true, skrining_visual: 'kuning' } });
-        expect(await uji.hitungKeperawatanUntukKlinisKlinisIntegrasiTest(kunjA1)).toBe(2);
+        expect(v2.badan.data.bagian).toMatchObject({ pengesahan: { versi: 2 }, verifikasi: 'sah', isi: { alergi: 'Penisilin', nyeri_skala: 6, nyeri_lokasi: 'Lutut', gizi_bb_turun: true } });
+        expect(await uji.hitungPemeriksaanBagianUji(kunjA1, 'keperawatan')).toBe(2);
         expect((await uji.wajibVersiCatatanUntukKlinisKlinisIntegrasiTest('keperawatan', kunjA1)).alasan).toBe('Alergi terlewat');
         const semua = (await panggil('GET', `/kunjungan/${kunjA1}/klinis`, 'dokter')).badan.data;
         expect(semua.bagian.keperawatan).toMatchObject({ verifikasi: 'sah', isi: { nyeri_jenis: 'kronis' } });
         // isi diubah langsung di basis data terdeteksi lewat hash
-        await uji.ubahKeperawatanUntukKlinisKlinisIntegrasiTest(2, kunjA1, 2);
+        await uji.ubahPemeriksaanKeperawatanSkalaUji(2, kunjA1, 2);
         expect((await panggil('GET', `/pengesahan/keperawatan/${kunjA1}`, 'dokter')).badan.data.status).toBe('berubah');
-        await uji.ubahKeperawatanUntukKlinisKlinisIntegrasiTest(6, kunjA1, 2);
+        await uji.ubahPemeriksaanKeperawatanSkalaUji(6, kunjA1, 2);
         expect((await panggil('GET', `/pengesahan/keperawatan/${kunjA1}`, 'dokter')).badan.data.status).toBe('sah');
     });
     it('konteks klinis: alergi, diagnosis aktif, dan tanda vital terakhir', async () => {
@@ -312,7 +312,7 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         expect(salin.status).toBe(200);
         expect(salin.badan.data).toMatchObject({ sumber: { id: kunjA1 }, anamnesis: { keluhan_utama: 'Batuk 4 hari', riwayat_sekarang: 'Batuk kering sejak 4 hari, memberat malam', kajian_sosial: 'Perokok aktif' }, diagnosis: { item: [{ kode: 'I10' }, { kode: 'E11.9' }] }, tindakan: { item: [{ kode: '89.52' }] } });
         // hanya draf: tidak ada yang tersimpan di kunjungan tujuan
-        expect(await uji.hitungAnamnesisUntukKlinisKlinisIntegrasiTest(kunjA2)).toBe(0);
+        expect(await uji.hitungPemeriksaanBagianUji(kunjA2, 'anamnesis')).toBe(0);
         expect((await panggil('GET', `/kunjungan/${kunjB}/salinan/${kunjA1}`, 'dokter')).status).toBe(400);
         expect((await panggil('GET', `/kunjungan/${kunjA2}/salinan/${kunjA2}`, 'dokter')).status).toBe(400);
         expect((await panggil('GET', `/kunjungan/${kunjA2}/salinan/${kunjLain}`, 'dokter')).status).toBe(404);

@@ -356,8 +356,10 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     // --- Tab Pemeriksaan (formulir SOAPIE dua kolom) ---
     const S = T.soapie;
     const barisForm = (label, kontrol, ...tambahan) => {
-        const b = buat('div', 'profil-form-baris'), l = buat('label', null, label), sisi = buat('div', 'profil-form-sisi');
-        l.htmlFor = kontrol.id; sisi.append(kontrol, ...tambahan.filter(Boolean)); b.append(l, sisi); return b;
+        const bisaLabel = ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'METER', 'OUTPUT', 'PROGRESS'].includes(kontrol.tagName);
+        const b = buat('div', 'profil-form-baris'), l = buat(bisaLabel ? 'label' : 'span', null, label), sisi = buat('div', 'profil-form-sisi');
+        if (bisaLabel && kontrol.id) l.htmlFor = kontrol.id;
+        sisi.append(kontrol, ...tambahan.filter(Boolean)); b.append(l, sisi); return b;
     };
     function isian(id, nilai, { boleh: dapat, onInput, tipe = 'text', baris: rows, maxLength }) {
         const c = buat(rows ? 'textarea' : 'input', 'profil-form-isian'); c.id = id; c.value = nilai; c.readOnly = !dapat; c.autocomplete = 'off';
@@ -448,7 +450,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 sisiDx.style.position = 'relative';
                 c.style.paddingBottom = '34px';
                 const btnDx = tombol(k.diagnosis.length ? `Diagnosis (${k.diagnosis.length}) →` : 'Diagnosis (ICD-10) →', () => bukaModalDiagnosis(m), 'teks');
-                btnDx.style.cssText = 'position:absolute;right:8px;padding:2px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                btnDx.style.cssText = 'position:absolute;right:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
                 // Posisi mengikuti dasar textarea (di atas ringkasDx/galatEl jika ada).
                 btnDx.style.top = 'auto';
                 const bungkusArea = document.createElement('div');
@@ -482,7 +484,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     /** Tanda vital terpisah dari enam teks SOAPIE: suhu, tinggi, berat, tensi, respirasi, nadi, SpO2, GCS, kesadaran (tiga kolom). */
     function tandaVital(m) {
         const kotak = buat('div', 'profil-vital'), grid = buat('div', 'profil-vital-grid');
-        grid.append(...['suhu', 'tinggi_badan', 'berat_badan', 'tensi', 'respirasi', 'nadi', 'spo2', 'gcs', 'kesadaran'].map((x) => selVital(x, m)));
+        grid.append(...['suhu', 'tinggi_badan', 'berat_badan', 'lingkar_perut', 'tensi', 'respirasi', 'nadi', 'spo2', 'gcs', 'kesadaran'].map((x) => selVital(x, m)));
         const g = !parseTensi(tensiTeks).sah ? S.vital.galatTensi : galatDi('tanda_vital'), sah = penandaSah(klinis.bagian.tanda_vital);
         kotak.append(...[grid, g && kecil(g, 'profil-galat'), sah].filter(Boolean));
         return kotak;
@@ -548,7 +550,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                     sisiPlan.style.position = 'relative';
                     areaPlan.style.paddingBottom = '34px';
                     const btnResep = tombol('Tulis resep →', () => { el.pilihSub('resep'); onSub?.('resep'); }, 'teks');
-                    btnResep.style.cssText = 'position:absolute;right:8px;bottom:8px;padding:2px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                    btnResep.style.cssText = 'position:absolute;right:8px;bottom:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
                     sisiPlan.append(btnResep);
                 }
             }

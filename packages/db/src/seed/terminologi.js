@@ -30,6 +30,7 @@ export const TERMINOLOGI_CONTOH = [
     { sistem: 'loinc', kode: '59408-5', nama: 'Saturasi oksigen (SpO2)', aktif: true },
     { sistem: 'loinc', kode: '29463-7', nama: 'Berat badan', aktif: true },
     { sistem: 'loinc', kode: '8302-2', nama: 'Tinggi badan', aktif: true },
+    { sistem: 'loinc', kode: '56115-9', nama: 'Lingkar perut', aktif: true },
     { sistem: 'ucum', kode: 'mm[Hg]', nama: 'milimeter air raksa', aktif: true },
     { sistem: 'ucum', kode: '/min', nama: 'per menit', aktif: true },
     { sistem: 'ucum', kode: 'Cel', nama: 'derajat Celsius', aktif: true },
