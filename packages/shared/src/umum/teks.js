@@ -776,7 +776,7 @@ export const KLINIS = {
     normal: PENANDA_NORMAL,
     tandaVital: {
         sistolik: 'Sistole', diastolik: 'Diastole', nadi: 'Heart Rate', suhu: 'Suhu', respirasi: 'Resp. Rate',
-        berat_badan: 'Berat', tinggi_badan: 'Tinggi', lingkar_perut: 'Lingkar Perut', spo2: 'SpO2', gcs: 'GCS', kesadaran: 'Kesadaran',
+        berat_badan: 'Berat', tinggi_badan: 'Tinggi', lingkar_perut: 'L perut', spo2: 'SpO2', gcs: 'GCS', kesadaran: 'Kesadaran',
         singkat: { sistolik: 'TD', nadi: 'N', suhu: 'S', respirasi: 'RR', berat_badan: 'BB', tinggi_badan: 'TB', lingkar_perut: 'LP', spo2: 'SpO2', gcs: 'GCS' },
         satuan: { 'mm[Hg]': 'mmHg', '/min': 'x/mnt', Cel: '°C', '%': '%', kg: 'kg', cm: 'cm', '{score}': 'skor' },
         pilihKesadaran: 'Pilih', kesadaranOpsi: { compos_mentis: 'Compos mentis', apatis: 'Apatis', somnolen: 'Somnolen', sopor: 'Sopor', koma: 'Koma' },
@@ -849,7 +849,7 @@ export const KLINIS = {
         templatBagian: { anamnesis: 'Anamnesis', pemeriksaan: 'Pemeriksaan' }, templatHapus: 'Hapus', templatGagal: 'Templat gagal diproses.',
         keluargaJudul: 'Family folder', keluargaWali: 'Wali dan kontak keluarga', keluargaAnggota: 'Anggota keluarga yang juga pasien', keluargaKosong: 'Belum ada anggota keluarga tertaut.',
         keluargaDibatasi: 'Dibatasi', keluargaTersembunyi: 'Identitas disembunyikan (privasi anggota)', keluargaBatasi: 'Batasi identitas', keluargaBuka: 'Tampilkan identitas', keluargaTambah: 'Tautkan anggota',
-        keluargaCari: 'Cari pasien (nama, nomor RM, atau NIK)', keluargaHubungan: 'Hubungan', keluargaTautkan: 'Tautkan', keluargaGagal: 'Family folder gagal diproses.', keluargaTanpaWali: 'Belum ada wali tercatat.',
+        keluargaCari: 'Cari pasien (nama, NIK, atau nomor JKN)', keluargaHubungan: 'Hubungan', keluargaTautkan: 'Tautkan', keluargaGagal: 'Family folder gagal diproses.', keluargaTanpaWali: 'Belum ada wali tercatat.',
         keluargaTercatat: 'Pembukaan data keluarga tercatat di audit.', keluargaPilih: 'Pilih', keluargaHasilKosong: 'Tidak ada pasien yang cocok.', keluargaDiriSendiri: 'Pasien tidak dapat ditautkan dengan dirinya sendiri.',
     },
     galat: {
@@ -1137,7 +1137,7 @@ export const REKAM_MEDIS = {
     },
     dok: {
         tab: { resume: 'Resume dan surat', pembukaan: 'Permintaan pembukaan', penyampaian: 'Penyampaian' },
-        memuat: 'Memuat...', gagalMuat: 'Data gagal dimuat.', tombolResume: 'Resume dan surat', tombolLaporan: 'Buat laporan', pasienCari: 'Cari pasien (nama atau nomor RM)', pasienPilih: 'Pilih pasien...', pasienKosong: 'Pasien tidak ditemukan.', pasienLabel: 'Pasien',
+        memuat: 'Memuat...', gagalMuat: 'Data gagal dimuat.', tombolResume: 'Resume dan surat', tombolLaporan: 'Buat laporan', pasienCari: 'Cari pasien (nama, NIK, atau nomor JKN)', pasienPilih: 'Pilih pasien...', pasienKosong: 'Pasien tidak ditemukan.', pasienLabel: 'Pasien',
         resume: {
             judul: 'Resume medis dan surat', langkah: { resume: 'Resume', pulang: 'Kondisi pulang', surat: 'Surat', ringkasan: 'Ringkasan' }, ringkasan: 'Ringkasan perjalanan penyakit', diagnosis: 'Diagnosis akhir', terapi: 'Terapi', kondisi: 'Kondisi saat pulang', anjuran: 'Anjuran',
             alasan: 'Alasan perubahan', alasanPetunjuk: 'Resume sudah disahkan; alasan wajib dan versi lama tetap tersimpan.', saran: 'Isian awal diambil dari catatan dokter; periksa dan ubah bila perlu.', belumDitutup: 'Resume dibuat setelah pelayanan selesai (tahap kasir atau ditutup).',
@@ -1161,7 +1161,7 @@ export const REKAM_MEDIS = {
             info: 'Penyetuju harus orang lain dari pengaju.', tinjauJudul: 'Tinjau permintaan pembukaan',
         },
         penyampaian: {
-            judul: 'Penyampaian rekam medis', catat: 'Catat penyampaian', cari: 'Cari penerima, pasien, atau nomor RM', terapkan: 'Terapkan', aturUlang: 'Atur ulang', kolom: { pasien: 'Pasien', penerima: 'Penerima', bentuk: 'Bentuk', bukti: 'Bukti persetujuan', petugas: 'Petugas', waktu: 'Waktu' }, kosong: 'Belum ada penyampaian.',
+            judul: 'Penyampaian rekam medis', catat: 'Catat penyampaian', cari: 'Cari penerima, nama, NIK, atau nomor JKN', terapkan: 'Terapkan', aturUlang: 'Atur ulang', kolom: { pasien: 'Pasien', penerima: 'Penerima', bentuk: 'Bentuk', bukti: 'Bukti persetujuan', petugas: 'Petugas', waktu: 'Waktu' }, kosong: 'Belum ada penyampaian.',
             penerima: 'Nama penerima', hubungan: 'Hubungan penerima', bentuk: 'Bentuk penyampaian', bukti: 'Bukti persetujuan pasien', buktiPetunjuk: 'Wajib bila penerima keluarga atau pihak lain.', catatan: 'Catatan', simpan: 'Simpan', menyimpan: 'Menyimpan...', gagal: 'Penyampaian gagal dicatat.',
             hubunganLabel: { pasien: 'Pasien sendiri', wali: 'Wali', keluarga: 'Keluarga', pihak_lain: 'Pihak lain' }, bentukLabel: { elektronik: 'Elektronik', cetak: 'Cetak' }, hasil: 'Penyampaian tercatat.',
         },
@@ -1222,7 +1222,7 @@ export const RAWAT_INAP = {
     },
 };
 export const KLAIM = {
-    judul: 'Klaim JKN/BPJS', tab: 'Klaim JKN/BPJS', memuat: 'Memuat...', gagalMuat: 'Daftar klaim gagal dimuat.', siapkan: 'Siapkan klaim', cari: 'Cari nama, nomor RM, atau SEP', filterStatus: 'Status', semuaStatus: 'Semua status', terapkan: 'Terapkan', aturUlang: 'Atur ulang',
+    judul: 'Klaim JKN/BPJS', tab: 'Klaim JKN/BPJS', memuat: 'Memuat...', gagalMuat: 'Daftar klaim gagal dimuat.', siapkan: 'Siapkan klaim', cari: 'Cari nama, NIK, nomor JKN, atau SEP', filterStatus: 'Status', semuaStatus: 'Semua status', terapkan: 'Terapkan', aturUlang: 'Atur ulang',
     kolom: { pasien: 'Pasien', sep: 'Nomor SEP', selesai: 'Selesai dilayani', batas: 'Batas', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Belum ada klaim pada penyaring ini.', ubahStatus: 'Ubah status', berkas: 'Berkas dan SEP', rincian: 'Rincian',
     batas: { sisa: (n) => (n < 0 ? `Lewat ${-n} hari` : n === 0 ? 'Hari ini terakhir' : `${n} hari lagi`), dekat: (n) => `Batas pengajuan tinggal ${n} hari.`, lewat: 'Batas waktu terlewati; klaim tidak dapat diajukan.' },
     berkasLabel: { fpk: 'Formulir pengajuan klaim (FPK) bertanda tangan pimpinan', rekapitulasi: 'Rekapitulasi pelayanan', kuitansi: 'Kuitansi asli bermaterai', surat_tanggung_jawab: 'Surat tanggung jawab mutlak bermaterai', spri: 'Surat perintah rawat inap (SPRI)', ringkasan_rm: 'Ringkasan rekam medis' },
@@ -1255,7 +1255,7 @@ export const PDP = {
     tarik: {
         judul: 'Catat tarik persetujuan', tombol: 'Tarik persetujuan', daftar: 'Persetujuan pasien', kolom: { pasien: 'Pasien', jenis: 'Jenis', tujuan: 'Tujuan', waktu: 'Waktu', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Tidak ada persetujuan.',
         alasan: 'Alasan penarikan', petunjuk: 'Pemrosesan dihentikan paling lambat 3x24 jam sejak dicatat.', batasHenti: (tgl) => `Hentikan pemrosesan paling lambat ${tgl}`, pilih: 'Persetujuan yang ditarik', gagal: 'Penarikan gagal dicatat.', tersimpan: 'Penarikan dicatat.',
-        ditarik: 'Ditarik', diberikan: 'Diberikan', cariPasien: 'Cari nama atau nomor RM',
+        ditarik: 'Ditarik', diberikan: 'Diberikan', cariPasien: 'Cari nama, NIK, atau nomor JKN',
     },
     hak: {
         judul: 'Permintaan hak pasien', catat: 'Catat permintaan', cari: 'Cari pasien atau pemohon', kolom: { pasien: 'Pasien', hak: 'Hak', pemohon: 'Pemohon', batas: 'Batas 3x24 jam', status: 'Status', tindakan: 'Tindakan' }, kosong: 'Belum ada permintaan hak.', aktif: (n) => `${n} belum selesai`, terlambat: (n) => `${n} terlambat`,
@@ -1561,7 +1561,7 @@ export const PROFIL_PASIEN = {
         resepKet: 'Resep obat ditulis di tab Resep dan otomatis masuk ke Plan.',
         petunjukIsi: 'Tulis bebas dalam satu kolom.',
         drafDipulihkan: 'Draf yang belum disimpan dipulihkan.',
-        vital: { suhu: 'Suhu (°C)', tinggi_badan: 'Tinggi Badan (cm)', berat_badan: 'Berat (kg)', lingkar_perut: 'Lingkar Perut (cm)', tensi: 'Tensi (mmHg)', respirasi: 'Respirasi (/menit)', nadi: 'Nadi (/menit)', spo2: 'SpO2 (%)', gcs: 'GCS (E,V,M)', kesadaran: 'Kesadaran', galatTensi: 'Tulis tensi sebagai sistole/diastole, contoh 120/80.' },
+        vital: { suhu: 'Suhu (°C)', tinggi_badan: 'T Badan (cm)', berat_badan: 'Berat (kg)', lingkar_perut: 'L perut (cm)', tensi: 'Tensi (mmHg)', respirasi: 'Respirasi (/men)', nadi: 'Nadi (/men)', spo2: 'SpO2 (%)', gcs: 'GCS (E,V,M)', kesadaran: 'Kesadaran', galatTensi: 'Tulis tensi sebagai sistole/diastole, contoh 120/80.' },
         dilakukan: 'Dilakukan', profesi: 'Profesi / Jabatan / Departemen', alergi: 'Alergi', alergiKet: 'Disimpan pada skrining keperawatan kunjungan ini.', alergiTercatat: (teks) => `Tercatat sebelumnya: ${teks}`, tanpaAlergi: 'Tidak ada',
         nomorDokumen: 'Nomor dokumen',
         menyimpan: 'Menyimpan…', selesaikan: 'Selesaikan', simpanPerubahan: 'Simpan perubahan', cetak: 'Cetak rekam medis', cetakMenu: 'Cetak dokumen',

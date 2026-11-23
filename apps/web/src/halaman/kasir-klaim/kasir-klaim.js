@@ -3,7 +3,7 @@ import { KelolaMasterTab } from '../../komponen/master/kelola-master-tab.js';
 import { rekapHarian, shiftSaya } from '../../api-klien/kasir.js';
 import { GalatApi } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
-import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab } from '../../komponen/ui/primitif.js';
+import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { TabKlaim } from './tab-klaim.js';
 import { TabHasil } from './tab-hasil.js';
@@ -29,7 +29,11 @@ function TabShift() {
 }
 export function HalamanKasirKlaim() {
   const { pengguna } = penggunaSaatIni(), { search, ganti } = navigasiSaatIni(), daftar = pengguna ? tabKasirKlaimDiizinkan(pengguna) : [], ids = daftar.map(t => t.id), el = document.createElement('div'), header = document.createElement('header'), h = document.createElement('h1'), isi = document.createElement('div');
-  let aktif, page; el.style.display = isi.style.display = 'contents'; Object.assign(header.style, { display: 'flex', gap: token.jarak.md, alignItems: 'center', flexWrap: 'wrap' }); h.textContent = KASIR.judul; Object.assign(h.style, { margin: '0', flexGrow: '1', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal }); const tabs = daftar.length ? tab(daftar, '', KASIR.tabLabel, id => ganti(`/kasir-klaim?tab=${id}`)) : null; header.append(h); if (tabs) header.append(tabs.el); el.append(header, isi);
+  let aktif, page; el.style.display = isi.style.display = 'contents'; Object.assign(header.style, { display: 'flex', gap: token.jarak.md, alignItems: 'center', flexWrap: 'wrap' }); h.textContent = KASIR.judul; Object.assign(h.style, { margin: '0', flexGrow: '1', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal }); const tabs = daftar.length ? tab(daftar, '', KASIR.tabLabel, id => ganti(`/kasir-klaim?tab=${id}`)) : null; header.append(h); if (tabs) header.append(tabs.el); header.append(bantuanKecil('Kasir, Klaim & Keuangan', [
+    'Buka shift kasir sebelum menerima pembayaran tunai/non-tunai.',
+    'Pembayaran kasir & pelunasan klaim JKN otomatis tercatat ke Jurnal Umum.',
+    'Gunakan tab Keuangan & Akuntansi untuk pengeluaran, piutang, hutang supplier, jasa medis, dan Laba Rugi.',
+  ])); el.append(header, isi);
   function perbaruiAlamat(alamat) { const param = new URLSearchParams(alamat).get('tab'), choisi = ids.length ? pilihTab(ids, param, bacaTabTerakhir('kasir-klaim', ids, sessionStorage)) : undefined; if (!choisi) return; simpanTabTerakhir('kasir-klaim', choisi, sessionStorage); tabs.pilih(choisi); if (aktif === choisi) page?.perbaruiAlamat?.(alamat); else { page?.tutup(); isi.replaceChildren(); aktif = choisi; page = choisi === 'shift' ? TabShift() : choisi === 'hasil' ? TabHasil() : choisi === 'klaim' ? TabKlaim() : choisi === 'keuangan' ? TabKeuangan() : KelolaMasterTab({ jenis: 'tarif' }); isi.append(page); if (choisi === 'tarif') page.perbaruiAlamat(alamat); } if (param !== choisi) ganti(`/kasir-klaim?tab=${choisi}`); }
   el.perbaruiAlamat = perbaruiAlamat; el.tutup = () => { page?.tutup(); el.replaceChildren(); }; perbaruiAlamat(search); return el;
 }

@@ -18,9 +18,17 @@ export function lencana(teks, warna) {
   const el = document.createElement('span'); el.textContent = teks; const w = token.warna.status[warna];
   Object.assign(el.style, { display: 'inline-block', padding: `${token.jarak.xs} ${token.jarak.sm}`, borderRadius: token.radius.pil, background: w?.latar, color: w?.teks, fontSize: token.huruf.ukuran.kecil, fontWeight: token.huruf.berat.tebal }); return el;
 }
-export function peringatan(teks, nada = 'merah') {
-  const el = document.createElement('div'); el.textContent = teks; el.setAttribute('role', 'alert'); const w = token.warna.status[nada];
-  Object.assign(el.style, { background: w.latar, color: w.teks, padding: token.jarak.sm, borderRadius: token.radius.sedang, fontSize: token.huruf.ukuran.dasar }); return el;
+export function peringatan(teks, nada = 'merah', aksi = null) {
+  const el = document.createElement('div'); el.setAttribute('role', 'alert'); const w = token.warna.status[nada];
+  Object.assign(el.style, { background: w.latar, color: w.teks, padding: token.jarak.sm, borderRadius: token.radius.sedang, fontSize: token.huruf.ukuran.dasar, ...(aksi ? { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm, flexWrap: 'wrap' } : {}) });
+  if (!aksi) { el.textContent = teks; return el; }
+  const msg = document.createElement('span'); msg.textContent = teks;
+  const taut = document.createElement(aksi.href ? 'a' : 'button');
+  if (aksi.href) taut.href = aksi.href; else taut.type = 'button';
+  taut.textContent = aksi.label;
+  Object.assign(taut.style, { color: w.teks, fontWeight: token.huruf.berat.tebal, fontSize: token.huruf.ukuran.kecil, textDecoration: 'none', padding: '4px 10px', borderRadius: token.radius.pil, border: `1px solid ${w.teks}`, background: 'transparent', cursor: 'pointer', whiteSpace: 'nowrap' });
+  taut.addEventListener('click', (e) => { if (aksi.onClick) { e.preventDefault(); aksi.onClick(e); } });
+  el.append(msg, taut); return el;
 }
 export function bidang({ id, label, jenis = 'text', nilai = '', opsi, ubah, autoComplete, maxLength }) {
   const el = document.createElement('div'), judul = document.createElement('label'); judul.htmlFor = id; judul.textContent = label;
@@ -74,4 +82,50 @@ export function tab(daftar, aktif, label, onPilih) {
     }
   }
   pilih(aktif); return { el, pilih };
+}
+/** Ikon ? kecil dengan popover penjelasan singkat di sudut kanan atas/bawah komponen. */
+export function bantuanKecil(judul, isi, { arah = 'kiri', mini = false } = {}) {
+  const bungkus = document.createElement('span');
+  bungkus.className = 'ui-bantuan-bungkus';
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = mini ? 'ui-bantuan-tombol ui-bantuan-tombol--mini' : 'ui-bantuan-tombol';
+  btn.textContent = '?';
+  btn.title = judul;
+  btn.setAttribute('aria-label', `Bantuan: ${judul}`);
+  btn.setAttribute('aria-expanded', 'false');
+  const panel = document.createElement('div');
+  panel.className = arah === 'kanan' ? 'ui-bantuan-panel ui-bantuan-panel--kanan' : 'ui-bantuan-panel';
+  panel.setAttribute('role', 'dialog');
+  panel.hidden = true;
+  const h = document.createElement('strong');
+  h.textContent = judul;
+  panel.append(h);
+  if (Array.isArray(isi)) {
+    const ul = document.createElement('ul');
+    for (const barisTeks of isi) {
+      const li = document.createElement('li');
+      li.textContent = barisTeks;
+      ul.append(li);
+    }
+    panel.append(ul);
+  } else {
+    const p = document.createElement('div');
+    p.textContent = isi;
+    panel.append(p);
+  }
+  const tutup = () => { panel.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+  const onLuar = (e) => { if (!bungkus.isConnected) return void document.removeEventListener('click', onLuar); if (!bungkus.contains(e.target)) tutup(); };
+  const onEsc = (e) => { if (!bungkus.isConnected) return void document.removeEventListener('keydown', onEsc); if (e.key === 'Escape' && !panel.hidden) { tutup(); btn.focus(); } };
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const buka = panel.hidden;
+    panel.hidden = !buka;
+    btn.setAttribute('aria-expanded', String(buka));
+  });
+  document.addEventListener('click', onLuar);
+  document.addEventListener('keydown', onEsc);
+  bungkus.append(btn, panel);
+  return bungkus;
 }

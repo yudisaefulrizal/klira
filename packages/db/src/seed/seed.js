@@ -76,8 +76,12 @@ async function seedPimpinanPertama(koneksi, fasyankesId, env) {
     if ((await db.hitungPenggunaUntukSeedPimpinanPertama(fasyankesId, koneksi)) > 0)
         return;
     const pengguna = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahPenggunaUntukSeedPimpinanPertama(fasyankesId, 'Pimpinan Pertama', '0000000000000000', username, await hashKataSandi(kataSandi), true, koneksiBaru); return db.tambahPenggunaUntukBuatAkunHasil(_hasil.id, koneksiBaru); });
-    const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(fasyankesId, 'Pimpinan fasyankes', koneksi);
-    await db.tambahPenugasanJenisUntukSeedPimpinanPertama(fasyankesId, pengguna.id, jenis.id, new Date(), koneksi);
+    const waktu = new Date();
+    for (const j of JENIS_AKUN_AWAL) {
+        const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(fasyankesId, j.nama, koneksi);
+        if (jenis)
+            await db.tambahPenugasanJenisUntukSeedPimpinanPertama(fasyankesId, pengguna.id, jenis.id, waktu, koneksi);
+    }
     await db.tambahLogAuditUntukSeedPimpinanPertama(fasyankesId, pengguna.id, 'input', 'pengguna', 'Akun Pimpinan pertama dibuat (seed)', koneksi);
 }
 if (process.argv[1] && import.meta.url === kliraFileUrl(process.argv[1]).href) {

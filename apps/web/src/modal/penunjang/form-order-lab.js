@@ -3,6 +3,7 @@ import { token } from '../../gaya/token.js';
 import { bidang, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { gantiPilihan, perkiraanBiaya, rupiah, saringPemeriksaan } from './keadaan-order-lab.js';
+import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 
 export function FormOrderLab(awal) {
   let props = awal, cari = '';
@@ -18,7 +19,7 @@ export function FormOrderLab(awal) {
   function tampil() {
     const { master, k, cara, ringkas = false, galat } = props, tersedia = master.some(m => m.aktif);
     for (const node of [recherche.el, daftar, dipilih, catatan.el]) node.hidden = !tersedia;
-    status.replaceChildren(); if (!tersedia) status.append(peringatan(O.belumAda, 'biru')); else if (galat) status.append(peringatan(galat));
+    status.replaceChildren(); if (!tersedia) status.append(peringatan(O.belumAda, 'biru', { label: 'Buka Penunjang →', href: '/penunjang?tab=master', onClick: () => navigasiSaatIni().pindah('/penunjang?tab=master') })); else if (galat) status.append(peringatan(galat));
     petunjuk.hidden = !tersedia || ringkas || !!cari.trim(); ringkasan.hidden = akhir.hidden = !tersedia || ringkas;
     daftar.replaceChildren(); dipilih.replaceChildren(); if (!tersedia) return;
     const cocok = saringPemeriksaan(master, cari), terpilih = k.pemeriksaan.map(id => master.find(m => m.id === id)).filter(Boolean);
@@ -29,5 +30,5 @@ export function FormOrderLab(awal) {
     const biaya = perkiraanBiaya(master, k.pemeriksaan, cara); ringkasan.textContent = `${O.terpilih(k.pemeriksaan.length)}${k.pemeriksaan.length ? ` · ${rupiah(biaya.total)}${biaya.tanpaTarif ? ` (${O.tanpaTarifJumlah(biaya.tanpaTarif)})` : ''}` : ''}`;
     if (catatan.kontrol.value !== k.catatan) catatan.kontrol.value = k.catatan;
   }
-  el.perbarui = baru => { props = { ...props, ...baru }; tampil(); }; el.tutup = () => {}; tampil(); return el;
+  el.perbarui = baru => { props = { ...props, ...baru }; tampil(); }; el.tutup = () => { }; tampil(); return el;
 }

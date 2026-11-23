@@ -1,7 +1,7 @@
 import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js';
 import { bukaUbahDpjp } from '../../modal/pasien/ubah-dpjp.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
-import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab } from '../../komponen/ui/primitif.js';
+import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab,bantuanKecil } from '../../komponen/ui/primitif.js';
 import { TabJadwal } from '../../komponen/master/tab-jadwal.js';
 import { TabShift } from '../../komponen/master/tab-shift.js';
 import { KelolaMasterTab } from '../../komponen/master/kelola-master-tab.js';
@@ -122,6 +122,11 @@ export function HalamanDaftarPasien() {
         }
         if(boleh('kunjungan','input'))actions.append(icon({ikon:'kunjungan-baru',label:DAFTAR_PASIEN.daftarkanKunjungan,varian:'sekunder',onClick(){setTerbuka({jenis:'kunjungan'});}}));
         if(boleh('pasien','input'))actions.append(icon({ikon:'pasien-baru',label:DAFTAR_PASIEN.registrasi,onClick(){setTerbuka({jenis:'registrasi'});}}));
+        actions.append(bantuanKecil('Alur Antrean & Pintasan', [
+            'Tekan "/" untuk langsung fokus ke kolom pencarian Nama, NIK, atau nomor JKN.',
+            'Alur layanan: Skrining -> Pemeriksaan -> Resep/Lab -> Kasir -> Selesai.',
+            'Gunakan tombol Tutup antrean di akhir sesi praktik.',
+        ]));
         header.append(toolbar,actions);section.append(header);
         // Penyaring tahap: tombol dengan jumlah; bawaan menurut peran, pilihan tetap di alamat halaman.
         const tahapAktif=keadaan.tahap??tahapBawaan(boleh),jumlahTahap=hasil?.jumlah_tahap,penyaring=document.createElement('div');penyaring.className='pasien-penyaring';penyaring.setAttribute('role','group');penyaring.setAttribute('aria-label',DAFTAR_PASIEN.penyaringTahap);

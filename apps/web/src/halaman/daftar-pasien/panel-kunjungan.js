@@ -9,7 +9,7 @@ import { ordersKunjungan } from '../../api-klien/penunjang.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaKonfirmasi, bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
-import { bidang, lencana, peringatan, tab, tabel, baris, sel, tombol } from '../../komponen/ui/primitif.js';
+import { bidang, lencana, peringatan, tab, tabel, baris, sel, tombol, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { adaIsianResep, awalResep, awalTelaah, barisDariItem, bentukResep, galatResep, perbaruiPlan, resepDariServer, teksPlanResep } from '../../modal/farmasi/keadaan-farmasi.js';
 import { FormTelaah } from '../../modal/farmasi/form-telaah.js';
 import { galatIsianTelaah, resepTerkunci, simpanSeluruhTelaah } from '../../modal/farmasi/simpan-telaah.js';
@@ -23,6 +23,9 @@ import { disahkanDari, isiBagian, keadaanDariServer, rencanaSimpanBagian } from 
 import { bukaModalKia, sisipkanBlokKia } from '../../modal/pemeriksaan/form-kia.js';
 import { bukaModalGigi, sisipkanBlokGigi } from '../../modal/pemeriksaan/form-gigi.js';
 import { bukaModalUgd, sisipkanBlokUgd } from '../../modal/pemeriksaan/form-ugd.js';
+import { bukaModalFisikUmum, sisipkanBlokFisik } from '../../modal/pemeriksaan/form-fisik-umum.js';
+import { bukaModalAnamnesisSkrining, sisipkanBlokAnamnesis } from '../../modal/pemeriksaan/form-anamnesis-skrining.js';
+import { bukaModalTulisResep } from '../../modal/farmasi/modal-tulis-resep.js';
 import { DaftarOrderLab } from '../../modal/penunjang/daftar-order-lab.js';
 import { bukaOrderLab } from '../../modal/penunjang/order-lab.js';
 import { bukaAmbilSpesimen } from '../../modal/penunjang/ambil-spesimen.js';
@@ -353,16 +356,35 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             if (x.title) l.title = x.title;
             tanda.append(l);
         }
-        kepala.append(tanda, ...aksiKepala());
+        kepala.append(tanda, ...aksiKepala(), bantuanKecil('Panduan Pemeriksaan', [
+            'Saat status Menunggu skrining, bagian non-skrining diredupkan agar fokus ke Subjek, Tanda Vital, dan Alergi.',
+            'Gunakan tombol Diagnosis (ICD-10) dan Tulis resep → di pojok kolom untuk mempercepat pengisian.',
+            'Klik Selesaikan pemeriksaan agar data disahkan dan siap lanjut ke tahap berikutnya.',
+        ]));
     }
 
     // --- Tab Pemeriksaan (formulir SOAPIE dua kolom) ---
     const S = T.soapie;
+    const BANTUAN_BIDANG = {
+        subjek: ['Isian Subjek (S)', 'Keluhan utama pasien, sejak kapan dirasakan, riwayat penyakit sekarang/dahulu, dan faktor pemicu. Contoh: "Demam sejak 3 hari lalu disertai batuk kering."'],
+        objek: ['Isian Objek (O)', 'Hasil pemeriksaan fisik dokter (keadaan umum, kepala/leher, toraks, abdomen, ekstremitas) serta temuan khusus poli (Odontogram/KIA/UGD).'],
+        alergi: ['Isian Alergi', 'Riwayat alergi obat, makanan, atau bahan medis (mis. "Amoksisilin", "Debu", atau "Tidak ada").'],
+        asesmen: ['Isian Asesmen (A)', 'Kesimpulan diagnosis kerja atau diagnosis banding dokter. Gunakan tombol Diagnosis (ICD-10) di pojok kanan bawah untuk memilih kode ICD-10 resmi.'],
+        plan: ['Isian Plan (P)', 'Rencana terapi obat, tindakan medis, edukasi pasien, dan rencana kontrol. Gunakan tombol Tulis resep → untuk meresepkan obat.'],
+        instruksi: ['Isian Instruksi', 'Instruksi lanjutan untuk perawat atau pasien (mis. observasi tanda vital tiap 15 menit, rawat luka, diet khusus).'],
+        evaluasi: ['Isian Evaluasi', 'Catatan respons pasien setelah tindakan/terapi awal di klinik atau kondisi pasien sebelum pulang.'],
+    };
     const barisForm = (label, kontrol, ...tambahan) => {
         const bisaLabel = ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'METER', 'OUTPUT', 'PROGRESS'].includes(kontrol.tagName);
         const b = buat('div', 'profil-form-baris'), l = buat(bisaLabel ? 'label' : 'span', null, label), sisi = buat('div', 'profil-form-sisi');
         if (bisaLabel && kontrol.id) l.htmlFor = kontrol.id;
         sisi.append(kontrol, ...tambahan.filter(Boolean)); b.append(l, sisi); return b;
+    };
+    const pasangBantuan = (baris, kunci) => {
+        const info = BANTUAN_BIDANG[kunci];
+        const l = baris?.firstElementChild;
+        if (info && l) l.append(bantuanKecil(info[0], info[1], { arah: 'kanan', mini: true }));
+        return baris;
     };
     function isian(id, nilai, { boleh: dapat, onInput, tipe = 'text', baris: rows, maxLength }) {
         const c = buat(rows ? 'textarea' : 'input', 'profil-form-isian'); c.id = id; c.value = nilai; c.readOnly = !dapat; c.autocomplete = 'off';
@@ -446,7 +468,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             },
         });
         if (g) c.setAttribute('aria-invalid', 'true');
-        const baris = barisForm(LABEL_NARASI[bagian], c, galatEl, sah);
+        const baris = pasangBantuan(barisForm(LABEL_NARASI[bagian], c, galatEl, sah), bagian);
         if (bagian === 'asesmen') {
             const sisiDx = baris.querySelector('.profil-form-sisi');
             if (sisiDx) {
@@ -552,30 +574,97 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 if (sisiPlan && areaPlan) {
                     sisiPlan.style.position = 'relative';
                     areaPlan.style.paddingBottom = '34px';
-                    const btnResep = tombol('Tulis resep →', () => { el.pilihSub('resep'); onSub?.('resep'); }, 'teks');
+                    const btnResep = tombol('Tulis resep', () => {
+                        tutupModal();
+                        modal = bukaModalTulisResep({
+                            kunjunganId,
+                            onBukaTab: () => { el.pilihSub('resep'); onSub?.('resep'); },
+                            onSelesai: ({ lama, baru, obat }) => {
+                                if (obat?.length && !obatMaster?.length) obatMaster = obat;
+                                const plan = perbaruiPlan(k.plan, lama ? blokPlan(lama) : null, blokPlan(baru), MAKS_NARASI.plan);
+                                if (plan !== null) {
+                                    k = { ...k, plan };
+                                    catatDraf();
+                                }
+                                data.resep = null;
+                                resepSinkron = false;
+                                pesan = lama ? T.resep.diperbarui : T.resep.diajukan;
+                                lukis();
+                                onBerubah();
+                            },
+                        });
+                    }, 'teks');
                     btnResep.style.cssText = 'position:absolute;right:8px;bottom:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
                     sisiPlan.append(btnResep);
                 }
             }
             const objekEl = teksSoapie('objek', m, 3);
+            const terapkanObjek = (baru) => {
+                ubah({ objek: baru });
+                const area = document.getElementById('narasi-objek');
+                if (area && area.value !== baru) area.value = baru;
+            };
+            const tombolObjek = [
+                ['Pemeriksaan Fisik', () => bukaModalFisikUmum({ onTerapkan: (blok) => terapkanObjek(sisipkanBlokFisik(k.objek, blok)) })],
+            ];
             const tombolKhususPoli = {
-                kia: ['Input KIA', () => bukaModalKia({ kunjunganId, nilaiAwal: k.objek, onTerapkan: (blok) => ubah({ objek: sisipkanBlokKia(k.objek, blok) }) })],
-                gigi: ['Input Odontogram', () => bukaModalGigi({ pasienId: pasien.id, kunjunganId, onTerapkan: (blok) => ubah({ objek: sisipkanBlokGigi(k.objek, blok) }) })],
-                ugd: ['Input Triase UGD', () => bukaModalUgd({ kunjunganId, onTerapkan: (blok) => ubah({ objek: sisipkanBlokUgd(k.objek, blok) }) })],
+                kia: ['Input KIA', () => bukaModalKia({ kunjunganId, nilaiAwal: k.objek, onTerapkan: (blok) => terapkanObjek(sisipkanBlokKia(k.objek, blok)) })],
+                gigi: ['Input Odontogram', () => bukaModalGigi({ pasienId: pasien.id, kunjunganId, onTerapkan: (blok) => terapkanObjek(sisipkanBlokGigi(k.objek, blok)) })],
+                ugd: ['Input Triase UGD', () => bukaModalUgd({ kunjunganId, onTerapkan: (blok) => terapkanObjek(sisipkanBlokUgd(k.objek, blok)) })],
             }[konteks?.kunjungan?.poli_kategori];
-            if (m.ubah && tombolKhususPoli) {
+            if (tombolKhususPoli) tombolObjek.push(tombolKhususPoli);
+            if (m.ubah) {
                 const sisiObjek = objekEl.querySelector('.profil-form-sisi');
                 const areaObjek = sisiObjek?.querySelector('textarea');
                 if (sisiObjek && areaObjek) {
                     sisiObjek.style.position = 'relative';
-                    areaObjek.style.paddingBottom = '34px';
-                    const btnKhusus = tombol(tombolKhususPoli[0], tombolKhususPoli[1], 'teks');
-                    btnKhusus.style.cssText = 'position:absolute;right:8px;bottom:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
-                    sisiObjek.append(btnKhusus);
+                    areaObjek.style.paddingBottom = '36px';
+                    const barisTombol = document.createElement('div');
+                    barisTombol.style.cssText = 'position:absolute;right:8px;bottom:8px;display:flex;gap:6px;flex-wrap:wrap;';
+                    for (const [labelT, aksiT] of tombolObjek) {
+                        const btn = tombol(labelT, aksiT, 'teks');
+                        btn.style.cssText = 'min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                        barisTombol.append(btn);
+                    }
+                    sisiObjek.append(barisTombol);
                 }
             }
-            kiri.append(barisForm('ID Layanan', idLayanan), barisForm('Dokter (DPJP)', dokter), teksSoapie('subjek', m, 3), objekEl, tandaVital(m));
-            kanan.append(barisForm(S.alergi, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')), teksSoapie('asesmen', m, 3), planEl, teksSoapie('instruksi', m, 3), teksSoapie('evaluasi', m, 3));
+            const sedangSkrining = klinis.kunjungan.tahap_layanan === 'menunggu_skrining';
+            const subjekEl = teksSoapie('subjek', m, 3);
+            if (m.ubah || m.ubahVital) {
+                const sisiSubjek = subjekEl.querySelector('.profil-form-sisi');
+                const areaSubjek = sisiSubjek?.querySelector('textarea');
+                if (sisiSubjek && areaSubjek) {
+                    sisiSubjek.style.position = 'relative';
+                    areaSubjek.style.paddingBottom = '36px';
+                    const btnAnm = tombol('Anamnesis & Skrining', () => bukaModalAnamnesisSkrining({
+                        kunjunganId,
+                        anamnesisAwal: klinis.bagian.anamnesis?.isi,
+                        keperawatanAwal: k.keperawatan,
+                        onTerapkan: ({ blok, keperawatan: kpBaru }) => {
+                            const baru = sisipkanBlokAnamnesis(k.subjek, blok);
+                            ubah({ subjek: baru, keperawatan: { ...k.keperawatan, ...kpBaru } });
+                            const area = document.getElementById('narasi-subjek');
+                            if (area && area.value !== baru) area.value = baru;
+                            void muat(true);
+                        },
+                    }), 'teks');
+                    btnAnm.style.cssText = 'position:absolute;right:8px;bottom:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                    sisiSubjek.append(btnAnm);
+                }
+            }
+            const vitalEl = tandaVital(m);
+            const alergiEl = pasangBantuan(barisForm(S.alergi, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')), 'alergi');
+            const asesmenEl = teksSoapie('asesmen', m, 3);
+            const instruksiEl = teksSoapie('instruksi', m, 3);
+            const evaluasiEl = teksSoapie('evaluasi', m, 3);
+            if (sedangSkrining) {
+                for (const elNonSkrining of [objekEl, asesmenEl, planEl, instruksiEl, evaluasiEl]) {
+                    elNonSkrining.classList.add('profil-bagian-redup');
+                }
+            }
+            kiri.append(barisForm('ID Layanan', idLayanan), barisForm('Dokter (DPJP)', dokter), subjekEl, objekEl, vitalEl, alergiEl);
+            kanan.append(asesmenEl, planEl, instruksiEl, evaluasiEl);
             form.append(kiri, kanan); bungkus.append(form);
         }
         bungkus.append(aksiPemeriksaan(m));

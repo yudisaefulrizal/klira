@@ -1,1 +1,9 @@
 .ui-native-tombol{cursor:pointer;opacity:1}.ui-native-tombol:disabled{cursor:not-allowed;opacity:.6}
+.ui-bantuan-bungkus{position:relative;display:inline-flex;align-items:center}
+.ui-bantuan-tombol{width:20px;height:20px;padding:0;border-radius:999px;border:1px solid var(--warna-garis);background:var(--warna-permukaan);color:var(--warna-teks-redup);font-size:11px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.ui-bantuan-tombol:hover,.ui-bantuan-tombol:focus-visible,.ui-bantuan-tombol[aria-expanded='true']{border-color:var(--warna-utama);color:var(--warna-utama);background:var(--warna-utama-latar);outline:none}
+.ui-bantuan-tombol--mini{width:16px;height:16px;font-size:10px}
+.ui-bantuan-panel{position:absolute;top:calc(100% + 6px);right:0;z-index:950;width:min(300px,82vw);padding:10px 12px;border-radius:10px;border:1px solid var(--warna-garis);background:var(--warna-permukaan);color:var(--warna-teks);box-shadow:var(--bayangan-modal);font-size:12.5px;line-height:1.5;text-align:left;font-weight:400}
+.ui-bantuan-panel--kanan{left:0;right:auto}
+.ui-bantuan-panel strong{display:block;font-size:12.5px;margin-bottom:4px;color:var(--warna-teks)}
+.ui-bantuan-panel ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px;color:var(--warna-teks-redup)}

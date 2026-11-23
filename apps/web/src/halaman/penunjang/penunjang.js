@@ -1,6 +1,6 @@
 import { PENUNJANG } from '@klira/shared';
 import { token } from '../../gaya/token.js';
-import { tab } from '../../komponen/ui/primitif.js';
+import { tab, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../../util/tab/ingatan-tab.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { pasangTabMasterPemeriksaan } from './tab-master-pemeriksaan.js';
@@ -11,7 +11,11 @@ export function HalamanPenunjang() {
   let aktif, controller;
   const el = document.createElement('div'), header = document.createElement('header'), judul = document.createElement('h1'), isi = document.createElement('div'); el.style.display = isi.style.display = 'contents';
   Object.assign(header.style, { display: 'flex', gap: token.jarak.md, alignItems: 'center', flexWrap: 'wrap' }); judul.textContent = PENUNJANG.judul; Object.assign(judul.style, { margin: '0', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: '1' });
-  const tabs = tab(daftar, '', PENUNJANG.tabLabel, id => ganti(`/penunjang?tab=${id}`)); header.append(judul, tabs.el); el.append(header, isi);
+  const tabs = tab(daftar, '', PENUNJANG.tabLabel, id => ganti(`/penunjang?tab=${id}`)); header.append(judul, tabs.el, bantuanKecil('Alur Laboratorium', [
+    'Urutan pengerjaan: Order masuk -> Ambil spesimen -> Input hasil -> Validasi -> Serahkan hasil.',
+    'Kunjungan khusus Lab langsung masuk antrean penunjang tanpa perlu poli umum.',
+    'Pastikan tarif pemeriksaan terisi agar tagihan kasir otomatis terbentuk.',
+  ])); el.append(header, isi);
   function perbaruiAlamat(alamat) { const dariAlamat = new URLSearchParams(alamat).get('tab'), dipilih = pilihTab(ids, dariAlamat, bacaTabTerakhir('penunjang', ids, sessionStorage)); simpanTabTerakhir('penunjang', dipilih, sessionStorage); tabs.pilih(dipilih); if (aktif !== dipilih) { controller?.tutup(); isi.replaceChildren(); aktif = dipilih; controller = (dipilih === 'master' ? pasangTabMasterPemeriksaan : pasangTabRekap)(isi); } if (dariAlamat !== dipilih) ganti(`/penunjang?tab=${dipilih}`); }
   el.perbaruiAlamat = perbaruiAlamat; el.tutup = () => { controller?.tutup(); el.replaceChildren(); }; perbaruiAlamat(search); return el;
 }

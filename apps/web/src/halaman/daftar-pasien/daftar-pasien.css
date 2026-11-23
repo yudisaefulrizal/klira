@@ -167,7 +167,7 @@
 .profil-form-kolom { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .profil-form-baris { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 0 12px; align-items: start; }
 .profil-form-kanan > .profil-form-baris { grid-template-columns: 76px minmax(0, 1fr); gap: 0 10px; }
-.profil-form-baris > label { padding-top: 9px; text-align: right; font-size: 13px; font-weight: 600; }
+.profil-form-baris > label { padding-top: 9px; text-align: right; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
 .profil-form-sisi { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .profil-form-isian { box-sizing: border-box; width: 100%; padding: 8px 12px; font: inherit; line-height: 1.5; color: var(--warna-teks); background: var(--warna-permukaan); border: 1px solid var(--warna-garis); border-radius: 10px; }
 textarea.profil-form-isian { resize: vertical; min-height: 72px; }
@@ -178,11 +178,14 @@ textarea.profil-form-isian { resize: vertical; min-height: 72px; }
 .profil-form-isian[readonly], .profil-form-isian:disabled { background: var(--warna-kepala-tabel); }
 .profil-form-isian[aria-invalid='true'] { border-color: var(--status-merah-teks); }
 .profil-vital { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
-.profil-vital-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 14px; }
+.profil-vital-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .profil-vital-sel { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.profil-vital-sel label { font-size: 12px; font-weight: 600; color: var(--warna-teks-redup); }
-.profil-vital-sel .profil-form-isian { padding: 7px 10px; font-variant-numeric: tabular-nums; }
+.profil-vital-sel label { font-size: 11px; font-weight: 600; color: var(--warna-teks-redup); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profil-vital-sel .profil-form-isian { padding: 6px 8px; font-variant-numeric: tabular-nums; }
 .profil-galat { color: var(--status-merah-teks); }
+.profil-bagian-redup { opacity: 0.45; transition: opacity 0.15s ease; }
+.profil-bagian-redup:hover, .profil-bagian-redup:focus-within { opacity: 0.85; }
+.profil-bagian-redup > label { color: var(--warna-teks-redup); }
 .profil-soapie-aksi { position: sticky; bottom: 0; z-index: 2; display: flex; flex-direction: column; gap: 10px; padding: 12px 0 4px; background: var(--warna-permukaan); border-top: 1px solid var(--warna-garis); }
 .profil-soapie-aksi:empty { display: none; }
 .profil-soapie-tombol { display: flex; gap: 10px; flex-wrap: wrap; }

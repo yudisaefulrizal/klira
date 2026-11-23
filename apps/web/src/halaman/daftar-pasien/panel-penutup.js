@@ -13,6 +13,7 @@ import { TambahItemTarif } from '../../modal/kasir-klaim/tambah-item-tarif.js';
 import { bukaUbahHarga } from '../../modal/kasir-klaim/ubah-harga.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 
 const P = KASIR.penutup, B = KASIR.bayar, T = KASIR.tutup;
 const LABEL_SYARAT = { tahap: B.syarat.tahap, tagihan: B.syarat.tagihan, resep: B.syarat.resep, lunas: B.syarat.lunas };
@@ -136,7 +137,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     const t = g.tagihan;
     if (t.sisa <= 0 || t.total <= 0 || tahap() === 'ditutup') return null;
     const e = kolom();
-    if (!g.shift_terbuka) e.append(peringatan(B.tanpaShift));
+    if (!g.shift_terbuka) e.append(peringatan(B.tanpaShift, 'merah', { label: 'Buka Kasir dan klaim →', href: '/kasir-klaim?tab=shift', onClick: () => navigasiSaatIni().pindah('/kasir-klaim?tab=shift') }));
     for (const p of t.pembayaran) { const r = document.createElement('div'); Object.assign(r.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' }); const jumlah = teks(rupiah(p.jumlah)); jumlah.style.flexGrow = '1'; r.append(lencana(METODE_BAYAR.label(p.metode), METODE_BAYAR.warna(p.metode)), jumlah, teks(`${p.kasir_nama ?? '-'} · ${formatWaktu(p.waktu)}`, true)); e.append(r); }
     {
       const opsiMetode = NILAI_METODE_BAYAR.map((m) => ({ nilai: m, label: METODE_BAYAR.label(m) }));
