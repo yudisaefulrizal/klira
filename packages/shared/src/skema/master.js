@@ -17,8 +17,13 @@ const lokasiDasar = z.object({
     ihs_location_id: teksOpsional(100),
     status_operasional: statusOperasional.default('O'),
 });
-/** Poli = layanan (mis. Umum, Gigi): satu antrean dan satu awalan nomor per poli. */
-export const poliMasukan = lokasiDasar.extend({ nama: teksWajib(60) });
+/** Jenis poli/unit layanan baku di klinik pratama, selaras dengan kode poli BPJS PCare. */
+export const JENIS_POLI_KLINIK = ['umum', 'gigi', 'kia', 'ugd'];
+export const LABEL_JENIS_POLI = { umum: 'Poli Umum', gigi: 'Poli Gigi', kia: 'Poli KIA', ugd: 'UGD' };
+export const KODE_PCARE_POLI = { umum: '001', gigi: '002', kia: '003', ugd: '005' };
+export const kategoriPoli = z.enum(JENIS_POLI_KLINIK);
+/** Poli = layanan (mis. Umum, Gigi, KIA, UGD): satu antrean dan satu awalan nomor per poli. */
+export const poliMasukan = lokasiDasar.extend({ nama: teksWajib(60), kategori_poli: kategoriPoli.default('umum') });
 /** Ruang periksa = tempat periksa fisik milik satu poli; pasien poli itu dipanggil ke ruang yang bebas. */
 export const ruangPeriksaMasukan = lokasiDasar.extend({
     induk_id: z.number({ error: MASTER.galat.indukRuangPeriksa }).int(MASTER.galat.indukRuangPeriksa).positive(MASTER.galat.indukRuangPeriksa),
@@ -115,8 +120,11 @@ const bidangLokasi = (induk, nama = { kunci: 'nama', label: B.nama, tipe: 'teks'
 ];
 export const DEFINISI_MASTER = {
     poli: {
-        bidang: bidangLokasi([], { kunci: 'nama', label: B.nama_poli, tipe: 'teks', wajib: true, maks: 60, petunjuk: P.nama_poli }),
-        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'awalan_antrean', label: K.awalanAntrean }, { kunci: 'jumlah_ruang', label: K.jumlahRuang }, { kunci: 'ihs_location_id', label: K.ihs }],
+        bidang: bidangLokasi(
+            [{ kunci: 'kategori_poli', label: 'Jenis layanan', tipe: 'pilihan', wajib: true, opsi: opsiDari(LABEL_JENIS_POLI), nilaiAwal: 'umum' }],
+            { kunci: 'nama', label: B.nama_poli, tipe: 'teks', wajib: true, maks: 60, petunjuk: P.nama_poli },
+        ),
+        kolom: [{ kunci: 'nama', label: K.nama }, { kunci: 'kategori_poli', label: 'Jenis layanan' }, { kunci: 'awalan_antrean', label: K.awalanAntrean }, { kunci: 'jumlah_ruang', label: K.jumlahRuang }, { kunci: 'ihs_location_id', label: K.ihs }],
         punyaStatus: true,
     },
     ruang_periksa: {

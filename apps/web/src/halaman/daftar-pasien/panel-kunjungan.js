@@ -20,6 +20,8 @@ import { EditorTindakan } from '../../modal/tindakan/editor-tindakan.js';
 import { barisDariTindakan, bentukIsiTindakan, galatTindakan } from '../../modal/tindakan/keadaan-tindakan.js';
 import { TampilanResep } from '../../modal/farmasi/tampilan-resep.js';
 import { disahkanDari, isiBagian, keadaanDariServer, rencanaSimpanBagian } from '../../modal/pemeriksaan/keadaan-pemeriksaan.js';
+import { bukaModalKia, sisipkanBlokKia } from '../../modal/pemeriksaan/form-kia.js';
+import { bukaModalGigi, sisipkanBlokGigi } from '../../modal/pemeriksaan/form-gigi.js';
 import { DaftarOrderLab } from '../../modal/penunjang/daftar-order-lab.js';
 import { bukaOrderLab } from '../../modal/penunjang/order-lab.js';
 import { bukaAmbilSpesimen } from '../../modal/penunjang/ambil-spesimen.js';
@@ -554,7 +556,30 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                     sisiPlan.append(btnResep);
                 }
             }
-            kiri.append(barisForm('ID Layanan', idLayanan), barisForm('Dokter (DPJP)', dokter), teksSoapie('subjek', m, 3), teksSoapie('objek', m, 3), tandaVital(m));
+            const objekEl = teksSoapie('objek', m, 3);
+            const kategoriPoli = konteks?.kunjungan?.poli_kategori;
+            if (m.ubah && (kategoriPoli === 'kia' || kategoriPoli === 'gigi')) {
+                const sisiObjek = objekEl.querySelector('.profil-form-sisi');
+                const areaObjek = sisiObjek?.querySelector('textarea');
+                if (sisiObjek && areaObjek) {
+                    sisiObjek.style.position = 'relative';
+                    areaObjek.style.paddingBottom = '34px';
+                    const btnKhusus = kategoriPoli === 'kia'
+                        ? tombol('Input KIA', () => bukaModalKia({
+                            kunjunganId,
+                            nilaiAwal: k.objek,
+                            onTerapkan: (blok) => ubah({ objek: sisipkanBlokKia(k.objek, blok) }),
+                        }), 'teks')
+                        : tombol('Input Odontogram', () => bukaModalGigi({
+                            pasienId: pasien.id,
+                            kunjunganId,
+                            onTerapkan: (blok) => ubah({ objek: sisipkanBlokGigi(k.objek, blok) }),
+                        }), 'teks');
+                    btnKhusus.style.cssText = 'position:absolute;right:8px;bottom:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
+                    sisiObjek.append(btnKhusus);
+                }
+            }
+            kiri.append(barisForm('ID Layanan', idLayanan), barisForm('Dokter (DPJP)', dokter), teksSoapie('subjek', m, 3), objekEl, tandaVital(m));
             kanan.append(barisForm(S.alergi, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')), teksSoapie('asesmen', m, 3), planEl, teksSoapie('instruksi', m, 3), teksSoapie('evaluasi', m, 3));
             form.append(kiri, kanan); bungkus.append(form);
         }

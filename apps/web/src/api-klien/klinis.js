@@ -28,3 +28,7 @@ export const bacaDrafKlinis = (kunjunganId, alur) => panggilApi('GET', `/kunjung
 export const simpanDrafKlinis = (kunjunganId, alur, langkah, isi) => panggilApi('PUT', `/kunjungan/${kunjunganId}/draf/${alur}`, { langkah, isi });
 export const hapusDrafKlinis = (kunjunganId, alur) => panggilApi('DELETE', `/kunjungan/${kunjunganId}/draf/${alur}`);
 export const jelajahKamus = (sistem, halaman, awalan = '') => panggilApi('GET', `/terminologi/kamus?${new URLSearchParams({ sistem, halaman: String(halaman), ukuran: '30', ...(awalan ? { awalan } : {}) })}`);
+export const ambilOdontogram = (pasienId) => panggilApi('GET', `/pasien/${pasienId}/odontogram`);
+export const simpanOdontogram = (pasienId, data) => panggilApi('PUT', `/pasien/${pasienId}/odontogram`, data);
+export const ambilKia = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/kia`);
+export const simpanKia = (kunjunganId, data) => panggilApi('PUT', `/kunjungan/${kunjunganId}/kia`, data);

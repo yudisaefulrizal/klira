@@ -164,7 +164,7 @@ export async function daftarLokasiUntukPetakanAntrean(fasyankes_id, id, koneksi 
     return baris;
 }
 export async function cariLokasiUntukKonteks(id, fasyankes_id, koneksi = pool) {
-    const baris = await baca("SELECT t.`nama` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+    const baris = await baca("SELECT t.`nama`, t.`kategori_poli` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`fasyankes_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function daftarLokasiUntukLaporan(id, koneksi = pool) {
@@ -195,18 +195,22 @@ export function kunciLokasiRawatInap(id, fasyankesId, koneksi) {
     return baca('SELECT id FROM lokasi WHERE id = ? AND fasyankes_id = ? FOR UPDATE', [id, fasyankesId], koneksi);
 }
 
-/** Poli (layanan) beserta awalan antrean, semua status operasional; untuk opsi pendaftaran, panggilan, dan master. */
+/** Poli (layanan) beserta kategori, awalan antrean, semua status operasional; untuk opsi pendaftaran, panggilan, dan master. */
 export async function daftarPoli(fasyankes_id, koneksi = pool) {
-    return baca("SELECT t.`id`, t.`nama`, t.`awalan_antrean`, t.`status_operasional` FROM `lokasi` t WHERE t.`fasyankes_id` = ? AND t.`jenis` = 'poli' ORDER BY t.`nama` ASC", [fasyankes_id], koneksi);
+    return baca("SELECT t.`id`, t.`nama`, t.`kategori_poli`, t.`awalan_antrean`, t.`status_operasional` FROM `lokasi` t WHERE t.`fasyankes_id` = ? AND t.`jenis` = 'poli' ORDER BY t.`nama` ASC", [fasyankes_id], koneksi);
 }
-/** Awalan antrean untuk sekumpulan poli (master). */
+/** Awalan antrean dan kategori untuk sekumpulan poli (master). */
 export async function daftarAwalanPoli(ids, fasyankes_id, koneksi = pool) {
     if (!ids.length)
         return [];
-    return baca("SELECT t.`id`, t.`awalan_antrean` FROM `lokasi` t WHERE t.`id` IN (?) AND t.`fasyankes_id` = ?", [ids, fasyankes_id], koneksi);
+    return baca("SELECT t.`id`, t.`awalan_antrean`, t.`kategori_poli` FROM `lokasi` t WHERE t.`id` IN (?) AND t.`fasyankes_id` = ?", [ids, fasyankes_id], koneksi);
 }
 export async function ubahAwalanPoli(id, fasyankes_id, awalan_antrean, koneksi = pool) {
     const hasil = await tulis("UPDATE `lokasi` t SET t.`awalan_antrean` = ? WHERE t.`id` = ? AND t.`fasyankes_id` = ? AND t.`jenis` = 'poli'", [awalan_antrean, id, fasyankes_id], koneksi);
+    return { count: hasil.affectedRows };
+}
+export async function ubahKategoriPoli(id, fasyankes_id, kategori_poli, koneksi = pool) {
+    const hasil = await tulis("UPDATE `lokasi` t SET t.`kategori_poli` = ? WHERE t.`id` = ? AND t.`fasyankes_id` = ? AND t.`jenis` = 'poli'", [kategori_poli ?? 'umum', id, fasyankes_id], koneksi);
     return { count: hasil.affectedRows };
 }
 /** Ruang periksa milik satu poli (semua status operasional). */

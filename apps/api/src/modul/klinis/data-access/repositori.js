@@ -275,7 +275,7 @@ export class RepositoriKlinisMysql {
         return {
             pasien: { id: k.pasien.id, nama: k.pasien.nama, nomor_rm: k.pasien.nomor_rm, jenis_kelamin: k.pasien.jenis_kelamin, umur_tahun: umurTahun(k.pasien.tanggal_lahir.toISOString().slice(0, 10)) },
             kunjungan: {
-                id: k.id, id_layanan: k.id_layanan ?? null, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, poli_nama: poli?.nama ?? null, dpjp_id: k.peserta[0]?.pengguna_id ?? null, dpjp_nama: dpjp?.nama ?? null, keluhan_singkat: k.keluhan_singkat,
+                id: k.id, id_layanan: k.id_layanan ?? null, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, poli_nama: poli?.nama ?? null, poli_kategori: poli?.kategori_poli ?? null, dpjp_id: k.peserta[0]?.pengguna_id ?? null, dpjp_nama: dpjp?.nama ?? null, keluhan_singkat: k.keluhan_singkat,
                 pasien_baru: kunjunganSebelumnya === 0,
             },
             // Default "tidak ada" berarti tanpa alergi.
@@ -462,5 +462,17 @@ export class RepositoriKlinisMysql {
         // Tanpa alur: hanya draf catatan klinis (draf hasil lab dan persetujuan tindakan tidak ikut terhapus).
         const h = await db.hapusDrafUntukHapusDraf(fasyankesId, kunjunganId, (penggunaId !== undefined) ? (penggunaId) : undefined, alur ? [alur] : ['pemeriksaan-klinis', 'skrining']);
         return h.count;
+    }
+    async bacaOdontogram(fasyankesId, pasienId) {
+        return db.bacaOdontogramPasien(fasyankesId, pasienId);
+    }
+    async simpanOdontogram(fasyankesId, pasienId, kunjunganId, gigi, intraoral, penggunaId) {
+        return db.simpanOdontogramPasien(fasyankesId, pasienId, kunjunganId, gigi, intraoral, penggunaId);
+    }
+    async bacaKia(fasyankesId, kunjunganId, pasienId) {
+        return db.bacaKiaKunjungan(fasyankesId, kunjunganId, pasienId);
+    }
+    async simpanKia(fasyankesId, pasienId, kunjunganId, layanan, data, penggunaId) {
+        return db.simpanKiaKunjungan(fasyankesId, pasienId, kunjunganId, layanan, data, penggunaId);
     }
 }

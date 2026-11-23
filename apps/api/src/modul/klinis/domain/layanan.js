@@ -271,5 +271,37 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             });
             return { ok: true, data: k };
         },
+        /** Odontogram kumulatif terakhir milik pasien (FDI + intraoral). */
+        async bacaOdontogram(p, pasienId, alamat) {
+            if (!(await repo.pasienAda(p.fasyankes_id, pasienId)))
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            const o = await repo.bacaOdontogram(p.fasyankes_id, pasienId);
+            await catatLihat(p, 'odontogram_pasien', pasienId, 'Membuka odontogram pasien', alamat);
+            return { ok: true, data: o ?? { pasien_id: pasienId, gigi: {}, intraoral: {}, diperbarui_pada: null } };
+        },
+        async simpanOdontogram(p, pasienId, d, alamat) {
+            if (!(await repo.pasienAda(p.fasyankes_id, pasienId)))
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            const o = await repo.simpanOdontogram(p.fasyankes_id, pasienId, d.kunjungan_id ?? null, d.gigi, d.intraoral, p.id);
+            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'odontogram_pasien', entitas_id: o.id, keterangan: 'Memperbarui odontogram pasien', alamat });
+            return { ok: true, data: o };
+        },
+        /** Data KIA terstruktur untuk kunjungan ini (atau nilai awal obstetri/KB dari riwayat terakhir pasien). */
+        async bacaKia(p, kunjunganId, alamat) {
+            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            if (!k)
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            const kia = await repo.bacaKia(p.fasyankes_id, kunjunganId, k.pasien_id);
+            await catatLihat(p, 'kia_kunjungan', kunjunganId, 'Membuka catatan KIA kunjungan', alamat);
+            return { ok: true, data: kia ?? { sumber: 'kosong', pasien_id: k.pasien_id, kunjungan_id: kunjunganId, layanan: 'anc', data: {} } };
+        },
+        async simpanKia(p, kunjunganId, d, alamat) {
+            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            if (!k)
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            const kia = await repo.simpanKia(p.fasyankes_id, k.pasien_id, kunjunganId, d.layanan, d.data, p.id);
+            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kia_kunjungan', entitas_id: kia.id, keterangan: 'Memperbarui catatan KIA kunjungan', alamat });
+            return { ok: true, data: kia };
+        },
     };
 }

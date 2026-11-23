@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, punyaIzin, keluargaMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, } from '@klira/shared';
+import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, punyaIzin, keluargaMasukan, kiaMasukan, odontogramMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -204,6 +204,38 @@ export function buatRuteKlinis(layananAkses, layananIzin, layanan) {
         if (!m.success)
             return galatValidasi(res, m.error);
         kirimHasil(res, await layanan.ubahKeluarga(pengguna(res), p.data.id, p.data.anak_id, m.data, alamatDari(req)));
+    }));
+    // Odontogram kumulatif pasien (FDI + pemeriksaan intraoral).
+    rute.get('/pasien/:id/odontogram', masuk, lihatKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        kirimHasil(res, await layanan.bacaOdontogram(pengguna(res), id.data.id, alamatDari(req)));
+    }));
+    rute.put('/pasien/:id/odontogram', masuk, tulisKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        const m = odontogramMasukan.safeParse(req.body ?? {});
+        if (!m.success)
+            return galatValidasi(res, m.error);
+        kirimHasil(res, await layanan.simpanOdontogram(pengguna(res), id.data.id, m.data, alamatDari(req)));
+    }));
+    // KIA terstruktur per kunjungan (ANC, KB, Anak/Imunisasi).
+    rute.get('/kunjungan/:id/kia', masuk, lihatKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        kirimHasil(res, await layanan.bacaKia(pengguna(res), id.data.id, alamatDari(req)));
+    }));
+    rute.put('/kunjungan/:id/kia', masuk, tulisKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        const m = kiaMasukan.safeParse(req.body ?? {});
+        if (!m.success)
+            return galatValidasi(res, m.error);
+        kirimHasil(res, await layanan.simpanKia(pengguna(res), id.data.id, m.data, alamatDari(req)));
     }));
     return rute;
 }

@@ -99,3 +99,5 @@ export * from './wali_keluarga.js';
 export * from './website_klinik.js';
 export * from './wilayah.js';
 export * from './riwayat_tahap_layanan.js';
+export * from './odontogram_pasien.js';
+export * from './kia_kunjungan.js';

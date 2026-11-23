@@ -169,3 +169,35 @@ export const samarNomor = (v) => {
     const s = (v ?? '').trim();
     return !s ? null : s.length <= 8 ? s : `${s.slice(0, 4)}${'•'.repeat(s.length - 8)}${s.slice(-4)}`;
 };
+// Odontogram kumulatif pasien (FDI 2-digit + intraoral standar Kemenkes).
+const itemOdontogram = z.object({
+    kondisi: z.enum(['sou', 'car', 'amf', 'cof', 'rrx', 'mis', 'non', 'imx', 'poc', 'prd', 'goyang']),
+    catatan: z.string().trim().max(100).optional().default(''),
+});
+const intraoralOdontogram = z.object({
+    oklusi: z.enum(['', 'Normal', 'Crossbite', 'Openbite', 'Steep bite']).default(''),
+    torus_palatinus: z.enum(['', 'Tidak ada', 'Kecil', 'Sedang', 'Besar', 'Multiple']).default(''),
+    torus_mandibularis: z.enum(['', 'Tidak ada', 'Sisi kiri', 'Sisi kanan', 'Kedua sisi']).default(''),
+    palatum: z.enum(['', 'Dalam', 'Sedang', 'Rendah']).default(''),
+    diastema: z.enum(['', 'Tidak ada', 'Ada']).default(''),
+    anomali: z.enum(['', 'Tidak ada', 'Ada']).default(''),
+    gingiva: z.enum(['', 'Normal', 'Hiperemis', 'Berdarah', 'Resesi']).default(''),
+    kalkulus: z.enum(['', 'Tidak ada', 'Sedikit', 'Sedang', 'Banyak']).default(''),
+});
+export const odontogramMasukan = z.object({
+    kunjungan_id: idPositif.optional().nullable(),
+    gigi: z.record(z.string().regex(/^(?:[1-4][1-8]|[5-8][1-5])$/), itemOdontogram).default({}),
+    intraoral: intraoralOdontogram.default({}),
+});
+// KIA terstruktur per kunjungan (ANC, KB, Anak/Imunisasi).
+const teksKia = (maks = 60) => z.string().trim().max(maks).optional().default('');
+const tanggalKia = z.string().trim().refine((v) => v === '' || tanggalKalenderSah(v), KLINIS.galat.tanggalOdontogram).optional().default('');
+export const kiaMasukan = z.object({
+    layanan: z.enum(['anc', 'kb', 'anak']),
+    data: z.object({
+        g: teksKia(5), p: teksKia(5), a: teksKia(5), hpht: tanggalKia,
+        tfu: teksKia(10), djj: teksKia(10), letak: teksKia(30), lila: teksKia(10), tt: teksKia(10),
+        metode_kb: teksKia(40), status_kb: teksKia(30), kontrol_kb: tanggalKia,
+        lk: teksKia(10), vaksin: teksKia(100), dosis_vaksin: teksKia(80), jadwal_vaksin: tanggalKia,
+    }).default({}),
+});
