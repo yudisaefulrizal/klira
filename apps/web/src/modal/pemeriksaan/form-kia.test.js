@@ -19,8 +19,8 @@ describe('form ringkas KIA', () => {
         expect(susunRingkasanKia({ layanan: 'kb', metode_kb: 'Suntik 3 bulan', status_kb: 'Ulang', kontrol_kb: '2027-02-20' }))
             .toBe('[KIA - KB] Metode Suntik 3 bulan · Status Ulang · Kontrol 2027-02-20');
 
-        expect(susunRingkasanKia({ layanan: 'anak', lk: '42', vaksin: 'DPT-HB-Hib 1', dosis_vaksin: '0.5 ml IM', jadwal_vaksin: '2026-12-23' }))
-            .toBe('[KIA - Anak] LK 42 cm · Imunisasi DPT-HB-Hib 1 · 0.5 ml IM · Jadwal berikutnya 2026-12-23');
+        expect(susunRingkasanKia({ layanan: 'anak', lk: '42', vaksin: 'DPT-HB-Hib 1', vaksin_kfa: '93001012', batch_vaksin: 'B202611A', dosis_vaksin: '0.5 ml IM', jadwal_vaksin: '2026-12-23' }))
+            .toBe('[KIA - Anak] LK 42 cm · Imunisasi DPT-HB-Hib 1 [KFA 93001012] · Batch B202611A · 0.5 ml IM · Jadwal berikutnya 2026-12-23');
     });
 
     it('mengurai kembali blok KIA dari teks Objek untuk ANC, KB, dan Anak', () => {
@@ -30,8 +30,8 @@ describe('form ringkas KIA', () => {
         expect(uraiBlokKia('[KIA - KB] Metode Suntik 3 bulan · Status Ulang · Kontrol 2027-02-20'))
             .toMatchObject({ layanan: 'kb', metode_kb: 'Suntik 3 bulan', status_kb: 'Ulang', kontrol_kb: '2027-02-20' });
 
-        expect(uraiBlokKia('[KIA - Anak] LK 42 cm · Imunisasi DPT-HB-Hib 1 · 0.5 ml IM · Jadwal berikutnya 2026-12-23'))
-            .toMatchObject({ layanan: 'anak', lk: '42', vaksin: 'DPT-HB-Hib 1', dosis_vaksin: '0.5 ml IM', jadwal_vaksin: '2026-12-23' });
+        expect(uraiBlokKia('[KIA - Anak] LK 42 cm · Imunisasi DPT-HB-Hib 1 [KFA 93001012] · Batch B202611A · 0.5 ml IM · Jadwal berikutnya 2026-12-23'))
+            .toMatchObject({ layanan: 'anak', lk: '42', vaksin: 'DPT-HB-Hib 1', vaksin_kfa: '93001012', batch_vaksin: 'B202611A', dosis_vaksin: '0.5 ml IM', jadwal_vaksin: '2026-12-23' });
     });
 
     it('menyisipkan dan memperbarui blok KIA di teks Objek tanpa menghapus catatan lain', () => {

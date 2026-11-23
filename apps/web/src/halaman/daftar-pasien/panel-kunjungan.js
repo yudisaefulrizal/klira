@@ -22,6 +22,7 @@ import { TampilanResep } from '../../modal/farmasi/tampilan-resep.js';
 import { disahkanDari, isiBagian, keadaanDariServer, rencanaSimpanBagian } from '../../modal/pemeriksaan/keadaan-pemeriksaan.js';
 import { bukaModalKia, sisipkanBlokKia } from '../../modal/pemeriksaan/form-kia.js';
 import { bukaModalGigi, sisipkanBlokGigi } from '../../modal/pemeriksaan/form-gigi.js';
+import { bukaModalUgd, sisipkanBlokUgd } from '../../modal/pemeriksaan/form-ugd.js';
 import { DaftarOrderLab } from '../../modal/penunjang/daftar-order-lab.js';
 import { bukaOrderLab } from '../../modal/penunjang/order-lab.js';
 import { bukaAmbilSpesimen } from '../../modal/penunjang/ambil-spesimen.js';
@@ -557,24 +558,18 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 }
             }
             const objekEl = teksSoapie('objek', m, 3);
-            const kategoriPoli = konteks?.kunjungan?.poli_kategori;
-            if (m.ubah && (kategoriPoli === 'kia' || kategoriPoli === 'gigi')) {
+            const tombolKhususPoli = {
+                kia: ['Input KIA', () => bukaModalKia({ kunjunganId, nilaiAwal: k.objek, onTerapkan: (blok) => ubah({ objek: sisipkanBlokKia(k.objek, blok) }) })],
+                gigi: ['Input Odontogram', () => bukaModalGigi({ pasienId: pasien.id, kunjunganId, onTerapkan: (blok) => ubah({ objek: sisipkanBlokGigi(k.objek, blok) }) })],
+                ugd: ['Input Triase UGD', () => bukaModalUgd({ kunjunganId, onTerapkan: (blok) => ubah({ objek: sisipkanBlokUgd(k.objek, blok) }) })],
+            }[konteks?.kunjungan?.poli_kategori];
+            if (m.ubah && tombolKhususPoli) {
                 const sisiObjek = objekEl.querySelector('.profil-form-sisi');
                 const areaObjek = sisiObjek?.querySelector('textarea');
                 if (sisiObjek && areaObjek) {
                     sisiObjek.style.position = 'relative';
                     areaObjek.style.paddingBottom = '34px';
-                    const btnKhusus = kategoriPoli === 'kia'
-                        ? tombol('Input KIA', () => bukaModalKia({
-                            kunjunganId,
-                            nilaiAwal: k.objek,
-                            onTerapkan: (blok) => ubah({ objek: sisipkanBlokKia(k.objek, blok) }),
-                        }), 'teks')
-                        : tombol('Input Odontogram', () => bukaModalGigi({
-                            pasienId: pasien.id,
-                            kunjunganId,
-                            onTerapkan: (blok) => ubah({ objek: sisipkanBlokGigi(k.objek, blok) }),
-                        }), 'teks');
+                    const btnKhusus = tombol(tombolKhususPoli[0], tombolKhususPoli[1], 'teks');
                     btnKhusus.style.cssText = 'position:absolute;right:8px;bottom:8px;min-height:24px;padding:3px 8px;font-size:12px;background:var(--warna-permukaan);border-radius:6px;';
                     sisiObjek.append(btnKhusus);
                 }

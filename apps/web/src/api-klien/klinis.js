@@ -32,3 +32,5 @@ export const ambilOdontogram = (pasienId) => panggilApi('GET', `/pasien/${pasien
 export const simpanOdontogram = (pasienId, data) => panggilApi('PUT', `/pasien/${pasienId}/odontogram`, data);
 export const ambilKia = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/kia`);
 export const simpanKia = (kunjunganId, data) => panggilApi('PUT', `/kunjungan/${kunjunganId}/kia`, data);
+export const ambilUgd = (kunjunganId) => panggilApi('GET', `/kunjungan/${kunjunganId}/ugd`);
+export const simpanUgd = (kunjunganId, data) => panggilApi('PUT', `/kunjungan/${kunjunganId}/ugd`, data);

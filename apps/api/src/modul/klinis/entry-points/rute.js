@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, punyaIzin, keluargaMasukan, kiaMasukan, odontogramMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, } from '@klira/shared';
+import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, punyaIzin, keluargaMasukan, kiaMasukan, odontogramMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, ugdMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -236,6 +236,22 @@ export function buatRuteKlinis(layananAkses, layananIzin, layanan) {
         if (!m.success)
             return galatValidasi(res, m.error);
         kirimHasil(res, await layanan.simpanKia(pengguna(res), id.data.id, m.data, alamatDari(req)));
+    }));
+    // Triase & survei primer UGD per kunjungan.
+    rute.get('/kunjungan/:id/ugd', masuk, lihatKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        kirimHasil(res, await layanan.bacaUgd(pengguna(res), id.data.id, alamatDari(req)));
+    }));
+    rute.put('/kunjungan/:id/ugd', masuk, tulisKlinis, bungkus(async (req, res) => {
+        const id = idParam.safeParse(req.params);
+        if (!id.success)
+            return tidakAda(res);
+        const m = ugdMasukan.safeParse(req.body ?? {});
+        if (!m.success)
+            return galatValidasi(res, m.error);
+        kirimHasil(res, await layanan.simpanUgd(pengguna(res), id.data.id, m.data, alamatDari(req)));
     }));
     return rute;
 }

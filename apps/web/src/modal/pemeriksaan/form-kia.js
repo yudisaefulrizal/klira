@@ -18,7 +18,7 @@ const STATE_KOSONG = {
     layanan: 'anc',
     g: '', p: '', a: '', hpht: '', tfu: '', djj: '', letak: '', lila: '', tt: '',
     metode_kb: '', status_kb: '', kontrol_kb: '',
-    lk: '', vaksin: '', dosis_vaksin: '', jadwal_vaksin: '',
+    lk: '', vaksin: '', vaksin_kfa: '', batch_vaksin: '', dosis_vaksin: '', jadwal_vaksin: '',
 };
 
 const adaNilai = (v) => v !== '' && v !== null && v !== undefined && String(v).trim() !== '';
@@ -67,7 +67,13 @@ export function susunRingkasanKia(d, acuan = new Date()) {
         return bagian.length ? `[KIA - KB] ${bagian.join(' · ')}` : '';
     }
     if (adaNilai(d.lk)) bagian.push(`LK ${d.lk} cm`);
-    if (adaNilai(d.vaksin)) bagian.push(`Imunisasi ${d.vaksin}`);
+    if (adaNilai(d.vaksin)) {
+        const kfa = adaNilai(d.vaksin_kfa) ? ` [KFA ${d.vaksin_kfa}]` : '';
+        bagian.push(`Imunisasi ${d.vaksin}${kfa}`);
+    } else if (adaNilai(d.vaksin_kfa)) {
+        bagian.push(`Imunisasi [KFA ${d.vaksin_kfa}]`);
+    }
+    if (adaNilai(d.batch_vaksin)) bagian.push(`Batch ${d.batch_vaksin}`);
     if (adaNilai(d.dosis_vaksin)) bagian.push(String(d.dosis_vaksin).trim());
     if (adaNilai(d.jadwal_vaksin)) bagian.push(`Jadwal berikutnya ${d.jadwal_vaksin}`);
     return bagian.length ? `[KIA - Anak] ${bagian.join(' · ')}` : '';
@@ -106,7 +112,17 @@ export function uraiBlokKia(objek) {
         hasil.layanan = 'anak';
         for (const p of potongan) {
             if (p.startsWith('LK ')) hasil.lk = p.slice(3).replace(/\s*cm$/, '').trim();
-            else if (p.startsWith('Imunisasi ')) hasil.vaksin = p.slice(10).trim();
+            else if (p.startsWith('Imunisasi ')) {
+                const teksVaksin = p.slice(10).trim();
+                const mKfa = teksVaksin.match(/^(.*?)\s*\[KFA\s+([^\]]+)\]$/);
+                if (mKfa) {
+                    hasil.vaksin = mKfa[1].trim();
+                    hasil.vaksin_kfa = mKfa[2].trim();
+                } else {
+                    hasil.vaksin = teksVaksin;
+                }
+            }
+            else if (p.startsWith('Batch ')) hasil.batch_vaksin = p.slice(6).trim();
             else if (p.startsWith('Jadwal berikutnya ')) hasil.jadwal_vaksin = p.slice(18).trim();
             else if (!hasil.dosis_vaksin) hasil.dosis_vaksin = p;
         }
@@ -254,8 +270,10 @@ export function bukaModalKia({ kunjunganId, nilaiAwal = '', onTerapkan }) {
         } else {
             isiGrid.append(
                 buatInput('lk', 'Lingkar Kepala (cm)', { tipe: 'number', min: 0, max: 80, step: '0.1', placeholder: '42', lebar: '132px' }),
-                buatInput('vaksin', 'Jenis Imunisasi', { placeholder: 'mis. DPT-HB-Hib 1', lebar: '190px' }),
-                buatInput('dosis_vaksin', 'Dosis / Keterangan', { placeholder: 'mis. 0.5 ml IM', lebar: '170px' }),
+                buatInput('vaksin', 'Jenis Imunisasi', { placeholder: 'mis. DPT-HB-Hib 1', lebar: '185px' }),
+                buatInput('vaksin_kfa', 'Kode KFA Vaksin', { placeholder: 'mis. 93001012', lebar: '135px' }),
+                buatInput('batch_vaksin', 'Nomor Batch', { placeholder: 'mis. B202611A', lebar: '135px' }),
+                buatInput('dosis_vaksin', 'Dosis / Keterangan', { placeholder: 'mis. 0.5 ml IM', lebar: '165px' }),
                 buatInput('jadwal_vaksin', 'Jadwal Berikutnya', { tipe: 'date', lebar: '230px' }),
             );
         }

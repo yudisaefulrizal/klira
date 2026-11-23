@@ -198,6 +198,21 @@ export const kiaMasukan = z.object({
         g: teksKia(5), p: teksKia(5), a: teksKia(5), hpht: tanggalKia,
         tfu: teksKia(10), djj: teksKia(10), letak: teksKia(30), lila: teksKia(10), tt: teksKia(10),
         metode_kb: teksKia(40), status_kb: teksKia(30), kontrol_kb: tanggalKia,
-        lk: teksKia(10), vaksin: teksKia(100), dosis_vaksin: teksKia(80), jadwal_vaksin: tanggalKia,
+        lk: teksKia(10), vaksin: teksKia(100), vaksin_kfa: teksKia(30), batch_vaksin: teksKia(50), dosis_vaksin: teksKia(80), jadwal_vaksin: tanggalKia,
+    }).default({}),
+});
+// UGD terstruktur per kunjungan (Triase PMK 47/2018 & survei primer ABCDE).
+export const ugdMasukan = z.object({
+    triase: z.enum(['merah', 'kuning', 'hijau', 'hitam']),
+    data: z.object({
+        zona: teksKia(50),
+        cara_datang: teksKia(40),
+        jenis_kasus: teksKia(40),
+        airway: teksKia(60),
+        breathing: teksKia(60),
+        circulation: teksKia(60),
+        disability: teksKia(40),
+        temuan_trauma: teksKia(250),
+        catatan: teksKia(250),
     }).default({}),
 });

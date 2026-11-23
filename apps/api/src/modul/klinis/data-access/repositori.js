@@ -475,4 +475,10 @@ export class RepositoriKlinisMysql {
     async simpanKia(fasyankesId, pasienId, kunjunganId, layanan, data, penggunaId) {
         return db.simpanKiaKunjungan(fasyankesId, pasienId, kunjunganId, layanan, data, penggunaId);
     }
+    async bacaUgd(fasyankesId, kunjunganId) {
+        return db.bacaUgdKunjungan(fasyankesId, kunjunganId);
+    }
+    async simpanUgd(fasyankesId, pasienId, kunjunganId, triase, data, penggunaId) {
+        return db.simpanUgdKunjungan(fasyankesId, pasienId, kunjunganId, triase, data, penggunaId);
+    }
 }

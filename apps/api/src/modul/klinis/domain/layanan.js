@@ -303,5 +303,22 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
             await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kia_kunjungan', entitas_id: kia.id, keterangan: 'Memperbarui catatan KIA kunjungan', alamat });
             return { ok: true, data: kia };
         },
+        /** Catatan triase & survei primer UGD kunjungan. */
+        async bacaUgd(p, kunjunganId, alamat) {
+            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            if (!k)
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            const ugd = await repo.bacaUgd(p.fasyankes_id, kunjunganId);
+            await catatLihat(p, 'ugd_kunjungan', kunjunganId, 'Membuka catatan triase UGD kunjungan', alamat);
+            return { ok: true, data: ugd ?? { pasien_id: k.pasien_id, kunjungan_id: kunjunganId, triase: 'hijau', waktu_triase: null, data: {} } };
+        },
+        async simpanUgd(p, kunjunganId, d, alamat) {
+            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            if (!k)
+                return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
+            const ugd = await repo.simpanUgd(p.fasyankes_id, k.pasien_id, kunjunganId, d.triase, d.data, p.id);
+            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'ugd_kunjungan', entitas_id: ugd.id, keterangan: `Memperbarui triase UGD (${d.triase})`, alamat });
+            return { ok: true, data: ugd };
+        },
     };
 }
