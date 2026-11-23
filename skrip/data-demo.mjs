@@ -102,13 +102,18 @@ async function masterAda(jenis, nama, badan) {
 async function siapkanMaster(id) {
   console.log('\n[2] Master data (poli, ruang, bed, tarif, jadwal)');
   // Poli = layanan (satu antrean per poli). Poli Umum punya dua ruang periksa, sehingga dua pasien umum dapat dilayani bersamaan.
-  const poliAktif = async (nama) => {
-    const id = await masterAda('poli', nama, { nama });
-    if (id) await wajib(`poli ${nama}`, 'admin', 'PATCH', `/master/poli/${id}`, { nama, status_operasional: 'O' });
+  const poliAktif = async (nama, kategori_poli) => {
+    const id = await masterAda('poli', nama, { nama, kategori_poli });
+    if (id) await wajib(`poli ${nama}`, 'admin', 'PATCH', `/master/poli/${id}`, { nama, kategori_poli, status_operasional: 'O' });
     return id;
   };
-  const poli = { umum: await poliAktif('Umum'), gigi: await poliAktif('Gigi'), kia: await poliAktif('KIA') };
-  for (const [nama, induk_id] of [['Ruang Periksa Umum 1', poli.umum], ['Ruang Periksa Umum 2', poli.umum], ['Ruang Periksa Gigi', poli.gigi], ['Ruang Periksa KIA', poli.kia]])
+  const poli = {
+    umum: await poliAktif('Umum', 'umum'),
+    gigi: await poliAktif('Gigi', 'gigi'),
+    kia: await poliAktif('KIA', 'kia'),
+    ugd: await poliAktif('UGD', 'ugd'),
+  };
+  for (const [nama, induk_id] of [['Ruang Periksa Umum 1', poli.umum], ['Ruang Periksa Umum 2', poli.umum], ['Ruang Periksa Gigi', poli.gigi], ['Ruang Periksa KIA', poli.kia], ['Ruang UGD', poli.ugd]])
     await masterAda('ruang_periksa', nama, { nama, induk_id });
   // Ruang rawat inap berdiri sendiri (tanpa poli); bed di dalamnya.
   const ruang = await masterAda('ruang', 'Ruang Observasi', { nama: 'Ruang Observasi' });

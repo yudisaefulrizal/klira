@@ -49,3 +49,11 @@ Tabel berikut membandingkan kolom pemeriksaan & CPPT pada **SIMRS Khanza** (deng
 | 43 | `sg1`, `nilai1` **[beda tabel: `penilaian_awal_keperawatan_*`]** | `gizi_bb_turun` |
 | 44 | `sg2`, `nilai2` **[beda tabel: `penilaian_awal_keperawatan_*`]** | `gizi_asupan_kurang` |
 | 45 | `nip` | `dibuat_oleh` |
+
+## Ekstensi Terstruktur per Layanan (`kategori_poli`)
+
+Selain 1 tabel inti `pemeriksaan`, Klira menyimpan data khusus unit dalam 3 tabel ekstensi JSON agar tidak menduplikasi TTV/SOAP dan tetap siap untuk integrasi SATUSEHAT:
+
+- **Poli Gigi** (`odontogram_pasien`): status kumulatif gigi FDI (`11–48`, `51–85`), kode kondisi standar Kemenkes, dan pemeriksaan intraoral.
+- **Poli KIA** (`kia_kunjungan`): catatan terstruktur `anc`, `kb`, dan `anak` (termasuk `vaksin_kfa` & `batch_vaksin` untuk `Immunization`).
+- **UGD** (`ugd_kunjungan`): triase warna (`merah`/`kuning`/`hijau`/`hitam`), `waktu_triase`, cara datang, jenis kasus, ABCDE, dan temuan trauma kondisional.
