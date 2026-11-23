@@ -17,7 +17,7 @@ import { blokirSelamaWajibGanti } from './middleware/auth.js';
 import { pasangCsp } from './middleware/csp.js';
 import { buatBatasLaju } from './middleware/batas-laju.js';
 import { tolakAsalLintasSitus } from './middleware/asal.js';
-import { pool } from '@klira/db';
+import { pool, daftarCoa, tambahCoa, catatJurnal, daftarJurnal, daftarPengeluaran, tambahPengeluaran, daftarFakturSupplier, tambahFakturSupplier, bayarHutangSupplier, daftarPiutang, tambahPiutang, bayarPiutang, rekapJasaMedis, daftarTarifJasa, simpanTarifJasa, ringkasanKeuangan } from '@klira/db';
 import { PenampungAuditMysql } from './middleware/audit.js';
 import { buatLayananAkses } from './modul/akses/domain/layanan.js';
 import { PembatasPercobaan } from './modul/akses/domain/pembatas.js';
@@ -93,6 +93,8 @@ import { buatRutePenunjang } from './modul/penunjang/entry-points/rute.js';
 import { buatLayananPersetujuan } from './modul/persetujuan/domain/layanan.js';
 import { RepositoriPersetujuanMysql } from './modul/persetujuan/data-access/repositori.js';
 import { buatRutePersetujuan } from './modul/persetujuan/entry-points/rute.js';
+import { buatLayananKeuangan } from './modul/keuangan/domain/layanan.js';
+import { buatRuteKeuangan } from './modul/keuangan/entry-points/rute.js';
 import { buatLayananPengguna } from './modul/pengguna/domain/layanan.js';
 import { RepositoriPenggunaMysql } from './modul/pengguna/data-access/repositori.js';
 import { buatLayananPembuatanAkun } from './modul/pengguna/domain/pembuatan.js';
@@ -214,8 +216,15 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     const layananDokumen = buatLayananDokumen({ repo: repoDokumen, repoRm, pengesahan: layananPengesahan, baca: repoKlinis, audit: new PenampungAuditMysql() });
     app.use('/api', buatRuteDokumen(layananAkses, layananIzin, layananDokumen));
     app.use('/api', buatRutePdp(layananAkses, layananIzin, buatLayananPdp({ repo: new RepositoriPdpMysql(), audit: new PenampungAuditMysql() })));
+    const repoKeuangan = {
+        daftarCoa, tambahCoa, catatJurnal, daftarJurnal,
+        daftarPengeluaran, tambahPengeluaran,
+        daftarFakturSupplier, tambahFakturSupplier, bayarHutangSupplier,
+        daftarPiutang, tambahPiutang, bayarPiutang,
+        rekapJasaMedis, daftarTarifJasa, simpanTarifJasa, ringkasanKeuangan,
+    };
     app.use('/api', buatRuteKlaim(layananAkses, layananIzin, buatLayananKlaim({
-        repo: new RepositoriKlaimMysql(), rm: { resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditMysql(),
+        repo: new RepositoriKlaimMysql(), rm: { resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditMysql(), keuangan: repoKeuangan,
     })));
     app.use('/api', buatRuteRawatInap(layananAkses, layananIzin, buatLayananRawatInap({
         repo: new RepositoriRawatInapMysql(), pengesahan: layananPengesahan, audit: new PenampungAuditMysql(), simpanResume: layananDokumen.simpanResume,
@@ -229,8 +238,9 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     })));
     app.use('/api', buatRuteFarmasi(layananAkses, layananIzin, buatLayananFarmasi({ repo: new RepositoriFarmasiMysql(), audit: new PenampungAuditMysql() })));
     const repoFarmasi = new RepositoriFarmasiMysql();
-    app.use('/api', buatRuteKasirLengkap(layananAkses, layananIzin, buatLayananKasir({ repo: new RepositoriKasirMysql(), farmasi: repoFarmasi, audit: new PenampungAuditMysql() })));
+    app.use('/api', buatRuteKasirLengkap(layananAkses, layananIzin, buatLayananKasir({ repo: new RepositoriKasirMysql(), farmasi: repoFarmasi, audit: new PenampungAuditMysql(), keuangan: repoKeuangan })));
     app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanMysql(), audit: new PenampungAuditMysql() })));
+    app.use('/api', buatRuteKeuangan(layananAkses, layananIzin, buatLayananKeuangan({ repo: repoKeuangan, audit: new PenampungAuditMysql() })));
     app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
     app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaMysql(), audit: new PenampungAuditMysql() }), buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruMysql(), repoIzin: new RepositoriIzinMysql(), audit: new PenampungAuditMysql() })));

@@ -413,25 +413,15 @@ export function TabPasien({ search, pindah, ganti }) {
         }
     }
     let pengamatTinggiPanel;
-    function tinggiMinimalKiri() {
-        const padBawah = parseFloat(getComputedStyle(kotakRiwayat).paddingBottom) || 16;
-        const daftar = kotakRiwayat.querySelector('.profil-riwayat-daftar');
-        if (!daftar) return 680;
-        const kepala = Math.max(0, daftar.getBoundingClientRect().top - kotakRiwayat.getBoundingClientRect().top);
-        const jumlah = 7;
-        const tinggiMinimal = daftar.children.length >= jumlah
-            ? (daftar.children[jumlah - 1].offsetTop + daftar.children[jumlah - 1].offsetHeight - daftar.children[0].offsetTop)
-            : ((daftar.children[0]?.offsetHeight || 72) * jumlah + 8 * (jumlah - 1));
-        return Math.ceil(Math.max(680, kepala + tinggiMinimal + padBawah));
-    }
+    const TINGGI_MIN_KIRI = 560;
     function sesuaikanTinggiPanel() {
         if (!aktif || !kotakRiwayat || !kotakPanel) return;
-        if (window.innerWidth <= 900) { kotakRiwayat.style.minHeight = ''; kotakRiwayat.style.maxHeight = ''; return; }
+        if (window.innerWidth <= 900) { kotakRiwayat.style.minHeight = ''; kotakRiwayat.style.height = ''; kotakRiwayat.style.maxHeight = ''; return; }
         requestAnimationFrame(() => {
             if (!aktif || !kotakRiwayat || !kotakPanel) return;
-            const minimal = tinggiMinimalKiri();
-            const tinggi = Math.max(minimal, kotakPanel.offsetHeight);
-            kotakRiwayat.style.minHeight = `${minimal}px`;
+            const tinggi = Math.max(TINGGI_MIN_KIRI, kotakPanel.offsetHeight);
+            kotakRiwayat.style.minHeight = `${TINGGI_MIN_KIRI}px`;
+            kotakRiwayat.style.height = `${tinggi}px`;
             kotakRiwayat.style.maxHeight = `${tinggi}px`;
         });
     }

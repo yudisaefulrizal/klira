@@ -128,7 +128,7 @@
 .profil-identitas-kisi dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
 .profil-identitas-aksi { display: flex; gap: 10px; margin-left: auto; }
 .profil-identitas-aksi:empty { display: none; }
-.profil-badan { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.profil-badan { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 16px; align-items: start; }
 .profil-riwayat, .profil-kanan { box-shadow: none !important; min-width: 0; }
 .profil-kolom-kanan { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .profil-kolom-kanan > .profil-kanan { position: static; }

@@ -25,3 +25,4 @@ export * from './satusehat.js';
 export * from './pcare.js';
 export * from './uji-endpoint.js';
 export * from './antrean-jkn.js';
+export * from './keuangan.js';

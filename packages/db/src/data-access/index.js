@@ -102,3 +102,4 @@ export * from './riwayat_tahap_layanan.js';
 export * from './odontogram_pasien.js';
 export * from './kia_kunjungan.js';
 export * from './ugd_kunjungan.js';
+export * from './keuangan.js';

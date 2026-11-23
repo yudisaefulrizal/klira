@@ -7,7 +7,7 @@ const tglDb = (t) => new Date(`${t}T00:00:00.000+07:00`);
  * Klaim JKN/BPJS FKTP (4.5, 7): siapkan klaim dari kunjungan JKN yang sudah ditutup (kode disalin dari rekam medis), kelola SEP dan berkas, dan ubah status
  * (ajukan, dikembalikan, ajukan ulang, ditolak, dibayar) dengan pagar batas 6 bulan dan batas ajukan ulang bulan berikutnya. Semua tercatat di audit dan riwayat status.
  */
-export function buatLayananKlaim({ repo, rm, baca, audit, sekarang = () => new Date() }) {
+export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekarang = () => new Date() }) {
     const catat = (p, aksi, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas: 'klaim', entitas_id: id, keterangan, alamat });
     /** Kode rekam medis sekarang: catatan dokter (versi terakhir). */
     async function kodeRm(fas, kunjunganId) {
@@ -140,6 +140,21 @@ export function buatLayananKlaim({ repo, rm, baca, audit, sekarang = () => new D
                 Object.assign(d, { jumlah_dibayar: m.jumlah_dibayar, dibayar_pada: tglDb(m.dibayar_pada) });
             try {
                 await repo.ubahStatus(p.fasyankes_id, id, k.status, t.ke, d, p.id, m.alasan ?? m.berita_acara ?? null);
+                if (m.aksi === 'dibayar' && keuangan?.catatJurnal && Number(m.jumlah_dibayar) > 0) {
+                    try {
+                        await keuangan.catatJurnal(p.fasyankes_id, {
+                            tanggal: m.dibayar_pada,
+                            sumber: 'klaim_jkn',
+                            referensi_id: id,
+                            keterangan: `Pelunasan klaim JKN #${id} (SEP ${k.nomor_sep ?? '-'})`,
+                            dibuat_oleh: p.id,
+                            baris: [
+                                { akun_kode: '1102', debit: Number(m.jumlah_dibayar), kredit: 0, keterangan: 'Penerimaan transfer klaim BPJS/JKN' },
+                                { akun_kode: '4101', debit: 0, kredit: Number(m.jumlah_dibayar), keterangan: `Pendapatan klaim JKN #${id}` },
+                            ],
+                        });
+                    } catch { /* jurnal otomatis tidak menggagalkan pelunasan klaim */ }
+                }
             }
             catch (e) {
                 const g = bentrok(e);

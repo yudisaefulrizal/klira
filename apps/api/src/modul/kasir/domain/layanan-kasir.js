@@ -5,7 +5,7 @@ import { hariWib } from '../data-access/repositori-kasir.js';
 const G = KASIR.galat;
 const rp = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 /** Kasir (4.5, 7): shift, pembayaran, dan tutup kunjungan. Semua tindakan tercatat di audit; tidak ada rute ubah atau hapus. */
-export function buatLayananKasir({ repo, farmasi, audit }) {
+export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
     const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
     async function gambaran(p, kunjunganId) {
         const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
@@ -68,6 +68,22 @@ export function buatLayananKasir({ repo, farmasi, audit }) {
             }
             const rincian = h.pembayaran.map((x) => `${x.metode} ${rp(x.jumlah)}`).join(', ');
             const kemb = h.kembalian ? `, kembalian ${rp(h.kembalian)}` : '';
+            if (keuangan?.catatJurnal && h.diterapkan > 0) {
+                try {
+                    const akunUtama = h.pembayaran[0]?.metode === 'tunai' ? '1101' : '1102';
+                    await keuangan.catatJurnal(p.fasyankes_id, {
+                        tanggal: hariWib(),
+                        sumber: 'kasir',
+                        referensi_id: h.pembayaran[0]?.id ?? kunjunganId,
+                        keterangan: `Pembayaran kasir kunjungan #${kunjunganId} (${rincian})`,
+                        dibuat_oleh: p.id,
+                        baris: [
+                            { akun_kode: akunUtama, debit: h.diterapkan, kredit: 0, keterangan: `Terima ${rincian}` },
+                            { akun_kode: '4101', debit: 0, kredit: h.diterapkan, keterangan: `Pendapatan layanan kunjungan #${kunjunganId}` },
+                        ],
+                    });
+                } catch { /* jurnal otomatis tidak menggagalkan transaksi kasir */ }
+            }
             await catat(p, 'input', 'pembayaran', h.pembayaran[0]?.id ?? null, `Pembayaran ${rincian} untuk kunjungan ${kunjunganId}${kemb}, sisa ${rp(h.tagihan.sisa)}`, alamat);
             return { ok: true, data: { pembayaran: h.pembayaran, tagihan: h.tagihan, diterima: h.diterima, diterapkan: h.diterapkan, kembalian: h.kembalian } };
         },
