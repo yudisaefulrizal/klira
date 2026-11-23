@@ -71,13 +71,32 @@ export function pilihBatch(k, stok, batch) {
     return { ...k, batch, kedaluwarsa: s?.kedaluwarsa ?? k.kedaluwarsa, jumlah: k.jenis === 'koreksi' && s ? String(s.jumlah) : k.jumlah };
 }
 // ---- Resep (dokter): obat satu per satu dari master + catatan seluruh resep ----
+export const ATURAN_PAKAI_PUYER = 'Racikan/puyer (lihat catatan)';
+export const adalahBarisPuyer = (b) => Boolean(b?.puyer) || b?.aturan_pakai === ATURAN_PAKAI_PUYER;
+/** Membentuk atau memperbarui awalan narasi puyer pada catatan resep tanpa menghapus lanjutan yang sudah diketik dokter. */
+export function perbaruiCatatanPuyer(catatan, baris, obat) {
+    const nama = baris
+        .filter((b) => adalahBarisPuyer(b) && b.master_obat_id)
+        .map((b) => obat.find((o) => String(o.id) === b.master_obat_id)?.nama_tampil)
+        .filter(Boolean);
+    const awalanBaru = nama.length ? `${nama.join(', ')} dibuat puyer ` : '';
+    const teks = catatan ?? '';
+    const m = /^.+? dibuat puyer(?:\s*—\s*|\s+)?/.exec(teks);
+    if (m) {
+        const sisa = teks.slice(m[0].length);
+        return awalanBaru ? `${awalanBaru}${sisa}` : sisa;
+    }
+    if (!awalanBaru)
+        return teks;
+    return teks.trim() ? `${awalanBaru}${teks}` : awalanBaru;
+}
 /** Baris obat untuk dokter: jumlah 1 dan aturan pakai kosong (ditulis dokter); bentuk dan rute mengikuti obat. */
 export const barisResepDokter = () => ({ ...barisResepKosong(), aturan_pakai: '' });
 export const awalResep = () => ({ baris: [barisResepDokter()], catatan: '' });
 /** Resep hanya diajukan bila ada obat yang dipilih. */
 export const adaIsianResep = (r) => r.baris.some((b) => b.master_obat_id);
 /** Baris yang belum disentuh (tanpa obat, aturan pakai, dan bentuk; jumlah dan rute hanya nilai bawaan): tidak ikut divalidasi dan tidak dikirim. */
-export const barisSepenuhnyaKosong = (x) => !x.master_obat_id && !x.aturan_pakai.trim() && !x.bentuk.trim();
+export const barisSepenuhnyaKosong = (x) => !x.master_obat_id && !x.aturan_pakai.trim() && !x.bentuk.trim() && !x.puyer;
 export const bentukResep = (r) => ({ item: bentukItemResep(r.baris.filter((x) => !barisSepenuhnyaKosong(x))), catatan: r.catatan });
 /** Galat resep per bidang: `item` (belum ada obat), `item.n.bidang` per baris di layar (baris kosong dilewati), dan `catatan`. */
 export function galatResep(r) {
@@ -87,9 +106,15 @@ export function galatResep(r) {
         const m = /^item\.(\d+)(\..+)$/.exec(kunci);
         g[m ? `item.${terisi[Number(m[1])]}${m[2]}` : kunci] = pesan;
     }
-    for (const n of terisi)
+    let adaPuyer = false;
+    for (const n of terisi) {
         if (!r.baris[n].master_obat_id)
             g[`item.${n}.master_obat_id`] = FARMASI.galat.pilihObat;
+        if (adalahBarisPuyer(r.baris[n]))
+            adaPuyer = true;
+    }
+    if (adaPuyer && !r.catatan.trim())
+        g.catatan = FARMASI.galat.catatanPuyerWajib;
     return g;
 }
 /** Isian formulir dari resep tersimpan (item menjadi baris editor, kolom `catatan` dari server). */
@@ -104,20 +129,29 @@ export function perbaruiPlan(plan, blokLama, blokBaru, maks) {
     return hasil.length <= maks ? hasil : null;
 }
 /** Teks resep untuk kolom Plan: satu baris per obat (R/ nama No. jumlah — aturan pakai) lalu catatan resep. */
-export function teksPlanResep(r, obat) {
+export const teksPlanResep = (r, obat) => {
     const baris = r.baris.filter((b) => b.master_obat_id).map((b) => {
         const o = obat.find((x) => String(x.id) === b.master_obat_id);
-        return `R/ ${o?.nama_tampil ?? `Obat #${b.master_obat_id}`} No. ${b.jumlah}${o?.satuan ? ` ${o.satuan}` : ''} — ${b.aturan_pakai.trim()}`;
+        const aturan = adalahBarisPuyer(b) ? ATURAN_PAKAI_PUYER : b.aturan_pakai.trim();
+        return `R/ ${o?.nama_tampil ?? `Obat #${b.master_obat_id}`} No. ${b.jumlah}${o?.satuan ? ` ${o.satuan}` : ''} — ${aturan}`;
     });
     return [...baris, ...(r.catatan.trim() ? [`Catatan: ${r.catatan.trim()}`] : [])].join('\n');
-}
+};
 /** Baris baru langsung berisi nilai bawaan (jumlah 1, aturan pakai 3 x 1, rute Oral); apoteker menyesuaikan bila berbeda. */
 export const barisResepKosong = () => ({ master_obat_id: '', jumlah: '1', aturan_pakai: ATURAN_PAKAI_BAWAAN, bentuk: '', rute: RUTE_BAWAAN });
 export const ubahBarisResep = (b, n, p) => b.map((x, i) => (i === n ? { ...x, ...p } : x));
 export const hapusBarisResep = (b, n) => b.filter((_, i) => i !== n);
 /** Item tersimpan menjadi baris editor (urutan sama). */
-export const barisDariItem = (item) => item.map((i) => ({ master_obat_id: String(i.master_obat_id), jumlah: String(i.jumlah), aturan_pakai: i.aturan_pakai, bentuk: i.bentuk ?? '', rute: i.rute ?? '' }));
-export const bentukItemResep = (b) => b.map((x) => ({ master_obat_id: Number(x.master_obat_id), jumlah: x.jumlah, aturan_pakai: x.aturan_pakai, bentuk: x.bentuk.trim() || null, rute: x.rute.trim() || null }));
+export const barisDariItem = (item) => item.map((i) => ({
+    master_obat_id: String(i.master_obat_id), jumlah: String(i.jumlah), aturan_pakai: i.aturan_pakai, bentuk: i.bentuk ?? '', rute: i.rute ?? '',
+    ...(i.aturan_pakai === ATURAN_PAKAI_PUYER ? { puyer: true } : {}),
+}));
+export const bentukItemResep = (b) => b.map((x) => ({
+    master_obat_id: Number(x.master_obat_id), jumlah: x.jumlah,
+    aturan_pakai: adalahBarisPuyer(x) ? ATURAN_PAKAI_PUYER : x.aturan_pakai,
+    bentuk: x.bentuk.trim() || (adalahBarisPuyer(x) ? 'puyer' : null),
+    rute: x.rute.trim() || null,
+}));
 /** Galat per baris (`item.n.bidang`) dari skema bersama; obat wajib dipilih dari master. Obat yang sama boleh lebih dari sekali. */
 export function galatItemResep(b) {
     const g = petakan((daftarItemResepMasukan.safeParse(bentukItemResep(b)).error?.issues ?? []).map((i) => ({ ...i, path: ['item', ...i.path] })));

@@ -1017,7 +1017,7 @@ export const FARMASI = {
     /** Editor item resep oleh apoteker saat telaah (obat dari master obat klinik). */
     item: {
         judul: 'Item obat', petunjuk: 'Pilih obat dari master obat klinik sesuai resep dokter. Racikan dicatat total unit yang terpakai, dibulatkan ke atas (mis. ½ tab x 10 bungkus = 5 tab).',
-        obat: 'Obat', stokKolom: 'Stok', jumlah: 'Jumlah', jumlahSatuan: (satuan) => `Jumlah (${satuan})`, aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', bentuk: 'Bentuk', rute: 'Rute', ruteKosong: '— Tidak diisi —',
+        obat: 'Obat', satuanKolom: 'Satuan', stokKolom: 'Stok', jumlah: 'Jumlah', jumlahSatuan: (satuan) => `Jumlah (${satuan})`, aturan: 'Aturan pakai', aturanPetunjuk: 'Contoh: 3 x 1 sesudah makan', puyer: 'Puyer', puyerPetunjuk: 'Aturan pakai ditulis di catatan', bentuk: 'Bentuk', rute: 'Rute', ruteKosong: '— Tidak diisi —',
         tambah: 'Tambah obat', hapus: (n) => `Hapus obat baris ${n}`, stok: (n, satuan) => `Stok ${n} ${satuan}`, kosong: 'Belum ada item obat.',
         belumAdaMaster: 'Belum ada obat di master. Tambahkan di halaman Farmasi.', biaya: (rp) => `Perkiraan biaya obat ${rp}`,
     },
@@ -1029,7 +1029,7 @@ export const FARMASI = {
     },
     galat: {
         angka: 'Isi dengan bilangan bulat.', negatif: 'Tidak boleh negatif.', cariPendek: 'Ketik minimal dua huruf.', tanpaPerubahan: 'Tidak ada perubahan.', jumlahMinimal: 'Jumlah minimal 1.', tanggal: 'Tanggal harus berbentuk TTTT-BB-HH.',
-        kedaluwarsaWajib: 'Tanggal kedaluwarsa wajib untuk batch baru.', alasanWajib: 'Alasan wajib diisi.', obatResepWajib: 'Pilih minimal satu obat untuk resep.', itemWajib: 'Isi minimal satu item obat sebelum menandai siap.', catatanTelaahWajib: 'Catatan wajib bila telaah belum terpenuhi.',
+        kedaluwarsaWajib: 'Tanggal kedaluwarsa wajib untuk batch baru.', alasanWajib: 'Alasan wajib diisi.', obatResepWajib: 'Pilih minimal satu obat untuk resep.', itemWajib: 'Isi minimal satu item obat sebelum menandai siap.', catatanTelaahWajib: 'Catatan wajib bila telaah belum terpenuhi.', catatanPuyerWajib: 'Tulis aturan pakai racikan/puyer pada catatan resep.',
         kfaTidakAda: 'Kode KFA tidak ditemukan.', kfaTidakAktif: 'Kode KFA tidak aktif.', obatTertaut: 'Obat dengan kode KFA ini sudah ada di master.', obatTidakAda: 'Obat tidak ditemukan atau tidak aktif.', pilihObat: 'Pilih obat dari daftar.', kunjunganTidakAda: 'Kunjungan tidak ditemukan.',
         kunjunganDitutup: 'Kunjungan sudah ditutup. Resep baru tidak dapat dibuat.', resepTerkunciPemeriksaan: 'Resep sudah diteruskan ke kasir dan tidak dapat dibuat atau diubah lagi.', resepTerkunciTelaah: 'Resep sudah ditelaah apoteker dan tidak dapat diubah.', resepTidakAda: 'Resep tidak ditemukan.', statusTidakSah: 'Status resep tidak mengizinkan tindakan ini. Muat ulang data.', telaahBelumLengkap: 'Telaah belum lengkap: ketiga telaah harus terpenuhi.', itemTerkunci: 'Item obat tidak dapat diubah: tagihan kunjungan sudah ada pembayaran. Minta kasir menyesuaikan.',
         stokTidakCukup: 'Jumlah keluar melebihi stok batch.', batchTidakAda: 'Batch tidak ditemukan.', bentrok: 'Data baru saja diubah pengguna lain. Muat ulang lalu coba lagi.', dpjpTidakAda: 'Dokter penanggung jawab tidak ditemukan.',

@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { FARMASI } from '@klira/shared';
-import { perbaruiPlan, resepDariServer, teksPlanResep, adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, isiDariObat, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi.js';
+import { perbaruiCatatanPuyer, perbaruiPlan, resepDariServer, teksPlanResep, adaIsianResep, awalMasterObat, awalMutasi, awalResep, awalTelaah, barisDariItem, barisResepKosong, biayaResep, bentukItemResep, bentukMutasi, bentukResep, galatItemResep, galatMasterObat, galatMutasi, galatResep, galatTelaah, gantiJenisMutasi, hapusBarisResep, isiDariObat, opsiRute, perubahanMasterObat, pilihBatch, pilihKfa, telaahLengkap, ubahBarisResep } from './keadaan-farmasi.js';
 const kfa = { kode: '93000001', nama: 'Parasetamol 500 mg tablet', bentuk_sediaan: null, satuan: 'tablet', status: 'aktif', lokal: false };
 describe('master obat', () => {
     it('memilih KFA mengisi nama dan satuan awal tanpa menimpa isian klinik', () => {
@@ -77,6 +77,25 @@ describe('resep dokter (obat satu per satu + catatan)', () => {
         const obat = [{ id: 1, nama_tampil: 'Parasetamol 500 mg', satuan: 'tablet' }, { id: 2, nama_tampil: 'Amoksisilin 500 mg', satuan: 'kapsul' }];
         const r = { baris: [baris(), baris({ master_obat_id: '2', jumlah: '15', aturan_pakai: '3 x 1' }), baris({ master_obat_id: '' })], catatan: ' Parasetamol dibuat puyer ' };
         expect(teksPlanResep(r, obat)).toBe('R/ Parasetamol 500 mg No. 10 tablet — 3 x 1 sesudah makan\nR/ Amoksisilin 500 mg No. 15 kapsul — 3 x 1\nCatatan: Parasetamol dibuat puyer');
+    });
+    it('toggle puyer: aturan pakai otomatis terisi penanda dan catatan resep wajib diisi', () => {
+        const puyer = baris({ aturan_pakai: '', puyer: true });
+        expect(galatResep({ baris: [puyer], catatan: '' }).catatan).toBeTruthy();
+        expect(galatResep({ baris: [puyer], catatan: 'Buat puyer 10 bungkus, 3 x 1' })).toEqual({});
+        expect(bentukResep({ baris: [puyer], catatan: 'Buat puyer 10 bungkus' }).item[0]).toMatchObject({
+            aturan_pakai: 'Racikan/puyer (lihat catatan)',
+            bentuk: 'puyer',
+        });
+    });
+    it('narasi puyer otomatis di catatan resep: membentuk daftar obat dan mempertahankan lanjutan dokter', () => {
+        const obat = [{ id: 1, nama_tampil: 'Parasetamol 500 mg' }, { id: 2, nama_tampil: 'Ambroksol 30 mg' }];
+        const b1 = [baris({ master_obat_id: '1', puyer: true }), baris({ master_obat_id: '2', puyer: false })];
+        expect(perbaruiCatatanPuyer('', b1, obat)).toBe('Parasetamol 500 mg dibuat puyer ');
+        const b2 = [baris({ master_obat_id: '1', puyer: true }), baris({ master_obat_id: '2', puyer: true })];
+        expect(perbaruiCatatanPuyer('Parasetamol 500 mg dibuat puyer 10 bungkus, 3 x 1', b2, obat))
+            .toBe('Parasetamol 500 mg, Ambroksol 30 mg dibuat puyer 10 bungkus, 3 x 1');
+        expect(perbaruiCatatanPuyer('Parasetamol 500 mg, Ambroksol 30 mg dibuat puyer 10 bungkus', [baris({ puyer: false })], obat))
+            .toBe('10 bungkus');
     });
 });
 describe('resep tersimpan dan Plan', () => {
