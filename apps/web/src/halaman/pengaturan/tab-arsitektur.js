@@ -283,6 +283,96 @@ function hitungTataLetakPeta(tabelList, relasiList, akarUtama = null) {
     };
 }
 
+/**
+ * Tata letak ERD untuk satu tabel terpilih (graf bintang) berpola bagan organisasi:
+ * induk (tabel yang dirujuk) di baris atas, tabel terpilih di tengah, anak (yang merujuk) dalam grid berkolom genap di bawah.
+ * Satu batang vertikal lewat celah kolom tengah, tiap baris punya satu jalur horizontal; semua garis anak berkumpul
+ * di titik tengah bawah tabel terpilih, semua garis ke induk berangkat dari titik tengah atasnya.
+ */
+function tataLetakErdTerpilih(tabelList, relasiList, pusat) {
+    const GAP = 56;
+    const CH = 44;
+    const peta = new Map(tabelList.map((t) => [t.nama, t]));
+    const tPusat = peta.get(pusat);
+    const induk = [];
+    const anak = [];
+    for (const r of relasiList) {
+        if (r.dari_tabel === r.ke_tabel) continue;
+        if (r.dari_tabel === pusat && !induk.includes(r.ke_tabel)) induk.push(r.ke_tabel);
+    }
+    for (const r of relasiList) {
+        if (r.dari_tabel === r.ke_tabel) continue;
+        if (r.ke_tabel === pusat && !induk.includes(r.dari_tabel) && !anak.includes(r.dari_tabel)) anak.push(r.dari_tabel);
+    }
+    const urut = (arr) => arr.map((n) => peta.get(n)).filter(Boolean).sort((a, b) => a.domain.localeCompare(b.domain) || a.nama.localeCompare(b.nama));
+    const tInduk = urut(induk);
+    const tAnak = urut(anak);
+    const kolom = (n) => Math.min(8, Math.max(2, 2 * Math.ceil(Math.sqrt(n * 1.6) / 2)));
+    const kolAnak = kolom(tAnak.length);
+    const kolInduk = kolom(tInduk.length);
+    const lebarGrid = (k) => k * KARTU_L + (k - 1) * GAP;
+    // Satu baris saja: kartu dipusatkan; lebih dari satu baris: grid berkolom genap (celah tengah bebas untuk batang)
+    const kolBaris = (jumlah, kGrid) => (jumlah <= kGrid ? jumlah : kGrid);
+    const lebarIsi = Math.max(lebarGrid(kolBaris(tAnak.length, kolAnak)), lebarGrid(kolBaris(tInduk.length, kolInduk)), KARTU_L);
+    const lebarKanvas = Math.max(960, lebarIsi + PAD_KANVAS * 2);
+    const cx = Math.round(lebarKanvas / 2);
+    const posisiTabel = new Map();
+    const rute = new Map();
+    const baris = (daftar, k) => {
+        const hasil = [];
+        for (let i = 0; i < daftar.length; i += k) hasil.push(daftar.slice(i, i + k));
+        return hasil;
+    };
+    // Kolom grid berpusat di celah tengah (k genap) sehingga batang vertikal tidak pernah menabrak kartu
+    const xKolom = (k, i) => Math.round(cx - lebarGrid(k) / 2 + i * (KARTU_L + GAP));
+
+    let y = PAD_KANVAS;
+    // Induk: baris terdekat ke tabel terpilih paling bawah
+    const barisInduk = baris(tInduk, kolInduk).reverse();
+    const yBarisInduk = [];
+    for (const b of barisInduk) {
+        const tinggi = Math.max(...b.map(hitungTinggiKartu));
+        const k = kolBaris(tInduk.length, kolInduk);
+        b.forEach((t, i) => posisiTabel.set(t.nama, { tabel: t, x: xKolom(k, i), y: y + tinggi - hitungTinggiKartu(t), w: KARTU_L, h: hitungTinggiKartu(t) }));
+        yBarisInduk.push({ b, bawah: y + tinggi });
+        y += tinggi + CH;
+    }
+    const hPusat = hitungTinggiKartu(tPusat);
+    const posPusat = { tabel: tPusat, x: cx - KARTU_L / 2, y, w: KARTU_L, h: hPusat };
+    posisiTabel.set(pusat, posPusat);
+    y += hPusat + CH;
+
+    // Garis ke induk: dari tengah atas tabel terpilih naik ke kanal di bawah baris induk, lalu ke tengah bawah induk
+    const atasPusat = { x: cx, y: posPusat.y };
+    yBarisInduk.forEach(({ b, bawah }) => {
+        const yKanal = bawah + CH / 2;
+        for (const t of b) {
+            const p = posisiTabel.get(t.nama);
+            const tx = p.x + p.w / 2;
+            const titik = [atasPusat, { x: cx, y: yKanal }, { x: tx, y: yKanal }, { x: tx, y: p.y + p.h }];
+            for (const r of relasiList) if (r.dari_tabel === pusat && r.ke_tabel === t.nama) rute.set(r, titik);
+        }
+    });
+
+    // Anak: grid di bawah; batang di celah tengah, kanal tepat di atas tiap baris
+    const bawahPusat = { x: cx, y: posPusat.y + hPusat };
+    for (const b of baris(tAnak, kolAnak)) {
+        const tinggi = Math.max(...b.map(hitungTinggiKartu));
+        const k = kolBaris(tAnak.length, kolAnak);
+        const yKanal = y - CH / 2;
+        b.forEach((t, i) => {
+            const p = { tabel: t, x: xKolom(k, i), y, w: KARTU_L, h: hitungTinggiKartu(t) };
+            posisiTabel.set(t.nama, p);
+            const tx = p.x + p.w / 2;
+            const titik = [{ x: tx, y }, { x: tx, y: yKanal }, { x: cx, y: yKanal }, bawahPusat];
+            for (const r of relasiList) if (r.ke_tabel === pusat && r.dari_tabel === t.nama) rute.set(r, titik);
+        });
+        y += tinggi + CH;
+    }
+    const tinggiKanvas = y - CH + PAD_KANVAS;
+    return { zona: [], posisiTabel, rute, lebarKanvas, tinggiKanvas };
+}
+
 /** Buang titik ganda & titik kolinear dari polyline ortogonal. */
 function rapikanTitik(pts) {
     const bersih = [];
@@ -625,7 +715,8 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
     const CH_MIN = 70;
     const PORT_GAP = 22;
     const PORT_TEPI = 20;
-    const BATAS_PELURUSAN = 150;
+    const BATAS_PELURUSAN = 350; // kira-kira satu kolom kotak + jaraknya
+    const LAJUR_PUTAR = 44;
 
     const nodes = nodesInput.map((n, idx) => {
         const uk = UKURAN_BENTUK[n.bentuk] || UKURAN_BENTUK.rect;
@@ -637,7 +728,28 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
 
     // 1. Layering
     const rank = new Map(nodes.map((n) => [n.id, 0]));
-    const maju = edges.filter((e) => e.jenis !== 'kembali' && e.jenis !== 'samping');
+    const majuAwal = edges.filter((e) => e.jenis !== 'kembali' && e.jenis !== 'samping');
+    // Putus siklus: edge yang menutup lingkaran (DFS back-edge) diperlakukan sebagai garis balik
+    const balikOtomatis = new Set();
+    {
+        const keluarMaju = new Map();
+        for (const e of majuAwal) {
+            if (!keluarMaju.has(e.dari)) keluarMaju.set(e.dari, []);
+            keluarMaju.get(e.dari).push(e);
+        }
+        const status = new Map();
+        const kunjungi = (id) => {
+            status.set(id, 1);
+            for (const e of keluarMaju.get(id) || []) {
+                const st = status.get(e.ke);
+                if (st === 1) balikOtomatis.add(e);
+                else if (!st) kunjungi(e.ke);
+            }
+            status.set(id, 2);
+        };
+        for (const n of nodes) if (!status.get(n.id)) kunjungi(n.id);
+    }
+    const maju = majuAwal.filter((e) => !balikOtomatis.has(e));
     const samping = edges.filter((e) => e.jenis === 'samping');
     const sampingDari = new Map(samping.map((e) => [e.ke, e.dari]));
     for (let iter = 0; iter < nodes.length * 2; iter += 1) {
@@ -689,6 +801,8 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
             pasanganDatar.add(`${b.id}|${a.id}`);
             return { e, a, b, idx, datar: true };
         }
+        // Garis balik ke lapis atas (mis. "Belum" → perawatan harian): digambar sebagai putaran samping, bukan rantai dummy
+        if (e.jenis === 'kembali' || balikOtomatis.has(e)) return { e, a, b, idx, putar: true };
         const terbalik = a.layer > b.layer;
         const atas = terbalik ? b : a;
         const bawah = terbalik ? a : b;
@@ -763,11 +877,45 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
     urutanTerbaik.forEach((l, i) => { layers[i] = l; });
     segarkanPos();
 
+    // Sisi samping yang dipakai garis datar & putaran; putaran memakai sisi yang masih bebas di kedua ujung
+    const sisiTerpakai = new Set();
+    for (const info of infoEdge) {
+        if (!info.datar) continue;
+        const kanan = posIdx.get(info.b.id) > posIdx.get(info.a.id);
+        sisiTerpakai.add(`${info.a.id}:${kanan ? 'R' : 'L'}`);
+        sisiTerpakai.add(`${info.b.id}:${kanan ? 'L' : 'R'}`);
+    }
+    const lajurPutar = new Set();
+    for (const info of infoEdge) {
+        if (!info.putar) continue;
+        const bebasKiri = !sisiTerpakai.has(`${info.a.id}:L`) && !sisiTerpakai.has(`${info.b.id}:L`);
+        info.sisiPutar = bebasKiri ? 'L' : 'R';
+        for (const n of [info.a, info.b]) {
+            sisiTerpakai.add(`${n.id}:${info.sisiPutar}`);
+            lajurPutar.add(`${n.id}:${info.sisiPutar}`);
+        }
+    }
+
     // 4. Penempatan X (median tetangga + regresi isotonik berbobot / pool-adjacent-violators)
+    // Jarak minimum antar simpul bersebelahan; dimemo karena dipanggil sangat sering di pass pelurusan
+    let nomor = 0;
+    for (const arr of layers) for (const n of arr) n._no = nomor++;
+    const memoJarak = new Map();
     const jarakMin = (u, v) => {
-        if (pasanganDatar.has(`${u.id}|${v.id}`)) return u.w / 2 + GAP_SAMPING + v.w / 2;
-        const g = u.dummy && v.dummy ? GAP_DUMMY : u.dummy || v.dummy ? GAP_DUMMY_NYATA : GAP_X;
-        return u.w / 2 + g + v.w / 2;
+        const kunci = u._no * 65536 + v._no;
+        const ada = memoJarak.get(kunci);
+        if (ada !== undefined) return ada;
+        let hasil;
+        if (pasanganDatar.has(`${u.id}|${v.id}`)) {
+            hasil = u.w / 2 + GAP_SAMPING + v.w / 2;
+        } else {
+            const g = u.dummy && v.dummy ? GAP_DUMMY : u.dummy || v.dummy ? GAP_DUMMY_NYATA : GAP_X;
+            // Sediakan lajur untuk garis putaran di sisi simpul yang memakainya
+            const lajur = (lajurPutar.has(`${u.id}:R`) ? LAJUR_PUTAR : 0) + (lajurPutar.has(`${v.id}:L`) ? LAJUR_PUTAR : 0);
+            hasil = u.w / 2 + g + lajur + v.w / 2;
+        }
+        memoJarak.set(kunci, hasil);
+        return hasil;
     };
     // Median berbobot dari daftar target; bila rentang median tidak tunggal, pilih titik terdekat ke posisi sekarang
     const medianBerbobot = (target, sekarang) => {
@@ -818,11 +966,19 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
         for (const n of arr) n.cx -= geser;
     }
     // Bobot sisi: rantai dummy paling kaku agar garis panjang lurus vertikal
+    // Belah ketupat bercabang ganjil (≥3): anak tengah lurus di bawah, cabang lain keluar dari sudut kiri/kanan
+    const anakTengah = new Map();
+    for (const n of nodes) {
+        if (n.bentuk !== 'diamond') continue;
+        const anakIds = (bawahNb.get(n.id) || []).slice().sort((p, q) => posIdx.get(p) - posIdx.get(q));
+        if (anakIds.length >= 3 && anakIds.length % 2 === 1) anakTengah.set(n.id, anakIds[(anakIds.length - 1) / 2]);
+    }
     const bobotSisi = (u, v) => {
         if (u.dummy && v.dummy) return 8;
         if (u.dummy || v.dummy) return 3;
         // Sambungan tunggal (satu-satunya anak & satu-satunya induk) adalah jalur utama: wajib lurus
         const [atas, bawah] = u.layer < v.layer ? [u, v] : [v, u];
+        if (anakTengah.get(atas.id) === bawah.id) return 2;
         const tunggal = (bawahNb.get(atas.id) || []).length === 1 && (atasNb.get(bawah.id) || []).length === 1;
         return tunggal ? 6 : 1;
     };
@@ -869,14 +1025,23 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
     const skorGlobal = () => {
         let skor = 0;
         for (const [u, v] of sisiVertikal) {
-            if (cocok(u, v)) skor += bobotSisi(u, v);
+            // Ujung rantai dummy berbobot biasa: garis panjang boleh berbelok di ujung, simpul tujuan tetap memilih induk nyatanya
+            const w = u.dummy && v.dummy ? 8 : u.dummy || v.dummy ? 1 : bobotSisi(u, v);
+            if (cocok(u, v)) skor += w;
             // Penalti kecil panjang horizontal: pemecah seri agar simpul memilih posisi tengah/ringkas
-            skor -= 0.0004 * bobotSisi(u, v) * Math.abs(u.cx - v.cx);
+            skor -= 0.0004 * w * Math.abs(u.cx - v.cx);
         }
         for (const [s, t] of pasanganSamping) if (Math.abs(t.cx - s.cx - jarakMin(s, t)) < 1) skor += 2;
+        // Rantai garis panjang lurus dari pangkalnya (tautan terakhir ke tujuan tidak dihitung, agar tujuan fan-in tetap bebas)
+        for (const info of infoEdge) {
+            const r = info.rantai;
+            if (!r || r.length < 3) continue;
+            let lurus = true;
+            for (let k = 0; k < r.length - 2 && lurus; k += 1) lurus = cocok(r[k], r[k + 1]);
+            if (lurus) skor += 2;
+        }
         return skor;
     };
-    const tataLetakSah = () => layers.every((arr) => arr.every((n, i) => i === 0 || n.cx - arr[i - 1].cx >= jarakMin(arr[i - 1], n) - 0.5));
     // Komponen = simpul yang saling terhubung lewat sambungan yang sudah lurus; digeser bersama agar kelurusan terjaga
     // arah: 0 = dua arah, 1 = hanya ke bawah, -1 = hanya ke atas
     const komponenDari = (awal, arah = 0) => {
@@ -901,7 +1066,18 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
         }
         return [...set];
     };
-    for (let putaran = 0; putaran < 30; putaran += 1) {
+    const rantaiDummy = new Map();
+    for (const info of infoEdge) {
+        const ds = (info.rantai || []).filter((n) => n.dummy);
+        for (const d of ds) rantaiDummy.set(d, ds);
+    }
+    // Posisi disalin ke array berindeks _no (murah), pengecekan hanya pada lapis yang tersentuh, dan jumlah evaluasi
+    // dibatasi tetap agar graf besar (domain ERD) tetap cepat dan hasilnya deterministik di semua mesin
+    const semuaSimpul = layers.flat();
+    const posSimpan = new Float64Array(semuaSimpul.length);
+    const BATAS_EVALUASI = 4000;
+    let evaluasi = 0;
+    for (let putaran = 0; putaran < 30 && evaluasi < BATAS_EVALUASI; putaran += 1) {
         const skorAwal = skorGlobal();
         let terbaik = null;
         const kandidat = [];
@@ -913,19 +1089,64 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
         for (const [n, delta] of kandidat) {
             // Hanya luruskan tekukan "hampir lurus"; selisih besar adalah percabangan sah yang tidak perlu dipaksa
             if (Math.abs(delta) < 0.5 || Math.abs(delta) > BATAS_PELURUSAN) continue;
+            const kompSudah = new Set();
             for (const arah of [0, 1, -1]) {
+                if (evaluasi >= BATAS_EVALUASI) break;
                 const komp = komponenDari(n, arah);
+                const kunciKomp = komp.map((m) => m._no).sort((x, y) => x - y).join(',');
+                if (kompSudah.has(kunciKomp)) continue;
+                kompSudah.add(kunciKomp);
+                evaluasi += 1;
+                for (const m of semuaSimpul) posSimpan[m._no] = m.cx;
                 for (const m of komp) m.cx += delta;
-                const sah = tataLetakSah();
-                const skor = sah ? skorGlobal() : -Infinity;
-                for (const m of komp) m.cx -= delta;
-                if (skor > skorAwal + 1e-9 && (!terbaik || skor > terbaik.skor + 1e-9)) {
-                    terbaik = { skor, komp, delta };
+                // Dorong tetangga selapis yang tertabrak ke arah geser (berantai), agar ruang untuk pelurusan tersedia
+                const set = new Set(komp);
+                const lapisTersentuh = new Set(komp.map((m) => m.layer));
+                // Dummy yang terdorong menyeret seluruh rantainya yang tadinya lurus, agar garis panjang tetap lurus
+                const lurusAwal = (d) => (rantaiDummy.get(d) || []).every((x) => Math.abs(posSimpan[x._no] - posSimpan[d._no]) < 0.5);
+                for (let ulang = 0; ulang < 6; ulang += 1) {
+                    const terdorong = [];
+                    for (const l of lapisTersentuh) {
+                        const arr = layers[l];
+                        if (delta > 0) {
+                            for (let i = 1; i < arr.length; i += 1) {
+                                const min = arr[i - 1].cx + jarakMin(arr[i - 1], arr[i]);
+                                if (!set.has(arr[i]) && arr[i].cx < min - 0.01) {
+                                    arr[i].cx = min;
+                                    terdorong.push(arr[i]);
+                                }
+                            }
+                        } else {
+                            for (let i = arr.length - 2; i >= 0; i -= 1) {
+                                const maks = arr[i + 1].cx - jarakMin(arr[i], arr[i + 1]);
+                                if (!set.has(arr[i]) && arr[i].cx > maks + 0.01) {
+                                    arr[i].cx = maks;
+                                    terdorong.push(arr[i]);
+                                }
+                            }
+                        }
+                    }
+                    if (!terdorong.length) break;
+                    for (const d of terdorong) {
+                        if (!d.dummy || !lurusAwal(d)) continue;
+                        for (const x of rantaiDummy.get(d)) {
+                            if (delta > 0 ? x.cx < d.cx : x.cx > d.cx) {
+                                x.cx = d.cx;
+                                lapisTersentuh.add(x.layer);
+                            }
+                        }
+                    }
                 }
+                const sah = [...lapisTersentuh].every((l) => layers[l].every((m, i, arr) => i === 0 || m.cx - arr[i - 1].cx >= jarakMin(arr[i - 1], m) - 0.5));
+                const skor = sah ? skorGlobal() : -Infinity;
+                if (skor > skorAwal + 1e-9 && (!terbaik || skor > terbaik.skor + 1e-9)) {
+                    terbaik = { skor, hasil: Float64Array.from(semuaSimpul, (m) => m.cx) };
+                }
+                for (const m of semuaSimpul) m.cx = posSimpan[m._no];
             }
         }
         if (!terbaik) break;
-        for (const m of terbaik.komp) m.cx += terbaik.delta;
+        semuaSimpul.forEach((m, i) => { m.cx = terbaik.hasil[i]; });
     }
     let minX = Infinity;
     for (const arr of layers) for (const n of arr) minX = Math.min(minX, n.cx - n.w / 2);
@@ -942,7 +1163,7 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
     // 5. Potongan antar-lapis, sisi keluar diamond & penyelarasan port
     const potongan = [];
     for (const info of infoEdge) {
-        if (info.datar) continue;
+        if (info.datar || info.putar) continue;
         info.potongan = [];
         for (let k = 0; k < info.rantai.length - 1; k += 1) {
             const p = { u: info.rantai[k], v: info.rantai[k + 1], info, k, sisi: null, xAtas: 0, xBawah: 0 };
@@ -950,13 +1171,7 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
             info.potongan.push(p);
         }
     }
-    const sisiDatar = new Set();
-    for (const info of infoEdge) {
-        if (!info.datar) continue;
-        const kanan = info.b.cx > info.a.cx;
-        sisiDatar.add(`${info.a.id}:${kanan ? 'R' : 'L'}`);
-        sisiDatar.add(`${info.b.id}:${kanan ? 'L' : 'R'}`);
-    }
+    const sisiDatar = sisiTerpakai;
     for (const u of nodes) {
         if (u.bentuk !== 'diamond') continue;
         const keluar = potongan.filter((p) => p.u === u);
@@ -1114,7 +1329,22 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
         });
     }
     for (const info of infoEdge) {
-        if (info.datar) continue;
+        if (!info.putar) continue;
+        const kiri = info.sisiPutar === 'L';
+        const ya = Math.round(info.a.y + info.a.h / 2);
+        const yb = Math.round(info.b.y + info.b.h / 2);
+        const lajurX = kiri
+            ? Math.min(info.a.x, info.b.x) - LAJUR_PUTAR / 2 - 6
+            : Math.max(info.a.x + info.a.w, info.b.x + info.b.w) + LAJUR_PUTAR / 2 + 6;
+        info.titik = [
+            { x: Math.round(tepiX(info.a, kiri ? -1 : 1, 0)), y: ya },
+            { x: lajurX, y: ya },
+            { x: lajurX, y: yb },
+            { x: Math.round(tepiX(info.b, kiri ? -1 : 1, 0)), y: yb },
+        ];
+    }
+    for (const info of infoEdge) {
+        if (info.datar || info.putar) continue;
         let pts = [];
         for (const p of info.potongan) {
             if (p.sisi) {
@@ -1267,6 +1497,11 @@ export function TabArsitektur() {
     };
 
     let tahapTerpilih = null;
+    // Zoom & posisi gulir Alur Layanan dipertahankan antar-render (klik bentuk merender ulang)
+    let skalaAlur = null;
+    let gulirAlur = null;
+    const SKALA_ALUR_MIN = 0.25;
+    const SKALA_ALUR_MAKS = 2;
 
     function lukisAlur() {
         const petaTabel = new Map((data.tabel || []).map((t) => [t.nama, t]));
@@ -1284,12 +1519,21 @@ export function TabArsitektur() {
             { id: 'poli_umum', bentuk: 'rect', judul: 'Poli Umum & Spesialis', domain: 'klinis', ringkas: 'SOAPIE, Pemeriksaan Fisik, Diagnosis ICD-10, & Tindakan.', tabel: ['pemeriksaan', 'diagnosis', 'tindakan'], endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'] },
             { id: 'poli_gigi', bentuk: 'rect', judul: 'Poli Gigi & Mulut', domain: 'klinis', ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan.', tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'], endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'] },
             { id: 'poli_kia', bentuk: 'rect', judul: 'Poli KIA, KB & Imunisasi', domain: 'klinis', ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & imunisasi.', tabel: ['kia_kunjungan', 'pemeriksaan'], endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'] },
-            { id: 'dec_lab', bentuk: 'diamond', judul: 'Perlu Lab?', domain: 'penunjang', ringkas: 'Opsional: order pemeriksaan lab/penunjang lalu hasil dikembalikan ke dokter.', tabel: ['order_penunjang', 'hasil_penunjang'], endpoint: ['POST /api/kunjungan/:id/penunjang/order'] },
-            { id: 'lab', bentuk: 'rect', judul: 'Lab & Penunjang', domain: 'penunjang', ringkas: 'Pengambilan spesimen, input hasil, & validasi oleh analis.', tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'], endpoint: ['POST /api/penunjang/order/:id/spesimen', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'] },
+            { id: 'dec_lab', bentuk: 'diamond', judul: 'Perlu Lab?', domain: 'penunjang', ringkas: 'Dokter poli/UGD menilai perlu pemeriksaan lab sebelum menentukan tindak lanjut.', tabel: ['order_penunjang'], endpoint: ['GET /api/kunjungan/:id/penunjang/order'] },
+            { id: 'lab_order', bentuk: 'rect', judul: 'Order Lab dari Poli', domain: 'penunjang', ringkas: 'Dokter memesan pemeriksaan; order masuk antrean lab (status dipesan).', tabel: ['order_penunjang', 'master_pemeriksaan'], endpoint: ['POST /api/kunjungan/:id/penunjang/order'] },
+            { id: 'lab', bentuk: 'rect', judul: 'Spesimen, Hasil & Validasi', domain: 'penunjang', ringkas: 'Pasien menunggu hasil lab; analis ambil spesimen, input hasil, & validasi.', tabel: ['spesimen', 'hasil_penunjang', 'order_penunjang'], endpoint: ['POST /api/penunjang/order/:id/spesimen', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'] },
+            { id: 'lab_panggil', bentuk: 'rect', judul: 'Dipanggil Kembali ke Poli', domain: 'klinis', ringkas: 'Hasil lab siap; pasien dipanggil ulang & dokter meninjau hasil.', tabel: ['antrean', 'hasil_penunjang', 'pemeriksaan'], endpoint: ['GET /api/antrean', 'POST /api/antrean/:id/:aksi', 'GET /api/kunjungan/:id/penunjang/order'] },
             { id: 'dec_lanjut', bentuk: 'diamond', judul: 'Tindak Lanjut?', domain: 'farmasi', ringkas: 'Menentukan tindak lanjut: Farmasi, Rawat Inap, Rujukan, atau langsung Kasir.', tabel: ['resep', 'rawat_inap', 'tindak_lanjut'], endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/kunjungan/:id/selesai'] },
             { id: 'farmasi', bentuk: 'rect', judul: 'Farmasi & Racikan', domain: 'farmasi', ringkas: 'Telaah resep, peracikan obat/puyer, & penyerahan ke pasien.', tabel: ['resep', 'item_resep', 'stok_obat'], endpoint: ['PUT /api/kunjungan/:id/resep'] },
-            { id: 'ranap_admisi', bentuk: 'rect', judul: 'Admisi & Penempatan Bed', domain: 'penunjang', ringkas: 'Pendaftaran rawat inap, pemilihan DPJP, kamar & bed.', tabel: ['rawat_inap', 'tempat_tidur'], endpoint: ['POST /api/rawat-inap/admisi', 'GET /api/rawat-inap/papan', 'PUT /api/kunjungan/:id/penempatan'] },
-            { id: 'ranap_cppt', bentuk: 'rect', judul: 'Perawatan Ranap & CPPT', domain: 'penunjang', ringkas: 'Catatan CPPT harian & ringkasan pemulangan rawat inap.', tabel: ['cppt', 'pemeriksaan'], endpoint: ['POST /api/kunjungan/:id/cppt', 'POST /api/kunjungan/:id/pemulangan'] },
+            { id: 'ranap_admisi', bentuk: 'rect', judul: 'Admisi Rawat Inap', domain: 'penunjang', ringkas: 'SPRI, DPJP utama/bersama, ruang & tarif kamar; tagihan rawat jalan digabung.', tabel: ['kunjungan', 'peserta_kunjungan', 'tagihan'], endpoint: ['GET /api/rawat-inap/asal', 'GET /api/rawat-inap/opsi', 'POST /api/rawat-inap/admisi'] },
+            { id: 'dec_bed', bentuk: 'diamond', judul: 'Bed tersedia?', domain: 'penunjang', ringkas: 'Bed kosong & operasional di ruang yang dipilih; bila belum, pasien masuk daftar tunggu.', tabel: ['lokasi', 'penempatan'], endpoint: ['GET /api/rawat-inap/papan'] },
+            { id: 'ranap_tunggu', bentuk: 'rect', judul: 'Daftar Tunggu Ruangan', domain: 'penunjang', ringkas: 'Pasien diterima tanpa bed; tampil di papan sebagai menunggu ruangan.', tabel: ['kunjungan', 'peserta_kunjungan'], endpoint: ['GET /api/rawat-inap/papan'] },
+            { id: 'ranap_bed', bentuk: 'rect', judul: 'Penempatan Bed', domain: 'penunjang', ringkas: 'Bed terisi & DPJP tercatat; awal hitungan hari kamar.', tabel: ['penempatan', 'lokasi', 'peserta_kunjungan'], endpoint: ['PUT /api/kunjungan/:id/penempatan', 'GET /api/kunjungan/:id/rawat-inap'] },
+            { id: 'ranap_cppt', bentuk: 'rect', judul: 'Perawatan Harian (CPPT)', domain: 'penunjang', ringkas: 'SOAP & instruksi tiap PPA, disahkan; DPJP meninjau hasil lab di sini.', tabel: ['pemeriksaan', 'pengesahan_catatan', 'resep', 'order_penunjang'], endpoint: ['GET /api/kunjungan/:id/cppt', 'POST /api/kunjungan/:id/cppt', 'PUT /api/kunjungan/:id/resep', 'POST /api/kunjungan/:id/penunjang/order'] },
+            { id: 'ranap_pindah', bentuk: 'rect', judul: 'Pindah Bed / Ganti DPJP', domain: 'penunjang', ringkas: 'Alasan wajib; riwayat penempatan & periode DPJP tersimpan.', tabel: ['penempatan', 'peserta_kunjungan'], endpoint: ['PUT /api/kunjungan/:id/penempatan'] },
+            { id: 'lab_ranap', bentuk: 'rect', judul: 'Lab Rawat Inap', domain: 'penunjang', ringkas: 'Order rutin/cito masuk tagihan ranap; spesimen di bangsal, hasil divalidasi, DPJP dinotifikasi.', tabel: ['order_penunjang', 'spesimen', 'hasil_penunjang', 'item_tagihan'], endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'POST /api/penunjang/order/:id/spesimen', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'] },
+            { id: 'dec_pulang', bentuk: 'diamond', judul: 'Layak pulang?', domain: 'penunjang', ringkas: 'Keputusan DPJP: lanjut perawatan harian atau pemulangan.', tabel: ['pemeriksaan'], endpoint: ['GET /api/kunjungan/:id/cppt'] },
+            { id: 'ranap_pulang', bentuk: 'rect', judul: 'Pemulangan & Resume Medis', domain: 'penunjang', ringkas: 'Disposisi & kondisi pulang, resume medis; bed dikosongkan, hari kamar ditagihkan.', tabel: ['pemulangan', 'resume_medis', 'penempatan', 'item_tagihan'], endpoint: ['POST /api/kunjungan/:id/pemulangan'] },
             { id: 'rujukan', bentuk: 'rect', judul: 'Rujukan & Kontrol', domain: 'pasien', ringkas: 'Tindak lanjut rujukan ke RS/FKTL atau jadwal kontrol ulang.', tabel: ['tindak_lanjut', 'kunjungan'], endpoint: ['POST /api/kunjungan/:id/selesai'] },
             { id: 'kasir', bentuk: 'rect', judul: 'Kasir, Klaim & Akuntansi', domain: 'keuangan', ringkas: 'Tagihan kunjungan, pembayaran kasir, klaim JKN, & jurnal.', tabel: ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'], endpoint: ['GET /api/kunjungan/:id/tagihan', 'POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'] },
             { id: 'integrasi', bentuk: 'cylinder', judul: 'SATUSEHAT & BPJS PCare', domain: 'integrasi', ringkas: 'Sinkronisasi FHIR & integrasi BPJS PCare / Antrean JKN.', tabel: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'], endpoint: ['GET /api/satusehat/status', 'GET /api/pcare/status'] },
@@ -1310,15 +1554,28 @@ export function TabArsitektur() {
             { dari: 'poli_gigi', ke: 'dec_lab', label: '' },
             { dari: 'poli_kia', ke: 'dec_lab', label: '' },
             { dari: 'ugd', ke: 'dec_lab', label: '' },
-            { dari: 'dec_lab', ke: 'lab', label: 'Ya (Order)', jenis: 'samping' },
-            { dari: 'lab', ke: 'dec_lab', label: 'Hasil kembali', jenis: 'kembali' },
-            { dari: 'dec_lab', ke: 'dec_lanjut', label: 'Tidak / Ada' },
+            { dari: 'dec_lab', ke: 'lab_order', label: 'Ya' },
+            { dari: 'lab_order', ke: 'lab', label: 'Pasien menunggu' },
+            { dari: 'lab', ke: 'lab_panggil', label: 'Hasil divalidasi' },
+            { dari: 'lab_panggil', ke: 'dec_lanjut', label: 'Hasil ditinjau' },
+            { dari: 'dec_lab', ke: 'dec_lanjut', label: 'Tidak' },
             { dari: 'dec_lanjut', ke: 'ranap_admisi', label: 'Opname', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'rujukan', label: 'Rujuk', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'farmasi', label: 'Resep', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'kasir', label: 'Langsung', jenis: 'opsional' },
-            { dari: 'ranap_admisi', ke: 'ranap_cppt', label: 'CPPT', jenis: 'samping' },
-            { dari: 'ranap_cppt', ke: 'kasir', label: 'Pemulangan' },
+            { dari: 'ranap_admisi', ke: 'dec_bed', label: '' },
+            { dari: 'dec_bed', ke: 'ranap_bed', label: 'Ya' },
+            { dari: 'dec_bed', ke: 'ranap_tunggu', label: 'Belum' },
+            { dari: 'ranap_tunggu', ke: 'ranap_bed', label: 'Tempatkan' },
+            { dari: 'ranap_bed', ke: 'ranap_cppt', label: '' },
+            { dari: 'ranap_bed', ke: 'ranap_pindah', label: 'Pindah', jenis: 'samping' },
+            { dari: 'ranap_pindah', ke: 'ranap_bed', label: 'Kembali', jenis: 'kembali' },
+            { dari: 'ranap_cppt', ke: 'lab_ranap', label: 'Perlu lab', jenis: 'samping' },
+            { dari: 'lab_ranap', ke: 'ranap_cppt', label: 'Hasil ke DPJP', jenis: 'kembali' },
+            { dari: 'ranap_cppt', ke: 'dec_pulang', label: '' },
+            { dari: 'dec_pulang', ke: 'ranap_cppt', label: 'Belum', jenis: 'kembali' },
+            { dari: 'dec_pulang', ke: 'ranap_pulang', label: 'Ya' },
+            { dari: 'ranap_pulang', ke: 'kasir', label: 'Ke kasir' },
             { dari: 'lab_saja', ke: 'kasir', label: 'Selesai Lab', jenis: 'opsional' },
             { dari: 'farmasi', ke: 'kasir', label: '' },
             { dari: 'rujukan', ke: 'kasir', label: '' },
@@ -1333,7 +1590,7 @@ export function TabArsitektur() {
 
         const info = document.createElement('p');
         info.textContent = 'Diagram alur layanan standar flowchart (Oval: Mulai/Selesai, Belah Ketupat: Keputusan, Persegi: Proses, Silinder: Sistem Eksternal). Klik bentuk apa saja untuk melihat detail.';
-        Object.assign(info.style, { margin: `0 0 ${token.jarak.md}`, color: token.warna.teksRedup, fontSize: token.huruf.ukuran.dasar });
+        Object.assign(info.style, { margin: '0', color: token.warna.teksRedup, fontSize: token.huruf.ukuran.dasar, flex: '1 1 360px' });
 
         const layout = document.createElement('div');
         Object.assign(layout.style, {
@@ -1355,8 +1612,59 @@ export function TabArsitektur() {
             },
         });
 
+        // Pembungkus berukuran sesuai skala agar area gulir ikut membesar/mengecil; stage diskalakan dengan transform
+        const pembungkus = document.createElement('div');
+        Object.assign(pembungkus.style, { position: 'relative', margin: '12px auto' });
         const stage = document.createElement('div');
-        Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px auto' });
+        Object.assign(stage.style, { position: 'absolute', left: '0', top: '0', width: `${lebarStage}px`, height: `${tinggiStage}px`, transformOrigin: '0 0' });
+        pembungkus.append(stage);
+
+        const lblZoomAlur = document.createElement('small');
+        Object.assign(lblZoomAlur.style, { minWidth: '44px', textAlign: 'center', color: token.warna.teksRedup });
+        const pasangSkala = (baru, ax, ay) => {
+            const skalaLama = skalaAlur ?? 1;
+            const s2 = Math.max(SKALA_ALUR_MIN, Math.min(SKALA_ALUR_MAKS, +baru.toFixed(3)));
+            // Titik konten di bawah jangkar (kursor atau tengah tampilan) tetap di tempat setelah zoom
+            const jx = ax ?? kanvasAlur.clientWidth / 2;
+            const jy = ay ?? kanvasAlur.clientHeight / 2;
+            const kx = (kanvasAlur.scrollLeft + jx - pembungkus.offsetLeft) / skalaLama;
+            const ky = (kanvasAlur.scrollTop + jy - pembungkus.offsetTop) / skalaLama;
+            skalaAlur = s2;
+            stage.style.transform = `scale(${s2})`;
+            pembungkus.style.width = `${Math.round(lebarStage * s2)}px`;
+            pembungkus.style.height = `${Math.round(tinggiStage * s2)}px`;
+            lblZoomAlur.textContent = `${Math.round(s2 * 100)}%`;
+            kanvasAlur.scrollLeft = kx * s2 + pembungkus.offsetLeft - jx;
+            kanvasAlur.scrollTop = ky * s2 + pembungkus.offsetTop - jy;
+        };
+        const sesuaikanAlur = () => {
+            const lebarTersedia = (kanvasAlur.clientWidth || 900) - 24;
+            pasangSkala(Math.min(1, lebarTersedia / lebarStage), 0, 0);
+            kanvasAlur.scrollTop = 0;
+        };
+        const barZoom = document.createElement('div');
+        Object.assign(barZoom.style, { display: 'inline-flex', gap: '4px', alignItems: 'center' });
+        barZoom.append(
+            tombol('-', () => pasangSkala((skalaAlur ?? 1) / 1.2), 'sekunder'),
+            lblZoomAlur,
+            tombol('+', () => pasangSkala((skalaAlur ?? 1) * 1.2), 'sekunder'),
+            tombol('Sesuaikan', sesuaikanAlur, 'sekunder'),
+            tombol('100%', () => pasangSkala(1), 'sekunder'),
+        );
+        const kepalaAlur = document.createElement('div');
+        Object.assign(kepalaAlur.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'center', justifyContent: 'space-between', marginBottom: token.jarak.md });
+        kepalaAlur.append(info, barZoom);
+
+        // Ctrl/⌘ + scroll = zoom di posisi kursor; scroll biasa tetap menggulir
+        kanvasAlur.addEventListener('wheel', (e) => {
+            if (!e.ctrlKey && !e.metaKey) return;
+            e.preventDefault();
+            const rect = kanvasAlur.getBoundingClientRect();
+            pasangSkala((skalaAlur ?? 1) * (e.deltaY < 0 ? 1.1 : 1 / 1.1), e.clientX - rect.left, e.clientY - rect.top);
+        }, { passive: false });
+        kanvasAlur.addEventListener('scroll', () => {
+            gulirAlur = { left: kanvasAlur.scrollLeft, top: kanvasAlur.scrollTop };
+        });
 
         // SVG panah antar bentuk flowchart menggunakan router koridor A* + jalur lurus/1-belokan
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1557,7 +1865,7 @@ export function TabArsitektur() {
             stage.append(card);
         }
 
-        kanvasAlur.append(stage);
+        kanvasAlur.append(pembungkus);
 
         // Panel kanan: detail bentuk yang dipilih
         const aktifNode = petaNode.get(tahapTerpilih) || nodeAlur[0];
@@ -1601,7 +1909,24 @@ export function TabArsitektur() {
 
         insp.append(hD, lencana(domAktif?.label || aktifNode.domain, domAktif?.warna || 'biru'), deskD, lblT, chips, lblE, eps);
         layout.append(kanvasAlur, insp);
-        isi.replaceChildren(info, layout);
+        isi.replaceChildren(kepalaAlur, layout);
+
+        // Terapkan skala setelah kanvas terpasang (butuh ukuran nyata); pertama kali: sesuaikan ke lebar kanvas
+        const gulirSimpan = gulirAlur;
+        if (skalaAlur === null) {
+            sesuaikanAlur();
+        } else {
+            const s2 = skalaAlur;
+            skalaAlur = s2;
+            stage.style.transform = `scale(${s2})`;
+            pembungkus.style.width = `${Math.round(lebarStage * s2)}px`;
+            pembungkus.style.height = `${Math.round(tinggiStage * s2)}px`;
+            lblZoomAlur.textContent = `${Math.round(s2 * 100)}%`;
+            if (gulirSimpan) {
+                kanvasAlur.scrollLeft = gulirSimpan.left;
+                kanvasAlur.scrollTop = gulirSimpan.top;
+            }
+        }
     }
 
     function lukisErd() {
@@ -1629,7 +1954,9 @@ export function TabArsitektur() {
         const jumlahAuditTersembunyi = tabelTerpilih ? 0 : relasiTampil.filter((r) => KOLOM_AUDIT.test(r.dari_kolom)).length;
         if (!tabelTerpilih) relasiTampil = relasiTampil.filter((r) => !KOLOM_AUDIT.test(r.dari_kolom));
 
-        const peta = hitungTataLetakPeta(tabelTampil, relasiTampil, tabelTerpilih);
+        // Tabel terpilih: pola bagan organisasi (induk di atas, anak di grid bawah); semua tabel: peta grid ikhtisar
+        const berlapis = !!tabelTerpilih;
+        const peta = berlapis ? tataLetakErdTerpilih(tabelTampil, relasiTampil, tabelTerpilih) : hitungTataLetakPeta(tabelTampil, relasiTampil, tabelTerpilih);
 
         // Baris kontrol cari, zoom & fit
         const bar = document.createElement('div');
@@ -1679,8 +2006,9 @@ export function TabArsitektur() {
             top: '0',
             width: `${peta.lebarKanvas}px`,
             height: `${peta.tinggiKanvas}px`,
+            // Tanpa will-change: browser menggambar ulang teks & garis pada skala baru (tajam saat zoom),
+            // bukan memperbesar bitmap hasil render skala awal (buram)
             transformOrigin: '0 0',
-            willChange: 'transform',
         });
 
         const terhubungSet = new Set();
@@ -1729,7 +2057,7 @@ export function TabArsitektur() {
             return Math.min(pos.y + pos.h - 9, pos.y + 42 + idx * 17);
         };
 
-        const ruteGaris = buatRouterGarisErd(peta.posisiTabel, peta.lebarKanvas, peta.tinggiKanvas);
+        const ruteGaris = berlapis ? null : buatRouterGarisErd(peta.posisiTabel, peta.lebarKanvas, peta.tinggiKanvas);
 
         for (const r of relasiTampil) {
             const a = peta.posisiTabel.get(r.dari_tabel);
@@ -1745,6 +2073,10 @@ export function TabArsitektur() {
                 const y2 = yKolom(a, r.ke_kolom);
                 const lx = a.x + a.w;
                 dPath = `M ${lx} ${y1} C ${lx + 42} ${y1}, ${lx + 42} ${y2}, ${lx} ${y2}`;
+            } else if (berlapis) {
+                const titik = peta.rute.get(r);
+                if (!titik) continue;
+                dPath = jalurSudutBulat(titik, 8);
             } else {
                 const samaKolom = Math.abs(a.x - b.x) < 10;
                 const sisiA = samaKolom ? 'R' : (b.x > a.x ? 'R' : 'L');

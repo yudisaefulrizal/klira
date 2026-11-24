@@ -30,9 +30,10 @@ export class RepositoriPenunjangMysql {
     async kunjungan(id) {
         return db.cariKunjunganUntukKunjungan5(id);
     }
+    /** DPJP utama yang sedang menjabat (tipe ATND, periode belum ditutup): setelah ganti DPJP rawat inap, notifikasi ke DPJP baru. */
     async dpjpKunjungan(kunjunganId) {
-        const peserta = await db.daftarPesertaKunjunganUntukRiwayatPasien([kunjunganId]);
-        return peserta[0]?.pengguna_id ?? null;
+        const aktif = await db.daftarPesertaKunjunganUntukDetail(kunjunganId, null);
+        return aktif.find((p) => p.tipe === 'ATND')?.pengguna_id ?? null;
     }
     async bagianDisahkan(kunjunganId) {
         const p = await db.daftarPengesahanCatatanUntukBagianDisahkan(kunjunganId, [...BAGIAN_KLINIS]);
