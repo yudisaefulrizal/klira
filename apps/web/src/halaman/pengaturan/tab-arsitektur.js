@@ -39,7 +39,7 @@ function gayaInput(el) {
  * - Rasio aspek lanskap (16:10) agar peta memanfaatkan lebar layar secara optimal.
  * - Resolusi tabrakan AABB ternormalisasi agar 0% kartu saling menutupi.
  */
-function hitungTataLetakPeta(tabelList, relasiList) {
+function hitungTataLetakPeta(tabelList, relasiList, akarUtama = null) {
     const posisiTabel = new Map();
     if (!tabelList.length) {
         return { zona: [], posisiTabel, lebarKanvas: 960, tinggiKanvas: 560 };
@@ -78,6 +78,10 @@ function hitungTataLetakPeta(tabelList, relasiList) {
 
     // Urutkan BFS dari hub terbesar agar tabel bertetangga langsung berada dekat sejak posisi awal
     const urutDerajat = aktifList.slice().sort((a, b) => {
+        if (akarUtama) {
+            if (a.nama === akarUtama) return -1;
+            if (b.nama === akarUtama) return 1;
+        }
         const dB = derajat.get(b.nama) ?? 0;
         const dA = derajat.get(a.nama) ?? 0;
         if (dB !== dA) return dB - dA;
@@ -640,7 +644,7 @@ export function TabArsitektur() {
             relasiTampil = relasiTampil.filter((r) => r.dari_tabel === tabelTerpilih || r.ke_tabel === tabelTerpilih);
         }
 
-        const peta = hitungTataLetakPeta(tabelTampil, relasiTampil, data.domain);
+        const peta = hitungTataLetakPeta(tabelTampil, relasiTampil, tabelTerpilih);
 
         // Baris kontrol cari, zoom & fit
         const bar = document.createElement('div');
