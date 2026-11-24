@@ -3,7 +3,7 @@ import { kabarkanNotifikasi } from '../../notifikasi/domain/kanal.js';
 import { ANTREAN_LAB, REGISTRASI, TAHAP_LAYANAN, bolehAksiAntrean, bolehPindahTahap, kodeAntrean, tanggalWib, TRANSISI_ANTREAN } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { AntreanDitutupError, KunjunganBerjalanError } from '../data-access/repositori.js';
-const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
+import { kosongJadiNull } from '../../../umum/nilai.js';
 /** `antreanBpjs` (opsional): mengabarkan antrean pasien JKN ke BPJS setelah daftar, panggil, dan batal; tidak pernah menggagalkan tindakan. */
 export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antreanBpjs, sekarang = () => new Date() }) {
     return {
@@ -195,7 +195,7 @@ export function buatLayananKunjungan({ repo, audit, orderLab, sinkronIhs, antrea
         /** Menutup sesi antrean aktif; ditolak jika masih ada pasien yang belum selesai atau dibatalkan. */
         async tutupAntrean(p, alamat) {
             const waktu = sekarang();
-            const h = await repo.tutupSesiAntrean(waktu);
+            const h = await repo.tutupSesiAntrean(p.id, waktu);
             if (h.galat === 'sudah_tutup')
                 return gagal('konflik', 'Antrean sudah dalam keadaan ditutup.');
             if (h.galat === 'belum_selesai') {

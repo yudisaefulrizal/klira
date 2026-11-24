@@ -1,17 +1,15 @@
 import { Router } from 'express';
-import { aksiAntrean, filterAntrean, idParam, kunjunganMasukan, ubahDpjpMasukan, ubahTahapMasukan, GALAT } from '@klira/shared';
+import { aksiAntrean, filterAntrean, idParam, kunjunganMasukan, ubahDpjpMasukan, ubahTahapMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /** Rute kunjungan dan antrean: input = pendaftaran, perbaikan = ubah tahap dan status antrean, lihat = daftar antrean (fitur `kunjungan`). */
 export function buatRuteKunjungan(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     rute.get('/kunjungan/opsi', masuk, wajibIzin('kunjungan', 'input'), bungkus(async (_req, res) => {
         res.json({ data: await layanan.opsi(pengguna(res)) });
     }));

@@ -2,7 +2,7 @@ import * as db from '@klira/db';
 import { selesaiAntreanDalam } from '../domain/antrean-otomatis.js';
 import { ANTREAN_LAB, TAHAP_BERJALAN, formatIdLayanan, kodeAntrean, tanggalWib } from '@klira/shared';
 import { namaPanggil, pilihRuangPanggil } from './ruang-panggil.js';
-const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);
+import { tglDb } from '../../../umum/nilai.js';
 const MAKS_ULANG_NOMOR = 5;
 /** Pasien sudah punya kunjungan berjalan (terdeteksi di dalam transaksi, aman dari pendaftaran serempak). */
 export class KunjunganBerjalanError extends Error {
@@ -260,7 +260,7 @@ export class RepositoriKunjunganMysql {
     async tandaiSementaraJknDipindahkan(id, kunjunganId, waktu) {
         return db.tandaiAntreanSementaraJknDipindahkan(id, kunjunganId, waktu);
     }
-    async tutupSesiAntrean(waktu) {
+    async tutupSesiAntrean(oleh, waktu) {
         return db.transaksi(async (tx) => {
             await db.kunciFasyankes(1, tx);
             const aktif = await db.ambilSesiAntreanAktif(tx);

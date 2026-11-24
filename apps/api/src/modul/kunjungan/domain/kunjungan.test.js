@@ -153,8 +153,10 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         });
         expect(await ditolak.tutupAntrean(saya)).toMatchObject({ ok: false, kode: 'konflik', pesan: expect.stringContaining('A-001 Budi') });
 
-        const diterima = buat({ tutupSesiAntrean: async () => ({ ok: true, sesi_id: 7 }) });
+        const tutupSesiAntrean = jest.fn(async () => ({ ok: true, sesi_id: 7 }));
+        const diterima = buat({ tutupSesiAntrean });
         expect(await diterima.tutupAntrean(saya)).toMatchObject({ ok: true, data: { status: 'tutup' } });
+        expect(tutupSesiAntrean).toHaveBeenCalledWith(saya.id, expect.any(Date));
     });
     it('bukaAntrean membuka sesi baru dan memindahkan antrean sementara Mobile JKN ke antrean aktif', async () => {
         const tandaiSementaraJknDipindahkan = jest.fn(async () => ({ count: 1 }));
