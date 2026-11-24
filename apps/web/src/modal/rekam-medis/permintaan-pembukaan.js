@@ -10,11 +10,12 @@ import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalPembukaan, bentukPembukaan, galatPembukaan, langkahBermasalahPembukaan } from './keadaan-dokumen.js';
 import { kolomFleks } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 
 export function bukaPermintaanPembukaan({ onTutup, onSelesai }) {
   const P = REKAM_MEDIS.dok.pembukaan, awal = awalPembukaan(), controls = new Map(); let k = { ...awal }, indeks = 0, dicoba = false, galat = null, proses = false, selesai = false, aktif = true, pasien, modal;
   function tutup() { aktif = false; pasien?.tutup(); modal.tutup(); (selesai ? onSelesai : onTutup)(); }
-  function perbarui() { const g = galatPembukaan(k); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); pasien?.perbarui({ pasienId: k.pasien_id, galat: dicoba ? g.pasien_id : undefined }); modal?.perbarui({ galat: galat ?? '', labelKirim: proses ? P.memproses : P.ajukan, nonaktif: proses }); }
+  function perbarui() { const g = galatPembukaan(k); tampilkanGalat(controls, g, dicoba); pasien?.perbarui({ pasienId: k.pasien_id, galat: dicoba ? g.pasien_id : undefined }); modal?.perbarui({ galat: galat ?? '', labelKirim: proses ? P.memproses : P.ajukan, nonaktif: proses }); }
   function repeindre() { if (modal) modal.ke(indeks, { fokus: false, beritahu: false }); perbarui(); }
   function champ(el, nom, label, jenis = 'text', maxLength, opsi, refresh = false) { const f = bidang({ id: `pb-${nom}`, label, jenis, maxLength, opsi, nilai: k[nom], autoComplete: 'off', ubah(v) { k = { ...k, [nom]: v }; if (refresh) repeindre(); else perbarui(); } }); controls.set(nom, f); f.setGalat(dicoba ? galatPembukaan(k)[nom] : undefined); el.append(f.el); }
   function isi(n) { pasien?.tutup(); pasien = undefined; controls.clear(); const el = document.createElement('div'); kolomFleks(el, 'md');

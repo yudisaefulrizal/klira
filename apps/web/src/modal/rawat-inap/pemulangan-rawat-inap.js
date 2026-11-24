@@ -10,6 +10,7 @@ import { navigasi } from '../../util/navigasi/navigasi.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { awalPulang, bentukPulang, galatPulang } from './keadaan-rawat-inap.js';
 import { kolomFleks } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 
 export function bukaPemulanganRawatInap({ kunjunganId, pasien, onTutup, onSelesai }) {
   const P = RAWAT_INAP.pulang, awal = awalPulang();
@@ -34,7 +35,7 @@ export function bukaPemulanganRawatInap({ kunjunganId, pasien, onTutup, onSelesa
 
   function perbarui() {
     const g = galatPulang(k);
-    for (const [nama, f] of controls) f.setGalat(dicoba ? g[nama] : undefined);
+    tampilkanGalat(controls, g, dicoba);
     simpan.disabled = proses;
     simpan.textContent = proses ? P.menyimpan : P.simpan;
   }

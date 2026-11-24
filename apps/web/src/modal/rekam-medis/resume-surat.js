@@ -11,10 +11,11 @@ import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { DetailKunjungan } from './detail-kunjungan.js';
 import { adaSuratBaru, awalResume, bentukResume, bentukSurat, galatResume, langkahBermasalahResume, resumeSama } from './keadaan-dokumen.js';
 import { kolomFleks } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 export function bukaResumeSurat({ kunjunganId, onTutup, onSelesai }) {
   const R = REKAM_MEDIS.dok.resume, controls = new Map(); let dok = null, awal = awalResume(null), k = awalResume(null), indeks = 0, dicoba = false, galat = null, proses = false, tersimpan = false, aktif = true, hasil = false, detail, modal;
   function tutup() { aktif = false; detail?.tutup(); modal.tutup(); (tersimpan ? onSelesai : onTutup)(); }
-  function perbarui() { const g = galatResume(k, dok); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); modal?.perbarui({ galat: galat ?? '', nonaktif: proses || !dok || !['kasir', 'ditutup'].includes(dok.kunjungan.tahap_layanan), labelKirim: proses ? R.menyimpan : R.simpan }); }
+  function perbarui() { const g = galatResume(k, dok); tampilkanGalat(controls, g, dicoba); modal?.perbarui({ galat: galat ?? '', nonaktif: proses || !dok || !['kasir', 'ditutup'].includes(dok.kunjungan.tahap_layanan), labelKirim: proses ? R.menyimpan : R.simpan }); }
   function petit(teks) { const el = document.createElement('small'); el.textContent = teks; el.style.color = token.warna.teksRedup; return el; }
   function champ(el, nom, label, jenis = 'text', maxLength, opsi) { const f = bidang({ id: `rs-${nom}`, label, jenis, maxLength, opsi, nilai: k[nom], autoComplete: 'off', ubah(v) { k = { ...k, [nom]: v }; perbarui(); } }); controls.set(nom, f); f.setGalat(dicoba ? galatResume(k, dok)[nom] : undefined); el.append(f.el); }
   function isi(n) { detail?.tutup(); detail = undefined; controls.clear(); const el = document.createElement('div'); kolomFleks(el, 'md');

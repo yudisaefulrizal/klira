@@ -10,13 +10,14 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { alihBerkas, awalKlaim, bentukSiapkan, bentukUbahBerkas, galatKlaim, kurangBerkas, langkahBermasalahKlaim, pilihKandidat } from './keadaan-klaim.js';
 import { kolomFleks } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 
 export function bukaPenyiapanKlaim({ klaim = null, onTutup, onSelesai }) {
   const S = KLAIM.siap, awal = awalKlaim(klaim), ubah = !!klaim;
   let k = { ...awal }, kandidat = ubah ? [] : null, kode = klaim ? { diagnosis: klaim.diagnosis, tindakan: klaim.tindakan } : null, indeks = 0, dicoba = false, galat = null, proses = false, hasil = false, aktif = true, versi = 0, modal;
   const controls = new Map(), teksKode = x => x.length ? x.map(v => `${v.kode} ${v.nama}`).join('; ') : S.kosongKode;
   function tutup() { aktif = false; versi++; modal.tutup(); (hasil ? onSelesai : onTutup)(); }
-  function perbarui() { const g = galatKlaim(k, ubah); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); modal?.perbarui({ galat: galat ?? '', nonaktif: proses || (!ubah && kandidat === null), labelKirim: proses ? S.menyimpan : S.simpan }); }
+  function perbarui() { const g = galatKlaim(k, ubah); tampilkanGalat(controls, g, dicoba); modal?.perbarui({ galat: galat ?? '', nonaktif: proses || (!ubah && kandidat === null), labelKirim: proses ? S.menyimpan : S.simpan }); }
   function repeindre() { if (modal && aktif && !hasil) { modal.ke(indeks, { fokus: false, beritahu: false }); perbarui(); } }
   async function pilih(v) { const saat = ++versi; k = pilihKandidat(k, kandidat?.find(c => String(c.kunjungan_id) === v)); kode = null; repeindre(); if (k.kunjungan_id === null) return; try { const d = await kodeKlaimKunjungan(k.kunjungan_id); if (aktif && saat === versi) { kode = d; repeindre(); } } catch { if (aktif && saat === versi) { kode = null; repeindre(); } } }
   function champ(el, nom, label, jenis = 'text', maxLength, opsi, change) { const f = bidang({ id: `klm-${nom}`, label, jenis, maxLength, opsi, nilai: k[nom] ?? '', autoComplete: 'off', ubah(v) { if (change) change(v); else { k = { ...k, [nom]: v }; perbarui(); } } }); controls.set(nom, f); f.setGalat(dicoba ? galatKlaim(k, ubah)[nom] : undefined); el.append(f.el); }

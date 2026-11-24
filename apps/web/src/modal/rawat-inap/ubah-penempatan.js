@@ -9,6 +9,7 @@ import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { awalPenempatan, bentukPenempatan, galatPenempatan } from './keadaan-rawat-inap.js';
 import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 
 export function bukaUbahPenempatan({ kunjunganId, onTutup, onSelesai }) {
   const P = RAWAT_INAP.penempatan, A = RAWAT_INAP.admisi;
@@ -24,7 +25,7 @@ export function bukaUbahPenempatan({ kunjunganId, onTutup, onSelesai }) {
   const alasan = bidang({ id: 'pn-alasan', label: P.alasan, jenis: 'textarea', maxLength: 300, ubah(v) { k = { ...k, alasan: v }; perbarui(); } });
   function perbarui() {
     const g = galatBidang();
-    for (const [nama, f] of controls) f.setGalat(dicoba ? g[nama] : undefined);
+    tampilkanGalat(controls, g, dicoba);
     alasan.setGalat(dicoba ? g.alasan : undefined);
     alasan.el.hidden = !(aktif() && k.bed_id !== '');
   }

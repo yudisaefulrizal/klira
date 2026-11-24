@@ -6,6 +6,7 @@ import { bidang, kartu, tombol, peringatan } from '../../komponen/ui/primitif.js
 import { token } from '../../gaya/token.js';
 import { BATAS_FORM, formDariPengaturan, bentukKeamanan, galatKeamanan, keamananBerubah } from './keadaan-keamanan.js';
 import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 export function pasangTabKeamanan(wadah) {
   const bolehUbah = izinSaatIni()('akses', 'perbaikan'); let awal = null, form = null, bawaan = false, galat = null, info = null, memproses = false, dicoba = false, aktif = true;
   const el = document.createElement('section'), card = kartu({ susun: 'md' }), judul = document.createElement('div'), ket = document.createElement('span'), pesan = document.createElement('div'), formulir = document.createElement('form'), baris = document.createElement('div');
@@ -23,7 +24,7 @@ export function pasangTabKeamanan(wadah) {
   }
   const simpan = tombol(KEAMANAN.simpan); simpan.type = 'submit'; if (bolehUbah) { const div = document.createElement('div'); div.append(simpan); formulir.append(div); }
   function terapkan(p) { awal = formDariPengaturan(p); form = { ...awal }; bawaan = p.bawaan; for (const [k, f] of controls) f.kontrol.value = form[k]; }
-  function tampil() { pesan.replaceChildren(); if (bawaan) pesan.append(peringatan(KEAMANAN.bawaan, 'biru')); if (galat) pesan.append(peringatan(galat)); if (info) pesan.append(peringatan(info, 'biru')); formulir.style.display = form ? 'flex' : 'none'; const g = form ? galatKeamanan(form) : {}; for (const [k, f] of controls) f.setGalat(dicoba ? g[k] : undefined); simpan.disabled = memproses || !awal || !form || !keamananBerubah(awal, form); simpan.textContent = memproses ? KEAMANAN.menyimpan : KEAMANAN.simpan; }
+  function tampil() { pesan.replaceChildren(); if (bawaan) pesan.append(peringatan(KEAMANAN.bawaan, 'biru')); if (galat) pesan.append(peringatan(galat)); if (info) pesan.append(peringatan(info, 'biru')); formulir.style.display = form ? 'flex' : 'none'; const g = form ? galatKeamanan(form) : {}; tampilkanGalat(controls, g, dicoba); simpan.disabled = memproses || !awal || !form || !keamananBerubah(awal, form); simpan.textContent = memproses ? KEAMANAN.menyimpan : KEAMANAN.simpan; }
   formulir.addEventListener('submit', async e => {
     e.preventDefault(); dicoba = true; tampil(); if (!form || Object.keys(galatKeamanan(form)).length) return; memproses = true; galat = info = null; tampil();
     try { const p = await simpanPengaturanKeamanan(bentukKeamanan(form)); if (!aktif) return; terapkan(p); dicoba = false; info = KEAMANAN.tersimpan; }

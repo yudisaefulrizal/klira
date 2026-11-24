@@ -10,6 +10,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalKunjungan, bentukKunjungan, dokterPoli, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan.js';
 import { KeteranganAsuransi } from './keterangan-asuransi.js';
 import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 /** Pasien yang punya nomor kartu JKN otomatis berstatus pembayaran JKN; pasien tanpa JKN tidak membiarkan sisa pilihan JKN dari pasien sebelumnya. */
 const caraDariJkn = (p, sekarang) => (p?.jkn_nomor_kartu ? { cara_pembayaran: 'jkn' } : sekarang === 'jkn' ? { cara_pembayaran: 'umum' } : {});
 export function bukaPendaftaranKunjungan({ pasien, onTutup, onSelesai }) {
@@ -18,7 +19,7 @@ export function bukaPendaftaranKunjungan({ pasien, onTutup, onSelesai }) {
   function fermer() { actif = false; version++; clearTimeout(timer); assurance?.tutup(); modal.tutup(); }
   const status = document.createElement('div'), form = document.createElement('form'), patient = document.createElement('div'), service = document.createElement('div'), complement = document.createElement('div'); form.noValidate = true; kolomFleks(form, 'md'); barisFleks(service, 'md', { bungkus: true });
   const save = tombol(KUNJUNGAN.daftar, kirim); modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), save);
-  function erreurs() { const g = galatKunjungan(k); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); }
+  function erreurs() { const g = galatKunjungan(k); tampilkanGalat(controls, g, dicoba); }
   function changer(p, repaint = false) { k = ubahKunjungan(k, p, opsi?.dpjp ?? []); if (repaint) afficher(); else erreurs(); }
   function champ(wadah, nom, label, choix, jenis = 'text', refresh = false, maxLength) { const f = bidang({ id: `kunjungan-${nom}`, label, nilai: k[nom], opsi: choix, jenis, maxLength, autoComplete: 'off', ubah(v) { changer({ [nom]: v }, refresh); } }); controls.set(nom, f); wadah.append(f.el); return f; }
   if (pasien) { const h = document.createElement('strong'); h.textContent = pasien.nama; patient.append(KUNJUNGAN.pasien, h, ` · ${pasien.nomor_rm}`); }

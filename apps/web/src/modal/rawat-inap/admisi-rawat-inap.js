@@ -10,6 +10,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalAdmisi, bentukAdmisi, galatAdmisi, isiSpriAsal } from './keadaan-rawat-inap.js';
 import { KeteranganAsuransi } from '../pasien/keterangan-asuransi.js';
 import { kolomFleks } from '../../gaya/tata-letak.js';
+import { tampilkanGalat } from '../../komponen/ui/formulir.js';
 
 export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSelesai }) {
   const A = RAWAT_INAP.admisi;
@@ -44,7 +45,7 @@ export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSele
   function petit(teks) { const el = document.createElement('small'); el.textContent = teks; el.style.color = token.warna.teksRedup; return el; }
   function perbarui() {
     const g = erreurs();
-    for (const [nama, f] of controls) f.setGalat(dicoba ? g[nama] : undefined);
+    tampilkanGalat(controls, g, dicoba);
     simpan.disabled = proses || !opsi;
     simpan.textContent = proses ? A.menyimpan : A.simpan;
   }
