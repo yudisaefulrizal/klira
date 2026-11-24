@@ -559,194 +559,292 @@ export function TabArsitektur() {
     function lukisAlur() {
         const petaTabel = new Map((data.tabel || []).map((t) => [t.nama, t]));
         const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
-        const sumberAlur = data.alur || [];
-        const cariTahap = (urutan) => sumberAlur.find((x) => Number(x.urutan) === urutan) || {};
 
-        const t1 = cariTahap(1);
-        const t2 = cariTahap(2);
-        const t3 = cariTahap(3);
-        const t4 = cariTahap(4);
-        const t5 = cariTahap(5);
-        const t6 = cariTahap(6);
-
-        // Node diagram alur layanan lengkap: pintu masuk (reguler/UGD), cabang poli, penunjang/opname/rujukan, kasir, & integrasi
+        // Flowchart standar ISO (ke bawah, tanpa penomoran): Oval (Mulai/Selesai), Diamond (Keputusan), Persegi (Proses), Silinder (Eksternal)
         const nodeAlur = [
             {
-                id: 'daftar',
-                kode: '1a',
-                judul: t1.judul || 'Pendaftaran & Antrean',
-                domain: t1.domain || 'pasien',
-                ringkas: t1.ringkas || 'Pasien baru/lama didaftarkan ke poli tujuan & sesi antrean.',
-                tabel: t1.tabel_utama || ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'],
-                endpoint: t1.endpoint_kunci || ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'],
-                x: 56,
-                y: 178,
+                id: 'start',
+                bentuk: 'oval',
+                judul: 'Pasien Datang',
+                domain: 'pasien',
+                ringkas: 'Pasien tiba di fasyankes (datang langsung, rujukan, atau via antrean online).',
+                tabel: ['pasien'],
+                endpoint: ['POST /api/pasien'],
+                x: 410,
+                y: 24,
+                w: 180,
+                h: 48,
             },
             {
-                id: 'ugd_masuk',
-                kode: '1b',
+                id: 'dec_darurat',
+                bentuk: 'diamond',
+                judul: 'Kondisi Darurat?',
+                domain: 'klinis',
+                ringkas: 'Penilaian awal apakah pasien mengalami kondisi gawat darurat (Triase Merah/Kuning).',
+                tabel: ['kunjungan', 'ugd_kunjungan'],
+                endpoint: ['POST /api/kunjungan'],
+                x: 400,
+                y: 120,
+                w: 200,
+                h: 84,
+            },
+            {
+                id: 'daftar',
+                bentuk: 'rect',
+                judul: 'Pendaftaran & Antrean',
+                domain: 'pasien',
+                ringkas: 'Pasien baru/lama didaftarkan ke poli tujuan & sesi antrean.',
+                tabel: ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'],
+                endpoint: ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'],
+                x: 120,
+                y: 256,
+                w: 210,
+                h: 86,
+            },
+            {
+                id: 'triase',
+                bentuk: 'rect',
                 judul: 'Triase Gawat Darurat',
                 domain: 'klinis',
-                ringkas: 'Kondisi darurat (Merah/Kuning) langsung masuk UGD tanpa antrean poli.',
+                ringkas: 'Kondisi darurat (Merah/Kuning) langsung ditangani di UGD tanpa antrean poli.',
                 tabel: ['kunjungan', 'ugd_kunjungan'],
                 endpoint: ['POST /api/kunjungan', 'PUT /api/kunjungan/:id/ugd'],
-                x: 56,
-                y: 478,
+                x: 670,
+                y: 256,
+                w: 210,
+                h: 86,
             },
             {
                 id: 'skrining',
-                kode: '2',
-                judul: t2.judul || 'Skrining Perawat',
-                domain: t2.domain || 'klinis',
-                ringkas: t2.ringkas || 'Tanda Vital, Alergi, Keluhan awal, Nyeri, Risiko Jatuh & Gizi.',
-                tabel: t2.tabel_utama || ['pemeriksaan', 'pengesahan_catatan'],
-                endpoint: t2.endpoint_kunci || ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 344,
-                y: 178,
-            },
-            {
-                id: 'poli_umum',
-                kode: '3a',
-                judul: 'Poli Umum & Spesialis',
+                bentuk: 'rect',
+                judul: 'Skrining Perawat',
                 domain: 'klinis',
-                ringkas: 'SOAPIE, Pemeriksaan Fisik, Diagnosis ICD-10, & Tindakan medis.',
-                tabel: ['pemeriksaan', 'diagnosis', 'tindakan'],
-                endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 632,
-                y: 28,
-            },
-            {
-                id: 'poli_gigi',
-                kode: '3b',
-                judul: 'Poli Gigi & Mulut',
-                domain: 'klinis',
-                ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan dental.',
-                tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'],
-                endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'],
-                x: 632,
-                y: 178,
-            },
-            {
-                id: 'poli_kia',
-                kode: '3c',
-                judul: 'Poli KIA, KB & Imunisasi',
-                domain: 'klinis',
-                ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & pencatatan imunisasi.',
-                tabel: ['kia_kunjungan', 'pemeriksaan'],
-                endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'],
-                x: 632,
-                y: 328,
+                ringkas: 'Tanda Vital, Alergi, Keluhan awal, Nyeri, Risiko Jatuh & Gizi.',
+                tabel: ['pemeriksaan', 'pengesahan_catatan'],
+                endpoint: ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'],
+                x: 120,
+                y: 394,
+                w: 210,
+                h: 86,
             },
             {
                 id: 'ugd',
-                kode: '3d',
+                bentuk: 'rect',
                 judul: 'Layanan UGD & Observasi',
                 domain: 'klinis',
                 ringkas: 'Penanganan emergensi, observasi tanda vital berkala, & stabilisasi.',
                 tabel: ['ugd_kunjungan', 'observasi', 'tindakan'],
                 endpoint: ['GET /api/kunjungan/:id/ugd', 'PUT /api/kunjungan/:id/ugd'],
-                x: 632,
-                y: 478,
+                x: 670,
+                y: 394,
+                w: 210,
+                h: 86,
+            },
+            {
+                id: 'dec_poli',
+                bentuk: 'diamond',
+                judul: 'Jenis Poli / Kondisi?',
+                domain: 'klinis',
+                ringkas: 'Menentukan layanan poli tujuan sesuai keluhan dan kebutuhan pasien.',
+                tabel: ['kunjungan', 'lokasi'],
+                endpoint: ['GET /api/kunjungan/:id'],
+                x: 125,
+                y: 532,
+                w: 200,
+                h: 84,
+            },
+            {
+                id: 'poli_umum',
+                bentuk: 'rect',
+                judul: 'Poli Umum & Spesialis',
+                domain: 'klinis',
+                ringkas: 'SOAPIE, Pemeriksaan Fisik, Diagnosis ICD-10, & Tindakan medis.',
+                tabel: ['pemeriksaan', 'diagnosis', 'tindakan'],
+                endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'],
+                x: 28,
+                y: 672,
+                w: 196,
+                h: 84,
+            },
+            {
+                id: 'poli_gigi',
+                bentuk: 'rect',
+                judul: 'Poli Gigi & Mulut',
+                domain: 'klinis',
+                ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan dental.',
+                tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'],
+                endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'],
+                x: 264,
+                y: 672,
+                w: 196,
+                h: 84,
+            },
+            {
+                id: 'poli_kia',
+                bentuk: 'rect',
+                judul: 'Poli KIA, KB & Imunisasi',
+                domain: 'klinis',
+                ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & pencatatan imunisasi.',
+                tabel: ['kia_kunjungan', 'pemeriksaan'],
+                endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'],
+                x: 500,
+                y: 672,
+                w: 196,
+                h: 84,
+            },
+            {
+                id: 'dec_lab',
+                bentuk: 'diamond',
+                judul: 'Perlu Lab / Penunjang?',
+                domain: 'penunjang',
+                ringkas: 'Opsional: jika perlu pemeriksaan lab/radiologi, hasil dikembalikan ke Dokter/Poli.',
+                tabel: ['order_penunjang', 'hasil_penunjang'],
+                endpoint: ['POST /api/kunjungan/:id/penunjang/order'],
+                x: 262,
+                y: 816,
+                w: 200,
+                h: 84,
+            },
+            {
+                id: 'lab',
+                bentuk: 'rect',
+                judul: 'Lab & Penunjang',
+                domain: 'penunjang',
+                ringkas: 'Pengambilan spesimen, analisis hasil, & pengembalian hasil tervalidasi ke dokter.',
+                tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'],
+                endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/:id/hasil'],
+                x: 670,
+                y: 816,
+                w: 210,
+                h: 84,
+            },
+            {
+                id: 'dec_lanjut',
+                bentuk: 'diamond',
+                judul: 'Tindak Lanjut?',
+                domain: 'farmasi',
+                ringkas: 'Menentukan tindak lanjut setelah pemeriksaan: Farmasi, Opname, Rujukan, atau langsung Kasir.',
+                tabel: ['resep', 'rawat_inap', 'tindak_lanjut'],
+                endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/kunjungan/:id/selesai'],
+                x: 262,
+                y: 956,
+                w: 200,
+                h: 84,
             },
             {
                 id: 'farmasi',
-                kode: '4a',
+                bentuk: 'rect',
                 judul: 'Farmasi & Racikan',
                 domain: 'farmasi',
                 ringkas: 'Resep obat, telaah resep, peracikan puyer/racikan, & penyerahan.',
                 tabel: ['resep', 'item_resep', 'stok_obat'],
                 endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/farmasi/telaah'],
-                x: 940,
-                y: 28,
-            },
-            {
-                id: 'penunjang',
-                kode: '4b',
-                judul: 'Lab & Penunjang',
-                domain: 'penunjang',
-                ringkas: 'Order pemeriksaan lab/radiologi, spesimen, hasil & validasi.',
-                tabel: (t4.tabel_utama || []).filter((x) => x.includes('penunjang')).length ? (t4.tabel_utama || []).filter((x) => x.includes('penunjang')) : ['order_penunjang', 'hasil_penunjang'],
-                endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/:id/hasil'],
-                x: 940,
-                y: 178,
-            },
-            {
-                id: 'rujukan',
-                kode: '4c',
-                judul: 'Rujukan & Kontrol',
-                domain: 'pasien',
-                ringkas: 'Kondisi rujuk ke FKTL/RS, rujuk balik, atau jadwal kontrol ulang.',
-                tabel: ['tindak_lanjut', 'kunjungan'],
-                endpoint: ['PUT /api/kunjungan/:id/tindak-lanjut', 'POST /api/kunjungan/:id/selesai'],
-                x: 940,
-                y: 328,
+                x: 28,
+                y: 1098,
+                w: 196,
+                h: 84,
             },
             {
                 id: 'ranap',
-                kode: '4d',
+                bentuk: 'rect',
                 judul: 'Rawat Inap (Opname)',
                 domain: 'penunjang',
                 ringkas: 'Kondisi perlu perawatan lanjutan: alokasi kamar/bed & CPPT harian.',
                 tabel: ['rawat_inap', 'tempat_tidur', 'cppt'],
                 endpoint: ['POST /api/rawat-inap', 'GET /api/rawat-inap/kamar'],
-                x: 940,
-                y: 478,
+                x: 264,
+                y: 1098,
+                w: 196,
+                h: 84,
+            },
+            {
+                id: 'rujukan',
+                bentuk: 'rect',
+                judul: 'Rujukan & Kontrol',
+                domain: 'pasien',
+                ringkas: 'Kondisi rujuk ke FKTL/RS, rujuk balik, atau jadwal kontrol ulang.',
+                tabel: ['tindak_lanjut', 'kunjungan'],
+                endpoint: ['PUT /api/kunjungan/:id/tindak-lanjut', 'POST /api/kunjungan/:id/selesai'],
+                x: 500,
+                y: 1098,
+                w: 196,
+                h: 84,
             },
             {
                 id: 'kasir',
-                kode: '5',
-                judul: t5.judul || 'Kasir, Klaim & Akuntansi',
-                domain: t5.domain || 'keuangan',
-                ringkas: t5.ringkas || 'Tagihan otomatis, shift kasir, klaim JKN, piutang/hutang, & jurnal.',
-                tabel: t5.tabel_utama || ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
-                endpoint: t5.endpoint_kunci || ['POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
-                x: 1248,
-                y: 252,
+                bentuk: 'rect',
+                judul: 'Kasir, Klaim & Akuntansi',
+                domain: 'keuangan',
+                ringkas: 'Tagihan otomatis, shift kasir, klaim JKN, piutang/hutang, & jurnal.',
+                tabel: ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
+                endpoint: ['POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
+                x: 395,
+                y: 1244,
+                w: 210,
+                h: 86,
             },
             {
                 id: 'integrasi',
-                kode: '6',
-                judul: t6.judul || 'SATUSEHAT & BPJS PCare',
-                domain: t6.domain || 'integrasi',
-                ringkas: t6.ringkas || 'Sinkronisasi FHIR (Patient, Encounter, Observation) & Antrean JKN.',
-                tabel: t6.tabel_utama || ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
-                endpoint: t6.endpoint_kunci || ['GET /api/satusehat/status', 'GET /api/pcare/status'],
-                x: 632,
-                y: 632,
+                bentuk: 'cylinder',
+                judul: 'SATUSEHAT & BPJS PCare',
+                domain: 'integrasi',
+                ringkas: 'Sinkronisasi FHIR (Patient, Encounter, Observation) & Antrean JKN.',
+                tabel: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
+                endpoint: ['GET /api/satusehat/status', 'GET /api/pcare/status'],
+                x: 700,
+                y: 1244,
+                w: 210,
+                h: 86,
+            },
+            {
+                id: 'selesai',
+                bentuk: 'oval',
+                judul: 'Pasien Pulang / Selesai',
+                domain: 'keuangan',
+                ringkas: 'Pelayanan selesai dan catatan rekam medis serta tagihan telah tuntas.',
+                tabel: ['kunjungan', 'pembayaran'],
+                endpoint: ['POST /api/kunjungan/:id/selesai'],
+                x: 410,
+                y: 1384,
+                w: 180,
+                h: 48,
             },
         ];
 
-        const sisiL = 208;
-        const sisiT = 104;
         const petaNode = new Map(nodeAlur.map((n) => [n.id, n]));
         const panahAlur = [
-            { dari: 'daftar', ke: 'skrining', label: 'Reguler' },
-            { dari: 'daftar', ke: 'ugd_masuk', label: 'Darurat' },
-            { dari: 'ugd_masuk', ke: 'ugd', label: 'Triase UGD' },
-            { dari: 'skrining', ke: 'poli_umum', label: 'Umum' },
-            { dari: 'skrining', ke: 'poli_gigi', label: 'Gigi' },
-            { dari: 'skrining', ke: 'poli_kia', label: 'KIA / KB' },
-            { dari: 'poli_umum', ke: 'farmasi', label: 'Resep' },
-            { dari: 'poli_gigi', ke: 'farmasi', label: 'Resep' },
-            { dari: 'poli_umum', ke: 'penunjang', label: 'Order Lab' },
-            { dari: 'poli_kia', ke: 'penunjang', label: 'Lab ANC' },
-            { dari: 'poli_umum', ke: 'ranap', label: 'Opname' },
-            { dari: 'ugd', ke: 'ranap', label: 'Opname' },
-            { dari: 'poli_umum', ke: 'rujukan', label: 'Kontrol' },
-            { dari: 'ugd', ke: 'rujukan', label: 'Rujuk RS' },
-            { dari: 'farmasi', ke: 'kasir', label: 'Obat' },
-            { dari: 'penunjang', ke: 'kasir', label: 'Lab' },
-            { dari: 'ranap', ke: 'kasir', label: 'Billing' },
-            { dari: 'rujukan', ke: 'kasir', label: 'Selesai' },
-            { dari: 'daftar', ke: 'integrasi', label: 'Patient / JKN', jenis: 'sinkron' },
-            { dari: 'ugd', ke: 'integrasi', label: 'Encounter FHIR', jenis: 'sinkron' },
-            { dari: 'kasir', ke: 'integrasi', label: 'Klaim PCare', jenis: 'sinkron' },
+            { dari: 'start', ke: 'dec_darurat', label: '' },
+            { dari: 'dec_darurat', ke: 'daftar', label: 'Tidak' },
+            { dari: 'dec_darurat', ke: 'triase', label: 'Ya' },
+            { dari: 'daftar', ke: 'skrining', label: 'Antrean' },
+            { dari: 'triase', ke: 'ugd', label: 'Stabilisasi' },
+            { dari: 'skrining', ke: 'dec_poli', label: '' },
+            { dari: 'dec_poli', ke: 'poli_umum', label: 'Umum' },
+            { dari: 'dec_poli', ke: 'poli_gigi', label: 'Gigi' },
+            { dari: 'dec_poli', ke: 'poli_kia', label: 'KIA / KB' },
+            { dari: 'dec_poli', ke: 'ugd', label: 'Darurat', jenis: 'opsional' },
+            { dari: 'poli_umum', ke: 'dec_lab', label: '' },
+            { dari: 'poli_gigi', ke: 'dec_lab', label: '' },
+            { dari: 'poli_kia', ke: 'dec_lab', label: '' },
+            { dari: 'ugd', ke: 'dec_lab', label: '' },
+            { dari: 'dec_lab', ke: 'lab', label: 'Ya (Order)', jenis: 'opsional' },
+            { dari: 'lab', ke: 'dec_lab', label: 'Hasil kembali', jenis: 'kembali' },
+            { dari: 'dec_lab', ke: 'dec_lanjut', label: 'Tidak / Ada' },
+            { dari: 'dec_lanjut', ke: 'farmasi', label: 'Resep', jenis: 'opsional' },
+            { dari: 'dec_lanjut', ke: 'ranap', label: 'Opname', jenis: 'opsional' },
+            { dari: 'dec_lanjut', ke: 'rujukan', label: 'Rujuk', jenis: 'opsional' },
+            { dari: 'dec_lanjut', ke: 'kasir', label: 'Langsung', jenis: 'opsional' },
+            { dari: 'farmasi', ke: 'kasir', label: '' },
+            { dari: 'ranap', ke: 'kasir', label: '' },
+            { dari: 'rujukan', ke: 'kasir', label: '' },
+            { dari: 'kasir', ke: 'integrasi', label: 'FHIR / PCare', jenis: 'opsional' },
+            { dari: 'kasir', ke: 'selesai', label: '' },
         ];
 
-        if (!tahapTerpilih || !petaNode.has(tahapTerpilih)) tahapTerpilih = 'daftar';
+        if (!tahapTerpilih || !petaNode.has(tahapTerpilih)) tahapTerpilih = 'dec_darurat';
 
         const info = document.createElement('p');
-        info.textContent = 'Klik tahapan pada diagram alur layanan untuk melihat detail proses, endpoint kunci, dan melompat ke tabel terkait di ERD.';
+        info.textContent = 'Diagram alur layanan standar flowchart (Oval: Mulai/Selesai, Belah Ketupat: Keputusan, Persegi: Proses, Silinder: Sistem Eksternal). Klik bentuk apa saja untuk melihat detail.';
         Object.assign(info.style, { margin: `0 0 ${token.jarak.md}`, color: token.warna.teksRedup, fontSize: token.huruf.ukuran.dasar });
 
         const layout = document.createElement('div');
@@ -770,11 +868,11 @@ export function TabArsitektur() {
         });
 
         const stage = document.createElement('div');
-        const lebarStage = 1490;
-        const tinggiStage = 768;
-        Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px' });
+        const lebarStage = 950;
+        const tinggiStage = 1460;
+        Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px auto' });
 
-        // SVG panah antar tahapan layanan menggunakan router koridor A* agar tidak memotong kartu
+        // SVG panah antar bentuk flowchart menggunakan router koridor A*
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', String(lebarStage));
         svg.setAttribute('height', String(tinggiStage));
@@ -798,35 +896,43 @@ export function TabArsitektur() {
         };
         defs.append(
             buatPanah('alur-utama', '#0ea5e9'),
-            buatPanah('alur-sinkron', '#8b5cf6'),
+            buatPanah('alur-kembali', '#10b981'),
             buatPanah('alur-normal', '#64748b'),
         );
         svg.append(defs);
 
-        const petaPosAlur = new Map(nodeAlur.map((n) => [n.id, { x: n.x, y: n.y, w: sisiL, h: sisiT }]));
+        const petaPosAlur = new Map(nodeAlur.map((n) => [n.id, { x: n.x, y: n.y, w: n.w, h: n.h }]));
         const ruteAlur = buatRouterGarisErd(petaPosAlur, lebarStage, tinggiStage);
 
-        // Hitung sisi keluar/masuk & urutkan port agar tidak saling bersilangan di tepi kartu
         const portKeluar = new Map();
         const portMasuk = new Map();
         const daftarPanah = panahAlur.map((e, idx) => {
             const a = petaNode.get(e.dari);
             const b = petaNode.get(e.ke);
-            let sisiA = 'R';
-            let sisiB = 'L';
-            if (e.ke === 'integrasi') {
-                sisiA = e.dari === 'daftar' ? 'L' : 'B';
-                sisiB = e.dari === 'daftar' ? 'L' : e.dari === 'kasir' ? 'R' : 'T';
-            } else if (a.x === b.x) {
-                sisiA = 'B';
+            let sisiA = 'B';
+            let sisiB = 'T';
+            if (e.dari === 'dec_lab' && e.ke === 'lab') {
+                sisiA = 'R';
+                sisiB = 'L';
+            } else if (e.dari === 'lab' && e.ke === 'dec_lab') {
+                sisiA = 'L';
+                sisiB = 'R';
+            } else if (e.dari === 'kasir' && e.ke === 'integrasi') {
+                sisiA = 'R';
+                sisiB = 'L';
+            } else if (e.dari === 'dec_lanjut' && e.ke === 'kasir') {
+                sisiA = 'R';
                 sisiB = 'T';
+            } else if (e.dari === 'dec_poli' && e.ke === 'ugd') {
+                sisiA = 'R';
+                sisiB = 'L';
             }
             const kA = `${e.dari}:${sisiA}`;
             const kB = `${e.ke}:${sisiB}`;
             if (!portKeluar.has(kA)) portKeluar.set(kA, []);
             if (!portMasuk.has(kB)) portMasuk.set(kB, []);
-            portKeluar.get(kA).push({ idx, kunciUrut: sisiA === 'B' ? b.x : b.y });
-            portMasuk.get(kB).push({ idx, kunciUrut: sisiB === 'T' ? a.x : a.y });
+            portKeluar.get(kA).push({ idx, kunciUrut: sisiA === 'B' || sisiA === 'T' ? b.x : b.y });
+            portMasuk.get(kB).push({ idx, kunciUrut: sisiB === 'T' || sisiB === 'B' ? a.x : a.y });
             return { e, a, b, sisiA, sisiB, kA, kB, idx };
         });
 
@@ -835,65 +941,68 @@ export function TabArsitektur() {
 
         const titikPortAlur = (n, sisi, daftar, idx) => {
             const posIdx = Math.max(0, daftar.findIndex((x) => x.idx === idx));
-            const fraksi = daftar.length <= 1 ? 0.5 : 0.22 + (posIdx / (daftar.length - 1)) * 0.56;
-            if (sisi === 'R') return { x: n.x + sisiL, y: n.y + sisiT * fraksi };
-            if (sisi === 'L') return { x: n.x, y: n.y + sisiT * fraksi };
-            if (sisi === 'B') return { x: n.x + sisiL * fraksi, y: n.y + sisiT };
-            return { x: n.x + sisiL * fraksi, y: n.y };
+            const fraksi = daftar.length <= 1 ? 0.5 : 0.25 + (posIdx / (daftar.length - 1)) * 0.5;
+            if (sisi === 'R') return { x: n.x + n.w, y: n.y + n.h * fraksi };
+            if (sisi === 'L') return { x: n.x, y: n.y + n.h * fraksi };
+            if (sisi === 'B') return { x: n.x + n.w * fraksi, y: n.y + n.h };
+            return { x: n.x + n.w * fraksi, y: n.y };
         };
 
         for (const item of daftarPanah) {
             const { e, a, b, sisiA, sisiB, kA, kB, idx } = item;
             if (!a || !b) continue;
             const aktifGaris = e.dari === tahapTerpilih || e.ke === tahapTerpilih;
-            const sinkron = e.jenis === 'sinkron';
+            const opsional = e.jenis === 'opsional';
+            const kembali = e.jenis === 'kembali';
 
             const p1 = titikPortAlur(a, sisiA, portKeluar.get(kA) || [], idx);
             const p2 = titikPortAlur(b, sisiB, portMasuk.get(kB) || [], idx);
             const dPath = ruteAlur(p1, sisiA, p2, sisiB);
 
-            const warna = aktifGaris ? (sinkron ? '#8b5cf6' : '#0ea5e9') : '#64748b';
+            const warna = kembali ? '#10b981' : aktifGaris ? '#0ea5e9' : '#64748b';
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', dPath);
             path.setAttribute('fill', 'none');
             path.setAttribute('stroke', warna);
-            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.5');
-            if (sinkron) path.setAttribute('stroke-dasharray', '6 4');
-            path.setAttribute('opacity', aktifGaris ? '0.98' : '0.75');
-            path.setAttribute('marker-end', `url(#${aktifGaris ? (sinkron ? 'alur-sinkron' : 'alur-utama') : 'alur-normal'})`);
+            path.setAttribute('stroke-width', kembali || aktifGaris ? '2.4' : '1.5');
+            if (opsional) path.setAttribute('stroke-dasharray', '6 4');
+            path.setAttribute('opacity', kembali || aktifGaris ? '0.98' : '0.78');
+            path.setAttribute('marker-end', `url(#${kembali ? 'alur-kembali' : aktifGaris ? 'alur-utama' : 'alur-normal'})`);
             svg.append(path);
 
-            // Tempatkan label di dekat titik awal atau titik akhir koridor agar jelas & tidak bertumpuk
-            const len = path.getTotalLength?.() || 0;
-            const ptLabel = len > 0 ? path.getPointAtLength(len * (sisiA === 'R' ? 0.28 : 0.5)) : { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-            const lx = ptLabel.x;
-            const ly = ptLabel.y - 4;
-            const bgTxt = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            const lebarLbl = Math.max(40, e.label.length * 6.2 + 10);
-            bgTxt.setAttribute('x', String(lx - lebarLbl / 2));
-            bgTxt.setAttribute('y', String(ly - 10));
-            bgTxt.setAttribute('width', String(lebarLbl));
-            bgTxt.setAttribute('height', '14');
-            bgTxt.setAttribute('rx', '4');
-            bgTxt.setAttribute('fill', token.warna.permukaan);
-            bgTxt.setAttribute('opacity', '0.9');
-            const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            txt.setAttribute('x', String(lx));
-            txt.setAttribute('y', String(ly));
-            txt.setAttribute('text-anchor', 'middle');
-            txt.setAttribute('font-size', '10');
-            txt.setAttribute('font-weight', aktifGaris ? '700' : '600');
-            txt.setAttribute('fill', warna);
-            txt.textContent = e.label;
-            svg.append(bgTxt, txt);
+            if (e.label) {
+                const len = path.getTotalLength?.() || 0;
+                const ptLabel = len > 0 ? path.getPointAtLength(len * (kembali ? 0.5 : 0.38)) : { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+                const lx = ptLabel.x;
+                const ly = ptLabel.y - 3;
+                const lebarLbl = Math.max(26, e.label.length * 6.2 + 10);
+                const bgTxt = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bgTxt.setAttribute('x', String(lx - lebarLbl / 2));
+                bgTxt.setAttribute('y', String(ly - 10));
+                bgTxt.setAttribute('width', String(lebarLbl));
+                bgTxt.setAttribute('height', '14');
+                bgTxt.setAttribute('rx', '4');
+                bgTxt.setAttribute('fill', token.warna.permukaan);
+                bgTxt.setAttribute('opacity', '0.92');
+                const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                txt.setAttribute('x', String(lx));
+                txt.setAttribute('y', String(ly));
+                txt.setAttribute('text-anchor', 'middle');
+                txt.setAttribute('font-size', '10');
+                txt.setAttribute('font-weight', aktifGaris || kembali ? '700' : '600');
+                txt.setAttribute('fill', warna);
+                txt.textContent = e.label;
+                svg.append(bgTxt, txt);
+            }
         }
         stage.append(svg);
 
-        // Render kartu node tahapan layanan
+        // Render bentuk standar flowchart (Oval, Belah Ketupat, Persegi Panjang, Silinder)
         for (const n of nodeAlur) {
             const dom = petaDomain.get(n.domain);
             const w = token.warna.status[dom?.warna || 'biru'];
             const dipilih = n.id === tahapTerpilih;
+            const warnaGaris = dipilih ? token.warna.utama : token.warna.garis;
 
             const card = document.createElement('button');
             card.type = 'button';
@@ -902,62 +1011,121 @@ export function TabArsitektur() {
                 zIndex: '2',
                 left: `${n.x}px`,
                 top: `${n.y}px`,
-                width: `${sisiL}px`,
-                height: `${sisiT}px`,
-                textAlign: 'left',
-                padding: '10px 12px',
-                borderRadius: token.radius.sedang,
-                border: `1.5px solid ${dipilih ? token.warna.utama : token.warna.garis}`,
-                borderTop: `4px solid ${w.teks}`,
-                background: token.warna.permukaan,
-                color: token.warna.teks,
+                width: `${n.w}px`,
+                height: `${n.h}px`,
                 cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                gap: '4px',
-                boxShadow: dipilih ? `0 0 0 3px ${token.warna.utamaLatar}` : '0 2px 6px rgba(0,0,0,0.1)',
+                color: token.warna.teks,
+                padding: '0',
+                background: 'transparent',
+                border: 'none',
             });
             card.addEventListener('click', () => {
                 tahapTerpilih = n.id;
                 lukisAlur();
             });
 
-            const atas = document.createElement('div');
-            Object.assign(atas.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' });
-            const jdl = document.createElement('strong');
-            jdl.textContent = `${n.kode}. ${n.judul}`;
-            jdl.style.fontSize = '12.5px';
-            atas.append(jdl);
-
-            const ringkas = document.createElement('div');
-            ringkas.textContent = n.ringkas;
-            Object.assign(ringkas.style, {
-                fontSize: '11px',
-                color: token.warna.teksRedup,
-                lineHeight: '1.35',
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: '2',
-                WebkitBoxOrient: 'vertical',
-            });
-
-            const kaki = document.createElement('div');
-            Object.assign(kaki.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: w.teks, fontWeight: token.huruf.berat.tebal });
-            kaki.textContent = `${dom?.label || n.domain} · ${n.tabel.length} tabel`;
-
-            card.append(atas, ringkas, kaki);
+            if (n.bentuk === 'oval') {
+                Object.assign(card.style, {
+                    borderRadius: '999px',
+                    background: w.latar,
+                    border: `2px solid ${dipilih ? token.warna.utama : w.teks}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: token.huruf.berat.tebal,
+                    fontSize: '12.5px',
+                    boxShadow: dipilih ? `0 0 0 3px ${token.warna.utamaLatar}` : '0 2px 6px rgba(0,0,0,0.08)',
+                });
+                card.textContent = n.judul;
+            } else if (n.bentuk === 'diamond') {
+                const dSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                dSvg.setAttribute('viewBox', `0 0 ${n.w} ${n.h}`);
+                Object.assign(dSvg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', pointerEvents: 'none' });
+                const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                poly.setAttribute('points', `${n.w / 2},2 ${n.w - 2},${n.h / 2} ${n.w / 2},${n.h - 2} 2,${n.h / 2}`);
+                poly.setAttribute('fill', token.warna.permukaan);
+                poly.setAttribute('stroke', dipilih ? token.warna.utama : w.teks);
+                poly.setAttribute('stroke-width', dipilih ? '2.5' : '1.8');
+                dSvg.append(poly);
+                const lbl = document.createElement('span');
+                lbl.textContent = n.judul;
+                Object.assign(lbl.style, {
+                    position: 'relative', zIndex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '100%', height: '100%', padding: '0 28px', textAlign: 'center',
+                    fontSize: '11.5px', fontWeight: token.huruf.berat.tebal, lineHeight: '1.25',
+                });
+                card.append(dSvg, lbl);
+            } else if (n.bentuk === 'cylinder') {
+                const cSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                cSvg.setAttribute('viewBox', `0 0 ${n.w} ${n.h}`);
+                Object.assign(cSvg.style, { position: 'absolute', inset: '0', width: '100%', height: '100%', pointerEvents: 'none' });
+                const ry = 10;
+                const pathBody = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pathBody.setAttribute('d', `M 2 ${ry + 2} A ${n.w / 2 - 2} ${ry} 0 0 1 ${n.w - 2} ${ry + 2} L ${n.w - 2} ${n.h - ry - 2} A ${n.w / 2 - 2} ${ry} 0 0 1 2 ${n.h - ry - 2} Z`);
+                pathBody.setAttribute('fill', token.warna.permukaan);
+                pathBody.setAttribute('stroke', dipilih ? token.warna.utama : w.teks);
+                pathBody.setAttribute('stroke-width', dipilih ? '2.5' : '1.8');
+                const ellTop = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+                ellTop.setAttribute('cx', String(n.w / 2));
+                ellTop.setAttribute('cy', String(ry + 2));
+                ellTop.setAttribute('rx', String(n.w / 2 - 2));
+                ellTop.setAttribute('ry', String(ry));
+                ellTop.setAttribute('fill', w.latar);
+                ellTop.setAttribute('stroke', dipilih ? token.warna.utama : w.teks);
+                ellTop.setAttribute('stroke-width', '1.5');
+                cSvg.append(pathBody, ellTop);
+                const lblWrap = document.createElement('div');
+                Object.assign(lblWrap.style, {
+                    position: 'relative', zIndex: '1', padding: '22px 12px 10px', textAlign: 'center',
+                    display: 'flex', flexDirection: 'column', gap: '3px',
+                });
+                const jdl = document.createElement('strong');
+                jdl.textContent = n.judul;
+                jdl.style.fontSize = '12px';
+                const sub = document.createElement('small');
+                sub.textContent = `${n.tabel.length} tabel integrasi`;
+                sub.style.color = w.teks;
+                lblWrap.append(jdl, sub);
+                card.append(cSvg, lblWrap);
+            } else {
+                Object.assign(card.style, {
+                    textAlign: 'left',
+                    padding: '9px 11px',
+                    borderRadius: token.radius.sedang,
+                    border: `1.5px solid ${warnaGaris}`,
+                    borderTop: `4px solid ${w.teks}`,
+                    background: token.warna.permukaan,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '3px',
+                    boxShadow: dipilih ? `0 0 0 3px ${token.warna.utamaLatar}` : '0 2px 6px rgba(0,0,0,0.08)',
+                });
+                const jdl = document.createElement('strong');
+                jdl.textContent = n.judul;
+                jdl.style.fontSize = '12px';
+                const ringkas = document.createElement('div');
+                ringkas.textContent = n.ringkas;
+                Object.assign(ringkas.style, {
+                    fontSize: '10.5px', color: token.warna.teksRedup, lineHeight: '1.3',
+                    overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical',
+                });
+                const kaki = document.createElement('div');
+                Object.assign(kaki.style, { fontSize: '10px', color: w.teks, fontWeight: token.huruf.berat.tebal });
+                kaki.textContent = `${dom?.label || n.domain} · ${n.tabel.length} tabel`;
+                card.append(jdl, ringkas, kaki);
+            }
             stage.append(card);
         }
 
         kanvasAlur.append(stage);
 
-        // Panel kanan: detail tahap layanan yang dipilih
+        // Panel kanan: detail bentuk yang dipilih
         const aktifNode = petaNode.get(tahapTerpilih) || nodeAlur[0];
         const domAktif = petaDomain.get(aktifNode.domain);
         const insp = kartu({ susun: 'sm', style: { maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' } });
         const hD = document.createElement('h3');
-        hD.textContent = `${aktifNode.kode}. ${aktifNode.judul}`;
+        hD.textContent = aktifNode.judul;
         hD.style.margin = '0';
         const deskD = document.createElement('p');
         deskD.textContent = aktifNode.ringkas;
