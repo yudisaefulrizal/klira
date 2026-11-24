@@ -579,8 +579,8 @@ export function TabArsitektur() {
                 ringkas: t1.ringkas || 'Pasien baru/lama didaftarkan ke poli tujuan & sesi antrean.',
                 tabel: t1.tabel_utama || ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'],
                 endpoint: t1.endpoint_kunci || ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'],
-                x: 24,
-                y: 146,
+                x: 56,
+                y: 178,
             },
             {
                 id: 'ugd_masuk',
@@ -590,8 +590,8 @@ export function TabArsitektur() {
                 ringkas: 'Kondisi darurat (Merah/Kuning) langsung masuk UGD tanpa antrean poli.',
                 tabel: ['kunjungan', 'ugd_kunjungan'],
                 endpoint: ['POST /api/kunjungan', 'PUT /api/kunjungan/:id/ugd'],
-                x: 24,
-                y: 398,
+                x: 56,
+                y: 478,
             },
             {
                 id: 'skrining',
@@ -601,8 +601,8 @@ export function TabArsitektur() {
                 ringkas: t2.ringkas || 'Tanda Vital, Alergi, Keluhan awal, Nyeri, Risiko Jatuh & Gizi.',
                 tabel: t2.tabel_utama || ['pemeriksaan', 'pengesahan_catatan'],
                 endpoint: t2.endpoint_kunci || ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 274,
-                y: 146,
+                x: 344,
+                y: 178,
             },
             {
                 id: 'poli_umum',
@@ -612,8 +612,8 @@ export function TabArsitektur() {
                 ringkas: 'SOAPIE, Pemeriksaan Fisik, Diagnosis ICD-10, & Tindakan medis.',
                 tabel: ['pemeriksaan', 'diagnosis', 'tindakan'],
                 endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 524,
-                y: 20,
+                x: 632,
+                y: 28,
             },
             {
                 id: 'poli_gigi',
@@ -623,8 +623,8 @@ export function TabArsitektur() {
                 ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan dental.',
                 tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'],
                 endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'],
-                x: 524,
-                y: 146,
+                x: 632,
+                y: 178,
             },
             {
                 id: 'poli_kia',
@@ -634,8 +634,8 @@ export function TabArsitektur() {
                 ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & pencatatan imunisasi.',
                 tabel: ['kia_kunjungan', 'pemeriksaan'],
                 endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'],
-                x: 524,
-                y: 272,
+                x: 632,
+                y: 328,
             },
             {
                 id: 'ugd',
@@ -645,8 +645,8 @@ export function TabArsitektur() {
                 ringkas: 'Penanganan emergensi, observasi tanda vital berkala, & stabilisasi.',
                 tabel: ['ugd_kunjungan', 'observasi', 'tindakan'],
                 endpoint: ['GET /api/kunjungan/:id/ugd', 'PUT /api/kunjungan/:id/ugd'],
-                x: 524,
-                y: 398,
+                x: 632,
+                y: 478,
             },
             {
                 id: 'farmasi',
@@ -656,8 +656,8 @@ export function TabArsitektur() {
                 ringkas: 'Resep obat, telaah resep, peracikan puyer/racikan, & penyerahan.',
                 tabel: ['resep', 'item_resep', 'stok_obat'],
                 endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/farmasi/telaah'],
-                x: 792,
-                y: 20,
+                x: 940,
+                y: 28,
             },
             {
                 id: 'penunjang',
@@ -667,30 +667,30 @@ export function TabArsitektur() {
                 ringkas: 'Order pemeriksaan lab/radiologi, spesimen, hasil & validasi.',
                 tabel: (t4.tabel_utama || []).filter((x) => x.includes('penunjang')).length ? (t4.tabel_utama || []).filter((x) => x.includes('penunjang')) : ['order_penunjang', 'hasil_penunjang'],
                 endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/:id/hasil'],
-                x: 792,
-                y: 146,
-            },
-            {
-                id: 'ranap',
-                kode: '4c',
-                judul: 'Rawat Inap (Opname)',
-                domain: 'penunjang',
-                ringkas: 'Kondisi perlu perawatan lanjutan: alokasi kamar/bed & CPPT harian.',
-                tabel: ['rawat_inap', 'tempat_tidur', 'cppt'],
-                endpoint: ['POST /api/rawat-inap', 'GET /api/rawat-inap/kamar'],
-                x: 792,
-                y: 272,
+                x: 940,
+                y: 178,
             },
             {
                 id: 'rujukan',
-                kode: '4d',
+                kode: '4c',
                 judul: 'Rujukan & Kontrol',
                 domain: 'pasien',
                 ringkas: 'Kondisi rujuk ke FKTL/RS, rujuk balik, atau jadwal kontrol ulang.',
                 tabel: ['tindak_lanjut', 'kunjungan'],
                 endpoint: ['PUT /api/kunjungan/:id/tindak-lanjut', 'POST /api/kunjungan/:id/selesai'],
-                x: 792,
-                y: 398,
+                x: 940,
+                y: 328,
+            },
+            {
+                id: 'ranap',
+                kode: '4d',
+                judul: 'Rawat Inap (Opname)',
+                domain: 'penunjang',
+                ringkas: 'Kondisi perlu perawatan lanjutan: alokasi kamar/bed & CPPT harian.',
+                tabel: ['rawat_inap', 'tempat_tidur', 'cppt'],
+                endpoint: ['POST /api/rawat-inap', 'GET /api/rawat-inap/kamar'],
+                x: 940,
+                y: 478,
             },
             {
                 id: 'kasir',
@@ -700,8 +700,8 @@ export function TabArsitektur() {
                 ringkas: t5.ringkas || 'Tagihan otomatis, shift kasir, klaim JKN, piutang/hutang, & jurnal.',
                 tabel: t5.tabel_utama || ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
                 endpoint: t5.endpoint_kunci || ['POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
-                x: 1060,
-                y: 208,
+                x: 1248,
+                y: 252,
             },
             {
                 id: 'integrasi',
@@ -711,8 +711,8 @@ export function TabArsitektur() {
                 ringkas: t6.ringkas || 'Sinkronisasi FHIR (Patient, Encounter, Observation) & Antrean JKN.',
                 tabel: t6.tabel_utama || ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
                 endpoint: t6.endpoint_kunci || ['GET /api/satusehat/status', 'GET /api/pcare/status'],
-                x: 524,
-                y: 552,
+                x: 632,
+                y: 632,
             },
         ];
 
@@ -770,11 +770,11 @@ export function TabArsitektur() {
         });
 
         const stage = document.createElement('div');
-        const lebarStage = 1310;
-        const tinggiStage = 684;
+        const lebarStage = 1490;
+        const tinggiStage = 768;
         Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px' });
 
-        // SVG panah antar tahapan layanan
+        // SVG panah antar tahapan layanan menggunakan router koridor A* agar tidak memotong kartu
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', String(lebarStage));
         svg.setAttribute('height', String(tinggiStage));
@@ -803,56 +803,89 @@ export function TabArsitektur() {
         );
         svg.append(defs);
 
-        for (const e of panahAlur) {
+        const petaPosAlur = new Map(nodeAlur.map((n) => [n.id, { x: n.x, y: n.y, w: sisiL, h: sisiT }]));
+        const ruteAlur = buatRouterGarisErd(petaPosAlur, lebarStage, tinggiStage);
+
+        // Hitung sisi keluar/masuk & urutkan port agar tidak saling bersilangan di tepi kartu
+        const portKeluar = new Map();
+        const portMasuk = new Map();
+        const daftarPanah = panahAlur.map((e, idx) => {
             const a = petaNode.get(e.dari);
             const b = petaNode.get(e.ke);
+            let sisiA = 'R';
+            let sisiB = 'L';
+            if (e.ke === 'integrasi') {
+                sisiA = e.dari === 'daftar' ? 'L' : 'B';
+                sisiB = e.dari === 'daftar' ? 'L' : e.dari === 'kasir' ? 'R' : 'T';
+            } else if (a.x === b.x) {
+                sisiA = 'B';
+                sisiB = 'T';
+            }
+            const kA = `${e.dari}:${sisiA}`;
+            const kB = `${e.ke}:${sisiB}`;
+            if (!portKeluar.has(kA)) portKeluar.set(kA, []);
+            if (!portMasuk.has(kB)) portMasuk.set(kB, []);
+            portKeluar.get(kA).push({ idx, kunciUrut: sisiA === 'B' ? b.x : b.y });
+            portMasuk.get(kB).push({ idx, kunciUrut: sisiB === 'T' ? a.x : a.y });
+            return { e, a, b, sisiA, sisiB, kA, kB, idx };
+        });
+
+        for (const arr of portKeluar.values()) arr.sort((u, v) => u.kunciUrut - v.kunciUrut);
+        for (const arr of portMasuk.values()) arr.sort((u, v) => u.kunciUrut - v.kunciUrut);
+
+        const titikPortAlur = (n, sisi, daftar, idx) => {
+            const posIdx = Math.max(0, daftar.findIndex((x) => x.idx === idx));
+            const fraksi = daftar.length <= 1 ? 0.5 : 0.22 + (posIdx / (daftar.length - 1)) * 0.56;
+            if (sisi === 'R') return { x: n.x + sisiL, y: n.y + sisiT * fraksi };
+            if (sisi === 'L') return { x: n.x, y: n.y + sisiT * fraksi };
+            if (sisi === 'B') return { x: n.x + sisiL * fraksi, y: n.y + sisiT };
+            return { x: n.x + sisiL * fraksi, y: n.y };
+        };
+
+        for (const item of daftarPanah) {
+            const { e, a, b, sisiA, sisiB, kA, kB, idx } = item;
             if (!a || !b) continue;
             const aktifGaris = e.dari === tahapTerpilih || e.ke === tahapTerpilih;
             const sinkron = e.jenis === 'sinkron';
 
-            let x1;
-            let y1;
-            let x2;
-            let y2;
-            let dPath;
-            if (b.y > a.y + sisiT) {
-                x1 = a.x + sisiL / 2;
-                y1 = a.y + sisiT;
-                x2 = b.x + (a.x < b.x ? 32 : a.x > b.x ? sisiL - 32 : sisiL / 2);
-                y2 = b.y;
-                const midY = (y1 + y2) / 2;
-                dPath = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
-            } else {
-                x1 = a.x + sisiL;
-                y1 = a.y + sisiT / 2;
-                x2 = b.x;
-                y2 = b.y + sisiT / 2;
-                const dx = Math.max(28, (x2 - x1) * 0.45);
-                dPath = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
-            }
+            const p1 = titikPortAlur(a, sisiA, portKeluar.get(kA) || [], idx);
+            const p2 = titikPortAlur(b, sisiB, portMasuk.get(kB) || [], idx);
+            const dPath = ruteAlur(p1, sisiA, p2, sisiB);
 
             const warna = aktifGaris ? (sinkron ? '#8b5cf6' : '#0ea5e9') : '#64748b';
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', dPath);
             path.setAttribute('fill', 'none');
             path.setAttribute('stroke', warna);
-            path.setAttribute('stroke-width', aktifGaris ? '2.5' : '1.6');
+            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.5');
             if (sinkron) path.setAttribute('stroke-dasharray', '6 4');
-            path.setAttribute('opacity', aktifGaris ? '0.98' : '0.72');
+            path.setAttribute('opacity', aktifGaris ? '0.98' : '0.75');
             path.setAttribute('marker-end', `url(#${aktifGaris ? (sinkron ? 'alur-sinkron' : 'alur-utama') : 'alur-normal'})`);
             svg.append(path);
 
-            const lx = (x1 + x2) / 2;
-            const ly = (y1 + y2) / 2 - 6;
+            // Tempatkan label di dekat titik awal atau titik akhir koridor agar jelas & tidak bertumpuk
+            const len = path.getTotalLength?.() || 0;
+            const ptLabel = len > 0 ? path.getPointAtLength(len * (sisiA === 'R' ? 0.28 : 0.5)) : { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+            const lx = ptLabel.x;
+            const ly = ptLabel.y - 4;
+            const bgTxt = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            const lebarLbl = Math.max(40, e.label.length * 6.2 + 10);
+            bgTxt.setAttribute('x', String(lx - lebarLbl / 2));
+            bgTxt.setAttribute('y', String(ly - 10));
+            bgTxt.setAttribute('width', String(lebarLbl));
+            bgTxt.setAttribute('height', '14');
+            bgTxt.setAttribute('rx', '4');
+            bgTxt.setAttribute('fill', token.warna.permukaan);
+            bgTxt.setAttribute('opacity', '0.9');
             const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             txt.setAttribute('x', String(lx));
             txt.setAttribute('y', String(ly));
             txt.setAttribute('text-anchor', 'middle');
-            txt.setAttribute('font-size', '10.5');
-            txt.setAttribute('font-weight', aktifGaris ? '700' : '500');
+            txt.setAttribute('font-size', '10');
+            txt.setAttribute('font-weight', aktifGaris ? '700' : '600');
             txt.setAttribute('fill', warna);
             txt.textContent = e.label;
-            svg.append(txt);
+            svg.append(bgTxt, txt);
         }
         stage.append(svg);
 
