@@ -375,7 +375,32 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
         return d;
     };
 
+    const bebasHalangan = (x1, y1, x2, y2) => {
+        const minX = Math.min(x1, x2);
+        const maxX = Math.max(x1, x2);
+        const minY = Math.min(y1, y2);
+        const maxY = Math.max(y1, y2);
+        for (const pos of posisiTabel.values()) {
+            const diUjung1 = x1 >= pos.x - 1 && x1 <= pos.x + pos.w + 1 && y1 >= pos.y - 1 && y1 <= pos.y + pos.h + 1;
+            const diUjung2 = x2 >= pos.x - 1 && x2 <= pos.x + pos.w + 1 && y2 >= pos.y - 1 && y2 <= pos.y + pos.h + 1;
+            if (diUjung1 || diUjung2) continue;
+            if (maxX >= pos.x - 4 && minX <= pos.x + pos.w + 4 && maxY >= pos.y - 4 && minY <= pos.y + pos.h + 4) {
+                return false;
+            }
+        }
+        return true;
+    };
+
     return (p1, sisiA, p2, sisiB) => {
+        if (((sisiA === 'B' && sisiB === 'T') || (sisiA === 'T' && sisiB === 'B')) && Math.abs(p1.x - p2.x) <= 8 && bebasHalangan(p1.x, p1.y, p2.x, p2.y)) {
+            const xLurus = (p1.x + p2.x) / 2;
+            return `M ${xLurus} ${p1.y} L ${xLurus} ${p2.y}`;
+        }
+        if (((sisiA === 'R' && sisiB === 'L') || (sisiA === 'L' && sisiB === 'R')) && Math.abs(p1.y - p2.y) <= 8 && bebasHalangan(p1.x, p1.y, p2.x, p2.y)) {
+            const yLurus = (p1.y + p2.y) / 2;
+            return `M ${p1.x} ${yLurus} L ${p2.x} ${yLurus}`;
+        }
+
         const s = cariSelKoridor(p1.x, p1.y, sisiA);
         const e = cariSelKoridor(p2.x, p2.y, sisiB);
         const startIdx = s.r * cols + s.c;
