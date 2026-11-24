@@ -12,8 +12,8 @@ const WARNA_METODE = {
 
 const KARTU_L = 216;
 const KARTU_T = 128;
-const JARAK_MIN_X = 58;
-const JARAK_MIN_Y = 44;
+const JARAK_MIN_X = 64;
+const JARAK_MIN_Y = 52;
 const PAD_KANVAS = 64;
 
 function gayaInput(el) {
@@ -32,22 +32,27 @@ function gayaInput(el) {
 }
 
 /**
- * Hitung tata letak peta grafis fleksibel (force-directed + anti-tumpang-tindih):
- * - Tidak terpaku pada kotak domain: tabel yang saling berelasi otomatis saling mendekat.
- * - Menyelesaikan semua tabrakan kotak (AABB) dengan jarak aman agar kartu tidak saling menutupi.
+ * Hitung tata letak peta grafis fleksibel dengan optimasi global:
+ * - Tidak terpaku pada kotak domain: seluruh tabel terhubung dioptimasi secara global (gaya pegas + tolak-menolak).
+ * - Rasio aspek lanskap (16:10) agar peta memanfaatkan lebar layar secara optimal.
+ * - Resolusi tabrakan AABB ternormalisasi agar 0% kartu saling menutupi.
  */
 function hitungTataLetakPeta(tabelList, relasiList) {
     const posisiTabel = new Map();
     if (!tabelList.length) {
-        return { zona: [], posisiTabel, lebarKanvas: 900, tinggiKanvas: 520 };
+        return { zona: [], posisiTabel, lebarKanvas: 960, tinggiKanvas: 560 };
     }
 
     const namaSet = new Set(tabelList.map((t) => t.nama));
     const derajat = new Map();
+    const tetangga = new Map();
     const sisiUnik = [];
     const kunciSisi = new Set();
 
-    for (const t of tabelList) derajat.set(t.nama, 0);
+    for (const t of tabelList) {
+        derajat.set(t.nama, 0);
+        tetangga.set(t.nama, []);
+    }
     for (const r of relasiList) {
         if (!namaSet.has(r.dari_tabel) || !namaSet.has(r.ke_tabel) || r.dari_tabel === r.ke_tabel) continue;
         derajat.set(r.dari_tabel, (derajat.get(r.dari_tabel) ?? 0) + 1);
@@ -56,39 +61,72 @@ function hitungTataLetakPeta(tabelList, relasiList) {
         if (!kunciSisi.has(k)) {
             kunciSisi.add(k);
             sisiUnik.push([r.dari_tabel, r.ke_tabel]);
+            tetangga.get(r.dari_tabel).push(r.ke_tabel);
+            tetangga.get(r.ke_tabel).push(r.dari_tabel);
         }
     }
 
-    // Urutkan deterministik: hub berderajat tertinggi di tengah, lalu spiral emas
-    const urut = tabelList.slice().sort((a, b) => {
+    // Pisahkan graf terhubung dari tabel terisolasi (derajat 0) agar tabel terisolasi tidak mengacaukan pusat graf
+    const tabelTerhubung = tabelList.filter((t) => (derajat.get(t.nama) ?? 0) > 0);
+    const tabelTerisolasi = tabelList
+        .filter((t) => (derajat.get(t.nama) ?? 0) === 0)
+        .sort((a, b) => a.domain.localeCompare(b.domain) || a.nama.localeCompare(b.nama));
+
+    const aktifList = tabelTerhubung.length ? tabelTerhubung : tabelList;
+
+    // Urutkan BFS dari hub terbesar agar tabel bertetangga langsung berada dekat sejak posisi awal
+    const urutDerajat = aktifList.slice().sort((a, b) => {
         const dB = derajat.get(b.nama) ?? 0;
         const dA = derajat.get(a.nama) ?? 0;
         if (dB !== dA) return dB - dA;
         return a.nama.localeCompare(b.nama);
     });
+    const terurut = [];
+    const dikunjungi = new Set();
+    for (const akar of urutDerajat) {
+        if (dikunjungi.has(akar.nama)) continue;
+        const antre = [akar];
+        dikunjungi.add(akar.nama);
+        while (antre.length) {
+            const cur = antre.shift();
+            terurut.push(cur);
+            const tList = (tetangga.get(cur.nama) || [])
+                .slice()
+                .sort((a, b) => (derajat.get(b) ?? 0) - (derajat.get(a) ?? 0) || a.localeCompare(b));
+            for (const nbNama of tList) {
+                if (!dikunjungi.has(nbNama)) {
+                    dikunjungi.add(nbNama);
+                    const obj = aktifList.find((x) => x.nama === nbNama);
+                    if (obj) antre.push(obj);
+                }
+            }
+        }
+    }
 
     const simpul = new Map();
-    const n = urut.length;
+    const n = terurut.length;
     const sudutEmas = Math.PI * (3 - Math.sqrt(5));
-    urut.forEach((t, idx) => {
-        const r = idx === 0 ? 0 : 190 * Math.sqrt(idx);
+    terurut.forEach((t, idx) => {
+        const r = idx === 0 ? 0 : 210 * Math.sqrt(idx);
         const theta = idx * sudutEmas;
         simpul.set(t.nama, {
             tabel: t,
-            cx: r * Math.cos(theta) * 1.25,
-            cy: r * Math.sin(theta) * 0.9,
+            cx: r * Math.cos(theta) * 1.55,
+            cy: r * Math.sin(theta) * 0.92,
             vx: 0,
             vy: 0,
         });
     });
 
     const daftarSimpul = [...simpul.values()];
-    const jarakIdeal = 310;
-    const maksIterasi = 200;
+    const butuhX = KARTU_L + JARAK_MIN_X;
+    const butuhY = KARTU_T + JARAK_MIN_Y;
+    const jarakIdeal = 315;
+    const maksIterasi = 260;
 
-    // Simulasi gaya: tolak-menolak antar simpul + tarik-menarik antar tabel berelasi
+    // Optimasi gaya global dengan rasio lanskap
     for (let iter = 0; iter < maksIterasi; iter += 1) {
-        const redam = 0.82 * (1 - iter / (maksIterasi * 1.25));
+        const redam = 0.86 * (1 - iter / (maksIterasi * 1.2));
 
         for (let i = 0; i < n; i += 1) {
             const a = daftarSimpul[i];
@@ -96,41 +134,35 @@ function hitungTataLetakPeta(tabelList, relasiList) {
                 const b = daftarSimpul[j];
                 let dx = b.cx - a.cx;
                 let dy = b.cy - a.cy;
-                let d2 = dx * dx + dy * dy;
-                if (d2 < 1) {
-                    dx = ((i + 1) % 3) - 1 || 0.7;
-                    dy = ((j + 1) % 3) - 1 || -0.7;
-                    d2 = dx * dx + dy * dy;
+                // Normalisasi jarak ke ukuran kartu agar jarak X dan Y seimbang
+                const nx = dx / butuhX;
+                const ny = dy / butuhY;
+                let nd2 = nx * nx + ny * ny;
+                if (nd2 < 0.01) {
+                    dx = ((i % 3) - 1) * 12 || 9;
+                    dy = ((j % 3) - 1) * 12 || -9;
+                    nd2 = 0.02;
                 }
-                const dist = Math.sqrt(d2);
-                // Skala elips sesuai rasio kartu agar lebih menyebar horizontal & tidak menumpuk
-                const tolak = Math.min(28, 72000 / d2);
-                const fx = (dx / dist) * tolak;
-                const fy = (dy / dist) * tolak;
+                const dist = Math.max(1, Math.hypot(dx, dy));
+                const tolak = Math.min(34, 1.35 / nd2);
+                const fx = (dx / dist) * tolak * 16;
+                const fy = (dy / dist) * tolak * 12;
                 a.vx -= fx;
                 a.vy -= fy;
                 b.vx += fx;
                 b.vy += fy;
-
-                // Afinitas sangat ringan untuk domain yang sama jika tidak punya relasi langsung
-                if (a.tabel.domain === b.tabel.domain && dist > jarakIdeal * 1.4) {
-                    const af = 0.008;
-                    a.vx += dx * af * 0.05;
-                    a.vy += dy * af * 0.05;
-                    b.vx -= dx * af * 0.05;
-                    b.vy -= dy * af * 0.05;
-                }
             }
         }
 
-        // Gaya pegas untuk setiap relasi
+        // Pegas relasi menarik tabel berelasi saling mendekat
         for (const [dari, ke] of sisiUnik) {
             const a = simpul.get(dari);
             const b = simpul.get(ke);
+            if (!a || !b) continue;
             const dx = b.cx - a.cx;
             const dy = b.cy - a.cy;
             const dist = Math.max(1, Math.hypot(dx, dy));
-            const gaya = (dist - jarakIdeal) * 0.045;
+            const gaya = (dist - jarakIdeal) * 0.055;
             const fx = (dx / dist) * gaya;
             const fy = (dy / dist) * gaya;
             a.vx += fx;
@@ -139,47 +171,69 @@ function hitungTataLetakPeta(tabelList, relasiList) {
             b.vy -= fy;
         }
 
-        // Gravitasi ringan ke pusat agar komponen terpisah tetap dekat
+        // Gravitasi elips ke pusat: sedikit lebih kuat secara vertikal agar peta melebar horizontal
         for (const s of daftarSimpul) {
-            s.vx -= s.cx * 0.012;
-            s.vy -= s.cy * 0.012;
+            s.vx -= s.cx * 0.007;
+            s.vy -= s.cy * 0.014;
             s.cx += s.vx * redam;
             s.cy += s.vy * redam;
-            s.vx *= 0.45;
-            s.vy *= 0.45;
+            s.vx *= 0.42;
+            s.vy *= 0.42;
         }
     }
 
-    // Resolusi tabrakan AABB ketat agar 0% kartu saling menutupi
-    const butuhX = KARTU_L + JARAK_MIN_X;
-    const butuhY = KARTU_T + JARAK_MIN_Y;
-    for (let pass = 0; pass < 140; pass += 1) {
-        let adaTabrakan = false;
-        for (let i = 0; i < n; i += 1) {
-            const a = daftarSimpul[i];
-            for (let j = i + 1; j < n; j += 1) {
-                const b = daftarSimpul[j];
-                const dx = b.cx - a.cx;
-                const dy = b.cy - a.cy;
-                const overlapX = butuhX - Math.abs(dx);
-                const overlapY = butuhY - Math.abs(dy);
-                if (overlapX > 0 && overlapY > 0) {
-                    adaTabrakan = true;
-                    if (overlapX < overlapY) {
-                        const geser = (overlapX / 2) + 1;
-                        const arah = dx >= 0 ? 1 : -1;
-                        a.cx -= arah * geser;
-                        b.cx += arah * geser;
-                    } else {
-                        const geser = (overlapY / 2) + 1;
-                        const arah = dy >= 0 ? 1 : -1;
-                        a.cy -= arah * geser;
-                        b.cy += arah * geser;
+    // Resolusi tabrakan AABB ternormalisasi (overlapX / butuhX vs overlapY / butuhY) agar bentuk lanskap terjaga
+    const selesaikanTabrakan = () => {
+        for (let pass = 0; pass < 160; pass += 1) {
+            let adaTabrakan = false;
+            for (let i = 0; i < n; i += 1) {
+                const a = daftarSimpul[i];
+                for (let j = i + 1; j < n; j += 1) {
+                    const b = daftarSimpul[j];
+                    const dx = b.cx - a.cx;
+                    const dy = b.cy - a.cy;
+                    const overlapX = butuhX - Math.abs(dx);
+                    const overlapY = butuhY - Math.abs(dy);
+                    if (overlapX > 0 && overlapY > 0) {
+                        adaTabrakan = true;
+                        if (overlapX / butuhX < overlapY / butuhY) {
+                            const geser = (overlapX / 2) + 1;
+                            const arah = dx >= 0 ? 1 : -1;
+                            a.cx -= arah * geser;
+                            b.cx += arah * geser;
+                        } else {
+                            const geser = (overlapY / 2) + 1;
+                            const arah = dy >= 0 ? 1 : -1;
+                            a.cy -= arah * geser;
+                            b.cy += arah * geser;
+                        }
                     }
                 }
             }
+            if (!adaTabrakan) break;
         }
-        if (!adaTabrakan) break;
+    };
+
+    selesaikanTabrakan();
+
+    // Pemolesan lokal: tarik simpul berderajat rendah lebih dekat ke rata-rata tetangganya tanpa menabrak
+    for (let polish = 0; polish < 14; polish += 1) {
+        for (const s of daftarSimpul) {
+            const nb = tetangga.get(s.tabel.nama) || [];
+            if (!nb.length) continue;
+            let sx = 0;
+            let sy = 0;
+            for (const namaNb of nb) {
+                const p = simpul.get(namaNb);
+                if (p) {
+                    sx += p.cx;
+                    sy += p.cy;
+                }
+            }
+            s.cx += (sx / nb.length - s.cx) * 0.14;
+            s.cy += (sy / nb.length - s.cy) * 0.14;
+        }
+        selesaikanTabrakan();
     }
 
     let minX = Infinity;
@@ -207,11 +261,29 @@ function hitungTataLetakPeta(tabelList, relasiList) {
         });
     }
 
+    let lebarTotal = Math.max(960, Math.round(maxX - minX + PAD_KANVAS * 2));
+    let tinggiTotal = Math.max(560, Math.round(maxY - minY + PAD_KANVAS * 2));
+
+    // Jika ada tabel terisolasi (tanpa relasi), susun rapi di baris bawah kanvas
+    if (tabelTerhubung.length && tabelTerisolasi.length) {
+        const perBaris = Math.max(4, Math.floor((lebarTotal - PAD_KANVAS * 2 + JARAK_MIN_X) / butuhX));
+        const awalY = tinggiTotal;
+        tabelTerisolasi.forEach((t, idx) => {
+            const kol = idx % perBaris;
+            const brs = Math.floor(idx / perBaris);
+            const x = PAD_KANVAS + kol * butuhX;
+            const y = awalY + brs * butuhY;
+            posisiTabel.set(t.nama, { tabel: t, x, y, w: KARTU_L, h: KARTU_T });
+            lebarTotal = Math.max(lebarTotal, x + KARTU_L + PAD_KANVAS);
+            tinggiTotal = Math.max(tinggiTotal, y + KARTU_T + PAD_KANVAS);
+        });
+    }
+
     return {
         zona: [],
         posisiTabel,
-        lebarKanvas: Math.max(960, Math.round(maxX - minX + PAD_KANVAS * 2)),
-        tinggiKanvas: Math.max(560, Math.round(maxY - minY + PAD_KANVAS * 2)),
+        lebarKanvas: lebarTotal,
+        tinggiKanvas: tinggiTotal,
     };
 }
 
@@ -474,54 +546,74 @@ export function TabArsitektur() {
         );
         svg.append(defs);
 
+        // Distribusi titik sambung di setiap sisi kartu agar garis paralel tidak bertumpuk
+        const portSisi = new Map();
+        const daftarGaris = [];
         for (const r of relasiTampil) {
             const a = peta.posisiTabel.get(r.dari_tabel);
             const b = peta.posisiTabel.get(r.ke_tabel);
             if (!a || !b) continue;
-            const keluar = tabelTerpilih && r.dari_tabel === tabelTerpilih;
-            const masuk = tabelTerpilih && r.ke_tabel === tabelTerpilih;
-            const aktifGaris = keluar || masuk;
-            if (tabelTerpilih && !aktifGaris && relasiTampil.length > 45) continue;
-
-            // Titik sambung sisi kartu paling dekat dengan kurva tegak lurus sisi
             const cxA = a.x + a.w / 2;
             const cyA = a.y + a.h / 2;
             const cxB = b.x + b.w / 2;
             const cyB = b.y + b.h / 2;
             const horizontal = Math.abs(cxB - cxA) >= Math.abs(cyB - cyA);
-            let x1 = cxA;
-            let y1 = cyA;
-            let x2 = cxB;
-            let y2 = cyB;
+            const sisiA = horizontal ? (cxB >= cxA ? 'R' : 'L') : (cyB >= cyA ? 'B' : 'T');
+            const sisiB = horizontal ? (cxB >= cxA ? 'L' : 'R') : (cyB >= cyA ? 'T' : 'B');
+            const kA = `${r.dari_tabel}:${sisiA}`;
+            const kB = `${r.ke_tabel}:${sisiB}`;
+            if (!portSisi.has(kA)) portSisi.set(kA, []);
+            if (!portSisi.has(kB)) portSisi.set(kB, []);
+            const idxA = portSisi.get(kA).length;
+            portSisi.get(kA).push(horizontal ? cyB : cxB);
+            const idxB = portSisi.get(kB).length;
+            portSisi.get(kB).push(horizontal ? cyA : cxA);
+            daftarGaris.push({ r, a, b, horizontal, sisiA, sisiB, kA, kB, idxA, idxB });
+        }
+
+        const hitungPort = (pos, sisi, k, idx) => {
+            const daftar = portSisi.get(k) || [0];
+            const total = daftar.length;
+            const fraksi = total <= 1 ? 0.5 : 0.18 + (idx / (total - 1)) * 0.64;
+            if (sisi === 'R') return { x: pos.x + pos.w, y: pos.y + pos.h * fraksi };
+            if (sisi === 'L') return { x: pos.x, y: pos.y + pos.h * fraksi };
+            if (sisi === 'B') return { x: pos.x + pos.w * fraksi, y: pos.y + pos.h };
+            return { x: pos.x + pos.w * fraksi, y: pos.y };
+        };
+
+        for (const g of daftarGaris) {
+            const { r, a, b, horizontal, sisiA, sisiB, kA, kB, idxA, idxB } = g;
+            const keluar = tabelTerpilih && r.dari_tabel === tabelTerpilih;
+            const masuk = tabelTerpilih && r.ke_tabel === tabelTerpilih;
+            const aktifGaris = keluar || masuk;
+
+            const p1 = hitungPort(a, sisiA, kA, idxA);
+            const p2 = hitungPort(b, sisiB, kB, idxB);
             let c1x;
             let c1y;
             let c2x;
             let c2y;
             if (horizontal) {
-                x1 = cxB >= cxA ? a.x + a.w : a.x;
-                x2 = cxB >= cxA ? b.x : b.x + b.w;
-                const dx = Math.max(36, Math.abs(x2 - x1) * 0.45);
-                c1x = cxB >= cxA ? x1 + dx : x1 - dx;
-                c1y = y1;
-                c2x = cxB >= cxA ? x2 - dx : x2 + dx;
-                c2y = y2;
+                const dx = Math.max(36, Math.abs(p2.x - p1.x) * 0.45);
+                c1x = p2.x >= p1.x ? p1.x + dx : p1.x - dx;
+                c1y = p1.y;
+                c2x = p2.x >= p1.x ? p2.x - dx : p2.x + dx;
+                c2y = p2.y;
             } else {
-                y1 = cyB >= cyA ? a.y + a.h : a.y;
-                y2 = cyB >= cyA ? b.y : b.y + b.h;
-                const dy = Math.max(32, Math.abs(y2 - y1) * 0.45);
-                c1x = x1;
-                c1y = cyB >= cyA ? y1 + dy : y1 - dy;
-                c2x = x2;
-                c2y = cyB >= cyA ? y2 - dy : y2 + dy;
+                const dy = Math.max(32, Math.abs(p2.y - p1.y) * 0.45);
+                c1x = p1.x;
+                c1y = p2.y >= p1.y ? p1.y + dy : p1.y - dy;
+                c2x = p2.x;
+                c2y = p2.y >= p1.y ? p2.y - dy : p2.y + dy;
             }
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
+            path.setAttribute('d', `M ${p1.x} ${p1.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`);
             path.setAttribute('fill', 'none');
             path.setAttribute('stroke', keluar ? 'var(--warna-utama)' : masuk ? '#10b981' : 'var(--warna-garis)');
-            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.15');
+            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.25');
             path.setAttribute('stroke-dasharray', r.jenis === 'konvensi' ? '5 4' : '');
-            path.setAttribute('opacity', aktifGaris ? '0.95' : tabelTerpilih ? '0.12' : '0.26');
+            path.setAttribute('opacity', aktifGaris ? '0.96' : tabelTerpilih ? '0.24' : '0.45');
             path.setAttribute('marker-end', `url(#${keluar ? 'panah-keluar' : masuk ? 'panah-masuk' : 'panah-redup'})`);
             svg.append(path);
         }
