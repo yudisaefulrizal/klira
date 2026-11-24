@@ -65,7 +65,7 @@ export function buatRuteInstagramPublik(akses) {
         if (!id)
             return void res.sendStatus(403);
         const code = randomBytes(24).toString('hex');
-        const fas = await db.transaksi(async (tx) => {
+        const adaKoneksi = await db.transaksi(async (tx) => {
             await db.kunciIgKoneksi(tx);
             const row = await db.cariIgKoneksiUntukBuatRuteInstagramPublik('meta', id, id, tx);
             if (row) {
@@ -80,9 +80,9 @@ export function buatRuteInstagramPublik(akses) {
                 await db.ubahIgKoneksiUntukBuatRuteInstagramPublik2(false, 'terputus', '', null, null, 1, tx);
             }
             await db.tambahIgPenghapusanUntukBuatRuteInstagramPublik(code, tx);
-            return row?.fasyankes_id;
+            return Boolean(row);
         });
-        if (fas)
+        if (adaKoneksi)
             kabarkanInstagram({ tipe: 'koneksi' });
         res.setHeader('Cache-Control', 'no-store');
         res.json({ url: `${new URL(process.env.BASE_URL ?? 'http://localhost').origin}/instagram/data-deletion-status/${code}`, confirmation_code: code });

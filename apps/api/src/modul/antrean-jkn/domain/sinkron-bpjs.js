@@ -34,7 +34,7 @@ export function buatSinkronAntreanBpjs({ repo, klienPcare, dekripsi, sekarang = 
             const kodepoli = peta.kodePoli(a.jenis_poli);
             if (!kodepoli)
                 return gagal(A.galat.poliBelumDipetakan(a.jenis_poli));
-            const aktif = await ({
+            const aktif = await klienPcare({
                 serviceName: atur.service_name, batasWaktuMs: BATAS_WAKTU_ANTREAN_MS,
                 ...(atur.user_key_terenkripsi ? { userKey: dekripsi(atur.user_key_terenkripsi) } : {}),
             });

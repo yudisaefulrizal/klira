@@ -31,12 +31,14 @@ export const TERMINOLOGI_CONTOH = [
     { sistem: 'loinc', kode: '29463-7', nama: 'Berat badan', aktif: true },
     { sistem: 'loinc', kode: '8302-2', nama: 'Tinggi badan', aktif: true },
     { sistem: 'loinc', kode: '56115-9', nama: 'Lingkar perut', aktif: true },
+    { sistem: 'loinc', kode: '9269-2', nama: 'Skor Glasgow Coma Scale (GCS) total', aktif: true },
     { sistem: 'ucum', kode: 'mm[Hg]', nama: 'milimeter air raksa', aktif: true },
     { sistem: 'ucum', kode: '/min', nama: 'per menit', aktif: true },
     { sistem: 'ucum', kode: 'Cel', nama: 'derajat Celsius', aktif: true },
     { sistem: 'ucum', kode: '%', nama: 'persen', aktif: true },
     { sistem: 'ucum', kode: 'kg', nama: 'kilogram', aktif: true },
     { sistem: 'ucum', kode: 'cm', nama: 'sentimeter', aktif: true },
+    { sistem: 'ucum', kode: '{score}', nama: 'skor', aktif: true },
 ];
 const SAH = new Set(SISTEM_TERMINOLOGI);
 const NILAI_NONAKTIF = new Set(['0', 'false', 'tidak', 'nonaktif', 'n']);

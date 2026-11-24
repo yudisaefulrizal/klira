@@ -4,10 +4,6 @@ export async function ambilPengaturanAntreanJkn(koneksi = pool) {
     const baris = await baca(`SELECT ${KOLOM} FROM \`pengaturan_antrean_jkn\` t WHERE TRUE LIMIT 1`, [], koneksi);
     return baris[0] ?? null;
 }
-/** Fasyankes yang mengaktifkan antrean online (untuk penarikan berkala). */
-export async function daftarFasyankesAntreanJknAktif(koneksi = pool) {
-    return (await baca('SELECT 1 AS ada FROM `pengaturan_antrean_jkn` t WHERE t.`aktif` = true LIMIT 1', [], koneksi)).length ? [1] : [];
-}
 /** Simpan (buat atau ubah). `user_key_terenkripsi` bernilai null berarti tidak diganti. */
 export async function simpanPengaturanAntreanJkn(d, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis('INSERT INTO `pengaturan_antrean_jkn` (`aktif`, `service_name`, `user_key_terenkripsi`, `dibuat_oleh`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `aktif` = VALUES(`aktif`), `service_name` = VALUES(`service_name`), `user_key_terenkripsi` = COALESCE(VALUES(`user_key_terenkripsi`), `user_key_terenkripsi`), `diubah_pada` = CURRENT_TIMESTAMP(3)', [Boolean(d.aktif), d.service_name, d.user_key_terenkripsi ?? null, dibuat_oleh ?? null], koneksi);

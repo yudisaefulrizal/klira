@@ -25,7 +25,7 @@ console.warn = () => { };
 console.error = () => console.log('WhatsApp: terjadi galat internal; rincian sensitif disembunyikan.');
 const pemberitahu = buatPemberitahuEngine();
 const perbaruiFoto = buatPembaruanFotoWhatsapp();
-const kabarkan = (fasyankes_id, tipe, baru = false) => pemberitahu.kabarkan({ tipe, fasyankes_id, baru });
+const kabarkan = (tipe, baru = false) => pemberitahu.kabarkan({ tipe, baru });
 const pemilik = randomUUID();
 let retensiSiap = false;
 let socket;
@@ -84,7 +84,7 @@ async function autentikasi() {
         save: () => simpan('creds', creds),
     };
 }
-async function terima(fasyankes, message, wa) {
+async function terima(message, wa) {
     const generasiPesan = generasi;
     if (socket !== wa)
         return;
@@ -128,7 +128,6 @@ async function terima(fasyankes, message, wa) {
             mediaId = randomUUID();
             lampiran = {
                 id: mediaId,
-                fasyankes_id: fasyankes,
                 isi: enkripsiRahasia(Buffer.concat(potongan).toString('base64')),
                 mime: media.mimetype ?? 'application/octet-stream',
                 nama: ('fileName' in media && media.fileName ? media.fileName : `lampiran-${tipe}`).slice(0, 200),
@@ -144,11 +143,11 @@ async function terima(fasyankes, message, wa) {
     const tersimpan = await db.transaksi(async (tx) => {
         await db.kunciWaKoneksi(tx);
         const current = await db.ambilWaKoneksi(1, tx);
-        if (!current?.aktif || current.fasyankes_id !== fasyankes || current.generasi !== generasiPesan || socket !== wa)
+        if (!current?.aktif || current.generasi !== generasiPesan || socket !== wa)
             return false;
         if (lampiran)
             await db.tambahWaMediaUntukTerima(tx);
-        const percakapan = await (async () => { (await db.simpanWaPercakapanUntukTerima(fasyankes, jid, (message.key.fromMe ? jid.split('@')[0] : message.pushName || jid.split('@')[0]).slice(0, 200), tx)); return db.simpanWaPercakapanUntukBuatRuteWhatsappHasil(fasyankes, jid, tx); })();
+        const percakapan = await (async () => { (await db.simpanWaPercakapanUntukTerima(jid, (message.key.fromMe ? jid.split('@')[0] : message.pushName || jid.split('@')[0]).slice(0, 200), tx)); return db.simpanWaPercakapanUntukBuatRuteWhatsappHasil(jid, tx); })();
         await kunciPercakapanWhatsapp(tx, percakapan.id);
         await db.tambahWaPesanUntukTerima(percakapan.id, waId, message.key.fromMe ? 'keluar' : 'masuk', enkripsiRahasia(teks), jenis, mediaId, message.key.fromMe ? 'terkirim' : 'diterima', tx);
         await db.ubahWaPercakapanUntukBuatRuteWhatsapp3(new Date(), percakapan.id, tx);
@@ -156,9 +155,9 @@ async function terima(fasyankes, message, wa) {
         return true;
     });
     if (tersimpan)
-        kabarkan(fasyankes, 'pesan', !message.key.fromMe);
+        kabarkan('pesan', !message.key.fromMe);
 }
-async function hubungkan(fasyankes) {
+async function hubungkan() {
     await db.ubahWaKoneksiUntukHubungkan('menghubungkan', null, 1);
     const auth = await autentikasi();
     const wa = makeWASocket({
@@ -187,12 +186,12 @@ async function hubungkan(fasyankes) {
             if (logout)
                 await db.hapusWaAuthUntukPutuskanDanBersihkan();
         }
-        kabarkan(fasyankes, 'koneksi');
+        kabarkan('koneksi');
     }));
     wa.ev.on('messages.upsert', (event) => {
         if (event.type === 'notify')
             for (const pesan of event.messages)
-                catat(() => terima(fasyankes, pesan, wa));
+                catat(() => terima(pesan, wa));
     });
     wa.ev.on('messages.update', (events) => catat(async () => {
         for (const { key, update } of events) {
@@ -202,14 +201,14 @@ async function hubungkan(fasyankes) {
             if (status)
                 await db.ubahWaPesanUntukHubungkan(status, key.id, ['antre', 'mengirim'], 'dibaca', (status === 'diterima') && (true));
         }
-        kabarkan(fasyankes, 'pesan');
+        kabarkan('pesan');
     }));
 }
-async function kirim(fasyankes) {
+async function kirim() {
     const wa = socket;
     if (!wa?.user)
         return;
-    const pesan = await db.cariWaPesanUntukKirim('keluar', 'antre', fasyankes);
+    const pesan = await db.cariWaPesanUntukKirim('keluar', 'antre');
     if (!pesan)
         return;
     if (!jidWhatsappPribadi(pesan.percakapan.jid)) {
@@ -251,7 +250,7 @@ async function kirim(fasyankes) {
             await pangkasPesanWhatsapp(tx, pesan.percakapan_id);
         });
     }
-    kabarkan(fasyankes, 'pesan');
+    kabarkan('pesan');
 }
 async function detak() {
     if (berhenti)
@@ -296,19 +295,19 @@ async function detak() {
         }
         if (!socket && Date.now() >= ulangPada) {
             ulangPada = Date.now() + 10000;
-            await hubungkan(koneksi.fasyankes_id);
+            await hubungkan();
         }
         const terbaru = await db.wajibWaKoneksiUntukDetak(1);
         if (terbaru.aktif && terbaru.generasi === generasi && terbaru.status === 'terhubung') {
-            await kirim(koneksi.fasyankes_id);
+            await kirim();
             const wa = socket;
             const generasiFoto = generasi;
             if (wa?.user)
                 void perbaruiFoto({
-                    fasyankes: koneksi.fasyankes_id, generasi: generasiFoto, pemilik,
+                    generasi: generasiFoto, pemilik,
                     masihAktif: () => socket === wa && generasi === generasiFoto && !berhenti,
                     ambil: (jid) => wa.profilePictureUrl(jid, 'image', 8000),
-                    kabarkan: () => kabarkan(koneksi.fasyankes_id, 'pesan'),
+                    kabarkan: () => kabarkan('pesan'),
                 });
         }
     }

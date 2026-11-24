@@ -8,9 +8,6 @@ export class RepositoriAntreanJknMysql {
     pengaturan() {
         return db.ambilPengaturanAntreanJkn();
     }
-    fasyankesAktif() {
-        return db.daftarFasyankesAntreanJknAktif();
-    }
     pemetaan() {
         return db.daftarPemetaanBpjs();
     }

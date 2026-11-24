@@ -6,8 +6,8 @@ export function buatPemberitahuEngine() {
     let timer;
     let berhenti = false;
     let percobaan = 0;
-    const tertunda = new Map();
-    const dikenal = new Set();
+    let tertunda = false;
+    let dikenal = false;
     const hubungkan = () => {
         if (berhenti || !process.env.KUNCI_ENKRIPSI)
             return;
@@ -19,9 +19,9 @@ export function buatPemberitahuEngine() {
         ws.on('open', () => {
             percobaan = 0;
             awasi();
-            for (const fas of dikenal)
-                ws.send(JSON.stringify({ tipe: 'siap', fasyankes_id: fas, baru: tertunda.get(fas) ?? false }));
-            tertunda.clear();
+            if (dikenal)
+                ws.send(JSON.stringify({ tipe: 'siap', baru: tertunda }));
+            tertunda = false;
         });
         ws.on('error', () => { });
         ws.on('close', () => {
@@ -35,11 +35,11 @@ export function buatPemberitahuEngine() {
     hubungkan();
     return {
         kabarkan(event) {
-            dikenal.add(event.fasyankes_id);
+            dikenal = true;
             if (ws?.readyState === WebSocket.OPEN && ws.bufferedAmount < 65536)
                 ws.send(JSON.stringify(event));
             else {
-                tertunda.set(event.fasyankes_id, (tertunda.get(event.fasyankes_id) ?? false) || !!event.baru);
+                tertunda = tertunda || !!event.baru;
                 if (ws?.readyState === WebSocket.OPEN)
                     ws.close();
             }

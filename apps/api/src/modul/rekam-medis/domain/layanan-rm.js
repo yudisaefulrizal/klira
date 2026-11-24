@@ -8,9 +8,9 @@ const G = REKAM_MEDIS.galat;
  */
 export function buatLayananRm({ repo, pengesahanRepo, klinis, baca, audit, sekarang = () => new Date() }) {
     const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
-    const bacaIsi = (fas) => (kunjunganId, bagian) => baca.bacaBagian(fas, kunjunganId, bagian);
-    async function kePermintaanDto(fas, id) {
-        const h = await repo.daftarPermintaan(fas, { halaman: 1, ukuran: 100 }, bacaIsi(fas));
+    const bacaIsi = () => (kunjunganId, bagian) => baca.bacaBagian(kunjunganId, bagian);
+    async function kePermintaanDto(id) {
+        const h = await repo.daftarPermintaan({ halaman: 1, ukuran: 100 }, bacaIsi());
         return h.data.find((x) => x.id === id) ?? null;
     }
     return {

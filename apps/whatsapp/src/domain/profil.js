@@ -17,7 +17,7 @@ export function buatPembaruanFotoWhatsapp(akses = db) {
             return;
         sibuk = true;
         try {
-            const kontak = await akses.cariWaPercakapanUntukBuatPembaruanFotoWhatsapp(koneksi.fasyankes, '@s.whatsapp.net', '@lid', null, new Date());
+            const kontak = await akses.cariWaPercakapanUntukBuatPembaruanFotoWhatsapp('@s.whatsapp.net', '@lid', null, new Date());
             if (!kontak || !koneksi.masihAktif())
                 return;
             let foto = null;
@@ -35,9 +35,9 @@ export function buatPembaruanFotoWhatsapp(akses = db) {
             const berubah = await akses.transaksi(async (tx) => {
                 await akses.kunciWaKoneksi(tx);
                 const current = await akses.ambilWaKoneksi(1, tx);
-                if (!koneksi.masihAktif() || !current?.aktif || current.status !== 'terhubung' || current.generasi !== koneksi.generasi || current.fasyankes_id !== koneksi.fasyankes || current.pemilik_engine !== koneksi.pemilik || !current.sewa_sampai || current.sewa_sampai.getTime() <= Date.now())
+                if (!koneksi.masihAktif() || !current?.aktif || current.status !== 'terhubung' || current.generasi !== koneksi.generasi || current.pemilik_engine !== koneksi.pemilik || !current.sewa_sampai || current.sewa_sampai.getTime() <= Date.now())
                     return false;
-                const hasil = await akses.ubahWaPercakapanUntukBuatPembaruanFotoWhatsapp((!gagal) ? (foto) : (undefined), new Date(Date.now() + (gagal ? 15 * 60000 : 24 * 60 * 60000)), kontak.id, koneksi.fasyankes, kontak.jid, tx);
+                const hasil = await akses.ubahWaPercakapanUntukBuatPembaruanFotoWhatsapp((!gagal) ? (foto) : (undefined), new Date(Date.now() + (gagal ? 15 * 60000 : 24 * 60 * 60000)), kontak.id, kontak.jid, tx);
                 return hasil.count > 0 && !gagal && foto !== kontak.foto_profil;
             });
             if (berubah)

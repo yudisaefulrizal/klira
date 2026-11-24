@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { buatPembaruanFotoWhatsapp, fotoProfilWhatsapp } from '../src/domain/profil.js';
 const foto = 'https://pps.whatsapp.net/avatar.jpg?token=abc';
 function siapkan() {
-  const kontak = { id: 12, fasyankes_id: 10, jid: '628123@s.whatsapp.net', foto_profil: null };
-  const koneksi = { aktif: true, status: 'terhubung', generasi: 2, fasyankes_id: 10, pemilik_engine: 'engine', sewa_sampai: new Date(Date.now() + 60000) };
+  const kontak = { id: 12, jid: '628123@s.whatsapp.net', foto_profil: null };
+  const koneksi = { aktif: true, status: 'terhubung', generasi: 2, pemilik_engine: 'engine', sewa_sampai: new Date(Date.now() + 60000) };
   const db = {
     kunciWaKoneksi: mock.fn(),
     cariWaPercakapanUntukBuatPembaruanFotoWhatsapp: mock.fn(async () => kontak),
@@ -12,7 +12,7 @@ function siapkan() {
     ambilWaKoneksi: mock.fn(async () => koneksi),
     transaksi: async fn => fn({}),
   };
-  const dep = { fasyankes: 10, generasi: 2, pemilik: 'engine', masihAktif: mock.fn(() => true), ambil: mock.fn(async () => foto), kabarkan: mock.fn() };
+  const dep = { generasi: 2, pemilik: 'engine', masihAktif: mock.fn(() => true), ambil: mock.fn(async () => foto), kabarkan: mock.fn() };
   return { kontak, koneksi, db, dep, perbarui: buatPembaruanFotoWhatsapp(db) };
 }
 test('hanya menerima foto HTTPS dari CDN WhatsApp', () => {
@@ -29,7 +29,7 @@ test('melengkapi kontak lama dan menyimpan foto selama sehari', async () => {
   assert.equal(data.foto_profil, foto);
   assert.ok(data.foto_periksa_setelah.getTime() >= sebelum + 86400000);
   assert.equal(dep.kabarkan.mock.callCount(), 1);
-  assert.equal(db.cariWaPercakapanUntukBuatPembaruanFotoWhatsapp.mock.calls[0].arguments[0], 10);
+  assert.equal(db.cariWaPercakapanUntukBuatPembaruanFotoWhatsapp.mock.calls[0].arguments[0], '@s.whatsapp.net');
 });
 for (const kode of [403, 404]) test(`menghapus foto yang dibatasi atau dihapus (${kode})`, async () => {
   const { db, dep, kontak, perbarui } = siapkan(); kontak.foto_profil = foto;
@@ -49,7 +49,7 @@ test('gangguan sementara mempertahankan foto dan menjadwalkan ulang setelah 15 m
   assert.ok(data.foto_periksa_setelah.getTime() < Date.now() + 901000);
   assert.equal(dep.kabarkan.mock.callCount(), 0);
 });
-for (const perubahan of [{ aktif: false }, { generasi: 3 }, { fasyankes_id: 11 }, { pemilik_engine: 'lain' }, { sewa_sampai: new Date(0) }]) test(`menolak hasil dari koneksi yang berubah: ${Object.keys(perubahan)[0]}`, async () => {
+for (const perubahan of [{ aktif: false }, { generasi: 3 }, { pemilik_engine: 'lain' }, { sewa_sampai: new Date(0) }]) test(`menolak hasil dari koneksi yang berubah: ${Object.keys(perubahan)[0]}`, async () => {
   const { db, dep, koneksi, perbarui } = siapkan(); Object.assign(koneksi, perubahan);
   await perbarui(dep);
   assert.equal(db.ubahWaPercakapanUntukBuatPembaruanFotoWhatsapp.mock.callCount(), 0);

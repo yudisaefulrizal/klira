@@ -180,7 +180,7 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesMysql(), audit: new PenampungAuditMysql() })));
     const layananSatusehat = opsi.layananSatusehat ?? buatLayananSatusehat({ repo: new RepositoriSatusehatMysql(), audit: new PenampungAuditMysql() });
     app.locals.layananSatusehat = layananSatusehat;
-    const sinkronIhs = buatSinkronIhs({ repo: opsi.repoSatusehat ?? new RepositoriSatusehatMysql(), klienAktif: (f, o) => layananSatusehat.klienAktif(f, o), audit: new PenampungAuditMysql() });
+    const sinkronIhs = buatSinkronIhs({ repo: opsi.repoSatusehat ?? new RepositoriSatusehatMysql(), klienAktif: (o) => layananSatusehat.klienAktif(o), audit: new PenampungAuditMysql() });
     app.use('/api', buatRuteSatusehat(layananAkses, layananIzin, layananSatusehat, sinkronIhs));
     const layananPcare = opsi.layananPcare ?? buatLayananPcare({ repo: new RepositoriPcareMysql(), audit: new PenampungAuditMysql() });
     app.locals.layananPcare = layananPcare;
@@ -196,12 +196,12 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     // Antrean online BPJS: kunjungan JKN dikabarkan ke BPJS (tambah, panggil, batal); pendaftaran Mobile JKN ditarik dari PCare lewat layanan kunjungan yang sama.
     const repoKunjungan = new RepositoriKunjunganMysql();
     const repoAntreanJkn = new RepositoriAntreanJknMysql();
-    const antreanBpjs = buatSinkronAntreanBpjs({ repo: repoAntreanJkn, klienPcare: (f, o) => layananPcare.klienAktif(f, o), dekripsi: dekripsiRahasia });
+    const antreanBpjs = buatSinkronAntreanBpjs({ repo: repoAntreanJkn, klienPcare: (o) => layananPcare.klienAktif(o), dekripsi: dekripsiRahasia });
     const layananKunjungan = buatLayananKunjungan({ repo: repoKunjungan, audit: new PenampungAuditMysql(), sinkronIhs, antreanBpjs, orderLab: (p, id, m, alamat) => layananPenunjang.buatOrder(p, id, m, alamat) });
     app.use('/api', buatRuteKunjungan(layananAkses, layananIzin, layananKunjungan));
     const layananAntreanJkn = opsi.layananAntreanJkn ?? buatLayananAntreanJkn({
-        repo: repoAntreanJkn, audit: new PenampungAuditMysql(), kunjungan: layananKunjungan, klienPcare: (f, o) => layananPcare.klienAktif(f, o),
-        opsiKunjungan: (f) => repoKunjungan.opsi(f), jenisPoliOperasional: (f, jenis) => repoKunjungan.jenisPoliOperasional(f, jenis), enkripsi: enkripsiRahasia,
+        repo: repoAntreanJkn, audit: new PenampungAuditMysql(), kunjungan: layananKunjungan, klienPcare: (o) => layananPcare.klienAktif(o),
+        opsiKunjungan: () => repoKunjungan.opsi(), jenisPoliOperasional: (jenis) => repoKunjungan.jenisPoliOperasional(jenis), enkripsi: enkripsiRahasia,
     });
     app.locals.layananAntreanJkn = layananAntreanJkn;
     app.use('/api', buatRuteAntreanJkn(layananAkses, layananIzin, layananAntreanJkn));
@@ -225,7 +225,7 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
         rekapJasaMedis, daftarTarifJasa, simpanTarifJasa, ringkasanKeuangan,
     };
     app.use('/api', buatRuteKlaim(layananAkses, layananIzin, buatLayananKlaim({
-        repo: new RepositoriKlaimMysql(), rm: { resumeAda: (fas, ids) => repoDokumen.resumeAda(fas, ids) }, baca: repoKlinis, audit: new PenampungAuditMysql(), keuangan: repoKeuangan,
+        repo: new RepositoriKlaimMysql(), rm: { resumeAda: (ids) => repoDokumen.resumeAda(ids) }, baca: repoKlinis, audit: new PenampungAuditMysql(), keuangan: repoKeuangan,
     })));
     app.use('/api', buatRuteRawatInap(layananAkses, layananIzin, buatLayananRawatInap({
         repo: new RepositoriRawatInapMysql(), pengesahan: layananPengesahan, audit: new PenampungAuditMysql(), simpanResume: layananDokumen.simpanResume,
@@ -283,7 +283,6 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.get(['/', '/klinik/:slug'], async (req, res, next) => {
         try {
             const slug = typeof req.params.slug === 'string' ? req.params.slug : undefined;
-            const ruteNative = !slug || /^[a-z0-9-]+$/.test(slug);
             const data = slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? null : await bacaKlinikPublik(req.hostname, slug);
             const html = await readFile(path.join(direktoriWeb, 'index.html'), 'utf8');
             res.setHeader('Cache-Control', 'no-store');

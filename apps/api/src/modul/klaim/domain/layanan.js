@@ -10,14 +10,14 @@ const tglDb = (t) => new Date(`${t}T00:00:00.000+07:00`);
 export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekarang = () => new Date() }) {
     const catat = (p, aksi, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas: 'klaim', entitas_id: id, keterangan, alamat });
     /** Kode rekam medis sekarang: catatan dokter (versi terakhir). */
-    async function kodeRm(fas, kunjunganId) {
-        const [d, t] = await Promise.all([baca.bacaBagian(fas, kunjunganId, 'diagnosis'), baca.bacaBagian(fas, kunjunganId, 'tindakan')]);
+    async function kodeRm(kunjunganId) {
+        const [d, t] = await Promise.all([baca.bacaBagian(kunjunganId, 'diagnosis'), baca.bacaBagian(kunjunganId, 'tindakan')]);
         return { diagnosis: (d?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama })), tindakan: unikPerKode((t?.item ?? []).map((x) => ({ kode: x.kode, nama: x.nama }))) };
     }
-    async function keDto(fas, k, kunj, resume, riwayat, nama) {
+    async function keDto(k, kunj, resume, riwayat, nama) {
         const now = sekarang();
         const dasar = { status: k.status, batas_pengajuan: k.batas_pengajuan, batas_ajukan_ulang: k.batas_ajukan_ulang };
-        const kini = await kodeRm(fas, k.kunjungan_id);
+        const kini = await kodeRm(k.kunjungan_id);
         const jenis = kunj?.jenis ?? 'AMB';
         return {
             id: k.id, kunjungan_id: k.kunjungan_id, pasien_nama: kunj?.pasien_nama ?? '-', pasien_nomor_rm: kunj?.pasien_nomor_rm ?? '-', jenis, nomor_sep: k.nomor_sep, status: statusKlaimEfektif(dasar, now), tanggal_selesai: k.tanggal_selesai.toISOString(),
@@ -54,7 +54,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
         async kodeKunjungan(p, kunjunganId) {
             if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            return { ok: true, data: await (kunjunganId) };
+            return { ok: true, data: await kodeRm(kunjunganId) };
         },
         async daftar(p, f) {
             const now = sekarang();
@@ -75,7 +75,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
                 return gagal('konflik', G.bukanJkn);
             if (k.tahap_layanan !== 'ditutup' || !k.waktu_tutup)
                 return gagal('konflik', G.belumDitutup);
-            const [kode, resume] = await Promise.all([(k.id), rm.resumeAda([k.id])]);
+            const [kode, resume] = await Promise.all([kodeRm(k.id), rm.resumeAda([k.id])]);
             const sep = m.nomor_sep ?? k.nomor_sep;
             let id;
             try {

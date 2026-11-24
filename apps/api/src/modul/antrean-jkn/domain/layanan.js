@@ -20,7 +20,7 @@ const balikTanggal = (t) => t.split('-').reverse().join('-');
  */
 export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, jenisPoliOperasional, klienPcare, enkripsi, sekarang = () => new Date() }) {
     /** Pelaku untuk tindakan yang datang dari Mobile JKN (tanpa akun pengguna). */
-    const pelaku = (fasyankesId) => ({ id: null, sistem: 'mobile_jkn' });
+    const pelaku = () => ({ id: null, sistem: 'mobile_jkn' });
     const terakhir = new Map();
     const berjalan = new Map();
 
@@ -63,13 +63,13 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
         const waktu = sekarang();
         const selesai = (hasil) => {
             const lengkap = { baru: 0, batal: 0, dilewati: [], ...hasil, waktu: waktu.toISOString() };
-            terakhir.set(fasyankesId, lengkap);
+            terakhir.set(1, lengkap);
             return lengkap;
         };
         const atur = await repo.pengaturan();
         if (!atur?.aktif)
             return selesai({ status: 'nonaktif', pesan: A.tarik.nonaktif });
-        const aktif = await ({ batasWaktuMs: BATAS_WAKTU_MS });
+        const aktif = await klienPcare({ batasWaktuMs: BATAS_WAKTU_MS });
         if (!aktif)
             return selesai({ status: 'gagal', pesan: A.galat.pcareBelum });
         const tanggal = tanggalWib(waktu);
@@ -128,7 +128,7 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
                 continue;
             }
             if (!sesiAktif && repo.tambahSementaraJkn) {
-                const adaSementara = await repo.cariSementaraJkn?.(fasyankesId, poli.jenis_poli, noUrut.slice(0, 10), nomorKartu);
+                const adaSementara = await repo.cariSementaraJkn?.(poli.jenis_poli, noUrut.slice(0, 10), nomorKartu);
                 if (!adaSementara) {
                     await repo.tambahSementaraJkn({
                         pasien_id: pasien.id, lokasi_id: poli.lokasi_id ?? null,
@@ -147,7 +147,7 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
                     await repo.kaitkanPcare(lama.id, noUrut);
                 continue;
             }
-            const h = await kunjungan.daftarkan({
+            const h = await kunjungan.daftarkan(pelaku(), {
                 pasien_id: pasien.id, jenis: 'AMB', jenis_poli: poli.jenis_poli, cara_pembayaran: 'jkn',
                 keluhan_singkat: teks(d.keluhan).slice(0, 500) || A.tarik.keluhanBawaan, sumber: 'mobile_jkn', pcare_no_urut: noUrut.slice(0, 10),
             }, alamat);
@@ -232,7 +232,7 @@ export function buatLayananAntreanJkn({ repo, audit, kunjungan, opsiKunjungan, j
         },
         /** Untuk tugas berkala server: tarik antrean online bila aktif. */
         async tarikSemua() {
-            if ((await repo.fasyankesAktif()).length)
+            if ((await repo.pengaturan())?.aktif)
                 await this.tarik();
         },
     };
