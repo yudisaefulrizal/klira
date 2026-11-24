@@ -8,21 +8,22 @@ import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { awalSerah, bentukSerah, galatSerah } from './keadaan-farmasi.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { TampilanResep } from './tampilan-resep.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 /** `ringkas`: tanpa kartu resep dan keterangan (rincian obat sudah tampil di tagihan, mis. di tab Penutup); hanya peringatan stok kurang beserta persetujuannya. */
 export function buatSerahObat(kunjunganId, diizinkan = true, onUbah = () => {}, { ringkas = false } = {}) {
-  const B = KASIR.bayar, isi = document.createElement('div'); Object.assign(isi.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  const B = KASIR.bayar, isi = document.createElement('div'); kolomFleks(isi, 'md');
   let resep = null, serah = awalSerah(), kekurangan = [], galat = null, info = null, dicoba = false, memproses = false, berubah = false, aktif = true;
   const siap = () => (resep ?? []).filter(r => r.status === 'siap'), belum = () => (resep ?? []).filter(r => r.status === 'diajukan' || r.status === 'ditelaah');
   function tampil() {
     isi.replaceChildren();
     if (!resep) { isi.append(KASIR.memuat); return; }
     if (!resep.length && !ringkas) isi.append(B.serahKosong);
-    for (const r of ringkas ? [] : resep) { const box = kartu({ susun: 'xs', style: { padding: token.jarak.md } }), row = document.createElement('div'), nama = document.createElement('strong'); nama.textContent = r.nomor_resep; Object.assign(row.style, { display: 'flex', gap: token.jarak.sm, justifyContent: 'space-between', flexWrap: 'wrap' }); row.append(nama, lencana(STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))); box.append(row, TampilanResep({ resep: r })); isi.append(box); }
+    for (const r of ringkas ? [] : resep) { const box = kartu({ susun: 'xs', style: { padding: token.jarak.md } }), row = document.createElement('div'), nama = document.createElement('strong'); nama.textContent = r.nomor_resep; barisFleks(row, 'sm', { bungkus: true, sebar: true }); row.append(nama, lencana(STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))); box.append(row, TampilanResep({ resep: r })); isi.append(box); }
     if (belum().length && !ringkas) isi.append(peringatan(B.serahBelumSiap, 'biru'));
     if (kekurangan.length) { const box = peringatan(''), h = document.createElement('strong'); h.textContent = B.stokKurangJudul; box.append(h); for (const pesan of kekurangan) { const el = document.createElement('div'); el.textContent = pesan; box.append(el); } isi.append(box); }
     if (siap().length) {
-      if (!ringkas) { const p = document.createElement('span'); p.textContent = B.serahInfo; Object.assign(p.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); isi.append(p); }
+      if (!ringkas) { const p = document.createElement('span'); p.textContent = B.serahInfo; teksRedupKecil(p); isi.append(p); }
       if (kekurangan.length) {
         isi.append(KotakCentang({ id: 'serah-izinkan', label: B.izinkanStokKurang, checked: serah.izinkan, onChange(e) { serah = { ...serah, izinkan: e.target.checked }; tampil(); onUbah(); } }));
         if (serah.izinkan) { const f = bidang({ id: 'serah-alasan', label: B.alasanStok, jenis: 'textarea', nilai: serah.alasan, maxLength: 300, ubah(v) { serah = { ...serah, alasan: v }; f.setGalat(dicoba ? galatSerah(serah) : undefined); } }); f.setGalat(dicoba ? galatSerah(serah) : undefined); isi.append(f.el); }

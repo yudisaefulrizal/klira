@@ -7,11 +7,12 @@ import { token } from '../../gaya/token.js';
 import { bukaMasterObat } from '../../modal/farmasi/master-obat.js';
 import { bukaMutasiStok } from '../../modal/farmasi/mutasi-stok.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 export function pasangTabMasterObat(wadah) {
   const M = FARMASI.master, boleh = izinSaatIni(), el = document.createElement('div'), toolbar = document.createElement('div'), status = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), kosong = document.createElement('div'), pages = document.createElement('div');
   let cari = '', halaman = 1, aktif = true, timer, urut = 0, modal;
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); Object.assign(toolbar.style, { display: 'flex', gap: token.jarak.md, alignItems: 'flex-end', flexWrap: 'wrap' });
+  kolomFleks(el, 'md'); barisFleks(toolbar, 'md', { rata: 'flex-end', bungkus: true });
   const pencarian = bidang({ id: 'cari-obat', label: M.cari, jenis: 'search', autoComplete: 'off', ubah(v) { cari = v; halaman = 1; jadwal(); } }); pencarian.el.style.flexGrow = '1'; toolbar.append(pencarian.el);
   const table = tabel(['nama', 'kfa', 'satuan', 'harga', 'stok', 'kedaluwarsa', 'status', 'tindakan'].map(k => ({ judul: M.kolom[k], rataKanan: k === 'tindakan' })), FARMASI.tab.master);
   function selesai() { modal = undefined; jadwal(); }

@@ -6,6 +6,7 @@ import { EditorItemResep } from './editor-item-resep.js';
 import { telaahLengkap } from './keadaan-farmasi.js';
 import { galatIsianTelaah, resepTerkunci } from './simpan-telaah.js';
 import { CatatanResep, ItemResepFarmasi } from './tampilan-resep.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 const T = FARMASI.telaah;
 
@@ -28,7 +29,7 @@ export function RingkasanKlinis({ konteks, galatKonteks }) {
  * Isian dipegang induk (`isian` per id resep); `onUbah(id, perubahan)` mencatatnya tanpa menggambar ulang, kecuali `lukis` dipanggil induk.
  */
 export function FormTelaah({ daftar, isian, obat, konteks, galatKonteks, kekurangan = [], dicoba, memproses, galat, info, onUbah, onSimpan }) {
-  const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  const el = document.createElement('div'); kolomFleks(el, 'md');
   const editor = [];
   el.append(RingkasanKlinis({ konteks, galatKonteks }));
   if (galat) el.append(peringatan(galat));
@@ -40,7 +41,7 @@ export function FormTelaah({ daftar, isian, obat, konteks, galatKonteks, kekuran
   }
   for (const r of daftar) {
     const k = isian[r.id], g = k ? galatIsianTelaah(k) : {}, terkunci = resepTerkunci(r) || memproses, card = kartu({ susun: 'sm', style: { padding: token.jarak.md } });
-    const kepala = document.createElement('div'); Object.assign(kepala.style, { display: 'flex', justifyContent: 'space-between', gap: token.jarak.sm, alignItems: 'center' });
+    const kepala = document.createElement('div'); barisFleks(kepala, 'sm', { rata: 'center', sebar: true });
     // Dokter dan waktu resep diajukan: dalam kurung di samping nomor resep.
     const judul = document.createElement('strong'); judul.textContent = `${T.resep(r.nomor_resep)} (Dokter: ${r.dpjp_nama ?? 'Belum tercatat'} · ${new Date(r.dibuat_pada).toLocaleString('id-ID')})`;
     kepala.append(judul, lencana(r.status === 'diajukan' ? FARMASI.resep.menungguFarmasiLabel : STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))); card.append(kepala);
@@ -64,7 +65,7 @@ export function FormTelaah({ daftar, isian, obat, konteks, galatKonteks, kekuran
   const bisaSimpan = !!obat && daftar.some((r) => !resepTerkunci(r));
   if (bisaSimpan) {
     // Tombol simpan di kiri; siapa yang menelaah di kanan, sejajar dengan tombol.
-    const baris = document.createElement('div'); Object.assign(baris.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: token.jarak.md, flexWrap: 'wrap' });
+    const baris = document.createElement('div'); barisFleks(baris, 'md', { rata: 'center', bungkus: true, sebar: true });
     const simpan = tombol(memproses ? T.menyimpan : T.simpanTelaah, onSimpan); simpan.disabled = memproses; baris.append(simpan);
     const penelaah = [...new Set(daftar.filter((r) => !resepTerkunci(r) && r.telaah).map((r) => r.telaah.apoteker_nama ?? '-'))];
     if (penelaah.length) { const oleh = document.createElement('span'); oleh.textContent = T.oleh(penelaah.join(', ')); oleh.style.color = token.warna.teksRedup; baris.append(oleh); }

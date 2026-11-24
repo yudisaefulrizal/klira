@@ -6,6 +6,7 @@ import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahanJenis, alihIzin, awalJenis, bentukBuat, bentukUbah, galatJenis, kelompokkanIzin, labelAksiCakupan, semuaTerpilih, setKelompok } from './keadaan-jenis-akun.js';
+import { barisFleks, judulTebal, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 export function bukaModalJenisAkun({ jenis, onTutup, onSelesai }) {
   const ubah = jenis !== undefined, awal = awalJenis(jenis), form = { ...awal, izin: [...awal.izin] };
   let katalog = null, dicoba = false, memproses = false, aktif = true, kelompok = [];
@@ -13,11 +14,11 @@ export function bukaModalJenisAkun({ jenis, onTutup, onSelesai }) {
   const pesan = document.createElement('div'); pesan.style.display = 'contents';
   const nama = bidang({ id: 'jenis-nama', label: JENIS_AKUN.nama, nilai: form.nama, maxLength: 150, ubah(v) { form.nama = v; perbarui(); } });
   const syarat = bidang({ id: 'jenis-syarat', label: JENIS_AKUN.syarat, nilai: form.syarat, maxLength: 200, ubah(v) { form.syarat = v; perbarui(); } });
-  const syaratRoot = document.createElement('div'), hint = document.createElement('small'); hint.textContent = JENIS_AKUN.syaratPetunjuk; Object.assign(hint.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); syaratRoot.append(syarat.el, hint);
+  const syaratRoot = document.createElement('div'), hint = document.createElement('small'); hint.textContent = JENIS_AKUN.syaratPetunjuk; teksRedupKecil(hint); syaratRoot.append(syarat.el, hint);
   const section = document.createElement('section'), kepala = document.createElement('div'), tumbuh = document.createElement('div'), h3 = document.createElement('h3'), hitungan = document.createElement('span'), info = document.createElement('span'), grid = document.createElement('div');
-  section.setAttribute('aria-label', JENIS_AKUN.izinJudul); Object.assign(section.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm }); Object.assign(kepala.style, { display: 'flex', alignItems: 'baseline', gap: token.jarak.md }); tumbuh.style.flexGrow = '1';
-  h3.textContent = JENIS_AKUN.izinJudul; Object.assign(h3.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); tumbuh.append(h3); hitungan.style.color = token.warna.teksRedup; kepala.append(tumbuh, hitungan);
-  info.textContent = JENIS_AKUN.izinPetunjuk; Object.assign(info.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
+  section.setAttribute('aria-label', JENIS_AKUN.izinJudul); kolomFleks(section, 'sm'); barisFleks(kepala, 'md', { rata: 'baseline' }); tumbuh.style.flexGrow = '1';
+  h3.textContent = JENIS_AKUN.izinJudul; judulTebal(h3, 'besar'); tumbuh.append(h3); hitungan.style.color = token.warna.teksRedup; kepala.append(tumbuh, hitungan);
+  info.textContent = JENIS_AKUN.izinPetunjuk; teksRedupKecil(info);
   Object.assign(grid.style, { display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${token.ukuran.kolomKelompok}, 1fr))`, columnGap: token.jarak.sm, rowGap: token.jarak.sm, maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }); section.append(kepala, info, grid);
   const alasan = bidang({ id: 'jenis-alasan', label: ubah ? JENIS_AKUN.alasan : JENIS_AKUN.alasanBuat, nilai: form.alasan, jenis: 'textarea', maxLength: 1000, ubah(v) { form.alasan = v; perbarui(); } }); alasan.kontrol.setAttribute('aria-required', String(ubah));
   const galatAlasan = document.createElement('div'); galatAlasan.style.display = 'contents'; modal.isi.append(pesan, nama.el, syaratRoot, section, alasan.el, galatAlasan);

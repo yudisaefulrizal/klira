@@ -6,6 +6,7 @@ import { bidang, kartu, lencana, peringatan, tombol } from '../../komponen/ui/pr
 import { token } from '../../gaya/token.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { aksiTersedia, bentukKonfigurasi, formDariLingkungan, galatKonfigurasi, konfigurasiBerubah, ujiBerhasil } from './keadaan-satusehat.js';
+import { barisFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 const H = S.halaman;
 const LINGKUNGAN = ['sandbox', 'produksi'];
@@ -17,9 +18,9 @@ function kartuLingkungan(env, { bolehUbah, muat }) {
   const el = kartu({ susun: 'md' }), judul = document.createElement('h2'), kepala = document.createElement('div'), penanda = lencana(H.aktif, 'hijau'), pesan = document.createElement('div'), hasil = document.createElement('div'), tombolBaris = document.createElement('div');
   const formulir = document.createElement('form'); formulir.noValidate = true;
   judul.textContent = H.lingkungan[env]; Object.assign(judul.style, { margin: 0, fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.tebal });
-  Object.assign(kepala.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm }); kepala.append(judul, penanda);
-  Object.assign(formulir.style, kolom(token.jarak.md)); Object.assign(pesan.style, kolom(token.jarak.sm)); Object.assign(hasil.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
-  Object.assign(tombolBaris.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' });
+  barisFleks(kepala, 'sm', { rata: 'center' }); kepala.append(judul, penanda);
+  Object.assign(formulir.style, kolom(token.jarak.md)); Object.assign(pesan.style, kolom(token.jarak.sm)); teksRedupKecil(hasil);
+  barisFleks(tombolBaris, 'sm', { bungkus: true });
   const kontrol = {};
   for (const [nama, label, jenis, maks] of [['client_id', H.clientId, 'text', 200], ['client_secret', H.clientSecret, 'password', 500], ['base_url', H.alamat, 'text', 300]]) {
     const f = bidang({ id: `satusehat-${env}-${nama}`, label, jenis, maxLength: maks, autoComplete: nama === 'client_secret' ? 'new-password' : 'off', ubah(v) { if (!form) return; form[nama] = v; tampil(); } });

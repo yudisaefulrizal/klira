@@ -8,6 +8,7 @@ import { bukaPemulanganRawatInap } from '../../modal/rawat-inap/pemulangan-rawat
 import { bukaUbahPenempatan } from '../../modal/rawat-inap/ubah-penempatan.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { ringkasTandaVital } from './keadaan-histori-rawat-jalan.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 
 /** Tabel histori pemeriksaan Rawat Inap (CPPT) bergaya spreadsheet/Excel di bawah formulir Pemeriksaan. */
@@ -17,7 +18,7 @@ export function TabelHistoriCppt({ kunjunganId }) {
     Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm, marginTop: token.jarak.md });
 
     const kepala = document.createElement('div');
-    Object.assign(kepala.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm });
+    barisFleks(kepala, 'sm', { rata: 'center', sebar: true });
     const judul = document.createElement('strong');
     judul.textContent = 'Histori pemeriksaan rawat inap';
     const jumlah = document.createElement('small');
@@ -127,9 +128,9 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
     const P = RAWAT_INAP.penempatan, PM = RAWAT_INAP.pulang, PB = RAWAT_INAP.papan;
     const el = document.createElement('div'), status = document.createElement('div'), isi = document.createElement('div'), riwayatBed = document.createElement('div');
     const histori = TabelHistoriCppt({ kunjunganId });
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
-    Object.assign(isi.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
-    Object.assign(riwayatBed.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    kolomFleks(el, 'md');
+    kolomFleks(isi, 'md');
+    kolomFleks(riwayatBed, 'md');
     el.append(status, isi, histori, riwayatBed);
 
     let aktif = true, versi = 0, modal;
@@ -138,7 +139,7 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
     function kecil(teks) {
         const node = document.createElement('span');
         node.textContent = teks;
-        Object.assign(node.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
+        teksRedupKecil(node);
         return node;
     }
 
@@ -157,7 +158,7 @@ export function PanelBangsal({ kunjunganId, pasien, bolehInput = false, onBeruba
 
             const ringkasKartu = kartu({ susun: 'sm' });
             const atas = document.createElement('div');
-            Object.assign(atas.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' });
+            barisFleks(atas, 'sm', { rata: 'center', bungkus: true, sebar: true });
             const judul = document.createElement('strong');
             judul.textContent = bedAktif
                 ? `${[bedAktif.ruang_nama, bedAktif.bed_nama].filter(Boolean).join(' · ')}`

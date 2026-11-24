@@ -1,11 +1,11 @@
 import { panggilApi } from '../../../api-klien/klien.js';
 import { bukaKonfirmasi } from '../../../komponen/modal-1/modal-1.js';
 import { tombol, peringatan } from '../../../komponen/ui/primitif.js';
-import { token } from '../../../gaya/token.js';
+import { kolomFleks } from '../../../gaya/tata-letak.js';
 export function BersihkanPesan({ kanal, onSelesai }) {
   let sibuk = false, konfirmasi, aktif = true;
   const nama = kanal === 'whatsapp' ? 'WhatsApp' : 'Instagram', el = document.createElement('div'), baris = document.createElement('div'), pesan = document.createElement('div');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm }); pesan.style.display = 'contents';
+  kolomFleks(el, 'sm'); pesan.style.display = 'contents';
   const button = tombol('Bersihkan pesan', () => {
     pesan.replaceChildren(); konfirmasi = bukaKonfirmasi({ judul: `Bersihkan semua pesan ${nama}?`, pesan: `Seluruh percakapan dan lampiran ${nama} di Klira akan dihapus dan tidak dapat dikembalikan. Pesan di aplikasi ${nama} dan koneksi akun tetap ada.`, labelYa: 'Bersihkan semua', onYa: () => void bersihkan(), onTidak() { if (!sibuk) { konfirmasi.tutup(); konfirmasi = undefined; } } });
   }, 'sekunder'); baris.append(button); el.append(baris, pesan);

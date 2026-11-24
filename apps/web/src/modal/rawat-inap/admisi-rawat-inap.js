@@ -9,6 +9,7 @@ import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalAdmisi, bentukAdmisi, galatAdmisi, isiSpriAsal } from './keadaan-rawat-inap.js';
 import { KeteranganAsuransi } from '../pasien/keterangan-asuransi.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSelesai }) {
   const A = RAWAT_INAP.admisi;
@@ -27,7 +28,7 @@ export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSele
 
   const status = document.createElement('div'), form = document.createElement('form');
   form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   const simpan = tombol(A.simpan, kirim);
   simpan.disabled = true;
   modal.isi.append(status, form);
@@ -130,7 +131,7 @@ export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSele
       if (rekanOpsi.length) {
         const group = document.createElement('div'), h = document.createElement('strong');
         group.setAttribute('role', 'group'); group.setAttribute('aria-label', A.dpjpBersama);
-        Object.assign(group.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs });
+        kolomFleks(group, 'xs');
         h.textContent = A.dpjpBersama; group.append(h);
         for (const d of rekanOpsi) {
           group.append(KotakCentang({

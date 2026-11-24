@@ -1,4 +1,5 @@
 import { token } from '../../gaya/token.js';
+import { judulTebal, kolomFleks } from '../../gaya/tata-letak.js';
 
 const gayaGaris = (garis, halus) => {
   if (!garis) return {};
@@ -74,9 +75,9 @@ export function DaftarRingkasan({ bagian }) {
   const el = Kolom();
   for (const b of bagian) {
     const section = document.createElement('section'), h = document.createElement('h4'), dl = document.createElement('dl');
-    Object.assign(section.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs });
+    kolomFleks(section, 'xs');
     h.textContent = b.judul;
-    Object.assign(h.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal });
+    judulTebal(h, 'besar');
     section.append(h);
     if (!b.baris.length) { const p = document.createElement('p'); p.style.margin = '0'; p.textContent = '—'; section.append(p); }
     Object.assign(dl.style, { margin: '0', display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: token.jarak.md, rowGap: token.jarak.xs });

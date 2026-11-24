@@ -1,7 +1,6 @@
 import { PENUNJANG, TOMBOL } from '@klira/shared';
 import { pesanGalat } from '../../api-klien/klien.js';
 import { ambilSpesimen, ordersKunjungan } from '../../api-klien/penunjang.js';
-import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
@@ -9,6 +8,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { awalSpesimen, bentukSpesimen, galatSpesimen, gantiOrderSpesimen, menungguSpesimen } from './keadaan-spesimen.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function bukaAmbilSpesimen({ kunjunganId, pasien, onTutup, onSelesai }) {
   const S = PENUNJANG.spesimen, { pengguna } = penggunaSaatIni();
@@ -17,13 +17,13 @@ export function bukaAmbilSpesimen({ kunjunganId, pasien, onTutup, onSelesai }) {
   const modal = bukaModal1({ judul: S.judul, onTutup: tutup, lindungiTutup: () => !selesai && !!k && !!awal && adaPerubahan(awal, k) });
   modal.konteks.append(KepalaPasien({ nama: pasien.nama, nomorRm: pasien.nomor_rm }));
   const status = document.createElement('div'), isi = document.createElement('div'), form = document.createElement('form'), pilihan = document.createElement('div'), galatPilihan = document.createElement('div');
-  for (const el of [isi, form, pilihan]) Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  for (const el of [isi, form, pilihan]) kolomFleks(el, 'md');
   pilihan.setAttribute('role', 'group'); pilihan.setAttribute('aria-label', S.pilihOrder); form.noValidate = true;
   const asal = bidang({ id: 'spesimen-asal', label: S.asal, autoComplete: 'off', ubah(nilai) { k = { ...k, asal: nilai, asalManual: nilai.trim() !== '' }; tampilGalat(); } });
   const waktu = bidang({ id: 'spesimen-waktu', label: S.waktu, jenis: 'datetime-local', ubah(nilai) { k = { ...k, waktu: nilai }; tampilGalat(); } });
   const petugas = bidang({ id: 'spesimen-petugas', label: S.petugas, nilai: pengguna ? `${pengguna.nama} (${S.petugasSaya})` : S.petugasSaya }); petugas.kontrol.readOnly = true;
-  const petunjuk = document.createElement('span'); petunjuk.textContent = S.asalPetunjuk; Object.assign(petunjuk.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
-  const baris = document.createElement('div'); Object.assign(baris.style, { display: 'flex', gap: token.jarak.md, flexWrap: 'wrap' }); baris.append(waktu.el, petugas.el);
+  const petunjuk = document.createElement('span'); petunjuk.textContent = S.asalPetunjuk; teksRedupKecil(petunjuk);
+  const baris = document.createElement('div'); barisFleks(baris, 'md', { bungkus: true }); baris.append(waktu.el, petugas.el);
   form.append(pilihan, galatPilihan, asal.el, petunjuk, baris);
   const simpan = tombol(S.simpan, kirim); simpan.disabled = true;
   modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), simpan); modal.isi.append(status, isi);

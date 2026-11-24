@@ -1,9 +1,9 @@
-import { token } from '../../gaya/token.js';
 import { bidang, peringatan } from '../../komponen/ui/primitif.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 /** Penyusunan bidang modal PDP; keadaan dan aturan bisnis tetap milik masing-masing alur. */
 export function bidangPdp(k, { prefix, galat, dicoba, berubah }) {
   let fields = [], lepas = [];
-  function kecil(teks) { const el = document.createElement('span'); el.textContent = teks; Object.assign(el.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return el; }
+  function kecil(teks) { const el = document.createElement('span'); el.textContent = teks; teksRedupKecil(el); return el; }
   function perbarui() {
     const g = galat();
     for (const { nama, f, pesan, area, petunjuk } of fields) {
@@ -16,7 +16,7 @@ export function bidangPdp(k, { prefix, galat, dicoba, berubah }) {
   }
   function kolom() {
     lepas.forEach(f => f()); lepas = []; fields = [];
-    const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); return el;
+    const el = document.createElement('div'); kolomFleks(el, 'md'); return el;
   }
   function isian(nama, label, opsi = {}) {
     const { id = `${prefix}-${nama}`, jenis = 'text', petunjuk, ubah, ...sisa } = opsi;

@@ -1,9 +1,9 @@
 import { FARMASI } from '@klira/shared';
-import { token } from '../../gaya/token.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, peringatan } from '../../komponen/ui/primitif.js';
 import { EditorItemResep } from './editor-item-resep.js';
 import { barisResepDokter, perbaruiCatatanPuyer } from './keadaan-farmasi.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 const R = FARMASI.resep;
 
@@ -13,7 +13,7 @@ const R = FARMASI.resep;
  */
 export function LangkahResep({ resep, obat, onUbah, galat = {}, tampilGalat, disabled }) {
   const el = document.createElement('div');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(el, 'md');
   if (!izinSaatIni()('resep', 'input')) { el.append(peringatan(R.tanpaIzin, 'biru')); return el; }
   let catatanSaatIni = resep.catatan ?? '';
   const catatan = bidang({

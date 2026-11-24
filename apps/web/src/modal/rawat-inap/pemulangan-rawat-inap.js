@@ -9,6 +9,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { navigasi } from '../../util/navigasi/navigasi.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { awalPulang, bentukPulang, galatPulang } from './keadaan-rawat-inap.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaPemulanganRawatInap({ kunjunganId, pasien, onTutup, onSelesai }) {
   const P = RAWAT_INAP.pulang, awal = awalPulang();
@@ -26,7 +27,7 @@ export function bukaPemulanganRawatInap({ kunjunganId, pasien, onTutup, onSelesa
 
   const status = document.createElement('div'), form = document.createElement('form');
   form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   const simpan = tombol(P.simpan, kirim);
   modal.isi.append(status, form);
   modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), simpan);

@@ -6,6 +6,7 @@ import { token } from '../../gaya/token.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { ujiBerhasil } from '../satusehat/keadaan-satusehat.js';
 import { aksiPcare, bentukPcare, formDariPcare, galatPcare, pcareBerubah } from './keadaan-pcare.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 const H = P.halaman;
 const BIDANG = [
@@ -21,9 +22,9 @@ export function kartuPcare(env, { bolehUbah, muat }) {
   const el = kartu({ susun: 'md' }), judul = document.createElement('h3'), kepala = document.createElement('div'), penanda = lencana(H.aktif, 'hijau'), pesan = document.createElement('div'), hasil = document.createElement('div'), baris = document.createElement('div');
   const formulir = document.createElement('form'); formulir.noValidate = true;
   judul.textContent = H.lingkungan[env]; Object.assign(judul.style, { margin: 0, fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.tebal });
-  Object.assign(kepala.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm }); kepala.append(judul, penanda);
-  for (const x of [formulir, pesan]) Object.assign(x.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm });
-  Object.assign(hasil.style, { fontSize: token.huruf.ukuran.kecil }); Object.assign(baris.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' });
+  barisFleks(kepala, 'sm', { rata: 'center' }); kepala.append(judul, penanda);
+  for (const x of [formulir, pesan]) kolomFleks(x, 'sm');
+  Object.assign(hasil.style, { fontSize: token.huruf.ukuran.kecil }); barisFleks(baris, 'sm', { bungkus: true });
   const kontrol = {};
   for (const [nama, label, jenis, maks] of BIDANG) {
     const f = bidang({ id: `pcare-${env}-${nama}`, label, jenis, maxLength: maks, autoComplete: jenis === 'password' ? 'new-password' : 'off', ubah(v) { if (!form) return; form[nama] = v; tampil(); } });

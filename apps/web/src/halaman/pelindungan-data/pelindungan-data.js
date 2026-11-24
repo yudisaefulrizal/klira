@@ -1,9 +1,9 @@
 import { PDP, punyaIzin } from '@klira/shared';
-import { token } from '../../gaya/token.js';
 import { tab } from '../../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../../util/tab/ingatan-tab.js';
 import { TABS_PDP } from '../../util/tab/tab-pdp.js';
 import { pasangTabPdp } from './kerangka-tab.js';
+import { barisFleks, judulTebal } from '../../gaya/tata-letak.js';
 const HALAMAN = 'pelindungan-data';
 const simpanan = () => typeof sessionStorage === 'undefined' ? null : sessionStorage;
 
@@ -12,8 +12,8 @@ export function pasangPelindunganData(wadah, { pengguna, search, ganti, bukaModa
   const boleh = !!pengguna && punyaIzin(pengguna, 'pdp', 'lihat');
   const ids = boleh ? TABS_PDP.map(t => t.id) : [];
   const kepala = document.createElement('header'), h1 = document.createElement('h1'), isi = document.createElement('div');
-  Object.assign(kepala.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, flexWrap: 'wrap' });
-  h1.textContent = PDP.judul; Object.assign(h1.style, { margin: '0', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: '1' }); kepala.append(h1); isi.style.display = 'contents';
+  barisFleks(kepala, 'md', { rata: 'center', bungkus: true });
+  h1.textContent = PDP.judul; judulTebal(h1, 'halaman', true); kepala.append(h1); isi.style.display = 'contents';
   const tabs = boleh ? tab(TABS_PDP, '', PDP.tabLabel, id => ganti(`/${HALAMAN}?tab=${id}`)) : null;
   if (tabs) kepala.append(tabs.el); wadah.replaceChildren(kepala, isi);
   function perbaruiAlamat(alamat) {

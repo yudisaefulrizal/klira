@@ -8,6 +8,7 @@ import { token } from '../../gaya/token.js';
 import { bentukKirim, formAwal, galatForm, kelompokkan, pulihkanBadan, ringkasHasil, ringkasKoneksi, ubahBadan, ubahParameter } from './keadaan-test-endpoint.js';
 import { kartuPcare } from './kartu-pcare.js';
 import { bagianAntreanJkn } from './kartu-antrean-jkn.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 
 const H = U.halaman;
 const LAYANAN = ['satusehat', 'pcare'];
@@ -25,7 +26,7 @@ function panelLayanan(layanan, { bolehKirim }) {
   el.id = `panel-${layanan}`; el.setAttribute('role', 'tabpanel'); el.setAttribute('aria-labelledby', `tab-${layanan}`); Object.assign(el.style, kolom(token.jarak.md));
   for (const x of [spanduk, paramWadah, badanWadah, pesan, hasilWadah]) Object.assign(x.style, kolom(token.jarak.sm));
   Object.assign(info.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap', color: token.warna.teksRedup, fontSize: token.huruf.ukuran.dasar });
-  Object.assign(aksi.style, { display: 'flex', gap: token.jarak.sm });
+  barisFleks(aksi, 'sm');
   const pilihBidang = document.createElement('div'), pilihLabel = document.createElement('label'); pilih.id = `uji-${layanan}-endpoint`; pilihLabel.htmlFor = pilih.id; pilihLabel.textContent = H.endpoint;
   Object.assign(pilihBidang.style, kolom(token.jarak.xs)); Object.assign(pilihLabel.style, { fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang });
   Object.assign(pilih.style, { height: token.ukuran.isian, padding: `0 ${token.jarak.sm}`, border: `${token.ukuran.garis} solid ${token.warna.garis}`, borderRadius: token.radius.sedang, background: token.warna.permukaan, color: token.warna.teks, fontFamily: token.huruf.keluarga, fontSize: token.huruf.ukuran.dasar });
@@ -66,7 +67,7 @@ function panelLayanan(layanan, { bolehKirim }) {
   function tampilHasil() {
     hasilWadah.replaceChildren(); if (!hasil) return;
     const r = ringkasHasil(layanan, hasil), judul = document.createElement('strong'), baris = document.createElement('div'); judul.textContent = H.hasilJudul;
-    Object.assign(baris.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' });
+    barisFleks(baris, 'sm', { rata: 'center', bungkus: true });
     if (r.status !== null) baris.append(lencana(String(r.status), r.nada)); if (r.durasi !== null) { const d = document.createElement('small'); d.textContent = H.durasi(r.durasi); baris.append(d); }
     hasilWadah.append(judul, baris); for (const c of r.catatan) hasilWadah.append(peringatan(c, r.nada === 'merah' ? 'merah' : 'biru'));
     const a = document.createElement('small'), b = document.createElement('small'); a.textContent = H.permintaan; b.textContent = H.respons;

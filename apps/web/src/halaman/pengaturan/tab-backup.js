@@ -7,6 +7,7 @@ import { bidang, kartu, tombol, peringatan, baris, sel, lencana, paginasi } from
 import { token } from '../../gaya/token.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { tabelTab } from './tabel.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 export function pasangTabBackup(wadah) {
   let backup = null, halaman = 1, aktif = true, versi = 0, sistemMemproses = false, galatSistem = null, konfirmasi, aturLewatWeb;
   const ui = tabelTab({ id: 'backup', label: KEAMANAN.backupJudul, kolom: ['waktu', 'status', 'ukuran', 'lokasi'].map(k => ({ judul: KEAMANAN.backupKolom[k] })) }); wadah.replaceChildren(ui.el);
@@ -14,10 +15,10 @@ export function pasangTabBackup(wadah) {
   const pesanSistem = document.createElement('div'); pesanSistem.style.display = 'contents'; const tombolSistem = [];
   function tutupKonfirmasi() { konfirmasi?.tutup(); konfirmasi = undefined; }
   if (izinSaatIni()('akses', 'perbaikan')) {
-    const card = kartu({ susun: 'md' }), label = document.createElement('div'), info = document.createElement('span'), aksi = document.createElement('div'), input = document.createElement('input'); label.textContent = KEAMANAN.sistemJudul; Object.assign(label.style, { fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); info.textContent = KEAMANAN.sistemPetunjuk; info.style.color = token.warna.teksRedup; Object.assign(aksi.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' }); input.type = 'file'; input.accept = '.sql'; input.hidden = true;
+    const card = kartu({ susun: 'md' }), label = document.createElement('div'), info = document.createElement('span'), aksi = document.createElement('div'), input = document.createElement('input'); label.textContent = KEAMANAN.sistemJudul; Object.assign(label.style, { fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); info.textContent = KEAMANAN.sistemPetunjuk; info.style.color = token.warna.teksRedup; barisFleks(aksi, 'sm', { rata: 'center', bungkus: true }); input.type = 'file'; input.accept = '.sql'; input.hidden = true;
     const link = document.createElement('a'), unduh = tombol(KEAMANAN.unduh, null, 'sekunder'); unduh.tabIndex = -1; link.href = alamatUnduhBackup; link.download = ''; link.style.textDecoration = 'none'; link.append(unduh);
     const unggah = tombol(KEAMANAN.unggah, () => input.click(), 'sekunder'), reset = tombol(KEAMANAN.reset, () => {
-      tutupKonfirmasi(); let ketik = ''; const isi = document.createElement('div'), teks = document.createElement('span'); Object.assign(isi.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm }); teks.textContent = KEAMANAN.resetPesan;
+      tutupKonfirmasi(); let ketik = ''; const isi = document.createElement('div'), teks = document.createElement('span'); kolomFleks(isi, 'sm'); teks.textContent = KEAMANAN.resetPesan;
       const f = bidang({ id: 'ketik-reset', label: 'RESET', ubah(v) { ketik = v; konfirmasi?.perbarui({ memproses: sistemMemproses || ketik !== 'RESET' }); } }); isi.append(teks, f.el);
       konfirmasi = bukaKonfirmasi({ judul: KEAMANAN.resetJudul, pesan: isi, labelYa: KEAMANAN.resetYa, memproses: true, onTidak: tutupKonfirmasi, onYa: () => void jalankanSistem(resetSistem, KEAMANAN.resetGagal) });
     });

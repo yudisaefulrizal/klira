@@ -9,10 +9,11 @@ import { token } from '../../gaya/token.js';
 import { bukaModalMasterProfil } from '../../modal/akun-pengaturan/master-profil.js';
 import { BAWAAN_MASTER, bacaPenyaring, queryPenyaring, saringanMaster, ubahPenyaring } from '../../util/tab/penyaring-tab.js';
 import { jenisMasterDiHalaman } from '../../util/lokasi-master.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function DaftarMaster({ search, ubahAlamat, jenisDaftar }) {
   const bawaan = { ...BAWAAN_MASTER, jenis: jenisDaftar[0] ?? 'poli' }, boleh = izinSaatIni(), el = document.createElement('section');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(el, 'md');
   let aktif = true, versi = 0, timer, modal;
   function terapkan(perubahan, ganti = false) { const lu = bacaPenyaring(search, bawaan), k = { ...lu, nilai: { ...lu.nilai, jenis: jenisMasterDiHalaman(search, jenisDaftar) } }; ubahAlamat(queryPenyaring('master', ubahPenyaring(ganti ? { ...k, nilai: { ...bawaan } } : k, perubahan), bawaan)); }
   function afficher() {

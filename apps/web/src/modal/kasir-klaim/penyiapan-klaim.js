@@ -9,6 +9,7 @@ import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { alihBerkas, awalKlaim, bentukSiapkan, bentukUbahBerkas, galatKlaim, kurangBerkas, langkahBermasalahKlaim, pilihKandidat } from './keadaan-klaim.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaPenyiapanKlaim({ klaim = null, onTutup, onSelesai }) {
   const S = KLAIM.siap, awal = awalKlaim(klaim), ubah = !!klaim;
@@ -21,7 +22,7 @@ export function bukaPenyiapanKlaim({ klaim = null, onTutup, onSelesai }) {
   function champ(el, nom, label, jenis = 'text', maxLength, opsi, change) { const f = bidang({ id: `klm-${nom}`, label, jenis, maxLength, opsi, nilai: k[nom] ?? '', autoComplete: 'off', ubah(v) { if (change) change(v); else { k = { ...k, [nom]: v }; perbarui(); } } }); controls.set(nom, f); f.setGalat(dicoba ? galatKlaim(k, ubah)[nom] : undefined); el.append(f.el); }
   function petit(teks) { const el = document.createElement('small'); el.style.color = token.warna.teksRedup; el.textContent = teks; return el; }
   function resume(judul, baris) { return DaftarRingkasan({ bagian: [{ judul, baris }] }); }
-  function isi(n) { controls.clear(); const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); const terpilih = kandidat?.find(c => c.kunjungan_id === k.kunjungan_id), jenis = klaim?.jenis ?? terpilih?.jenis ?? 'AMB';
+  function isi(n) { controls.clear(); const el = document.createElement('div'); kolomFleks(el, 'md'); const terpilih = kandidat?.find(c => c.kunjungan_id === k.kunjungan_id), jenis = klaim?.jenis ?? terpilih?.jenis ?? 'AMB';
     if (n === 0) { if (ubah) { const h = document.createElement('strong'); h.append(klaim.pasien_nama, ' ', petit(klaim.pasien_nomor_rm)); el.append(h); } else { if (kandidat && !kandidat.length) el.append(peringatan(S.tanpaKandidat, 'biru')); champ(el, 'kunjungan_id', S.kunjungan, 'text', undefined, [{ nilai: '', label: S.pilihKunjungan }, ...(kandidat ?? []).map(c => ({ nilai: String(c.kunjungan_id), label: `${c.pasien_nama} (${c.pasien_nomor_rm}) · ${formatWaktu(c.waktu_tutup)}${c.jenis === 'IMP' ? ' · rawat inap' : ''}` }))], pilih); } champ(el, 'nomor_sep', S.sep); el.append(petit(S.sepPetunjuk)); }
     if (n === 1) { if (klaim?.kode_beda) el.append(peringatan(S.kodeBeda)); el.append(resume(S.kodeSumber, [{ label: S.diagnosis, nilai: kode ? teksKode(kode.diagnosis) : '-' }, { label: S.tindakan, nilai: kode ? teksKode(kode.tindakan) : '-' }])); }
     if (n === 2) { el.append(petit(S.berkasPetunjuk)); for (const b of BERKAS_KLAIM.filter(b => (b !== 'spri' && b !== 'ringkasan_rm') || jenis === 'IMP')) el.append(KotakCentang({ id: `klm-berkas-${b}`, label: KLAIM.berkasLabel[b], checked: k.berkas.includes(b), onChange(e) { k = alihBerkas(k, b, e.target.checked, BERKAS_KLAIM); perbarui(); } })); if (jenis === 'IMP' && !(klaim?.resume_ada ?? terpilih?.resume_ada ?? false)) el.append(peringatan(S.resumeBelum)); champ(el, 'catatan', S.catatan, 'textarea', 300); }

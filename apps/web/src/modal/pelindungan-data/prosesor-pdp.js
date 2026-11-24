@@ -7,12 +7,13 @@ import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { alihButir, awalProsesor, bentukProsesor, galatProsesor, langkahBermasalahProsesor } from './keadaan-pdp.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 const P = PDP.prosesor;
 export function bukaProsesorPdp({ prosesor = null, onTutup, onSelesai }) {
   const awal = awalProsesor(prosesor), k = { ...awal, sub: awal.sub.map(s => ({ ...s })), butir: [...awal.butir] };
   let fields = [], dicoba = false, memproses = false, selesai = false, aktif = true, subGalat;
-  const kecil = teks => { const el = document.createElement('span'); el.textContent = teks; Object.assign(el.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return el; };
-  function kolom() { fields = []; subGalat = undefined; const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); return el; }
+  const kecil = teks => { const el = document.createElement('span'); el.textContent = teks; teksRedupKecil(el); return el; };
+  function kolom() { fields = []; subGalat = undefined; const el = document.createElement('div'); kolomFleks(el, 'md'); return el; }
   function input(id, label, nilai, ubah, nama, jenis = 'text') {
     const f = bidang({ id, label, nilai, jenis, autoComplete: jenis === 'date' ? undefined : 'off', ubah(v) { ubah(v); validasi(); modal.perbarui(); } }); fields.push({ nama, f }); return f;
   }

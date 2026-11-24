@@ -4,12 +4,13 @@ import { daftarShift, ubahShift } from '../../api-klien/master.js';
 import { token } from '../../gaya/token.js';
 import { izinSaatIni } from '../izin/izin-saja.js';
 import { baris, kartu, peringatan, sel, tabel, tombol } from '../ui/primitif.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 const JAM = /^([01]\d|2[0-3]):[0-5]\d$/;
 /** Halaman Shift: tiga shift tetap (Pagi, Siang, Malam); hanya jam mulai dan selesai yang bisa diubah. */
 export function TabShift() {
     const boleh = izinSaatIni(), el = document.createElement('section'), bisaUbah = boleh('master', 'perbaikan');
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    kolomFleks(el, 'md');
     let aktif = true, pesan = null, galat = null;
     const info = document.createElement('div'), isi = document.createElement('div'), kotak = kartu({ style: { padding: '0', overflow: 'hidden' } });
     info.textContent = S.petunjuk; info.style.color = token.warna.teksRedup;

@@ -6,11 +6,12 @@ import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan } from '.
 import { token } from '../../gaya/token.js';
 import { bukaMasterPemeriksaan } from '../../modal/penunjang/master-pemeriksaan.js';
 import { rupiahAtau } from '../../modal/penunjang/keadaan-order-lab.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 export function pasangTabMasterPemeriksaan(wadah) {
   const M = PENUNJANG.master, boleh = izinSaatIni(), el = document.createElement('div'), toolbar = document.createElement('div'), status = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), kosong = document.createElement('div');
   let cari = '', aktif = true, timer, urut = 0, modal;
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); Object.assign(toolbar.style, { display: 'flex', gap: token.jarak.md, alignItems: 'flex-end', flexWrap: 'wrap' });
+  kolomFleks(el, 'md'); barisFleks(toolbar, 'md', { rata: 'flex-end', bungkus: true });
   const pencarian = bidang({ id: 'cari-master', label: M.cari, jenis: 'search', autoComplete: 'off', ubah(v) { cari = v; jadwal(); } }); toolbar.append(pencarian.el);
   function buka(master) { modal = bukaMasterPemeriksaan({ master, onTutup() { modal = undefined; }, onSelesai() { modal = undefined; jadwal(); } }); }
   if (boleh('penunjang', 'input')) toolbar.append(tombol(M.tambah, () => buka()));

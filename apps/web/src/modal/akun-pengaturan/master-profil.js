@@ -8,6 +8,7 @@ import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { InfoBantuan } from '../../komponen/ui/info-bantuan.js';
 import { awalMaster, bentukMasukan, bidangAktif, bidangTampil, galatMaster, masterBerubah, opsiDenganNilaiSaatIni, petunjukSaatIni, wajibSaatIni } from './keadaan-master.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 const JENIS_ISIAN = { teks: 'text', angka: 'number', tanggal: 'date', waktu: 'time' };
 const P = MASTER.petunjuk;
 /** `tetap` = kunci bidang yang sudah ditentukan pemanggil (disembunyikan, nilainya tetap dari awalan/baris); `ringkasan` = teks penjelasnya. */
@@ -32,7 +33,7 @@ export function bukaModalMasterProfil({ jenis, baris, awalan, tetap = [], ringka
     const pilihan = b.tipe === 'pilihan' || b.tipe === 'rujukan';
     const f = bidang({ id, label: b.label, nilai: nilai[b.kunci] ?? '', jenis: JENIS_ISIAN[b.tipe], maxLength: b.maks, ...(pilihan ? { opsi: [] } : {}), ubah: v => atur(b.kunci, v) });
     if (b.tipe === 'angka') { f.kontrol.min = '0'; f.kontrol.step = '1'; f.kontrol.inputMode = 'numeric'; }
-    const label = f.el.querySelector('label'), labelRow = document.createElement('div'); Object.assign(labelRow.style, { display: 'flex', alignItems: 'center', gap: token.jarak.xs }); label.replaceWith(labelRow); labelRow.append(label);
+    const label = f.el.querySelector('label'), labelRow = document.createElement('div'); barisFleks(labelRow, 'xs', { rata: 'center' }); label.replaceWith(labelRow); labelRow.append(label);
     let info, petunjukLama;
     controls.set(b.kunci, { el: f.el, display: 'flex', tutup() { info?.tutup?.(); }, perbarui(g) {
       const wajib = wajibSaatIni(b, nilai), petunjuk = petunjukSaatIni(b, nilai); f.kontrol.setAttribute('aria-required', String(wajib)); f.setGalat(g);

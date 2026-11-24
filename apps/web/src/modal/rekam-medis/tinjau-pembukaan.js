@@ -6,13 +6,14 @@ import { bidang, tombol, peringatan, lencana } from '../../komponen/ui/primitif.
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { putuskanPembukaan } from '../../api-klien/dokumen-rm.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaTinjauPembukaan({ permintaan: q, bolehPutuskan = true, onTutup, onSelesai }) {
   const T = REKAM_MEDIS.dok.pembukaan, diputuskan = q.status !== 'diajukan', bisa = bolehPutuskan && !diputuskan;
   let catatan = '', dicoba = false, proses = false, hasil = false, aktif = true;
   function tutup() { aktif = false; modal.tutup(); (hasil ? onSelesai : onTutup)(); }
   const modal = bukaModal1({ judul: T.tinjauJudul, lebar: 'modalSedang', onTutup: tutup, lindungiTutup: () => !hasil && catatan.trim().length > 0 }), status = document.createElement('div'), contenu = document.createElement('div');
-  Object.assign(contenu.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(contenu, 'md');
   const meta = document.createElement('div'); meta.style.color = token.warna.teksRedup; meta.append(`${q.diminta_oleh_nama ? `${T.diminta(q.diminta_oleh_nama)} · ` : ''}${formatWaktu(q.dibuat_pada)} `, lencana(STATUS_PERBAIKAN.label(q.status), STATUS_PERBAIKAN.warna(q.status)));
   contenu.append(meta, DaftarRingkasan({ bagian: [{ judul: `${q.pasien_nama} (${q.pasien_nomor_rm})`, baris: [{ label: T.pemohon, nilai: [q.pemohon_nama, q.pemohon_instansi].filter(Boolean).join(' · ') }, { label: T.dasarLabel, nilai: `${T.dasar[q.dasar]}${q.alasan_hukum ? ` · ${T.alasan[q.alasan_hukum]}` : ''}` }, { label: T.dasarRinci, nilai: q.dasar_rinci }, { label: T.cakupan, nilai: q.cakupan }, { label: T.samar, nilai: q.identitas_disamarkan ? T.samarYa : T.samarTidak }] }] }));
   if (diputuskan) contenu.append(peringatan(`${q.penyetuju_nama ? `${T.oleh(q.penyetuju_nama)}. ` : ''}${q.catatan_keputusan ?? ''}`, 'biru'));

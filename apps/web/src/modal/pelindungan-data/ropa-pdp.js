@@ -6,6 +6,7 @@ import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.
 import { bidang, tombol } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalRopa, galatRopa, langkahBermasalahRopa } from './keadaan-pdp.js';
+import { judulTebal, kolomFleks } from '../../gaya/tata-letak.js';
 const R = PDP.ropa;
 const urutan = [['nama_kegiatan', R.namaKegiatan], ['ppdp_nama', R.ppdp], ['sumber_tujuan', R.sumberTujuan], ['dasar', R.dasar], ['tujuan', R.tujuan], ['jenis_data', R.jenisData], ['kategori_subjek', R.kategoriSubjek], ['pihak_akses', R.pihakAkses], ['pemenuhan_hak', R.pemenuhanHak], ['aliran', R.aliran], ['masa_retensi', R.masaRetensi], ['pengamanan', R.pengamanan], ['transfer', R.transfer]];
 export function bukaRopaPdp({ ropa = null, onTutup, onSelesai }) {
@@ -20,7 +21,7 @@ export function bukaRopaPdp({ ropa = null, onTutup, onSelesai }) {
   }
   function bagian(nama) { const g = galatRopa(k); return nama.every(n => !g[n]); }
   function isi(daftar, pengendali = false) {
-    fields = []; const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    fields = []; const el = document.createElement('div'); kolomFleks(el, 'md');
     if (pengendali) { const s = document.createElement('span'); s.textContent = R.pengendali; s.style.color = token.warna.teksRedup; el.append(s); }
     for (const [nama, label, panjang] of daftar) {
       const field = bidang({ id: `ropa-${nama}`, label, nilai: k[nama], jenis: panjang ? 'textarea' : 'text', maxLength: panjang ? 500 : undefined, autoComplete: panjang || nama === 'dasar' ? undefined : 'off', opsi: nama === 'dasar' ? [{ nilai: '', label: R.pilih }, ...Object.entries(R.dasarLabel).map(([nilai, label]) => ({ nilai, label }))] : undefined,
@@ -31,7 +32,7 @@ export function bukaRopaPdp({ ropa = null, onTutup, onSelesai }) {
   }
   function ringkasan() {
     fields = []; const el = document.createElement('div'), section = document.createElement('section'), h4 = document.createElement('h4'), dl = document.createElement('dl');
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); Object.assign(section.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); h4.textContent = R.judul; Object.assign(h4.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); Object.assign(dl.style, { margin: '0', display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: token.jarak.md, rowGap: token.jarak.xs });
+    kolomFleks(el, 'md'); kolomFleks(section, 'xs'); h4.textContent = R.judul; judulTebal(h4, 'besar'); Object.assign(dl.style, { margin: '0', display: 'grid', gridTemplateColumns: 'max-content 1fr', columnGap: token.jarak.md, rowGap: token.jarak.xs });
     for (const [nama, label] of urutan) { const row = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); row.style.display = 'contents'; dt.textContent = label; dt.style.color = token.warna.teksRedup; dd.textContent = (nama === 'dasar' ? R.dasarLabel[k.dasar] : k[nama]) || '-'; Object.assign(dd.style, { margin: '0', fontWeight: token.huruf.berat.sedang, overflowWrap: 'anywhere' }); row.append(dt, dd); dl.append(row); }
     section.append(h4, dl); el.append(section); return el;
   }

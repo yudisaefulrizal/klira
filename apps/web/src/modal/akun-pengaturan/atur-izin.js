@@ -10,10 +10,11 @@ import { jalankanAksi } from './alur-atur-izin.js';
 import { BagianIzin, BagianPenugasan, TeksMemuat } from './bagian-atur-izin.js';
 import { hariIniLokal, opsiIzin } from './keadaan-akun.js';
 import { bagianAkses, bentukIzinBaru, bentukPenugasanBaru, izinAwal, izinTerpakai, jenisBerjalan, opsiJenisBaru, penugasanAwal } from './keadaan-izin.js';
+import { teksRedupKecil } from '../../gaya/tata-letak.js';
 export function bukaAturIzin({ pengguna, onTutup }) {
   const hariIni = hariIniLokal(); let jenis = [], katalog = [], penugasan = [], izinAkun = [], memuat = true, galat = null, memproses = false, berubah = false, formTugas = penugasanAwal(hariIni), formIzin = izinAwal(hariIni), kata = '', aktif = true, tertunda, akses;
   const modal = bukaModal1({ judul: ATUR_IZIN.judul, lebar: 'modalBesar', onTutup: () => onTutup(berubah), lindungiTutup: () => formTugas.jenis_akun_id !== '' || formIzin.alasan.trim() !== '' || formIzin.izin_id !== 0 });
-  const identitas = document.createElement('div'), nama = document.createElement('div'), username = document.createElement('div'); identitas.style.flexGrow = '1'; nama.textContent = pengguna.nama; nama.style.fontWeight = token.huruf.berat.tebal; username.textContent = pengguna.username; Object.assign(username.style, { fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }); identitas.append(nama, username); modal.konteks.append(identitas, tombol(ATUR_IZIN.lihatAkses, () => void bukaAkses(), 'sekunder'));
+  const identitas = document.createElement('div'), nama = document.createElement('div'), username = document.createElement('div'); identitas.style.flexGrow = '1'; nama.textContent = pengguna.nama; nama.style.fontWeight = token.huruf.berat.tebal; username.textContent = pengguna.username; teksRedupKecil(username); identitas.append(nama, username); modal.konteks.append(identitas, tombol(ATUR_IZIN.lihatAkses, () => void bukaAkses(), 'sekunder'));
   modal.aksi.append(tombol(ATUR_IZIN.tutup, () => onTutup(berubah), 'sekunder'));
   const pesan = document.createElement('div'), tugas = document.createElement('div'), izin = document.createElement('div'); pesan.style.display = tugas.style.display = izin.style.display = 'contents'; modal.isi.append(pesan, tugas, izin);
   function tampilBagian(target, bangun) {

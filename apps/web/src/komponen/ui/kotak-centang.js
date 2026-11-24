@@ -1,4 +1,5 @@
 import { token } from '../../gaya/token.js';
+import { teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function KotakCentang({ id, label, keterangan, style, ...sisa }) {
   const el = document.createElement('div');
@@ -28,7 +29,7 @@ export function KotakCentang({ id, label, keterangan, style, ...sisa }) {
   judul.append(nama);
   if (keterangan) {
     const petunjuk = document.createElement('span');
-    Object.assign(petunjuk.style, { fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup });
+    teksRedupKecil(petunjuk);
     petunjuk.append(keterangan);
     judul.append(petunjuk);
   }

@@ -5,10 +5,11 @@ import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { BATAS_FORM, formDariPengaturan, bentukKeamanan, galatKeamanan, keamananBerubah } from './keadaan-keamanan.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 export function pasangTabKeamanan(wadah) {
   const bolehUbah = izinSaatIni()('akses', 'perbaikan'); let awal = null, form = null, bawaan = false, galat = null, info = null, memproses = false, dicoba = false, aktif = true;
   const el = document.createElement('section'), card = kartu({ susun: 'md' }), judul = document.createElement('div'), ket = document.createElement('span'), pesan = document.createElement('div'), formulir = document.createElement('form'), baris = document.createElement('div');
-  el.id = 'panel-keamanan'; el.setAttribute('role', 'tabpanel'); el.setAttribute('aria-labelledby', 'tab-keamanan'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); judul.textContent = KEAMANAN.kebijakanJudul; Object.assign(judul.style, { fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); ket.textContent = KEAMANAN.kebijakanPetunjuk; ket.style.color = token.warna.teksRedup; pesan.style.display = 'contents'; Object.assign(formulir.style, { display: 'none', flexDirection: 'column', gap: token.jarak.md }); Object.assign(baris.style, { display: 'flex', alignItems: 'stretch', gap: token.jarak.lg, flexWrap: 'wrap' }); formulir.append(baris); card.append(judul, ket, pesan, formulir); el.append(card); wadah.replaceChildren(el);
+  el.id = 'panel-keamanan'; el.setAttribute('role', 'tabpanel'); el.setAttribute('aria-labelledby', 'tab-keamanan'); kolomFleks(el, 'md'); judul.textContent = KEAMANAN.kebijakanJudul; Object.assign(judul.style, { fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); ket.textContent = KEAMANAN.kebijakanPetunjuk; ket.style.color = token.warna.teksRedup; pesan.style.display = 'contents'; Object.assign(formulir.style, { display: 'none', flexDirection: 'column', gap: token.jarak.md }); barisFleks(baris, 'lg', { rata: 'stretch', bungkus: true }); formulir.append(baris); card.append(judul, ket, pesan, formulir); el.append(card); wadah.replaceChildren(el);
   const controls = new Map();
   const definisi = [
     ['masa_sesi_jam', KEAMANAN.masaSesi, BATAS_FORM.masaSesiJam, KEAMANAN.petunjukMasaSesi],
@@ -16,9 +17,9 @@ export function pasangTabKeamanan(wadah) {
     ['panjang_minimum_kata_sandi', KEAMANAN.panjangKataSandi, BATAS_FORM.panjangMinimumKataSandi, KEAMANAN.petunjukPanjang],
   ];
   for (const [nama, label, batas, petunjuk] of definisi) {
-    const col = document.createElement('div'), hint = document.createElement('span'); Object.assign(col.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs });
+    const col = document.createElement('div'), hint = document.createElement('span'); kolomFleks(col, 'xs');
     const f = bidang({ id: `keamanan-${nama}`, label, jenis: 'number', ubah(v) { if (form) { form[nama] = v; tampil(); } } }); Object.assign(f.kontrol, { min: String(batas.min), max: String(batas.maks), step: '1', inputMode: 'numeric', readOnly: !bolehUbah }); f.kontrol.style.maxWidth = token.ukuran.kolomFilter;
-    hint.textContent = petunjuk(batas.min, batas.maks); Object.assign(hint.style, { fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }); col.append(f.el, hint); baris.append(col); controls.set(nama, f);
+    hint.textContent = petunjuk(batas.min, batas.maks); teksRedupKecil(hint); col.append(f.el, hint); baris.append(col); controls.set(nama, f);
   }
   const simpan = tombol(KEAMANAN.simpan); simpan.type = 'submit'; if (bolehUbah) { const div = document.createElement('div'); div.append(simpan); formulir.append(div); }
   function terapkan(p) { awal = formDariPengaturan(p); form = { ...awal }; bawaan = p.bawaan; for (const [k, f] of controls) f.kontrol.value = form[k]; }

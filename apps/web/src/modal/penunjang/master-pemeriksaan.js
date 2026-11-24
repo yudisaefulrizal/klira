@@ -8,6 +8,7 @@ import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalMasterPemeriksaan, bentukMasterPemeriksaan, galatMasterPemeriksaan, perubahanMaster } from './keadaan-master-pemeriksaan.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaMasterPemeriksaan({ master, onTutup, onSelesai }) {
   const M = PENUNJANG.master, awal = awalMasterPemeriksaan(master);
@@ -15,10 +16,10 @@ export function bukaMasterPemeriksaan({ master, onTutup, onSelesai }) {
   function bersih() { aktif = false; loinc.tutup(); modal.tutup(); }
   const modal = bukaModal1({ judul: master ? M.judulUbah : M.judulTambah, lindungiTutup: () => adaPerubahan(awal, k), onTutup() { bersih(); onTutup(); } });
   const status = document.createElement('div'), form = document.createElement('form'), controls = new Map(); form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   const loinc = PencarianLoinc({ id: 'mp-loinc', label: M.bidang.kode_loinc, petunjuk: M.petunjuk.kode_loinc, value: k.kode_loinc, onChange(v) { k = { ...k, kode_loinc: v }; erreurs(); } });
   function champ(nom) { const f = bidang({ id: `mp-${nom}`, label: M.bidang[nom], nilai: k[nom], autoComplete: 'off', ubah(v) { k = { ...k, [nom]: v }; erreurs(); } }); controls.set(nom, f); f.el.style.flex = '1 1 0'; if (nom.startsWith('rujukan_') && nom !== 'rujukan_teks') f.kontrol.inputMode = 'decimal'; if (nom.startsWith('harga_')) f.kontrol.inputMode = 'numeric'; if (M.petunjuk[nom]) { const p = document.createElement('small'); p.textContent = M.petunjuk[nom]; p.style.color = token.warna.teksRedup; f.el.append(p); } return f.el; }
-  function ligne(...noms) { const row = document.createElement('div'); Object.assign(row.style, { display: 'flex', gap: token.jarak.md, flexWrap: 'wrap' }); row.append(...noms.map(champ)); return row; }
+  function ligne(...noms) { const row = document.createElement('div'); barisFleks(row, 'md', { bungkus: true }); row.append(...noms.map(champ)); return row; }
   form.append(ligne('kode', 'nama'), loinc, ligne('jenis_spesimen', 'satuan'), ligne('rujukan_min', 'rujukan_maks'), champ('rujukan_teks'), ligne('harga_umum', 'harga_jkn'), KotakCentang({ id: 'mp-aktif', label: M.bidang.aktif, checked: k.aktif, onChange(e) { k = { ...k, aktif: e.target.checked }; } }));
   function erreurs() { const g = galatMasterPemeriksaan(k); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); loinc.perbarui({ galat: dicoba ? g.kode_loinc : undefined }); }
   const simpan = tombol(TOMBOL.simpan, kirim);

@@ -2,7 +2,6 @@ import { PDP, TOMBOL } from '@klira/shared';
 import { detailPasien } from '../../api-klien/pasien.js';
 import { simpanInsiden } from '../../api-klien/pdp.js';
 import { pesanGalat } from '../../api-klien/klien.js';
-import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
@@ -12,6 +11,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { awalInsiden, bentukInsiden, buangPasienTerdampak, galatInsiden, langkahBermasalahInsiden, tambahPasienTerdampak } from './keadaan-pdp.js';
 import { bidangPdp } from './formulir.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 const I = PDP.insiden;
 const batasDari = diketahui => diketahui ? new Date(new Date(`${diketahui}:00+07:00`).getTime() + 72 * 3600000).toISOString() : '';
 export function bukaInsidenPdp({ insiden = null, onTutup, onSelesai }) {
@@ -27,7 +27,7 @@ export function bukaInsidenPdp({ insiden = null, onTutup, onSelesai }) {
       const el = f.kolom(), judul = document.createElement('strong'), list = document.createElement('div'); list.style.display = 'contents';
       function daftar() {
         judul.textContent = `${I.pasienTerdampak} (${k.pasien.length})`; list.replaceChildren(); if (!k.pasien.length) list.append(f.kecil(I.kosongPasien));
-        for (const p of k.pasien) { const row = document.createElement('div'), nama = document.createElement('span'); Object.assign(row.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm }); nama.style.flexGrow = '1'; nama.append(p.nama, ' ', f.kecil(p.nomor_rm)); row.append(nama);
+        for (const p of k.pasien) { const row = document.createElement('div'), nama = document.createElement('span'); barisFleks(row, 'sm', { rata: 'center' }); nama.style.flexGrow = '1'; nama.append(p.nama, ' ', f.kecil(p.nomor_rm)); row.append(nama);
           if (!insiden?.pasien.some(lama => lama.id === p.id)) row.append(tombol(I.buang, () => { k.pasien = buangPasienTerdampak(k, p.id).pasien; daftar(); f.perbarui(); modal.perbarui(); }, 'teks')); list.append(row); }
       }
       const tambah = tombol(I.tambahPasien, async () => {

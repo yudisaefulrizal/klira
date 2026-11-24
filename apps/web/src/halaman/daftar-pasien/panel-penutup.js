@@ -14,6 +14,7 @@ import { bukaUbahHarga } from '../../modal/kasir-klaim/ubah-harga.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 const P = KASIR.penutup, B = KASIR.bayar, T = KASIR.tutup;
 const LABEL_SYARAT = { tahap: B.syarat.tahap, tagihan: B.syarat.tagihan, resep: B.syarat.resep, lunas: B.syarat.lunas };
@@ -25,7 +26,7 @@ const LABEL_SYARAT = { tahap: B.syarat.tahap, tagihan: B.syarat.tagihan, resep: 
 export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, onBerubah, onKepala }) {
   const boleh = izinSaatIni();
   const bolehKasir = boleh('kasir', 'lihat') || boleh('kasir', 'input') || boleh('kasir', 'perbaikan'), bolehBayar = boleh('kasir', 'input'), bolehTutup = boleh('kasir', 'perbaikan'), bolehObat = boleh('farmasi', 'input');
-  const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  const el = document.createElement('div'); kolomFleks(el, 'md');
   let g = null, bayar = awalBayar(), galatMuat = null, galat = null, info = null, dicoba = false, memproses = false, alasan = '', ditutup = null, aktif = true, anak = [], modalHarga, modalSerah, bukaTambahItem = false;
   const tahap = () => g?.kunjungan.tahap_layanan ?? klinis().kunjungan.tahap_layanan;
   // Setelah obat diserahkan, syarat tutup (resep sudah diserahkan) berubah di server: data kasir dimuat ulang sekali per penyerahan.
@@ -37,8 +38,8 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     lukis(); onKepala?.();
   }, { ringkas: true });
 
-  const kolom = () => { const e = document.createElement('div'); Object.assign(e.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); return e; };
-  const teks = (isi, redup = false) => { const e = document.createElement('span'); e.textContent = isi; if (redup) Object.assign(e.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return e; };
+  const kolom = () => { const e = document.createElement('div'); kolomFleks(e, 'md'); return e; };
+  const teks = (isi, redup = false) => { const e = document.createElement('span'); e.textContent = isi; if (redup) teksRedupKecil(e); return e; };
   const ringkas = (rows) => DaftarRingkasan({ bagian: [{ judul: '', baris: rows }] });
   const bagian = (judul, ...isi) => { const k = kartu({ susun: 'md', style: { padding: token.jarak.md } }), h = document.createElement('h3'); h.textContent = judul; h.style.margin = '0'; k.append(h, ...isi.filter(Boolean)); return k; };
   // Pasien JKN atau asuransi: baris pertama langsung memakai metodenya, supaya yang ditanggung tetap diinput sebagai pembayaran.
@@ -88,7 +89,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
         e.append(btnTambah);
       } else {
         const wadahTambah = document.createElement('div');
-        Object.assign(wadahTambah.style, { display: 'flex', gap: token.jarak.sm, alignItems: 'center', flexWrap: 'wrap' });
+        barisFleks(wadahTambah, 'sm', { rata: 'center', bungkus: true });
         const tambah = TambahItemTarif({ kunjunganId, gambaran: g, onUbah(h) { bukaTambahItem = false; terapkan(h); }, ringkas: true });
         tambah.style.flex = '1 1 320px';
         anak.push(tambah);
@@ -138,7 +139,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     if (t.sisa <= 0 || t.total <= 0 || tahap() === 'ditutup') return null;
     const e = kolom();
     if (!g.shift_terbuka) e.append(peringatan(B.tanpaShift, 'merah', { label: 'Buka Kasir dan klaim →', href: '/kasir-klaim?tab=shift', onClick: () => navigasiSaatIni().pindah('/kasir-klaim?tab=shift') }));
-    for (const p of t.pembayaran) { const r = document.createElement('div'); Object.assign(r.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' }); const jumlah = teks(rupiah(p.jumlah)); jumlah.style.flexGrow = '1'; r.append(lencana(METODE_BAYAR.label(p.metode), METODE_BAYAR.warna(p.metode)), jumlah, teks(`${p.kasir_nama ?? '-'} · ${formatWaktu(p.waktu)}`, true)); e.append(r); }
+    for (const p of t.pembayaran) { const r = document.createElement('div'); barisFleks(r, 'sm', { bungkus: true }); const jumlah = teks(rupiah(p.jumlah)); jumlah.style.flexGrow = '1'; r.append(lencana(METODE_BAYAR.label(p.metode), METODE_BAYAR.warna(p.metode)), jumlah, teks(`${p.kasir_nama ?? '-'} · ${formatWaktu(p.waktu)}`, true)); e.append(r); }
     {
       const opsiMetode = NILAI_METODE_BAYAR.map((m) => ({ nilai: m, label: METODE_BAYAR.label(m) }));
       const erreur = document.createElement('div'), ringk = document.createElement('div'), fields = [];
@@ -149,7 +150,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
         segarkanTutup();
       };
       bayar.baris.forEach((b, i) => {
-        const r = document.createElement('div'); Object.assign(r.style, { display: 'flex', gap: token.jarak.md, flexWrap: 'wrap', alignItems: 'flex-end' });
+        const r = document.createElement('div'); barisFleks(r, 'md', { rata: 'flex-end', bungkus: true });
         const metode = bidang({ id: `bayar-metode-${i}`, label: i === 0 ? B.metode : B.metodeKe(i + 1), opsi: opsiMetode, nilai: b.metode, ubah(v) { bayar = ubahBaris(bayar, i, { metode: v }); hitung(); } });
         const jumlah = bidang({ id: `bayar-jumlah-${i}`, label: i === 0 ? B.diterima : B.diterimaKe(i + 1), nilai: b.jumlah, autoComplete: 'off', ubah(v) { bayar = ubahBaris(bayar, i, { jumlah: v }); hitung(); } });
         jumlah.kontrol.inputMode = 'numeric'; jumlah.el.style.flex = '0 0 200px'; jumlah.el.style.maxWidth = '100%'; metode.kontrol.disabled = jumlah.kontrol.disabled = memproses; fields.push([i, metode, jumlah]); r.append(metode.el, jumlah.el);
@@ -189,7 +190,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     if (!g) { e.append(KASIR.memuat); return bagian(P.tutup, e); }
     const h = document.createElement('strong'); h.textContent = T.syaratJudul; e.append(h);
     for (const sy of daftarSyarat(g)) {
-      const r = document.createElement('div'), label = document.createElement('span'); Object.assign(r.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' }); label.style.flexGrow = '1'; label.textContent = LABEL_SYARAT[sy.kunci];
+      const r = document.createElement('div'), label = document.createElement('span'); barisFleks(r, 'sm', { bungkus: true }); label.style.flexGrow = '1'; label.textContent = LABEL_SYARAT[sy.kunci];
       // Syarat resep dan lunas yang akan dipenuhi oleh serah obat atau pembayaran dalam proses yang sama ditandai "ikut diproses".
       const ikut = !sy.ok && ((sy.kunci === 'resep' && akanSerah()) || (sy.kunci === 'lunas' && sisaAkhir() <= 0));
       r.append(label, ikut ? lencana(P.ikutDiproses, 'biru') : lencana(sy.ok ? T.ok : T.belum, sy.ok ? 'hijau' : sy.wajib ? 'merah' : 'kuning')); e.append(r);

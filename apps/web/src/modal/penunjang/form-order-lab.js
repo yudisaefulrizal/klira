@@ -4,11 +4,12 @@ import { bidang, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { gantiPilihan, perkiraanBiaya, rupiah, saringPemeriksaan } from './keadaan-order-lab.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function FormOrderLab(awal) {
   let props = awal, cari = '';
   const O = PENUNJANG.order, el = document.createElement('div'), status = document.createElement('div'), daftar = document.createElement('div'), dipilih = document.createElement('div'), ringkasan = document.createElement('small'), petunjuk = document.createElement('small'), akhir = document.createElement('small');
-  for (const node of [el, daftar, dipilih]) Object.assign(node.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  for (const node of [el, daftar, dipilih]) kolomFleks(node, 'md');
   Object.assign(daftar.style, { maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }); daftar.setAttribute('role', 'group'); daftar.setAttribute('aria-label', 'Hasil pencarian pemeriksaan'); dipilih.setAttribute('role', 'group'); dipilih.setAttribute('aria-label', 'Pemeriksaan terpilih');
   const recherche = bidang({ id: `${props.awalan}-cari`, label: 'Pemeriksaan', jenis: 'search', autoComplete: 'off', ubah(v) { cari = v; tampil(); } }); recherche.kontrol.placeholder = 'Cari nama atau kode pemeriksaan…';
   petunjuk.textContent = 'Ketik nama, kode pemeriksaan, atau LOINC untuk mencari.'; akhir.textContent = O.tagihanInfo;

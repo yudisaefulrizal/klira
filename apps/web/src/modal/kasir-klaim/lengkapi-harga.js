@@ -3,6 +3,7 @@ import { lengkapiHargaItem } from '../../api-klien/kasir.js';
 import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
+import { teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function LengkapiHarga({ kunjunganId, gambaran, onUbah }) {
   const L = KASIR.lengkapi, el = document.createElement('div'), status = document.createElement('div'), daftar = document.createElement('div');
@@ -10,7 +11,7 @@ export function LengkapiHarga({ kunjunganId, gambaran, onUbah }) {
   const nilai = new Map(), aksi = new Map();
   Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm, padding: token.jarak.md, border: `${token.ukuran.garis} solid ${token.warna.garisHalus}`, borderRadius: token.radius.sedang });
   const h = document.createElement('strong'); h.textContent = L.judul;
-  const petunjuk = document.createElement('span'); petunjuk.textContent = L.petunjuk; Object.assign(petunjuk.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
+  const petunjuk = document.createElement('span'); petunjuk.textContent = L.petunjuk; teksRedupKecil(petunjuk);
   const tautan = document.createElement('a'); tautan.href = '/kasir-klaim?tab=tarif'; tautan.textContent = L.tautanTarif; tautan.style.fontSize = token.huruf.ukuran.kecil;
   el.append(h, petunjuk, status, daftar, tautan);
   function sibuk(id) { proses = id; for (const [key, b] of aksi) { b.disabled = id !== null; b.textContent = key === id ? L.menyimpan : L.simpan; } }

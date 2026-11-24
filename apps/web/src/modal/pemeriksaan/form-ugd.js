@@ -2,6 +2,7 @@ import { ambilUgd, simpanUgd } from '../../api-klien/klinis.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 export const TRIASE_UGD = [
     { kode: 'merah', label: 'Merah — Resusitasi / Gawat Darurat', zona: 'Ruang Resusitasi', warna: '#b91c1c', latar: '#fee2e2' },
@@ -77,13 +78,13 @@ export function bukaModalUgd({ kunjunganId, onTerapkan }) {
 
     const wadahStatus = document.createElement('div');
     const barTriase = document.createElement('div');
-    Object.assign(barTriase.style, { display: 'flex', gap: token.jarak.xs, flexWrap: 'wrap' });
+    barisFleks(barTriase, 'xs', { bungkus: true });
 
     const isiGrid = document.createElement('div');
-    Object.assign(isiGrid.style, { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: token.jarak.sm });
+    barisFleks(isiGrid, 'sm', { rata: 'flex-end', bungkus: true });
 
     const wadahKondisional = document.createElement('div');
-    Object.assign(wadahKondisional.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm });
+    kolomFleks(wadahKondisional, 'sm');
 
     const pratinjau = document.createElement('small');
     Object.assign(pratinjau.style, {

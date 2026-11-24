@@ -9,6 +9,7 @@ import { bukaPembuatanAkun } from '../../modal/akun-pengaturan/pembuatan-akun.js
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from '../../util/penyaring/penyaring-daftar.js';
 import { tabelTab } from './tabel.js';
+import { teksRedupKecil } from '../../gaya/tata-letak.js';
 export function pasangTabPengguna(wadah, { search, ubahAlamat }) {
   const saya = penggunaSaatIni().pengguna, boleh = izinSaatIni(); let keadaan = keadaanDariQuery(search), hasil = null, aktif = true, versi = 0, timer, tutupModal;
   const kolom = ['nama', 'jenis', 'izin', 'peringatan', 'status', 'tindakan'].map(k => ({ judul: PENGGUNA.kolom[k], rataKanan: k === 'tindakan' })), ui = tabelTab({ id: 'pengguna', label: PENGGUNA.judulTab, kolom, catatan: PENGGUNA.catatan }); wadah.replaceChildren(ui.el);
@@ -20,7 +21,7 @@ export function pasangTabPengguna(wadah, { search, ubahAlamat }) {
   function terapkan(p) { ubahAlamat(queryDariKeadaan(ubahKeadaan(keadaan, p), { tab: 'pengguna' })); }
   function tampil() {
     ui.tbody.replaceChildren(...(hasil?.data.map(p => {
-      const nama = document.createElement('div'), username = document.createElement('div'); nama.textContent = p.nama; nama.style.fontWeight = token.huruf.berat.tebal; username.textContent = p.username; Object.assign(username.style, { fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup });
+      const nama = document.createElement('div'), username = document.createElement('div'); nama.textContent = p.nama; nama.style.fontWeight = token.huruf.berat.tebal; username.textContent = p.username; teksRedupKecil(username);
       const aksi = document.createElement('div'); Object.assign(aksi.style, { display: 'inline-flex', alignItems: 'stretch', gap: token.jarak.sm });
       if (boleh('akses', 'input')) aksi.append(tombol(PENGGUNA.aturIzin, () => { tutup(); tutupModal = bukaAturIzin({ pengguna: p, onTutup(berubah) { tutup(); if (berubah) void muat(); } }); }, 'teks'));
       if (p.id !== saya?.id && boleh('akses', 'perbaikan')) aksi.append(tombol(p.aktif ? PENGGUNA.nonaktifkan : PENGGUNA.aktifkan, () => void ubahAktif(p), 'teks'));

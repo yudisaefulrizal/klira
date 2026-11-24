@@ -4,14 +4,15 @@ import { token } from '../../gaya/token.js';
 import { buatNilaiTertunda } from '../../util/tunda.js';
 import { bidang, tombol } from '../ui/primitif.js';
 import { InfoBantuan } from '../ui/info-bantuan.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 const M = PENUNJANG.master;
 export function PencarianLoinc(awal) {
   let props = awal, hasil = null, terbuka = false, memuat = false, galatCari = null, nama = null, versi = 0, aktif = true;
-  const el = document.createElement('div'), info = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); info.style.display = 'contents';
+  const el = document.createElement('div'), info = document.createElement('div'); kolomFleks(el, 'xs'); info.style.display = 'contents';
   const field = bidang({ id: props.id, label: props.label, nilai: props.value, autoComplete: 'off', ubah(value) { props.value = value; props.onChange(value); terbuka = true; tunda.ubah(value.trim()); tampil(); } }); field.kontrol.placeholder = M.cariLoincPetunjuk;
-  if (props.petunjuk) { const label = field.el.querySelector('label'), baris = document.createElement('div'); Object.assign(baris.style, { display: 'flex', alignItems: 'center', gap: token.jarak.xs }); label.replaceWith(baris); baris.append(label, InfoBantuan({ label: props.label, children: props.petunjuk })); }
+  if (props.petunjuk) { const label = field.el.querySelector('label'), baris = document.createElement('div'); barisFleks(baris, 'xs', { rata: 'center' }); label.replaceWith(baris); baris.append(label, InfoBantuan({ label: props.label, children: props.petunjuk })); }
   field.kontrol.addEventListener('keydown', e => { if (e.key === 'Escape') { terbuka = false; tampil(); } }); el.append(field.el, info);
-  const redup = teks => { const s = document.createElement('span'); s.textContent = teks; Object.assign(s.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return s; };
+  const redup = teks => { const s = document.createElement('span'); s.textContent = teks; teksRedupKecil(s); return s; };
   function tampil() {
     info.replaceChildren(); field.setGalat(props.galat || galatCari || undefined);
     if (nama && !terbuka) info.append(redup(nama)); if (memuat && terbuka) info.append(redup(NAVIGASI.memuat));

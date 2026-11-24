@@ -2,6 +2,7 @@ import { ambilOdontogram, simpanOdontogram } from '../../api-klien/klinis.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 
 export const KONDISI_GIGI = [
     { kode: 'sou', label: 'Normal / Sehat', singkat: '' },
@@ -98,7 +99,7 @@ export function bukaModalGigi({ pasienId, kunjunganId, onTerapkan }) {
 
     const wadahStatus = document.createElement('div');
     const barMode = document.createElement('div');
-    Object.assign(barMode.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' });
+    barisFleks(barMode, 'sm', { rata: 'center', bungkus: true, sebar: true });
     const judulPeta = document.createElement('strong');
     judulPeta.textContent = 'Peta Gigi (FDI)';
     const btnSulung = tombol('Tampilkan Gigi Sulung', () => {
@@ -133,7 +134,7 @@ export function bukaModalGigi({ pasienId, kunjunganId, onTerapkan }) {
     const judulIntraoral = document.createElement('strong');
     judulIntraoral.textContent = 'Pemeriksaan Intraoral';
     const gridIntraoral = document.createElement('div');
-    Object.assign(gridIntraoral.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'flex-end' });
+    barisFleks(gridIntraoral, 'sm', { rata: 'flex-end', bungkus: true });
 
     const pratinjau = document.createElement('small');
     Object.assign(pratinjau.style, {

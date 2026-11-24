@@ -1,6 +1,7 @@
 import { panggilApi, pesanGalat } from '../../api-klien/klien.js';
 import { kartu, tombol, lencana, peringatan, tab, tabel, baris, sel } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
+import { barisFleks, judulTebal, kolomFleks } from '../../gaya/tata-letak.js';
 
 const WARNA_METODE = {
     GET: 'biru',
@@ -1437,23 +1438,23 @@ function tataLetakAlurOtomatis(nodesInput, edgesInput) {
 /** Halaman dinamis Diagram Database (ERD) bergaya peta auto-layout, Alur Layanan, dan Peta Endpoint API. */
 export function TabArsitektur() {
     const el = document.createElement('div');
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    kolomFleks(el, 'md');
 
     const header = document.createElement('div');
-    Object.assign(header.style, { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm });
+    barisFleks(header, 'sm', { rata: 'center', bungkus: true, sebar: true });
     const kiriH = document.createElement('div');
     const h2 = document.createElement('h2');
     h2.textContent = 'Diagram Database & Alur Layanan';
-    Object.assign(h2.style, { margin: '0', fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal });
+    judulTebal(h2, 'judul');
     const subH = document.createElement('small');
     subH.style.color = token.warna.teksRedup;
     subH.textContent = 'Otomatis membaca skema tabel, relasi, dan endpoint API yang sedang aktif.';
     kiriH.append(h2, subH);
 
     const kananH = document.createElement('div');
-    Object.assign(kananH.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' });
+    barisFleks(kananH, 'sm', { rata: 'center', bungkus: true });
     const ringkasBadge = document.createElement('div');
-    Object.assign(ringkasBadge.style, { display: 'flex', gap: token.jarak.xs, flexWrap: 'wrap' });
+    barisFleks(ringkasBadge, 'xs', { bungkus: true });
     const btnMuat = tombol('Muat Ulang dari DB', () => void muat(), 'sekunder');
     kananH.append(ringkasBadge, btnMuat);
     header.append(kiriH, kananH);

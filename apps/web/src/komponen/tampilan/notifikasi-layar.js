@@ -3,6 +3,7 @@ import { token } from '../../gaya/token.js';
 import { navigasi } from '../../util/navigasi/navigasi.js';
 import { sambungkanNotifikasi } from '../../util/notifikasi/sambungan-notifikasi.js';
 import { buatSuaraNotifikasi } from '../../util/notifikasi/suara-notifikasi.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 
 const IKON_SUARA_AKTIF = '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>';
 const IKON_SUARA_MATI = '<path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="m22 9-6 6"/><path d="m16 9 6 6"/>';
@@ -145,7 +146,7 @@ export function pasangNotifikasiLayar(wadahTombol, pengguna) {
         });
 
         const atas = document.createElement('div');
-        Object.assign(atas.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm });
+        barisFleks(atas, 'sm', { rata: 'center', sebar: true });
         const judul = document.createElement('strong');
         judul.textContent = info.judul;
         judul.style.color = info.segera ? token.warna.status.merah.teks : token.warna.utamaGelap;

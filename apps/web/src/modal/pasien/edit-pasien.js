@@ -9,6 +9,7 @@ import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { token } from '../../gaya/token.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 
 export function bukaEditPasien({ id, nama, nomor_rm: nomorAwal, onTutup, onSelesai }) {
   const { pengguna } = penggunaSaatIni();
@@ -35,7 +36,7 @@ export function bukaEditPasien({ id, nama, nomor_rm: nomorAwal, onTutup, onSeles
       else ubah({ [key]: v });
     } }); f.setGalat(galatBidang[key]); controls.set(key, f); if (wadah.dataset.baris) f.el.style.flex = '1 1 140px'; wadah.append(f.el); return f;
   }
-  function ligne(wadah = panel) { const el = document.createElement('div'); el.dataset.baris = '1'; Object.assign(el.style, { display: 'flex', gap: token.jarak.md, flexWrap: 'wrap' }); wadah.append(el); return el; }
+  function ligne(wadah = panel) { const el = document.createElement('div'); el.dataset.baris = '1'; barisFleks(el, 'md', { bungkus: true }); wadah.append(el); return el; }
   function kolom(wadah) { const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md, minWidth: '0' }); wadah.append(el); return el; }
   function afficherWali(wadah = panel) {
     const check = document.createElement('input'), label = document.createElement('label'); check.type = 'checkbox'; check.id = 'edit-pasien-tidak-cakap'; check.checked = data.tidak_cakap; label.htmlFor = check.id; label.append(check, REGISTRASI.tidakCakap); check.addEventListener('change', () => ubah({ tidak_cakap: check.checked })); wadah.append(label);

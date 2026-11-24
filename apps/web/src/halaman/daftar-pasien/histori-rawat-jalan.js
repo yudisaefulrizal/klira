@@ -5,14 +5,15 @@ import { token } from '../../gaya/token.js';
 import { peringatan } from '../../komponen/ui/primitif.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { barisHistori } from './keadaan-histori-rawat-jalan.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 /** Tabel histori pemeriksaan rawat jalan pasien (bisa diklik untuk membuka/mengedit kunjungan terkait); dipasang di kartu tersendiri di bawah panel kunjungan. */
 export function TabelHistoriRawatJalan({ pasienId, kunjunganId, onPilih }) {
     const H = HISTORI_RAWAT_JALAN;
     const el = document.createElement('section');
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm });
+    kolomFleks(el, 'sm');
     const kepala = document.createElement('div');
-    Object.assign(kepala.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm });
+    barisFleks(kepala, 'sm', { rata: 'center', sebar: true });
     const judul = document.createElement('strong'); judul.textContent = H.judul;
     const jumlah = document.createElement('small'); jumlah.className = 'profil-redup';
     kepala.append(judul, jumlah);

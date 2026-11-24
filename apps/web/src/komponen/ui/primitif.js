@@ -2,6 +2,7 @@ import { token } from '../../gaya/token.js';
 import { KEAMANAN } from '@klira/shared';
 import { buatTanggalTiga } from './tanggal-tiga.js';
 import { totalHalaman } from '../../util/tab/penyaring-tab.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 
 /** Primitif DOM UI yang sudah ada: menerima teks/Node dan mengembalikan elemen browser. */
 export function tombol(teks, onClick, varian = 'utama') {
@@ -32,7 +33,7 @@ export function peringatan(teks, nada = 'merah', aksi = null) {
 }
 export function bidang({ id, label, jenis = 'text', nilai = '', opsi, ubah, autoComplete, maxLength }) {
   const el = document.createElement('div'), judul = document.createElement('label'); judul.htmlFor = id; judul.textContent = label;
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); Object.assign(judul.style, { fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang, padding: '0' });
+  kolomFleks(el, 'xs'); Object.assign(judul.style, { fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.sedang, padding: '0' });
   // Tanggal diketik manual dalam tiga kolom (bukan pemilih tanggal bawaan peramban); `value`, peristiwa `input`, dan `focus()` tetap seperti isian biasa.
   const tanggal = jenis === 'date' && !opsi;
   const kontrol = tanggal ? buatTanggalTiga({ id, label }) : document.createElement(opsi ? 'select' : jenis === 'textarea' ? 'textarea' : 'input'); if (!tanggal) kontrol.id = id;
@@ -69,7 +70,7 @@ export function paginasi(halaman, total, ukuran, pindah) {
 }
 export function tab(daftar, aktif, label, onPilih) {
   const el = document.createElement('div'); el.setAttribute('role', 'tablist'); el.setAttribute('aria-label', label);
-  Object.assign(el.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm });
+  barisFleks(el, 'sm', { bungkus: true });
   const tombolTab = new Map();
   for (const item of daftar) {
     const button = document.createElement('button'); button.type = 'button'; button.id = `tab-${item.id}`; button.setAttribute('role', 'tab'); button.textContent = item.label;

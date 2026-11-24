@@ -3,6 +3,7 @@ import { token } from '../../gaya/token.js';
 import { batasi, posisiLangkah, statusLangkah } from '../../util/langkah.js';
 import { bukaModal1 } from '../modal-1/modal-1.js';
 import { tombol, peringatan } from '../ui/primitif.js';
+import { judulTebal } from '../../gaya/tata-letak.js';
 
 /** Modal bertahap native; setiap langkah memasang isi DOM sendiri, tanpa state atau renderer pengganti React. */
 export function bukaModalBertahap({ judul, langkah, onKirim, onTutup, lindungiTutup, labelKirim, onLanjut, onIndeks, konteks, catatan, aksiHeader, indeksAwal = 0 }) {
@@ -26,7 +27,7 @@ export function bukaModalBertahap({ judul, langkah, onKirim, onTutup, lindungiTu
   });
   form.className = 'modal-langkah-form'; form.noValidate = true; Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: '0', flex: '1 1 0', minWidth: '0' });
   section.className = 'modal-langkah-isi'; section.setAttribute('aria-labelledby', 'judul-langkah'); Object.assign(section.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md, padding: `${token.jarak.lg} ${token.jarak.xl}`, flexGrow: '1', minHeight: '0', overflowY: 'auto' });
-  h3.id = 'judul-langkah'; Object.assign(h3.style, { margin: '0', fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal }); pesan.style.display = isi.style.display = 'contents'; section.append(h3, catatanEl, pesan, isi);
+  h3.id = 'judul-langkah'; judulTebal(h3, 'judul'); pesan.style.display = isi.style.display = 'contents'; section.append(h3, catatanEl, pesan, isi);
   Object.assign(footer.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, padding: token.jarak.md, borderTop: `${token.ukuran.garis} solid ${token.warna.garis}` });
   const kembali = tombol(TOMBOL.kembali, () => ke(indeks - 1), 'sekunder'), kirim = tombol(TOMBOL.lanjut); kirim.type = 'submit';
   Object.assign(posisi.style, { flexGrow: '1', textAlign: 'center', color: token.warna.teksRedup }); footer.append(kembali, posisi, kirim); form.append(section, footer); modal.isi.append(nav, form);

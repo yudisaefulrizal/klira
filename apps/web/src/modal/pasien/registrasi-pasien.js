@@ -10,6 +10,7 @@ import { adaPerubahan, adaptorLokal, kunciDraf } from '../../util/draf/draf.js';
 import { buatDrafOtomatis } from '../../util/draf/draf-otomatis.js';
 import { awalRegistrasi, BIDANG_KUNCI_DUPLIKAT, bentukRegistrasi, bisaCariDuplikat, galatRegistrasi, isianCariDuplikat, BIDANG_SENSITIF_REGISTRASI } from './keadaan-registrasi.js';
 import { FormRegistrasi, KonteksPasien } from './langkah-registrasi.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 export const ALUR_REGISTRASI_PASIEN = 'registrasi-pasien';
 /**
  * Registrasi pasien baru: satu formulir dua kolom (identitas, data sosial, alamat, penjamin, wali/keluarga) dengan general consent di bawahnya,
@@ -55,7 +56,7 @@ export function bukaRegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan 
       const h = await registrasiPasien(bentukRegistrasi(keadaan, teks?.id ?? null)); draf.hapus(); if (!aktif) return;
       hasil = h; enfant?.tutup?.();
       const el = document.createElement('div'), pesan = document.createElement('p'), label = document.createElement('span'), rm = document.createElement('strong');
-      Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); pesan.textContent = REGISTRASI.berhasilPesan(h.nama); label.textContent = REGISTRASI.nomorRm; label.style.color = token.warna.teksRedup; rm.textContent = h.nomor_rm; rm.style.fontSize = token.huruf.ukuran.judul; rm.dataset.testid = 'nomor-rm-baru'; el.append(pesan, label, rm);
+      kolomFleks(el, 'md'); pesan.textContent = REGISTRASI.berhasilPesan(h.nama); label.textContent = REGISTRASI.nomorRm; label.style.color = token.warna.teksRedup; rm.textContent = h.nomor_rm; rm.style.fontSize = token.huruf.ukuran.judul; rm.dataset.testid = 'nomor-rm-baru'; el.append(pesan, label, rm);
       const ihs = ringkasStatusIhs(h.satusehat); if (ihs) el.append(peringatan(ihs.teks, ihs.nada));
       modal.judul.textContent = REGISTRASI.berhasilJudul; modal.setLebar('modalSedang'); modal.konteks.replaceChildren(); modal.isi.replaceChildren(el);
       modal.aksi.replaceChildren(tombol(REGISTRASI.selesai, tutup, 'sekunder'), tombol(REGISTRASI.daftarkanKunjungan, () => { bersih(); onDaftarkanKunjungan({ id: h.id, nama: h.nama, nomor_rm: h.nomor_rm }); }));

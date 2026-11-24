@@ -4,6 +4,7 @@ import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 /** Modal penyerahan hasil lab (penunjang saja): nama penerima wajib, hubungan opsional. `onSelesai` menerima gambaran kasir terbaru. */
 export function bukaSerahHasil({ kunjunganId, pasienNama, onTutup, onSelesai }) {
@@ -11,7 +12,7 @@ export function bukaSerahHasil({ kunjunganId, pasienNama, onTutup, onSelesai }) 
   let k = { penerima: pasienNama ?? '', hubungan: '' }, dicoba = false, proses = false, aktif = true;
   const modal = bukaModal1({ judul: S.judul, onTutup() { aktif = false; modal.tutup(); onTutup?.(); } });
   const status = document.createElement('div'), form = document.createElement('form'); form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   const petunjuk = document.createElement('span'); petunjuk.style.color = token.warna.teksRedup; petunjuk.textContent = pasienNama ? `${pasienNama}. ${S.petunjuk}` : S.petunjuk;
   const penerima = bidang({ id: 'serah-hasil-penerima', label: S.penerima, nilai: k.penerima, autoComplete: 'off', maxLength: 200, ubah(v) { k = { ...k, penerima: v }; perbarui(); } });
   const hubungan = bidang({ id: 'serah-hasil-hubungan', label: S.hubungan, nilai: k.hubungan, autoComplete: 'off', maxLength: 100, ubah(v) { k = { ...k, hubungan: v }; } });

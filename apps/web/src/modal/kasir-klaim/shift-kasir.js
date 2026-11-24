@@ -8,13 +8,14 @@ import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalShift, galatBukaShift, galatTutupShift, selisihShift } from './keadaan-kasir.js';
 import { rupiah } from '../penunjang/keadaan-order-lab.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaShiftKasir({ shift, onTutup, onSelesai }) {
   const S = KASIR.shift, menutup = !!shift, awal = awalShift();
   let k = { ...awal }, dicoba = false, proses = false, aktif = true;
   const modal = bukaModal1({ judul: menutup ? S.tutupJudul : S.bukaJudul, lindungiTutup: () => adaPerubahan(awal, k), onTutup() { aktif = false; modal.tutup(); onTutup(); } });
   const status = document.createElement('div'), form = document.createElement('form'), ringkas = document.createElement('div'); form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   const petunjuk = document.createElement('span'); petunjuk.style.color = token.warna.teksRedup; petunjuk.textContent = menutup ? S.petunjukTutup(rupiah(shift.kas_seharusnya)) : S.petunjukBuka; form.append(petunjuk);
   if (menutup) form.append(DaftarRingkasan({ bagian: [{ judul: '', baris: [{ label: S.kasAwal, nilai: rupiah(shift.kas_awal) }, { label: S.tunai, nilai: rupiah(shift.tunai) }, { label: S.seharusnya, nilai: rupiah(shift.kas_seharusnya) }] }] }));
   const kas = bidang({ id: 'shift-kas', label: menutup ? S.kasAkhir : S.kasAwal, nilai: k.kas, autoComplete: 'off', ubah(v) { k = { ...k, kas: v }; perbarui(); } }); kas.kontrol.inputMode = 'numeric';

@@ -14,9 +14,10 @@ import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { token } from '../../gaya/token.js';
 import { tombol, sel, baris, lencana, kartu, tabel, bidang } from '../../komponen/ui/primitif.js';
 import { pasangDaftarPdp } from './tabel-daftar.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 const STATUS = { diterima: 'Diterima', disetujui: 'Disetujui', ditolak: 'Ditolak', dilaksanakan: 'Dilaksanakan', selesai: 'Selesai' };
 const WARNA = { diterima: 'kuning', disetujui: 'biru', ditolak: 'merah', dilaksanakan: 'ungu', selesai: 'hijau' };
-function kecil(teks) { const el = document.createElement('div'); el.textContent = teks; Object.assign(el.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return el; }
+function kecil(teks) { const el = document.createElement('div'); el.textContent = teks; teksRedupKecil(el); return el; }
 function pasien(p) { const nama = document.createElement('div'); nama.textContent = p.pasien_nama; nama.style.fontWeight = token.huruf.berat.tebal; return sel(nama, kecil(p.pasien_nomor_rm)); }
 function kanan(...nodes) { const el = sel(...nodes); el.style.textAlign = 'right'; return el; }
 function kolom(peta, daftar) { return daftar.map(k => ({ judul: peta[k], ...(k === 'tindakan' ? { rataKanan: true } : {}) })); }
@@ -84,14 +85,14 @@ export function pasangTabPdp(wadah, jenis, pengguna, bukaModal) {
       const P = PDP.pemberitahuan;
       function pemberitahuan(teks) {
         const card = kartu({ susun: 'sm' }), kepala = document.createElement('div'), judul = document.createElement('strong');
-        Object.assign(kepala.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, flexWrap: 'wrap' }); judul.textContent = P.daftar; Object.assign(judul.style, { flexGrow: '1', fontSize: token.huruf.ukuran.besar }); kepala.append(judul); if (boleh('pdp', 'input')) kepala.append(tombol(P.tombol, () => buka('pemberitahuan', berlaku))); card.append(kepala);
+        barisFleks(kepala, 'md', { rata: 'center', bungkus: true }); judul.textContent = P.daftar; Object.assign(judul.style, { flexGrow: '1', fontSize: token.huruf.ukuran.besar }); kepala.append(judul); if (boleh('pdp', 'input')) kepala.append(tombol(P.tombol, () => buka('pemberitahuan', berlaku))); card.append(kepala);
         if (!teks.length) card.append(kecil(P.kosong));
         for (const t of teks) {
           const row = document.createElement('div'), top = document.createElement('div'), nama = document.createElement('strong');
-          Object.assign(row.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); Object.assign(top.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' }); nama.textContent = t.judul;
-          const waktu = document.createElement('span'); waktu.textContent = formatWaktu(t.dibuat_pada); Object.assign(waktu.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
+          kolomFleks(row, 'xs'); barisFleks(top, 'sm', { rata: 'center', bungkus: true }); nama.textContent = t.judul;
+          const waktu = document.createElement('span'); waktu.textContent = formatWaktu(t.dibuat_pada); teksRedupKecil(waktu);
           top.append(nama, lencana(`${P.versi(t.versi)} · ${t.aktif ? P.aktif : P.tidakAktif}`, t.aktif ? 'hijau' : 'abu'), waktu);
-          const tujuan = document.createElement('span'); tujuan.textContent = t.tujuan; Object.assign(tujuan.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); row.append(top, tujuan); card.append(row);
+          const tujuan = document.createElement('span'); tujuan.textContent = t.tujuan; teksRedupKecil(tujuan); row.append(top, tujuan); card.append(row);
         }
         sebelum.replaceChildren(card);
       }

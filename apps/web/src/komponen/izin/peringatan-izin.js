@@ -4,12 +4,13 @@ import { alasanSiap } from '../../util/alasan.js';
 import { bukaDialog } from '../ui/buka-dialog.js';
 import { bidang, tombol, peringatan as kotak } from '../ui/primitif.js';
 import { KotakCentang } from '../ui/kotak-centang.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 export const isianPeringatanAwal = { alasan: '', terima: false };
 export const dariIsian = i => ({ alasan: i.alasan.trim(), terima_untuk_akun: i.terima });
 export const isianPeringatanSiap = i => alasanSiap(i.alasan, true);
 export function FormPeringatan({ peringatan, nilai, onUbah, opsiTerima = true, idDasar = 'peringatan' }) {
   let keadaan = { ...nilai };
-  const el = document.createElement('section'); el.setAttribute('aria-label', MODAL.peringatanJudul); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm });
+  const el = document.createElement('section'); el.setAttribute('aria-label', MODAL.peringatanJudul); kolomFleks(el, 'sm');
   const alert = kotak('', 'kuning'), strong = document.createElement('strong'), ul = document.createElement('ul'), ket = document.createElement('div'); strong.textContent = MODAL.peringatanJudul; Object.assign(ul.style, { margin: `${token.jarak.xs} 0 0`, paddingLeft: token.jarak.lg });
   for (const w of peringatan) { const li = document.createElement('li'); li.textContent = w.pesan; ul.append(li); } ket.textContent = MODAL.peringatanKeterangan; ket.style.marginTop = token.jarak.sm; alert.append(strong, ul, ket);
   const alasan = bidang({ id: `${idDasar}-alasan`, label: MODAL.peringatanAlasan, jenis: 'textarea', nilai: keadaan.alasan, ubah(v) { keadaan.alasan = v; onUbah({ ...keadaan }); } }); alasan.kontrol.required = true; el.append(alert, alasan.el);

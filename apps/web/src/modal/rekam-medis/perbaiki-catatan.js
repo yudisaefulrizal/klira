@@ -10,10 +10,11 @@ import { galatAlasanPerbaikan } from './keadaan-rm.js';
 import { LangkahNarasi, LangkahAnamnesis, LangkahDiagnosis, LangkahPemeriksaan, LangkahTandaVital, LangkahTindakan, LangkahTindakLanjut } from '../pemeriksaan/langkah-pemeriksaan.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { BagianKeperawatan } from '../pemeriksaan/langkah-keperawatan.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 export function bukaPerbaikiCatatan({ kunjunganId, pasien, onTutup, onSelesai }) {
   const P = REKAM_MEDIS.perbaikan; let klinis = null, bagian = '', k = null, alasan = '', dicoba = false, proses = false, hasil = false, aktif = true;
   const modal = bukaModal1({ judul: P.judul, lebar: 'modalBesar', lindungiTutup: () => !hasil && alasan.trim().length > 0, onTutup() { aktif = false; modal.tutup(); (hasil ? onSelesai : onTutup)(); } }); modal.konteks.append(KepalaPasien({ nama: pasien.nama, nomorRm: pasien.nomor_rm }));
-  const status = document.createElement('div'), form = document.createElement('form'), editor = document.createElement('div'); form.noValidate = true; Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  const status = document.createElement('div'), form = document.createElement('form'), editor = document.createElement('div'); form.noValidate = true; kolomFleks(form, 'md');
   const choix = bidang({ id: 'perbaikan-bagian', label: P.bagian, opsi: [{ nilai: '', label: P.pilihBagian }], ubah(v) { bagian = v; k = keadaanDariServer(klinis.bagian); dicoba = false; rendre(); } });
   const cause = bidang({ id: 'perbaikan-alasan', label: P.alasan, jenis: 'textarea', maxLength: 500, ubah(v) { alasan = v; cause.setGalat(dicoba ? galatAlasanPerbaikan(alasan) : undefined); } }), info = document.createElement('small'), aide = document.createElement('small'); info.textContent = P.batasInfo; aide.textContent = P.alasanPetunjuk; info.style.color = aide.style.color = token.warna.teksRedup;
   const simpan = tombol(P.ajukan, kirim); simpan.disabled = true;

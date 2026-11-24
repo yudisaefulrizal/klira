@@ -9,6 +9,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { buatDrafOtomatis } from '../../util/draf/draf-otomatis.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { awalHasilLab, galatHasilLab, langkahBermasalahHasil, menungguHasil, pulihkanHasilLab, rencanaHasil, saranUntuk, terapkanSaran, ubahIsian } from './keadaan-hasil-lab.js';
+import { barisFleks, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 export const ALUR_HASIL_LAB = 'hasil-lab';
 
 export function bukaHasilLab({ kunjunganId, pasien, onTutup, onSelesai }) {
@@ -18,10 +19,10 @@ export function bukaHasilLab({ kunjunganId, pasien, onTutup, onSelesai }) {
   function simpanDraf() { draf.perbarui({ adaptor, nilai: k, awal, langkah: indeks, aktif: siap && !hasil }); }
   function pulihkan() { if (!aktif || !orders || !draf.keadaan.siap || siap) return; awal = awalHasilLab(orders); const p = draf.keadaan.pulihan; k = p ? pulihkanHasilLab(awal, p.nilai) : awalHasilLab(orders); indeks = p ? Math.max(0, Math.min(p.langkah, 2)) : 0; dipulihkan = !!p; siap = true; simpanDraf(); tampil(true); }
   function tutup() { aktif = false; draf.tutup(); modal.tutup(); (tersimpan ? onSelesai : onTutup)(); }
-  function colonne() { const el = document.createElement('div'); Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); return el; }
-  function texte(teks, redup = false) { const el = document.createElement('span'); el.textContent = teks; if (redup) Object.assign(el.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return el; }
+  function colonne() { const el = document.createElement('div'); kolomFleks(el, 'md'); return el; }
+  function texte(teks, redup = false) { const el = document.createElement('span'); el.textContent = teks; if (redup) teksRedupKecil(el); return el; }
   function changer(b, id, valeur) { k = ubahIsian(k, b, id, valeur); simpanDraf(); afficherEtat(); }
-  function box(o, ...contenu) { const el = kartu({ susun: 'md', style: { padding: token.jarak.md } }), row = document.createElement('div'), nom = document.createElement('strong'); nom.textContent = o.nama; Object.assign(row.style, { display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: token.jarak.md }); row.append(nom, texte(o.rujukan_teks ? `${H.rujukan}: ${o.rujukan_teks}` : H.rujukanTidakAda, true)); el.append(row, ...contenu); return el; }
+  function box(o, ...contenu) { const el = kartu({ susun: 'md', style: { padding: token.jarak.md } }), row = document.createElement('div'), nom = document.createElement('strong'); nom.textContent = o.nama; barisFleks(row, 'md', { bungkus: true, sebar: true }); row.append(nom, texte(o.rujukan_teks ? `${H.rujukan}: ${o.rujukan_teks}` : H.rujukanTidakAda, true)); el.append(row, ...contenu); return el; }
   function contenu(n) {
     if (!orders || !siap) return galatMuat ? peringatan(galatMuat) : texte(PENUNJANG.memuat, true);
     const menunggu = menungguHasil(orders); if (!menunggu.length) return peringatan(H.kosong, 'biru');

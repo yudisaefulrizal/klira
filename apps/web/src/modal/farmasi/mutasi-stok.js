@@ -7,12 +7,13 @@ import { bidang, tombol, peringatan, lencana } from '../../komponen/ui/primitif.
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { awalMutasi, bentukMutasi, galatMutasi, gantiJenisMutasi, pilihBatch } from './keadaan-farmasi.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaMutasiStok({ obat, onTutup, onSelesai }) {
   const M = FARMASI.mutasi, awal = awalMutasi(String(obat.id));
   let k = { ...awal }, stok = [], riwayat = [], dicoba = false, proses = false, tercatat = false, aktif = true;
   const modal = bukaModal1({ judul: `${M.judul}: ${obat.nama_tampil}`, lindungiTutup: () => adaPerubahan(awal, k), onTutup() { aktif = false; modal.tutup(); (tercatat ? onSelesai : onTutup)(); } });
-  const status = document.createElement('div'), form = document.createElement('form'), historique = document.createElement('div'); form.noValidate = true; Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  const status = document.createElement('div'), form = document.createElement('form'), historique = document.createElement('div'); form.noValidate = true; kolomFleks(form, 'md');
   const controls = new Map(), simpan = tombol(M.simpan, kirim);
   function galatBidang() { const g = galatMutasi(k); for (const [nama, f] of controls) f.setGalat(dicoba ? g[nama] : undefined); }
   function tambah(nama, label, opsi, jenis = 'text', change) { const f = bidang({ id: `mutasi-${nama}`, label, opsi, jenis, nilai: k[nama], maxLength: nama === 'alasan' ? 300 : undefined, autoComplete: 'off', ubah(v) { k = change ? change(v) : { ...k, [nama]: v }; if (change) tampil(); else galatBidang(); } }); controls.set(nama, f); form.append(f.el); return f; }

@@ -9,13 +9,14 @@ import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalKunjungan, bentukKunjungan, dokterPoli, galatKunjungan, ubahKunjungan } from './keadaan-kunjungan.js';
 import { KeteranganAsuransi } from './keterangan-asuransi.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 /** Pasien yang punya nomor kartu JKN otomatis berstatus pembayaran JKN; pasien tanpa JKN tidak membiarkan sisa pilihan JKN dari pasien sebelumnya. */
 const caraDariJkn = (p, sekarang) => (p?.jkn_nomor_kartu ? { cara_pembayaran: 'jkn' } : sekarang === 'jkn' ? { cara_pembayaran: 'umum' } : {});
 export function bukaPendaftaranKunjungan({ pasien, onTutup, onSelesai }) {
   const awal = { ...awalKunjungan(pasien?.id), ...caraDariJkn(pasien, 'umum') }; let k = { ...awal }, opsi = null, statusSesi = 'buka', dicoba = false, proses = false, hasil = false, actif = true, timer, version = 0, assurance;
   const controls = new Map(), modal = bukaModal1({ judul: KUNJUNGAN.judul, lindungiTutup: () => !hasil && adaPerubahan(awal, k), onTutup() { fermer(); (hasil ? onSelesai : onTutup)(); } });
   function fermer() { actif = false; version++; clearTimeout(timer); assurance?.tutup(); modal.tutup(); }
-  const status = document.createElement('div'), form = document.createElement('form'), patient = document.createElement('div'), service = document.createElement('div'), complement = document.createElement('div'); form.noValidate = true; Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); Object.assign(service.style, { display: 'flex', gap: token.jarak.md, flexWrap: 'wrap' });
+  const status = document.createElement('div'), form = document.createElement('form'), patient = document.createElement('div'), service = document.createElement('div'), complement = document.createElement('div'); form.noValidate = true; kolomFleks(form, 'md'); barisFleks(service, 'md', { bungkus: true });
   const save = tombol(KUNJUNGAN.daftar, kirim); modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), save);
   function erreurs() { const g = galatKunjungan(k); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); }
   function changer(p, repaint = false) { k = ubahKunjungan(k, p, opsi?.dpjp ?? []); if (repaint) afficher(); else erreurs(); }

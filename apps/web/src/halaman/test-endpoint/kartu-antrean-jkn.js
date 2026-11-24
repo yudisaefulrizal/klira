@@ -4,6 +4,7 @@ import { ambilPengaturanAntreanJkn, simpanPengaturanAntreanJkn, tarikPendaftaran
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { bidang, kartu, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 
 const H = A.halaman;
 const kolom = (gap) => ({ display: 'flex', flexDirection: 'column', gap });
@@ -35,7 +36,7 @@ export function bagianAntreanJkn({ bolehUbah }) {
   const wadahPoli = document.createElement('div'), wadahDokter = document.createElement('div');
   for (const w of [wadahPoli, wadahDokter]) Object.assign(w.style, { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: token.jarak.sm });
   const tarik = tombol(A.tarik.tombol, null, 'sekunder'), hasilTarik = redup(A.tarik.belumPernah), barisAksi = document.createElement('div'); tarik.type = 'button';
-  Object.assign(barisAksi.style, { display: 'flex', gap: token.jarak.sm, flexWrap: 'wrap' }); barisAksi.append(simpan, tarik);
+  barisFleks(barisAksi, 'sm', { bungkus: true }); barisAksi.append(simpan, tarik);
   formulir.append(labelAktif, kontrol.service_name.el, kontrol.user_key.el, subjudul(H.pemetaanPoli), wadahPoli, subjudul(H.pemetaanDokter), wadahDokter, barisAksi, hasilTarik);
   isi.append(redup(H.petunjuk), pesan, formulir);
   const tampilTarik = (t) => { hasilTarik.textContent = t ? [A.tarik.terakhir(formatWaktu(t.waktu), t.pesan), ...(t.dilewati ?? [])].join(' ') : A.tarik.belumPernah; hasilTarik.style.color = t?.status === 'gagal' || t?.dilewati?.length ? token.warna.status.merah.teks : token.warna.teksRedup; };

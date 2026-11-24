@@ -1,12 +1,12 @@
 import { KASIR } from '@klira/shared';
 import { ubahHargaItem } from '../../api-klien/kasir.js';
 import { pesanGalat } from '../../api-klien/klien.js';
-import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { galatUbahHarga } from './keadaan-kasir.js';
 import { rupiahAtau } from '../penunjang/keadaan-order-lab.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function bukaUbahHarga({ kunjunganId, item, onTutup, onUbah }) {
   const U = KASIR.ubahHarga, awal = item.harga === null ? '' : String(item.harga);
@@ -14,9 +14,9 @@ export function bukaUbahHarga({ kunjunganId, item, onTutup, onUbah }) {
   function tutup() { aktif = false; modal.tutup(); onTutup(); }
   const modal = bukaModal1({ judul: U.judul, lebar: 'modalKecil', onTutup: tutup, lindungiTutup: () => !tersimpan && (harga !== awal || alasan.trim() !== '') });
   const status = document.createElement('div'), form = document.createElement('form'); form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   form.append(DaftarRingkasan({ bagian: [{ judul: '', baris: [{ label: U.item, nilai: `${item.nama} x${item.jumlah}` }, { label: U.hargaSekarang, nilai: rupiahAtau(item.harga) }, ...(item.harga_acuan !== null && item.harga_acuan !== undefined && item.harga_acuan !== item.harga ? [{ label: U.hargaAcuan, nilai: rupiahAtau(item.harga_acuan) }] : [])] }] }));
-  const petunjuk = document.createElement('span'); petunjuk.textContent = U.petunjuk; Object.assign(petunjuk.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); form.append(petunjuk);
+  const petunjuk = document.createElement('span'); petunjuk.textContent = U.petunjuk; teksRedupKecil(petunjuk); form.append(petunjuk);
   const fHarga = bidang({ id: 'ubah-harga-nilai', label: U.hargaBaru, nilai: harga, autoComplete: 'off', ubah(v) { harga = v; tampilGalat(); } }); fHarga.kontrol.inputMode = 'numeric';
   const fAlasan = bidang({ id: 'ubah-harga-alasan', label: U.alasan, maxLength: 300, autoComplete: 'off', ubah(v) { alasan = v; tampilGalat(); } });
   for (const f of [fHarga, fAlasan]) f.kontrol.setAttribute('aria-required', 'true');

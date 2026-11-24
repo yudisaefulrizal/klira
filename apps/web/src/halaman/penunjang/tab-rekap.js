@@ -9,6 +9,7 @@ import { bukaCetakHasilLab } from '../../modal/penunjang/cetak-hasil-lab.js';
 import { bukaHasilLab } from '../../modal/penunjang/hasil-lab.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 const UKURAN = 20;
 
@@ -18,7 +19,7 @@ export function pasangTabRekap(wadah) {
   let halaman = 1, total = 0, jumlahDimuat = 0, memuat = false, adaLagi = false;
 
   const el = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), toolbar = document.createElement('form'), status = document.createElement('div'), kosong = document.createElement('div'), kaki = document.createElement('div');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(el, 'md');
   Object.assign(toolbar.style, { display: 'flex', gap: token.jarak.md, padding: token.jarak.md, flexWrap: 'wrap', alignItems: 'flex-end' });
   Object.assign(kaki.style, { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: token.jarak.md, padding: token.jarak.md, color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
 
@@ -63,7 +64,7 @@ export function pasangTabRekap(wadah) {
   function buatBaris(o) {
     const pasien = sel(), nom = document.createElement('div'), rm = document.createElement('div');
     nom.textContent = o.pasien_nama; nom.style.fontWeight = token.huruf.berat.tebal;
-    rm.textContent = o.pasien_nomor_rm; Object.assign(rm.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
+    rm.textContent = o.pasien_nomor_rm; teksRedupKecil(rm);
     pasien.append(nom, rm);
     const hasil = sel(o.hasil_singkat ?? '-');
     if (o.interpretasi) hasil.append(' ', lencana(INTERPRETASI_HASIL.label(o.interpretasi), INTERPRETASI_HASIL.warna(o.interpretasi)));

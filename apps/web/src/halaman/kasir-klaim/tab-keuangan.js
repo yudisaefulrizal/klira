@@ -8,6 +8,7 @@ import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { kartu, tombol, tabel, baris, sel, lencana, peringatan, tab } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
+import { barisFleks, judulTebal, kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 const hariIni = () => new Date().toISOString().slice(0, 10);
 
@@ -114,10 +115,10 @@ function bungkusTabel(judul, tbl, jumlahBaris, pesanKosong = 'Belum ada data pad
     });
     const h = document.createElement('h3');
     h.textContent = judul;
-    Object.assign(h.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal });
+    judulTebal(h, 'besar');
     const cnt = document.createElement('span');
     cnt.textContent = `${jumlahBaris} data`;
-    Object.assign(cnt.style, { fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup });
+    teksRedupKecil(cnt);
     kep.append(h, cnt);
     box.append(kep);
     if (!jumlahBaris) {
@@ -136,16 +137,16 @@ export function TabKeuangan() {
     const boleh = izinSaatIni();
     const bolehInput = boleh('kasir', 'input') || boleh('klaim', 'input');
     const el = document.createElement('div');
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    kolomFleks(el, 'md');
 
     const header = document.createElement('div');
-    Object.assign(header.style, { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm });
+    barisFleks(header, 'sm', { rata: 'center', bungkus: true, sebar: true });
     const h2 = document.createElement('h2');
     h2.textContent = 'Keuangan & Akuntansi Klinik';
-    Object.assign(h2.style, { margin: '0', fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal });
+    judulTebal(h2, 'judul');
 
     const filterBox = document.createElement('div');
-    Object.assign(filterBox.style, { display: 'flex', alignItems: 'center', gap: token.jarak.sm, flexWrap: 'wrap' });
+    barisFleks(filterBox, 'sm', { rata: 'center', bungkus: true });
     const lblPeriode = document.createElement('span');
     lblPeriode.textContent = 'Periode';
     Object.assign(lblPeriode.style, { fontSize: token.huruf.ukuran.dasar, color: token.warna.teksRedup });
@@ -223,14 +224,14 @@ export function TabKeuangan() {
     async function muatPengeluaran() {
         const daftar = await daftarPengeluaran(periode());
         const wrap = document.createElement('div');
-        Object.assign(wrap.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+        kolomFleks(wrap, 'md');
         if (bolehInput) {
             const form = kartu({ susun: 'sm' });
             const judulF = document.createElement('h3');
             judulF.textContent = 'Catat Pengeluaran Operasional';
-            Object.assign(judulF.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal });
+            judulTebal(judulF, 'besar');
             const fRow = document.createElement('form');
-            Object.assign(fRow.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'flex-end' });
+            barisFleks(fRow, 'sm', { rata: 'flex-end', bungkus: true });
             const tgl = inputStd('date', hariIni());
             const kat = selectStd([['gaji', 'Gaji'], ['listrik_air', 'Listrik & Air'], ['atk', 'ATK'], ['pemeliharaan', 'Pemeliharaan'], ['rumah_tangga', 'Rumah Tangga'], ['lainnya', 'Lainnya']]);
             const met = selectStd([['tunai', 'Kas Tunai'], ['transfer', 'Transfer Bank']]);
@@ -269,14 +270,14 @@ export function TabKeuangan() {
     async function muatHutang() {
         const daftar = await daftarHutang();
         const wrap = document.createElement('div');
-        Object.assign(wrap.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+        kolomFleks(wrap, 'md');
         if (bolehInput) {
             const form = kartu({ susun: 'sm' });
             const judulF = document.createElement('h3');
             judulF.textContent = 'Catat Faktur Pembelian Supplier';
-            Object.assign(judulF.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal });
+            judulTebal(judulF, 'besar');
             const fRow = document.createElement('form');
-            Object.assign(fRow.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'flex-end' });
+            barisFleks(fRow, 'sm', { rata: 'flex-end', bungkus: true });
             const noF = inputStd('text', '', 'PBF-2026-001');
             const sup = inputStd('text', '', 'Nama PBF / Supplier');
             const tgl = inputStd('date', hariIni());
@@ -325,14 +326,14 @@ export function TabKeuangan() {
     async function muatPiutang() {
         const daftar = await daftarPiutang();
         const wrap = document.createElement('div');
-        Object.assign(wrap.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+        kolomFleks(wrap, 'md');
         if (bolehInput) {
             const form = kartu({ susun: 'sm' });
             const judulF = document.createElement('h3');
             judulF.textContent = 'Catat Piutang Pasien / Penjamin';
-            Object.assign(judulF.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal });
+            judulTebal(judulF, 'besar');
             const fRow = document.createElement('form');
-            Object.assign(fRow.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'flex-end' });
+            barisFleks(fRow, 'sm', { rata: 'flex-end', bungkus: true });
             const kid = inputStd('number', '', 'ID kunjungan'); kid.min = '1';
             const pen = inputStd('text', '', 'Nama asuransi / pasien');
             const tot = inputStd('number', '', '150000'); tot.min = '1';
@@ -379,7 +380,7 @@ export function TabKeuangan() {
     async function muatJasaMedis() {
         const [daftar, tarif] = await Promise.all([rekapJasaMedis(periode()), daftarTarifJasa()]);
         const wrap = document.createElement('div');
-        Object.assign(wrap.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+        kolomFleks(wrap, 'md');
 
         const tbl = tabel(['Praktisi / DPJP', 'Item Layanan', 'Jasa DPJP', 'Jasa Perawat', 'Jasa Klinik'].map((j, i) => ({ judul: j, rataKanan: i >= 1 })), 'Rekap Jasa Medis');
         for (const r of daftar) {
@@ -418,14 +419,14 @@ export function TabKeuangan() {
     async function muatJurnalCoa() {
         const [coa, jurnal] = await Promise.all([daftarCoa(), daftarJurnal(periode())]);
         const wrap = document.createElement('div');
-        Object.assign(wrap.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+        kolomFleks(wrap, 'md');
         if (bolehInput && coa.length >= 2) {
             const form = kartu({ susun: 'md' });
             const judulJ = document.createElement('h3');
             judulJ.textContent = 'Posting Jurnal Manual (Double-Entry)';
-            Object.assign(judulJ.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal });
+            judulTebal(judulJ, 'besar');
             const fRow = document.createElement('form');
-            Object.assign(fRow.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'flex-end' });
+            barisFleks(fRow, 'sm', { rata: 'flex-end', bungkus: true });
             const tgl = inputStd('date', hariIni());
             const opsiCoa = coa.map((c) => [c.kode, `${c.kode} - ${c.nama}`]);
             const deb = selectStd(opsiCoa);
@@ -466,7 +467,7 @@ export function TabKeuangan() {
             judulC.textContent = 'Tambah Akun Perkiraan (COA)';
             Object.assign(judulC.style, { margin: '0', fontSize: token.huruf.ukuran.dasar, fontWeight: token.huruf.berat.tebal, color: token.warna.teksRedup });
             const fCoa = document.createElement('form');
-            Object.assign(fCoa.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.sm, alignItems: 'flex-end' });
+            barisFleks(fCoa, 'sm', { rata: 'flex-end', bungkus: true });
             const kd = inputStd('text', '', 'mis. 5103');
             const nm = inputStd('text', '', 'Nama akun baru');
             const tp = selectStd([['aset', 'Aset'], ['kewajiban', 'Kewajiban'], ['ekuitas', 'Ekuitas'], ['pendapatan', 'Pendapatan'], ['beban', 'Beban']]);

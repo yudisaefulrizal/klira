@@ -4,12 +4,13 @@ import { bukaLapisanRiwayat } from '../../util/lapisan/riwayat-lapisan.js';
 import { alasanSiap } from '../../util/alasan.js';
 import { bukaDialog } from '../ui/buka-dialog.js';
 import { tombol, bidang } from '../ui/primitif.js';
+import { judulTebal } from '../../gaya/tata-letak.js';
 
 export function bukaKonfirmasi({ judul, pesan, labelYa = TOMBOL.konfirmasi, labelTidak = MODAL.batal, alasan = false, memproses = false, onYa, onTidak }) {
   const dialog = bukaDialog({ judul, onEsc: onTidak, lapis: 'konfirmasi', lebar: 'modalKecil' });
   const form = document.createElement('form'), h = document.createElement('h2'), isi = document.createElement('div'), kaki = document.createElement('div');
   Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md, padding: token.jarak.lg });
-  h.textContent = judul; Object.assign(h.style, { margin: '0', fontSize: token.huruf.ukuran.besar, fontWeight: token.huruf.berat.tebal }); isi.style.color = token.warna.teksRedup; isi.append(pesan);
+  h.textContent = judul; judulTebal(h, 'besar'); isi.style.color = token.warna.teksRedup; isi.append(pesan);
   form.append(h, isi);
   const teks = alasan ? bidang({ id: 'alasan-konfirmasi', label: alasan.label ?? MODAL.alasanOpsional, jenis: 'textarea', ubah: () => perbarui() }) : null;
   if (teks) form.append(teks.el);
@@ -37,7 +38,7 @@ export function bukaModal1({ judul, onTutup, lindungiTutup = () => false, lebar 
   const dialog = bukaDialog({ judul, onEsc: mintaTutup, lebar });
   const kepala = document.createElement('header'), h = document.createElement('h2'), konteks = document.createElement('div');
   Object.assign(kepala.style, { display: 'flex', alignItems: 'center', gap: token.jarak.lg, padding: `${token.jarak.md} ${token.jarak.lg}`, background: token.warna.kepalaTabel, borderBottom: `${token.ukuran.garis} solid ${token.warna.garis}` });
-  h.textContent = judul; Object.assign(h.style, { margin: '0', fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal });
+  h.textContent = judul; judulTebal(h, 'judul');
   Object.assign(konteks.style, { flexGrow: '1', display: 'flex', alignItems: 'center', gap: token.jarak.lg, minWidth: '0' });
   const tutup = tombol('', mintaTutup, 'sekunder'); tutup.setAttribute('aria-label', MODAL.tutup); tutup.title = MODAL.tutup;
   Object.assign(tutup.style, { padding: '0', width: token.ukuran.tombol });

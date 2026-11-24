@@ -7,6 +7,7 @@ import { izinSaatIni } from '../izin/izin-saja.js';
 import { bidang, kartu, lencana, peringatan, tab, tombol } from '../ui/primitif.js';
 import { bukaKonfirmasi } from '../modal-1/modal-1.js';
 import { HARI, petaDokter, petaPoli, saringDokter, saringPoli, TAMPILAN_JADWAL } from './keadaan-jadwal.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 const KUNCI_SIMPAN = 'klira.jadwal.tampilan', UKURAN = 100;
 const bacaTampilan = () => { try { const v = localStorage.getItem(KUNCI_SIMPAN); return TAMPILAN_JADWAL.includes(v) ? v : 'poli'; } catch { return 'poli'; } };
@@ -23,7 +24,7 @@ async function muatSemua(jenis) {
 /** Tab Jadwal praktik: peta poli (siapa dokternya) dan peta dokter (di poli mana), tiap sel = shift x hari. */
 export function TabJadwal() {
     const boleh = izinSaatIni(), el = document.createElement('section');
-    Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    kolomFleks(el, 'md');
     let aktif = true, versi = 0, modal, tampilan = bacaTampilan(), dokter = '', poliPilih = '', poli = null, praktisi = null, shift = null, data = null, galat = null, pesan = null;
     const tutupModal = () => { const t = modal; modal = undefined; t?.(); };
     /** `tetap` = bidang yang sudah ditentukan sel peta (disembunyikan di modal; hanya sisanya yang diisi). */

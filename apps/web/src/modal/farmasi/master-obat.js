@@ -7,6 +7,7 @@ import { bidang, tombol, peringatan, lencana, kartu } from '../../komponen/ui/pr
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalMasterObat, bentukTambahObat, galatMasterObat, opsiRute, perubahanMasterObat, pilihKfa } from './keadaan-farmasi.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaMasterObat({ obat, onTutup, onSelesai }) {
   const M = FARMASI.master, awal = awalMasterObat(obat), ubah = !!obat;
@@ -14,7 +15,7 @@ export function bukaMasterObat({ obat, onTutup, onSelesai }) {
   function bersih() { aktif = false; clearTimeout(timer); permintaan++; modal.tutup(); }
   const modal = bukaModal1({ judul: ubah ? M.judulUbah : M.judulTambah, onTutup() { bersih(); onTutup(); }, lindungiTutup: () => adaPerubahan(awal, { ...k, kfa: null }) || (!ubah && !!k.kfa) });
   const status = document.createElement('div'), form = document.createElement('form'), hasil = document.createElement('div'), dipilih = document.createElement('div'), galatKfa = document.createElement('div'), controls = new Map(); form.noValidate = true;
-  Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(form, 'md');
   const simpan = tombol(TOMBOL.simpan, kirim);
   const cari = bidang({ id: 'kfa-cari', label: M.cariKfa, autoComplete: 'off', ubah(v) { clearTimeout(timer); const urut = ++permintaan; hasil.replaceChildren(); if (v.trim().length < 2) return; timer = setTimeout(async () => { if (!aktif) return; hasil.append(NAVIGASI.memuat); try { const h = await cariKfa(v.trim(), 10); if (!aktif || urut !== permintaan) return; hasil.replaceChildren(); if (!h.length) hasil.append(peringatan(M.kfaTidakAda, 'biru')); const ul = document.createElement('ul'); ul.setAttribute('aria-label', M.pilihKfa); Object.assign(ul.style, { listStyle: 'none', padding: '0', margin: '0', maxHeight: token.ukuran.tinggiDaftar, overflowY: 'auto' }); for (const item of h) { const li = document.createElement('li'), b = tombol('', () => { k = pilihKfa(k, item); cari.kontrol.value = ''; hasil.replaceChildren(); for (const [nama, f] of controls) f.kontrol.value = k[nama]; perbarui(); }, 'teks'); Object.assign(b.style, { width: '100%', height: 'auto', padding: token.jarak.sm, textAlign: 'left' }); b.disabled = item.status !== 'aktif'; const nom = document.createElement('span'); nom.textContent = item.nama; const info = document.createElement('small'); info.textContent = [item.kode, item.bentuk_sediaan].filter(Boolean).join(' · '); info.style.display = 'block'; b.append(nom, info); if (item.lokal) b.append(lencana(M.kfaLokal, 'biru')); if (item.status !== 'aktif') b.append(lencana(M.kfaTidakAktif, 'abu')); li.append(b); ul.append(li); } hasil.append(ul); if (h.length >= 10) hasil.append(M.kfaBatasHasil); } catch (e) { if (aktif && urut === permintaan) hasil.replaceChildren(peringatan(pesanGalat(e, M.gagalMuat))); } }, 250); } });
   cari.kontrol.placeholder = M.cariKfaPetunjuk; cari.kontrol.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });

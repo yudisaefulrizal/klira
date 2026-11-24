@@ -2,6 +2,7 @@ import { ambilKia, simpanKia } from '../../api-klien/klinis.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { token } from '../../gaya/token.js';
+import { barisFleks } from '../../gaya/tata-letak.js';
 
 export const LAYANAN_KIA = [
     { nilai: 'anc', label: 'ANC (Ibu Hamil)' },
@@ -157,7 +158,7 @@ export function bukaModalKia({ kunjunganId, nilaiAwal = '', onTerapkan }) {
 
     const wadahStatus = document.createElement('div');
     const atasBar = document.createElement('div');
-    Object.assign(atasBar.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: token.jarak.sm, flexWrap: 'wrap' });
+    barisFleks(atasBar, 'sm', { rata: 'flex-end', bungkus: true, sebar: true });
 
     const pilihLayanan = bidang({
         id: 'kia-layanan',
@@ -176,7 +177,7 @@ export function bukaModalKia({ kunjunganId, nilaiAwal = '', onTerapkan }) {
     atasBar.append(pilihLayanan.el, infoAuto);
 
     const isiGrid = document.createElement('div');
-    Object.assign(isiGrid.style, { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: token.jarak.sm });
+    barisFleks(isiGrid, 'sm', { rata: 'flex-end', bungkus: true });
 
     const pratinjau = document.createElement('small');
     Object.assign(pratinjau.style, {

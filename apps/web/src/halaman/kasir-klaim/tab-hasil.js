@@ -7,12 +7,13 @@ import { token } from '../../gaya/token.js';
 import { bukaSerahHasil } from '../../modal/kasir-klaim/serah-hasil.js';
 import { bukaCetakHasilLab } from '../../modal/penunjang/cetak-hasil-lab.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 /** Hasil lab kunjungan penunjang saja yang belum diserahkan (lintas tanggal), dengan tombol Serahkan hasil bila hasil sudah divalidasi. */
 export function TabHasil() {
   const S = KASIR.serahHasil, boleh = izinSaatIni(), el = document.createElement('div'), status = document.createElement('div'), isi = document.createElement('div');
   let aktif = true, versi = 0, modal;
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  kolomFleks(el, 'md');
   const judul = document.createElement('h2'); judul.textContent = S.daftarJudul; judul.style.margin = '0'; el.append(judul, status, isi);
   async function muat() {
     const saat = ++versi;

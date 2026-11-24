@@ -1,16 +1,16 @@
 import { PENUNJANG } from '@klira/shared';
-import { token } from '../../gaya/token.js';
 import { tab, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../../util/tab/ingatan-tab.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { pasangTabMasterPemeriksaan } from './tab-master-pemeriksaan.js';
 import { pasangTabRekap } from './tab-rekap.js';
+import { barisFleks, judulTebal } from '../../gaya/tata-letak.js';
 
 export function HalamanPenunjang() {
   const { search, ganti } = navigasiSaatIni(), daftar = [{ id: 'rekap', label: PENUNJANG.tab.rekap }, { id: 'master', label: PENUNJANG.tab.master }], ids = daftar.map(t => t.id);
   let aktif, controller;
   const el = document.createElement('div'), header = document.createElement('header'), judul = document.createElement('h1'), isi = document.createElement('div'); el.style.display = isi.style.display = 'contents';
-  Object.assign(header.style, { display: 'flex', gap: token.jarak.md, alignItems: 'center', flexWrap: 'wrap' }); judul.textContent = PENUNJANG.judul; Object.assign(judul.style, { margin: '0', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: '1' });
+  barisFleks(header, 'md', { rata: 'center', bungkus: true }); judul.textContent = PENUNJANG.judul; judulTebal(judul, 'halaman', true);
   const tabs = tab(daftar, '', PENUNJANG.tabLabel, id => ganti(`/penunjang?tab=${id}`)); header.append(judul, tabs.el, bantuanKecil('Alur Laboratorium', [
     'Urutan pengerjaan: Order masuk -> Ambil spesimen -> Input hasil -> Validasi -> Serahkan hasil.',
     'Kunjungan khusus Lab langsung masuk antrean penunjang tanpa perlu poli umum.',

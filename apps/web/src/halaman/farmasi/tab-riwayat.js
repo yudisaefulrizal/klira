@@ -6,12 +6,13 @@ import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi
 import { bukaSerahTerimaObat } from '../../modal/farmasi/serah-terima-obat.js';
 import { token } from '../../gaya/token.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function pasangTabRiwayat(wadah) {
   const R = FARMASI.riwayat, boleh = izinSaatIni(), awal = { status: '', dari: '', sampai: '', halaman: 1 };
   let draf = { ...awal }, terapan = { ...awal }, aktif = true, urut = 0, modal;
   const el = document.createElement('div'), box = kartu({ style: { padding: '0', overflow: 'hidden' } }), toolbar = document.createElement('form'), status = document.createElement('div'), kosong = document.createElement('div'), pages = document.createElement('div');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md }); Object.assign(toolbar.style, { display: 'flex', gap: token.jarak.md, padding: token.jarak.md, flexWrap: 'wrap', alignItems: 'flex-end' });
+  kolomFleks(el, 'md'); Object.assign(toolbar.style, { display: 'flex', gap: token.jarak.md, padding: token.jarak.md, flexWrap: 'wrap', alignItems: 'flex-end' });
   const fStatus = bidang({ id: 'riwayat-status', label: R.filterStatus, opsi: [{ nilai: '', label: R.semuaStatus }, ...['diajukan', 'ditelaah', 'siap', 'diserahkan'].map(s => ({ nilai: s, label: STATUS_RESEP.label(s) }))], ubah(v) { draf.status = v; } });
   const dari = bidang({ id: 'riwayat-dari', label: R.dari, jenis: 'date', ubah(v) { draf.dari = v; periode(); } }), sampai = bidang({ id: 'riwayat-sampai', label: R.sampai, jenis: 'date', ubah(v) { draf.sampai = v; periode(); } });
   const terapkan = tombol('Terapkan'); terapkan.type = 'submit';
@@ -25,8 +26,8 @@ export function pasangTabRiwayat(wadah) {
     try { const h = await riwayatObat({ status: terapan.status || undefined, dari: terapan.dari || undefined, sampai: terapan.sampai || undefined, halaman: terapan.halaman, ukuran: 20 }); if (!aktif || id !== urut) return; status.replaceChildren(); table.tbody.replaceChildren();
       for (const r of h.data) {
         const nomor = sel(r.nomor_resep); nomor.style.fontWeight = token.huruf.berat.tebal;
-        const pasien = sel(), nama = document.createElement('div'), rm = document.createElement('div'); nama.textContent = r.pasien_nama; rm.textContent = r.pasien_nomor_rm; Object.assign(rm.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); pasien.append(nama, rm);
-        const item = sel(), teks = document.createElement('div'), daftar = document.createElement('div'); teks.textContent = r.catatan?.trim() ? `Catatan: ${r.catatan.trim()}` : ''; Object.assign(teks.style, { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }); daftar.textContent = r.item.length ? r.item.map(i => `${i.nama} ${i.jumlah} ${i.satuan}`).join('; ') : FARMASI.resep.belumAdaItem; item.append(daftar, ...(teks.textContent ? [teks] : [])); Object.assign(teks.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil });
+        const pasien = sel(), nama = document.createElement('div'), rm = document.createElement('div'); nama.textContent = r.pasien_nama; rm.textContent = r.pasien_nomor_rm; teksRedupKecil(rm); pasien.append(nama, rm);
+        const item = sel(), teks = document.createElement('div'), daftar = document.createElement('div'); teks.textContent = r.catatan?.trim() ? `Catatan: ${r.catatan.trim()}` : ''; Object.assign(teks.style, { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }); daftar.textContent = r.item.length ? r.item.map(i => `${i.nama} ${i.jumlah} ${i.satuan}`).join('; ') : FARMASI.resep.belumAdaItem; item.append(daftar, ...(teks.textContent ? [teks] : [])); teksRedupKecil(teks);
         const aksi = sel(); if (r.status === 'siap' && boleh('farmasi', 'input')) aksi.append(tombol('Serahkan obat', () => { modal = bukaSerahTerimaObat({ kunjunganId: r.kunjungan_id, pasien: { nama: r.pasien_nama, nomor_rm: r.pasien_nomor_rm }, onTutup() { modal = undefined; }, onSelesai() { modal = undefined; void muat(); } }); }, 'sekunder'));
         table.tbody.append(baris(nomor, pasien, sel(r.dpjp_nama ?? '-'), item, sel(lencana(STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))), sel(formatWaktu(r.dibuat_pada)), aksi));
       }

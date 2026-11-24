@@ -1,19 +1,19 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { buatPemberitahuan } from '../../api-klien/pdp.js';
 import { pesanGalat } from '../../api-klien/klien.js';
-import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalPemberitahuan, galatPemberitahuan } from './keadaan-pdp.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 const P = PDP.pemberitahuan;
 export function bukaVersiPemberitahuan({ berlaku, onTutup, onSelesai }) {
   const awal = awalPemberitahuan(berlaku), k = { ...awal };
   let dicoba = false, memproses = false, aktif = true;
   const modal = bukaModal1({ judul: P.judul, lebar: 'modalBesar', onTutup, lindungiTutup: () => adaPerubahan(awal, k) });
   const pesan = document.createElement('div'), form = document.createElement('form'), petunjuk = document.createElement('span'), isiGalat = document.createElement('div');
-  pesan.style.display = isiGalat.style.display = 'contents'; form.id = 'bentuk-pemberitahuan'; form.noValidate = true; Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
-  petunjuk.textContent = P.petunjuk; Object.assign(petunjuk.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); form.append(petunjuk);
+  pesan.style.display = isiGalat.style.display = 'contents'; form.id = 'bentuk-pemberitahuan'; form.noValidate = true; kolomFleks(form, 'md');
+  petunjuk.textContent = P.petunjuk; teksRedupKecil(petunjuk); form.append(petunjuk);
   const fields = {};
   for (const [nama, id, label] of [['judul', 'pb-judul', P.judulIsian], ['tujuan', 'pb-tujuan', P.tujuan], ['isi', 'pb-isi', P.isi]]) {
     fields[nama] = bidang({ id, label, nilai: k[nama], jenis: nama === 'isi' ? 'textarea' : 'text', maxLength: nama === 'isi' ? 20000 : undefined, autoComplete: nama === 'isi' ? undefined : 'off', ubah(nilai) { k[nama] = nilai; validasi(); } }); form.append(fields[nama].el);

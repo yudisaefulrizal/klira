@@ -7,11 +7,12 @@ import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { awalPenyampaian, bentukPenyampaian, galatPenyampaian } from './keadaan-dokumen.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export function bukaPenyampaianRm({ onTutup, onSelesai }) {
   const P = REKAM_MEDIS.dok.penyampaian, awal = awalPenyampaian(), controls = new Map(); let k = { ...awal }, dicoba = false, proses = false, aktif = true;
   function bersih() { aktif = false; pasien.tutup(); modal.tutup(); }
-  const modal = bukaModal1({ judul: P.judul, lindungiTutup: () => adaPerubahan(awal, k), onTutup() { bersih(); onTutup(); } }), status = document.createElement('div'), form = document.createElement('form'); form.noValidate = true; Object.assign(form.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  const modal = bukaModal1({ judul: P.judul, lindungiTutup: () => adaPerubahan(awal, k), onTutup() { bersih(); onTutup(); } }), status = document.createElement('div'), form = document.createElement('form'); form.noValidate = true; kolomFleks(form, 'md');
   const pasien = PemilihPasien({ id: 'py-pasien', pasienId: k.pasien_id, onPilih(id) { k = { ...k, pasien_id: id }; perbarui(); } }); form.append(pasien);
   function champ(nom, label, choix, jenis = 'text', maxLength) { const f = bidang({ id: `py-${nom}`, label, opsi: choix, jenis, maxLength, nilai: k[nom], autoComplete: 'off', ubah(v) { k = { ...k, [nom]: v }; perbarui(); } }); controls.set(nom, f); form.append(f.el); return f; }
   const opsi = p => Object.entries(p).map(([nilai, label]) => ({ nilai, label })); champ('penerima_nama', P.penerima); champ('hubungan', P.hubungan, opsi(P.hubunganLabel)); champ('bentuk', P.bentuk, opsi(P.bentukLabel)); const bukti = champ('bukti_persetujuan', P.bukti), aide = document.createElement('small'); aide.textContent = P.buktiPetunjuk; aide.style.color = token.warna.teksRedup; form.append(aide); champ('catatan', P.catatan, undefined, 'textarea', 500);

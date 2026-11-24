@@ -4,11 +4,12 @@ import { buatNilaiTertunda } from '../../../util/tunda.js';
 import { bidang, tombol, peringatan } from '../../ui/primitif.js';
 import { bukaKamusKode } from './kamus-kode.js';
 import { daftarHasilKode } from './hasil-kode.js';
+import { barisFleks, kolomFleks } from '../../../gaya/tata-letak.js';
 export function PencarianKode(props) {
   const { id, label, petunjuk, cari, onPilih, manual = false, teksManual, kamus, tambahan } = props;
   let q = '', hasil = null, hasilTambahan = [], kataHasil = null, memuat = false, galat = null, versi = 0, aktif = true, tutupKamus;
   const el = document.createElement('div'), kepala = document.createElement('div'), pencarian = document.createElement('div'), daftar = document.createElement('div');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm }); Object.assign(kepala.style, { display: 'flex', gap: token.jarak.sm, alignItems: 'flex-end', flexWrap: 'wrap' }); Object.assign(pencarian.style, { flex: '1 1 220px', minWidth: '0' }); daftar.style.display = 'contents';
+  kolomFleks(el, 'sm'); barisFleks(kepala, 'sm', { rata: 'flex-end', bungkus: true }); Object.assign(pencarian.style, { flex: '1 1 220px', minWidth: '0' }); daftar.style.display = 'contents';
   const field = bidang({ id, label, autoComplete: 'off', ubah(value) { q = value; hasil = null; tunda.ubah(q.trim()); tampil(); } }); field.kontrol.placeholder = petunjuk; pencarian.append(field.el); kepala.append(pencarian);
   const kode = bidang({ id: `${id}-kode`, label: teksManual?.kode ?? '', autoComplete: 'off', ubah: () => siapManual() }), nama = bidang({ id: `${id}-nama`, label: teksManual?.nama ?? '', autoComplete: 'off', ubah: () => siapManual() });
   const tambah = tombol(TOMBOL.tambah, () => pilih({ kode: kode.kontrol.value, nama: nama.kontrol.value }), 'sekunder');
@@ -27,7 +28,7 @@ export function PencarianKode(props) {
     daftar.replaceChildren(); if (galat) daftar.append(peringatan(galat));
     if (memuat) { const s = document.createElement('span'); s.textContent = NAVIGASI.memuat; s.style.color = token.warna.teksRedup; daftar.append(s); }
     const h = kataHasil === q.trim() ? hasil : null, t = h ? hasilTambahan : [];
-    if (tambahan && t.length) { const group = document.createElement('div'); Object.assign(group.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); group.append(judul(tambahan.judul), daftarHasilKode(t, { label: tambahan.judul, onPilih(v) { tambahan.onPilih(v); bersihkan(); } })); daftar.append(group); }
+    if (tambahan && t.length) { const group = document.createElement('div'); kolomFleks(group, 'xs'); group.append(judul(tambahan.judul), daftarHasilKode(t, { label: tambahan.judul, onPilih(v) { tambahan.onPilih(v); bersihkan(); } })); daftar.append(group); }
     if (tambahan && h?.length) daftar.append(judul(tambahan.judulKamus));
     if (h?.length) daftar.append(daftarHasilKode(h, { label: KLINIS.diagnosis.hasil, onPilih: pilih, labelContoh: KLINIS.diagnosis.contoh }));
     if (h && !h.length && !t.length && !memuat) { daftar.append(peringatan(KLINIS.diagnosis.tidakAda, 'kuning')); if (manual && teksManual) { siapManual(); daftar.append(manualEl); } }

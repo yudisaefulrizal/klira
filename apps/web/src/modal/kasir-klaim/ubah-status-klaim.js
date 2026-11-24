@@ -1,13 +1,13 @@
 import { aksiKlaimTersedia, KLAIM, STATUS_KLAIM, TOMBOL } from '@klira/shared';
 import { pesanGalat } from '../../api-klien/klien.js';
 import { ubahStatusKlaim } from '../../api-klien/klaim.js';
-import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { adaPerubahan } from '../../util/draf/draf.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { rupiah } from '../penunjang/keadaan-order-lab.js';
 import { awalStatusKlaim, bentukStatusKlaim, galatStatusKlaim } from './keadaan-klaim.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function bukaUbahStatusKlaim({ klaim, onTutup, onSelesai }) {
   const T = KLAIM.status, aksi = aksiKlaimTersedia(klaim.status);
@@ -17,7 +17,7 @@ export function bukaUbahStatusKlaim({ klaim, onTutup, onSelesai }) {
   const modal = bukaModal1({ judul: T.judul, onTutup: tutup, lindungiTutup: () => !selesai && adaPerubahan(awal, k) });
   const status = document.createElement('div'), form = document.createElement('form'), detail = document.createElement('div'), pilihan = document.createElement('div'), isian = document.createElement('div'), riwayat = document.createElement('div');
   form.noValidate = true;
-  for (const el of [form, detail, pilihan, isian, riwayat]) Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  for (const el of [form, detail, pilihan, isian, riwayat]) kolomFleks(el, 'md');
   const nama = document.createElement('strong'); nama.textContent = klaim.pasien_nama;
   detail.append(nama, `${klaim.pasien_nomor_rm}${klaim.nomor_sep ? ` · SEP ${klaim.nomor_sep}` : ''}`, lencana(STATUS_KLAIM.label(klaim.status), STATUS_KLAIM.warna(klaim.status)));
   if (klaim.sisa_hari !== null) detail.append(KLAIM.batas.sisa(klaim.sisa_hari));
@@ -26,7 +26,7 @@ export function bukaUbahStatusKlaim({ klaim, onTutup, onSelesai }) {
   if (klaim.status === 'dibayar' && klaim.jumlah_dibayar !== null) detail.append(`${T.jumlah}: ${rupiah(klaim.jumlah_dibayar)}${klaim.dibayar_pada ? ` · ${formatWaktu(klaim.dibayar_pada)}` : ''}`);
   if (klaim.riwayat.length) {
     const h = document.createElement('strong'); h.textContent = T.riwayat; riwayat.append(h);
-    for (const r of [...klaim.riwayat].reverse()) { const el = document.createElement('span'); Object.assign(el.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); el.textContent = `${formatWaktu(r.waktu)} · ${r.dari ? `${STATUS_KLAIM.label(r.dari)} → ` : ''}${STATUS_KLAIM.label(r.ke)}${r.oleh_nama ? ` · ${r.oleh_nama}` : ''}${r.alasan ? ` · ${r.alasan}` : ''}`; riwayat.append(el); }
+    for (const r of [...klaim.riwayat].reverse()) { const el = document.createElement('span'); teksRedupKecil(el); el.textContent = `${formatWaktu(r.waktu)} · ${r.dari ? `${STATUS_KLAIM.label(r.dari)} → ` : ''}${STATUS_KLAIM.label(r.ke)}${r.oleh_nama ? ` · ${r.oleh_nama}` : ''}${r.alasan ? ` · ${r.alasan}` : ''}`; riwayat.append(el); }
   }
   const kontrol = new Map();
   function tambah(namaBidang, label, jenis = 'text', maxLength) {

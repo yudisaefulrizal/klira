@@ -1,10 +1,10 @@
 import { TOMBOL } from '@klira/shared';
 import { opsiKunjungan, ubahDpjpKunjungan } from '../../api-klien/kunjungan.js';
 import { pesanGalat } from '../../api-klien/klien.js';
-import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { dokterPoli } from './keadaan-kunjungan.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 /**
  * Modal untuk petugas pendaftaran mengubah dokter tujuan (DPJP) pada kunjungan rawat jalan
@@ -31,7 +31,7 @@ export function bukaUbahDpjp({ pasienNama, kunjungan, onTutup, onSelesai }) {
     info.textContent = `${pasienNama} · ${kunjungan.antrean?.kode ?? '-'} (${kunjungan.poli_nama ?? kunjungan.jenis_poli ?? 'Rawat jalan'})`;
 
     const wadahForm = document.createElement('div');
-    Object.assign(wadahForm.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+    kolomFleks(wadahForm, 'md');
     wadahForm.append(status, info);
 
     const tombolSimpan = tombol('Simpan dokter', () => void simpan());

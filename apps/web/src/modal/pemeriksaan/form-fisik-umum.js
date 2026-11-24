@@ -1,6 +1,7 @@
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
+import { kolomFleks } from '../../gaya/tata-letak.js';
 
 export const OPSI_KEADAAN_UMUM = ['Sehat', 'Sakit Ringan', 'Sakit Sedang', 'Sakit Berat'];
 export const OPSI_STATUS_FISIK = ['Normal', 'Abnormal', 'Tidak Diperiksa'];
@@ -64,7 +65,7 @@ export function bukaModalFisikUmum({ onTerapkan }) {
     info.style.color = token.warna.teksRedup;
 
     const wadah = document.createElement('div');
-    Object.assign(wadah.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs });
+    kolomFleks(wadah, 'xs');
 
     const pratinjau = document.createElement('small');
     Object.assign(pratinjau.style, {

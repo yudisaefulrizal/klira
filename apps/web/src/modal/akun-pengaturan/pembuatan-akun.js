@@ -13,6 +13,7 @@ import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { kirimAkun } from './alur-buat-akun.js';
 import { awalAkun, BIDANG_SENSITIF_AKUN, galatLangkah, hariIniLokal } from './keadaan-akun.js';
 import { IsiHasilAkun, LangkahData, LangkahIzin, LangkahJenis, LangkahProfil, LangkahRingkasan } from './langkah-akun.js';
+import { barisFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 export const ALUR_PEMBUATAN_AKUN = 'pembuatan-akun';
 const JUMLAH_LANGKAH = 5;
 export function bukaPembuatanAkun({ onTutup, onSelesai }) {
@@ -44,8 +45,8 @@ export function bukaPembuatanAkun({ onTutup, onSelesai }) {
   ].map((l, n) => ({ ...l, selesai: () => n < JUMLAH_LANGKAH - 1 && dikunjungi.includes(n) && indeks !== n && !galatLangkah(keadaan)[n] }));
   modal = bukaModalBertahap({ judul: AKUN_BARU.judul, langkah, indeksAwal: indeks, onIndeks: pindah, labelKirim: AKUN_BARU.buat, onKirim() { if (!memproses && (!peringatan || isianPeringatanSiap(isian))) void kirim(); }, onTutup: () => hasil ? onSelesai() : onTutup(), lindungiTutup: () => adaPerubahan(awal, keadaan),
     onLanjut(dari) { const g = galatLangkah(keadaan)[dari]; if (g) { tampilGalat = true; galat = g; segarkanIsi(); return false; } galat = null; return true; },
-    konteks() { const el = document.createElement('div'), nama = document.createElement('div'), detail = document.createElement('div'); nama.textContent = keadaan.nama.trim() || '-'; nama.style.fontWeight = token.huruf.berat.tebal; detail.textContent = `${keadaan.username.trim() || '-'} · ${Object.keys(keadaan.penugasan).length} jenis akun · ${keadaan.izin.length} izin per akun`; Object.assign(detail.style, { fontSize: token.huruf.ukuran.kecil, color: token.warna.teksRedup }); el.append(nama, detail); return el; },
-    catatan() { if (!drafDipulihkan) return null; const el = kotak('', 'biru'), teks = document.createElement('span'); Object.assign(el.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md }); teks.textContent = MODAL.drafDipulihkan; teks.style.flexGrow = '1'; el.append(teks, tombol(MODAL.buangDraf, () => { draf.buang(); keadaan = awal; indeks = 0; dikunjungi = [0]; drafDipulihkan = false; simpanDraf(); modal.ke(0); status(); }, 'teks')); return el; },
+    konteks() { const el = document.createElement('div'), nama = document.createElement('div'), detail = document.createElement('div'); nama.textContent = keadaan.nama.trim() || '-'; nama.style.fontWeight = token.huruf.berat.tebal; detail.textContent = `${keadaan.username.trim() || '-'} · ${Object.keys(keadaan.penugasan).length} jenis akun · ${keadaan.izin.length} izin per akun`; teksRedupKecil(detail); el.append(nama, detail); return el; },
+    catatan() { if (!drafDipulihkan) return null; const el = kotak('', 'biru'), teks = document.createElement('span'); barisFleks(el, 'md', { rata: 'center' }); teks.textContent = MODAL.drafDipulihkan; teks.style.flexGrow = '1'; el.append(teks, tombol(MODAL.buangDraf, () => { draf.buang(); keadaan = awal; indeks = 0; dikunjungi = [0]; drafDipulihkan = false; simpanDraf(); modal.ke(0); status(); }, 'teks')); return el; },
   });
   async function kirim() {
     const g = galatLangkah(keadaan), masalah = langkahBermasalah(g); if (masalah >= 0) { tampilGalat = true; galat = g[masalah]; indeks = masalah; if (!dikunjungi.includes(masalah)) dikunjungi.push(masalah); modal.ke(masalah, { beritahu: false }); status(); return; }

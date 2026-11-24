@@ -1,16 +1,16 @@
 import { FARMASI } from '@klira/shared';
-import { token } from '../../gaya/token.js';
 import { tab, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../../util/tab/ingatan-tab.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
 import { pasangTabMasterObat } from './tab-master-obat.js';
 import { pasangTabRiwayat } from './tab-riwayat.js';
+import { barisFleks, judulTebal } from '../../gaya/tata-letak.js';
 
 export function HalamanFarmasi() {
   const { search, ganti } = navigasiSaatIni(), daftar = [{ id: 'master', label: FARMASI.tab.master }, { id: 'riwayat', label: FARMASI.tab.riwayat }], ids = daftar.map(t => t.id);
   let aktif, controller;
   const el = document.createElement('div'), header = document.createElement('header'), judul = document.createElement('h1'), isi = document.createElement('div'); el.style.display = isi.style.display = 'contents';
-  Object.assign(header.style, { display: 'flex', gap: token.jarak.md, alignItems: 'center', flexWrap: 'wrap' }); judul.textContent = FARMASI.judul; Object.assign(judul.style, { margin: '0', fontSize: token.huruf.ukuran.halaman, fontWeight: token.huruf.berat.tebal, flexGrow: '1' });
+  barisFleks(header, 'md', { rata: 'center', bungkus: true }); judul.textContent = FARMASI.judul; judulTebal(judul, 'halaman', true);
   const tabs = tab(daftar, '', FARMASI.tabLabel, id => ganti(`/farmasi?tab=${id}`)); header.append(judul, tabs.el, bantuanKecil('Alur Farmasi & Stok', [
     'Resep dokter diproses berurutan: Diajukan -> Ditelaah -> Siap -> Diserahkan.',
     'Pantau lencana stok menipis dan batch hampir kedaluwarsa secara berkala.',

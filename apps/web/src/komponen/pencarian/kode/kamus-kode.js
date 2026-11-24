@@ -3,13 +3,14 @@ import { token } from '../../../gaya/token.js';
 import { bukaPanel } from '../../panel/panel.js';
 import { tombol, peringatan, paginasi } from '../../ui/primitif.js';
 import { daftarHasilKode } from './hasil-kode.js';
+import { barisFleks, kolomFleks } from '../../../gaya/tata-letak.js';
 export function bukaKamusKode({ judul, sistem, onTutup, onPilih }) {
   let halaman = 1, awalan = '', versi = 0, aktif = true;
   const panel = bukaPanel({ judul, onTutup }), kepala = document.createElement('div'), indeks = document.createElement('div'), hasil = document.createElement('div');
-  Object.assign(kepala.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.sm }); hasil.style.display = 'contents';
+  kolomFleks(kepala, 'sm'); hasil.style.display = 'contents';
   const info = document.createElement('span'); info.style.color = token.warna.teksRedup; info.textContent = 'Pilih kode dari referensi yang tersedia.'; kepala.append(info);
   if (sistem === 'icd10' || sistem === 'icd9cm') { const note = document.createElement('small'); note.style.color = token.warna.teksRedup; note.textContent = sistem === 'icd10' ? 'Padanan Indonesia dari komunitas, belum diverifikasi klinis. Nama resmi Inggris tetap ditampilkan.' : 'Nama tindakan Indonesia mengikuti pemetaan KPTL SATUSEHAT; bukan terjemahan harfiah ICD-9-CM.'; kepala.append(note); }
-  Object.assign(indeks.style, { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: token.jarak.xs }); indeks.setAttribute('role', 'group'); indeks.setAttribute('aria-label', 'Awalan kode'); kepala.append(indeks); panel.isi.append(kepala, hasil);
+  barisFleks(indeks, 'xs', { rata: 'center', bungkus: true }); indeks.setAttribute('role', 'group'); indeks.setAttribute('aria-label', 'Awalan kode'); kepala.append(indeks); panel.isi.append(kepala, hasil);
   function filter() {
     indeks.replaceChildren();
     for (const huruf of ['', ...(sistem === 'icd10' ? 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' : '0123456789')]) {

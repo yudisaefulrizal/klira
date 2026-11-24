@@ -1,9 +1,10 @@
 import { token } from '../../gaya/token.js';
 import { gayaDiubah, LabelIsian, PesanGalat } from './isian.js';
+import { barisFleks, kolomFleks } from '../../gaya/tata-letak.js';
 export function PilihanPil(opsiAwal) {
   let props = opsiAwal;
   const el = document.createElement('div'), label = document.createElement('span'), grup = document.createElement('div'), pesan = document.createElement('div');
-  Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.xs }); Object.assign(grup.style, { display: 'flex', flexWrap: 'wrap', gap: token.jarak.xs }); pesan.style.display = 'contents'; grup.setAttribute('role', 'radiogroup'); el.append(label, grup, pesan);
+  kolomFleks(el, 'xs'); barisFleks(grup, 'xs', { bungkus: true }); pesan.style.display = 'contents'; grup.setAttribute('role', 'radiogroup'); el.append(label, grup, pesan);
   function pilih(nilai) { props = { ...props, nilai }; perbarui(); props.onUbah(nilai); }
   function perbarui(baru = {}) {
     props = { ...props, ...baru }; const { id, opsi, nilai, disabled, diubah, galat } = props;

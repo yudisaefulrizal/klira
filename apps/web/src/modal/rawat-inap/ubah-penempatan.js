@@ -1,7 +1,6 @@
 import { RAWAT_INAP, TOMBOL } from '@klira/shared';
 import { ambilOpsiRawatInap, ambilRawatInap, ubahPenempatan } from '../../api-klien/rawat-inap.js';
 import { pesanGalat } from '../../api-klien/klien.js';
-import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
@@ -9,6 +8,7 @@ import { adaPerubahan } from '../../util/draf/draf.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { KepalaPasien } from '../pasien/kepala-pasien.js';
 import { awalPenempatan, bentukPenempatan, galatPenempatan } from './keadaan-rawat-inap.js';
+import { kolomFleks, teksRedupKecil } from '../../gaya/tata-letak.js';
 
 export function bukaUbahPenempatan({ kunjunganId, onTutup, onSelesai }) {
   const P = RAWAT_INAP.penempatan, A = RAWAT_INAP.admisi;
@@ -16,11 +16,11 @@ export function bukaUbahPenempatan({ kunjunganId, onTutup, onSelesai }) {
   function tutup() { hidup = false; modal.tutup(); (tersimpan ? onSelesai : onTutup)(); }
   const modal = bukaModal1({ judul: P.judul, lebar: 'modalBesar', onTutup: tutup, lindungiTutup: () => !tersimpan && adaPerubahan(awal, k) });
   const status = document.createElement('div'), form = document.createElement('form'), alasanWadah = document.createElement('div'), bersama = document.createElement('div'), riwayat = document.createElement('div'), controls = new Map(); form.noValidate = true;
-  for (const el of [form, bersama, riwayat]) Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
+  for (const el of [form, bersama, riwayat]) kolomFleks(el, 'md');
   const simpan = tombol(P.simpan, kirim); simpan.disabled = true;
   const aktif = () => data?.penempatan.find(x => !x.selesai) ?? null;
   function galatBidang() { const g = galatPenempatan(k); if (aktif() && (k.bed_id !== awal.bed_id || k.tarif_id !== awal.tarif_id) && !k.alasan.trim()) g.alasan = RAWAT_INAP.galat.alasanPindah; return g; }
-  function kecil(teks) { const el = document.createElement('span'); el.textContent = teks; Object.assign(el.style, { color: token.warna.teksRedup, fontSize: token.huruf.ukuran.kecil }); return el; }
+  function kecil(teks) { const el = document.createElement('span'); el.textContent = teks; teksRedupKecil(el); return el; }
   const alasan = bidang({ id: 'pn-alasan', label: P.alasan, jenis: 'textarea', maxLength: 300, ubah(v) { k = { ...k, alasan: v }; perbarui(); } });
   function perbarui() {
     const g = galatBidang();
