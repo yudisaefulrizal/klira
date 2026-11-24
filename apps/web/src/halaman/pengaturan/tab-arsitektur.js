@@ -992,7 +992,7 @@ export function TabArsitektur() {
                 sisiB = 'R';
             } else if (e.dari === 'farmasi' && e.ke === 'kasir') {
                 sisiA = 'B';
-                sisiB = 'R';
+                sisiB = 'T';
             }
             const kA = `${e.dari}:${sisiA}`;
             const kB = `${e.ke}:${sisiB}`;
@@ -1023,8 +1023,14 @@ export function TabArsitektur() {
             const opsional = e.jenis === 'opsional';
             const kembali = e.jenis === 'kembali';
 
-            const p1 = titikPortAlur(a, sisiA, portKeluar.get(kA) || [], idx);
-            const p2 = titikPortAlur(b, sisiB, portMasuk.get(kB) || [], idx);
+            let p1 = titikPortAlur(a, sisiA, portKeluar.get(kA) || [], idx);
+            let p2 = titikPortAlur(b, sisiB, portMasuk.get(kB) || [], idx);
+            if (e.dari === 'lab_saja' && e.ke === 'kasir') {
+                p2 = { x: b.x + b.w, y: b.y + Math.round(b.h * 0.25) };
+            } else if (e.dari === 'kasir' && e.ke === 'integrasi') {
+                p1 = { x: a.x + a.w, y: a.y + Math.round(a.h * 0.72) };
+                p2 = { x: b.x, y: a.y + Math.round(a.h * 0.72) };
+            }
             const dPath = ruteAlur(p1, sisiA, p2, sisiB);
 
             const warna = kembali ? '#10b981' : aktifGaris ? '#0ea5e9' : '#64748b';
