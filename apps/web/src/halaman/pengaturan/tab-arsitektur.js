@@ -287,6 +287,218 @@ function hitungTataLetakPeta(tabelList, relasiList) {
     };
 }
 
+/**
+ * Router jalur ortogonal A* di koridor kosong antar kartu tabel
+ * agar garis relasi memutari kartu dan tidak pernah menembus tabel lain.
+ */
+function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
+    const CELL = 18;
+    const PAD_OBS = 8;
+    const cols = Math.max(4, Math.ceil(lebarKanvas / CELL));
+    const rows = Math.max(4, Math.ceil(tinggiKanvas / CELL));
+    const total = cols * rows;
+
+    const blocked = new Uint8Array(total);
+    const usage = new Uint16Array(total);
+    for (const pos of posisiTabel.values()) {
+        const c0 = Math.max(0, Math.floor((pos.x - PAD_OBS) / CELL));
+        const c1 = Math.min(cols - 1, Math.floor((pos.x + pos.w + PAD_OBS) / CELL));
+        const r0 = Math.max(0, Math.floor((pos.y - PAD_OBS) / CELL));
+        const r1 = Math.min(rows - 1, Math.floor((pos.y + pos.h + PAD_OBS) / CELL));
+        for (let r = r0; r <= r1; r += 1) {
+            const off = r * cols;
+            for (let c = c0; c <= c1; c += 1) blocked[off + c] = 1;
+        }
+    }
+
+    const seenStamp = new Int32Array(total);
+    const closedStamp = new Int32Array(total);
+    const gScore = new Int32Array(total);
+    const parent = new Int32Array(total);
+    const dirArr = new Int8Array(total);
+    const heapIdx = new Int32Array(total);
+    const heapF = new Int32Array(total);
+    let stamp = 0;
+
+    const dx = [1, -1, 0, 0];
+    const dy = [0, 0, 1, -1];
+
+    const cariSelKoridor = (px, py, sisi) => {
+        const vx = sisi === 'R' ? 1 : sisi === 'L' ? -1 : 0;
+        const vy = sisi === 'B' ? 1 : sisi === 'T' ? -1 : 0;
+        for (let step = 1; step <= 4; step += 1) {
+            const x = px + vx * (step * 12);
+            const y = py + vy * (step * 12);
+            const c = Math.max(0, Math.min(cols - 1, Math.floor(x / CELL)));
+            const r = Math.max(0, Math.min(rows - 1, Math.floor(y / CELL)));
+            if (!blocked[r * cols + c]) return { c, r };
+        }
+        const c = Math.max(0, Math.min(cols - 1, Math.floor((px + vx * 16) / CELL)));
+        const r = Math.max(0, Math.min(rows - 1, Math.floor((py + vy * 16) / CELL)));
+        return { c, r };
+    };
+
+    const buatKurvaSudut = (pts) => {
+        if (pts.length < 2) return '';
+        const bersih = [pts[0]];
+        for (let i = 1; i < pts.length; i += 1) {
+            const prev = bersih[bersih.length - 1];
+            if (Math.hypot(pts[i].x - prev.x, pts[i].y - prev.y) > 1) bersih.push(pts[i]);
+        }
+        // Hapus titik kolinear
+        const simpel = [bersih[0]];
+        for (let i = 1; i < bersih.length - 1; i += 1) {
+            const a = simpel[simpel.length - 1];
+            const b = bersih[i];
+            const c = bersih[i + 1];
+            const kolinearX = Math.abs(a.x - b.x) < 0.5 && Math.abs(b.x - c.x) < 0.5;
+            const kolinearY = Math.abs(a.y - b.y) < 0.5 && Math.abs(b.y - c.y) < 0.5;
+            if (!kolinearX && !kolinearY) simpel.push(b);
+        }
+        if (bersih.length > 1) simpel.push(bersih[bersih.length - 1]);
+        if (simpel.length < 2) return '';
+
+        const R = 7;
+        let d = `M ${simpel[0].x} ${simpel[0].y}`;
+        for (let i = 1; i < simpel.length - 1; i += 1) {
+            const prev = simpel[i - 1];
+            const cur = simpel[i];
+            const next = simpel[i + 1];
+            const d1 = Math.hypot(cur.x - prev.x, cur.y - prev.y);
+            const d2 = Math.hypot(next.x - cur.x, next.y - cur.y);
+            const r = Math.min(R, d1 * 0.4, d2 * 0.4);
+            if (r < 1.5) {
+                d += ` L ${cur.x} ${cur.y}`;
+            } else {
+                const bx = cur.x - ((cur.x - prev.x) / d1) * r;
+                const by = cur.y - ((cur.y - prev.y) / d1) * r;
+                const ax = cur.x + ((next.x - cur.x) / d2) * r;
+                const ay = cur.y + ((next.y - cur.y) / d2) * r;
+                d += ` L ${bx.toFixed(1)} ${by.toFixed(1)} Q ${cur.x} ${cur.y}, ${ax.toFixed(1)} ${ay.toFixed(1)}`;
+            }
+        }
+        const akhir = simpel[simpel.length - 1];
+        d += ` L ${akhir.x} ${akhir.y}`;
+        return d;
+    };
+
+    return (p1, sisiA, p2, sisiB) => {
+        const s = cariSelKoridor(p1.x, p1.y, sisiA);
+        const e = cariSelKoridor(p2.x, p2.y, sisiB);
+        const startIdx = s.r * cols + s.c;
+        const endIdx = e.r * cols + e.c;
+
+        stamp += 1;
+        let heapSize = 0;
+        const push = (idx, f) => {
+            let i = heapSize;
+            heapSize += 1;
+            while (i > 0) {
+                const p = (i - 1) >> 1;
+                if (heapF[p] <= f) break;
+                heapIdx[i] = heapIdx[p];
+                heapF[i] = heapF[p];
+                i = p;
+            }
+            heapIdx[i] = idx;
+            heapF[i] = f;
+        };
+        const pop = () => {
+            const top = heapIdx[0];
+            heapSize -= 1;
+            if (heapSize > 0) {
+                const lastIdx = heapIdx[heapSize];
+                const lastF = heapF[heapSize];
+                let i = 0;
+                while (true) {
+                    const l = i * 2 + 1;
+                    if (l >= heapSize) break;
+                    const r = l + 1;
+                    const best = r < heapSize && heapF[r] < heapF[l] ? r : l;
+                    if (heapF[best] >= lastF) break;
+                    heapIdx[i] = heapIdx[best];
+                    heapF[i] = heapF[best];
+                    i = best;
+                }
+                heapIdx[i] = lastIdx;
+                heapF[i] = lastF;
+            }
+            return top;
+        };
+
+        seenStamp[startIdx] = stamp;
+        gScore[startIdx] = 0;
+        parent[startIdx] = -1;
+        dirArr[startIdx] = -1;
+        push(startIdx, (Math.abs(e.c - s.c) + Math.abs(e.r - s.r)) * 10);
+
+        let ketemu = false;
+        let ekspansi = 0;
+        while (heapSize > 0 && ekspansi < 14000) {
+            const cur = pop();
+            if (closedStamp[cur] === stamp) continue;
+            closedStamp[cur] = stamp;
+            if (cur === endIdx) {
+                ketemu = true;
+                break;
+            }
+            ekspansi += 1;
+            const cr = Math.floor(cur / cols);
+            const cc = cur - cr * cols;
+            const curDir = dirArr[cur];
+            const curG = gScore[cur];
+
+            for (let d = 0; d < 4; d += 1) {
+                const nc = cc + dx[d];
+                const nr = cr + dy[d];
+                if (nc < 0 || nc >= cols || nr < 0 || nr >= rows) continue;
+                const nIdx = nr * cols + nc;
+                if (closedStamp[nIdx] === stamp) continue;
+                if (blocked[nIdx] && nIdx !== endIdx) continue;
+
+                const belok = curDir !== -1 && curDir !== d ? 18 : 0;
+                const padat = Math.min(14, usage[nIdx] * 4);
+                const ng = curG + 10 + belok + padat;
+                if (seenStamp[nIdx] !== stamp || ng < gScore[nIdx]) {
+                    seenStamp[nIdx] = stamp;
+                    gScore[nIdx] = ng;
+                    parent[nIdx] = cur;
+                    dirArr[nIdx] = d;
+                    const h = (Math.abs(e.c - nc) + Math.abs(e.r - nr)) * 10;
+                    push(nIdx, ng + h);
+                }
+            }
+        }
+
+        if (!ketemu) {
+            return `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`;
+        }
+
+        const jalurSel = [];
+        let cur = endIdx;
+        while (cur !== -1) {
+            usage[cur] += 1;
+            const cr = Math.floor(cur / cols);
+            const cc = cur - cr * cols;
+            jalurSel.push({ x: cc * CELL + CELL / 2, y: cr * CELL + CELL / 2 });
+            cur = parent[cur];
+        }
+        jalurSel.reverse();
+
+        const titik = [p1];
+        const awal = jalurSel[0];
+        if (sisiA === 'R' || sisiA === 'L') titik.push({ x: awal.x, y: p1.y });
+        else titik.push({ x: p1.x, y: awal.y });
+        for (const pt of jalurSel) titik.push(pt);
+        const akhirSel = jalurSel[jalurSel.length - 1];
+        if (sisiB === 'R' || sisiB === 'L') titik.push({ x: akhirSel.x, y: p2.y });
+        else titik.push({ x: p2.x, y: akhirSel.y });
+        titik.push(p2);
+
+        return buatKurvaSudut(titik);
+    };
+}
+
 /** Halaman dinamis Diagram Database (ERD) bergaya peta auto-layout, Alur Data Sistem, dan Peta Endpoint API. */
 export function TabArsitektur() {
     const el = document.createElement('div');
@@ -577,34 +789,27 @@ export function TabArsitektur() {
             return { x: pos.x + pos.w * fraksi, y: pos.y };
         };
 
+        const ruteGaris = buatRouterGarisErd(peta.posisiTabel, peta.lebarKanvas, peta.tinggiKanvas);
+
         for (const g of daftarGaris) {
-            const { r, a, b, horizontal, sisiA, sisiB, kA, kB, idxA, idxB } = g;
+            const { r, a, b, sisiA, sisiB, kA, kB, idxA, idxB } = g;
             const keluar = tabelTerpilih && r.dari_tabel === tabelTerpilih;
             const masuk = tabelTerpilih && r.ke_tabel === tabelTerpilih;
             const aktifGaris = keluar || masuk;
 
-            const p1 = hitungPort(a, sisiA, kA, idxA);
-            const p2 = hitungPort(b, sisiB, kB, idxB);
-            let c1x;
-            let c1y;
-            let c2x;
-            let c2y;
-            if (horizontal) {
-                const dx = Math.max(36, Math.abs(p2.x - p1.x) * 0.45);
-                c1x = p2.x >= p1.x ? p1.x + dx : p1.x - dx;
-                c1y = p1.y;
-                c2x = p2.x >= p1.x ? p2.x - dx : p2.x + dx;
-                c2y = p2.y;
+            let dPath;
+            if (r.dari_tabel === r.ke_tabel) {
+                const lx = a.x + a.w;
+                const ly = a.y + 24;
+                dPath = `M ${lx} ${ly} C ${lx + 38} ${ly - 22}, ${a.x + a.w - 18} ${a.y - 34}, ${a.x + a.w - 28} ${a.y}`;
             } else {
-                const dy = Math.max(32, Math.abs(p2.y - p1.y) * 0.45);
-                c1x = p1.x;
-                c1y = p2.y >= p1.y ? p1.y + dy : p1.y - dy;
-                c2x = p2.x;
-                c2y = p2.y >= p1.y ? p2.y - dy : p2.y + dy;
+                const p1 = hitungPort(a, sisiA, kA, idxA);
+                const p2 = hitungPort(b, sisiB, kB, idxB);
+                dPath = ruteGaris(p1, sisiA, p2, sisiB);
             }
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', `M ${p1.x} ${p1.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`);
+            path.setAttribute('d', dPath);
             path.setAttribute('fill', 'none');
             path.setAttribute('stroke', keluar ? 'var(--warna-utama)' : masuk ? '#10b981' : '#64748b');
             path.setAttribute('stroke-width', aktifGaris ? '2.4' : tabelTerpilih ? '1.25' : '1.45');
