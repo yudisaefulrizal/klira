@@ -4,10 +4,11 @@ import { perbaruiNamaKontakInstagram } from '../domain/profil.js';
 import { pasangRuteKoneksi } from '../domain/koneksi.js';
 import { kirimMeta, idPesan, hash, konfigurasiMeta, GalatMeta } from '../domain/meta.js';
 import { kabarkanInstagram } from '../domain/kanal.js';
+import { pasangRutePercakapan } from '../../pesan/entry-points/rute-percakapan.js';
 import { randomUUID, randomBytes } from 'node:crypto';
 import express, { Router } from 'express';
 import { enkripsiRahasia, dekripsiRahasia, kunciPercakapanInstagram, pangkasPesanInstagram, } from '@klira/db';
-import { punyaIzin, kirimPesanWa, ubahPercakapanWa, } from '@klira/shared';
+import { kirimPesanWa, } from '@klira/shared';
 import { buatFasilitasAudit } from '../../../middleware/audit.js';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -15,7 +16,6 @@ import { pengguna } from '../../../umum/rute.js';
 const tolak = (res, pesan, status = 400) => {
     res.status(status).json({ galat: { kode: 'instagram', pesan } });
 };
-const idValid = (v) => (typeof v === 'string' && /^[1-9]\d{0,9}$/.test(v) ? Number(v) : 0);
 export function buatRuteInstagram(akses, izin) {
     const rute = Router();
     const masuk = wajibMasuk(akses);
@@ -38,72 +38,19 @@ export function buatRuteInstagram(akses, izin) {
             }))),
         });
     });
-    rute.get('/instagram/ringkasan', wajibIzin('instagram', 'lihat'), async (_req, res) => {
-        const user = pengguna(res);
-        const rows = await db.hitungIgPercakapanBelumDibaca(user.id);
-        res.json({ data: { belum_dibaca: Number(rows[0]?.belum ?? 0), terbaru: rows[0]?.terbaru ?? 0 } });
-    });
-    // Seluruh rute percakapan di bawah dibatasi ke fasyankes pengguna, termasuk media.
-    rute.use('/instagram/percakapan/:id', wajibIzin('instagram', 'lihat'), async (req, res, next) => {
-        const row = await db.cariIgPercakapanUntukBuatRuteInstagram(idValid(req.params.id));
-        if (!row)
-            return tolak(res, 'Percakapan pribadi tidak ditemukan', 404);
-        res.locals.percakapan = row;
-        next();
-    });
-    rute.get('/instagram/percakapan/:id/pesan', audit.lihat({ entitas: 'ig_percakapan', id: (req) => Number(req.params.id) }), async (req, res) => {
-        const rows = await db.daftarIgPesanUntukBuatRuteInstagram(res.locals.percakapan.id, 10);
-        res.setHeader('Cache-Control', 'no-store');
-        res.json({ data: rows.reverse().map(({ isi, ...row }) => ({ ...row, teks: dekripsiRahasia(isi) })) });
-    });
-    rute.post('/instagram/percakapan/:id/baca', async (req, res) => {
-        const id = res.locals.percakapan.id;
-        const terakhir = Number(req.body?.pesan_id);
-        if (!Number.isSafeInteger(terakhir) ||
-            terakhir <= 0 ||
-            !(await db.cariIgPesanUntukBuatRuteInstagram(terakhir, id)))
-            return tolak(res, 'Pesan tidak valid');
-        await db.simpanIgBacaUntukBuatRuteInstagram(id, pengguna(res).id, terakhir);
-        await db.ubahIgBacaUntukBuatRuteInstagram(terakhir, id, pengguna(res).id);
-        kabarkanInstagram({ tipe: 'baca' });
-        res.json({ data: { ok: true } });
-    });
-    rute.get('/instagram/percakapan/:id/info', audit.lihat({ entitas: 'ig_percakapan', id: (req) => Number(req.params.id) }), async (_req, res) => {
-        const row = res.locals.percakapan;
-        const user = pengguna(res);
-        const [pasien, penanggung] = await Promise.all([
-            row.pasien_id && punyaIzin(user, 'pasien', 'lihat')
-                ? db.cariPasienUntukBuatRuteInstagram(row.pasien_id)
-                : null,
-            row.penanggung_jawab
-                ? db.cariPenggunaUntukBuatRuteInstagram(row.penanggung_jawab)
-                : null,
-        ]);
-        res.setHeader('Cache-Control', 'no-store');
-        res.json({ data: { pasien_tertaut: !!row.pasien_id, pasien, penanggung } });
-    });
-    rute.patch('/instagram/percakapan/:id', wajibIzin('instagram', 'lihat'), audit.perbaikan({ entitas: 'ig_percakapan', id: (req) => Number(req.params.id) }), async (req, res) => {
-        const hasil = ubahPercakapanWa.safeParse(req.body);
-        if (!hasil.success)
-            return tolak(res, 'Tautan pasien atau penanggung jawab tidak valid');
-        if (hasil.data.penanggung_jawab &&
-            !(await db.cariPenggunaUntukBuatRuteInstagram2(hasil.data.penanggung_jawab, true)))
-            return tolak(res, 'Akun penanggung jawab tidak ditemukan');
-        if (hasil.data.pasien_id) {
-            const user = pengguna(res);
-            if (!punyaIzin(user, 'pasien', 'lihat'))
-                return tolak(res, 'Tidak memiliki izin mengakses pasien', 403);
-            const pasien = await db.cariPasienUntukBuatRuteInstagram2(hasil.data.pasien_id);
-            if (!pasien)
-                return tolak(res, 'Pasien tidak ditemukan', 404);
-            const diperbarui = await db.ubahIgPercakapanUntukBuatRuteInstagram((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id, null, pasien.id);
-            if (!diperbarui.count)
-                return tolak(res, 'Kontak sudah ditautkan ke pasien lain', 409);
-        }
-        else
-            await db.ubahIgPercakapanUntukBuatRuteInstagram2((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id);
-        kabarkanInstagram({ tipe: 'percakapan' });
-        res.json({ data: { ok: true } });
+    pasangRutePercakapan(rute, audit, wajibIzin, {
+        kanal: 'instagram', entitasPercakapan: 'ig_percakapan', tolak, kabarkan: kabarkanInstagram,
+        sahPercakapan: () => true,
+        data: {
+            hitungBelumDibaca: db.hitungIgPercakapanBelumDibaca,
+            cariPercakapan: db.cariIgPercakapanUntukBuatRuteInstagram,
+            daftarPesan: db.daftarIgPesanUntukBuatRuteInstagram,
+            cariPesan: db.cariIgPesanUntukBuatRuteInstagram,
+            simpanBaca: db.simpanIgBacaUntukBuatRuteInstagram,
+            ubahBaca: db.ubahIgBacaUntukBuatRuteInstagram,
+            tautkanPasien: db.ubahIgPercakapanUntukBuatRuteInstagram,
+            ubahTautan: db.ubahIgPercakapanUntukBuatRuteInstagram2,
+        },
     });
     // Badan berlampiran (hingga 8 MB, base64) baru diurai di sini: sesi, izin, dan kepemilikan percakapan sudah diperiksa.
     rute.post('/instagram/percakapan/:id/pesan', wajibIzin('instagram', 'lihat'), express.json({ limit: '12mb' }), audit.lihat({ entitas: 'ig_pesan', ringkasan: 'Permintaan kirim pesan Instagram' }), async (req, res) => {

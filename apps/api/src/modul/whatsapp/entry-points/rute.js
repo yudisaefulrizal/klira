@@ -1,10 +1,11 @@
 import * as db from '@klira/db';
 import { pasangRuteBersihkan, putuskanDanBersihkan } from '../../pesan/domain/bersihkan.js';
 import { kabarkanWhatsapp } from '../domain/kanal.js';
+import { pasangRutePercakapan } from '../../pesan/entry-points/rute-percakapan.js';
 import { randomUUID } from 'node:crypto';
 import express, { Router } from 'express';
 import { enkripsiRahasia, dekripsiRahasia, kunciPercakapanWhatsapp, pangkasPesanWhatsapp, } from '@klira/db';
-import { jidWhatsappPribadi, punyaIzin, bukaPercakapanWa, kirimPesanWa, ubahPercakapanWa, } from '@klira/shared';
+import { jidWhatsappPribadi, punyaIzin, bukaPercakapanWa, kirimPesanWa, } from '@klira/shared';
 import { alamatDari, buatFasilitasAudit } from '../../../middleware/audit.js';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
@@ -61,11 +62,6 @@ export function buatRuteWhatsapp(akses, izin) {
             }))),
         });
     });
-    rute.get('/whatsapp/ringkasan', wajibIzin('whatsapp', 'lihat'), async (_req, res) => {
-        const user = pengguna(res);
-        const rows = await db.hitungWaPercakapanBelumDibaca(user.id);
-        res.json({ data: { belum_dibaca: Number(rows[0]?.belum ?? 0), terbaru: rows[0]?.terbaru ?? 0 } });
-    });
     rute.get('/whatsapp/pasien/:id', wajibIzin('whatsapp', 'lihat'), wajibIzin('pasien', 'lihat'), async (req, res) => {
         const pasien = await db.cariPasienUntukBuatRuteWhatsapp(idValid(req.params.id));
         if (!pasien)
@@ -94,66 +90,19 @@ export function buatRuteWhatsapp(akses, izin) {
         res.json({ data: { id: row.id } });
     });
     // Seluruh rute percakapan di bawah dibatasi ke fasyankes pengguna, termasuk media.
-    rute.use('/whatsapp/percakapan/:id', wajibIzin('whatsapp', 'lihat'), async (req, res, next) => {
-        const row = await db.cariWaPercakapanUntukBuatRuteWhatsapp(idValid(req.params.id));
-        if (!row || !jidWhatsappPribadi(row.jid))
-            return tolak(res, 'Percakapan pribadi tidak ditemukan', 404);
-        res.locals.percakapan = row;
-        next();
-    });
-    rute.get('/whatsapp/percakapan/:id/pesan', audit.lihat({ entitas: 'wa_percakapan', id: (req) => Number(req.params.id) }), async (req, res) => {
-        const rows = await db.daftarWaPesanUntukBuatRuteWhatsapp(res.locals.percakapan.id, 10);
-        res.setHeader('Cache-Control', 'no-store');
-        res.json({ data: rows.reverse().map(({ isi, ...row }) => ({ ...row, teks: dekripsiRahasia(isi) })) });
-    });
-    rute.post('/whatsapp/percakapan/:id/baca', async (req, res) => {
-        const id = res.locals.percakapan.id;
-        const terakhir = Number(req.body?.pesan_id);
-        if (!Number.isSafeInteger(terakhir) ||
-            terakhir <= 0 ||
-            !(await db.cariWaPesanUntukBuatRuteWhatsapp(terakhir, id)))
-            return tolak(res, 'Pesan tidak valid');
-        await db.simpanWaBacaUntukBuatRuteWhatsapp(id, pengguna(res).id, terakhir);
-        await db.ubahWaBacaUntukBuatRuteWhatsapp(terakhir, id, pengguna(res).id);
-        kabarkanWhatsapp({ tipe: 'baca' });
-        res.json({ data: { ok: true } });
-    });
-    rute.get('/whatsapp/percakapan/:id/info', audit.lihat({ entitas: 'wa_percakapan', id: (req) => Number(req.params.id) }), async (_req, res) => {
-        const row = res.locals.percakapan;
-        const user = pengguna(res);
-        const [pasien, penanggung] = await Promise.all([
-            row.pasien_id && punyaIzin(user, 'pasien', 'lihat')
-                ? db.cariPasienUntukBuatRuteInstagram(row.pasien_id)
-                : null,
-            row.penanggung_jawab
-                ? db.cariPenggunaUntukBuatRuteInstagram(row.penanggung_jawab)
-                : null,
-        ]);
-        res.setHeader('Cache-Control', 'no-store');
-        res.json({ data: { pasien_tertaut: !!row.pasien_id, pasien, penanggung } });
-    });
-    rute.patch('/whatsapp/percakapan/:id', wajibIzin('whatsapp', 'lihat'), audit.perbaikan({ entitas: 'wa_percakapan', id: (req) => Number(req.params.id) }), async (req, res) => {
-        const hasil = ubahPercakapanWa.safeParse(req.body);
-        if (!hasil.success)
-            return tolak(res, 'Tautan pasien atau penanggung jawab tidak valid');
-        if (hasil.data.penanggung_jawab &&
-            !(await db.cariPenggunaUntukBuatRuteInstagram2(hasil.data.penanggung_jawab, true)))
-            return tolak(res, 'Akun penanggung jawab tidak ditemukan');
-        if (hasil.data.pasien_id) {
-            const user = pengguna(res);
-            if (!punyaIzin(user, 'pasien', 'lihat'))
-                return tolak(res, 'Tidak memiliki izin mengakses pasien', 403);
-            const pasien = await db.cariPasienUntukBuatRuteInstagram2(hasil.data.pasien_id);
-            if (!pasien)
-                return tolak(res, 'Pasien tidak ditemukan', 404);
-            const diperbarui = await db.ubahWaPercakapanUntukBuatRuteWhatsapp((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id, null, pasien.id);
-            if (!diperbarui.count)
-                return tolak(res, 'Kontak sudah ditautkan ke pasien lain', 409);
-        }
-        else
-            await db.ubahWaPercakapanUntukBuatRuteWhatsapp2((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id);
-        kabarkanWhatsapp({ tipe: 'percakapan' });
-        res.json({ data: { ok: true } });
+    pasangRutePercakapan(rute, audit, wajibIzin, {
+        kanal: 'whatsapp', entitasPercakapan: 'wa_percakapan', tolak, kabarkan: kabarkanWhatsapp,
+        sahPercakapan: (row) => jidWhatsappPribadi(row.jid),
+        data: {
+            hitungBelumDibaca: db.hitungWaPercakapanBelumDibaca,
+            cariPercakapan: db.cariWaPercakapanUntukBuatRuteWhatsapp,
+            daftarPesan: db.daftarWaPesanUntukBuatRuteWhatsapp,
+            cariPesan: db.cariWaPesanUntukBuatRuteWhatsapp,
+            simpanBaca: db.simpanWaBacaUntukBuatRuteWhatsapp,
+            ubahBaca: db.ubahWaBacaUntukBuatRuteWhatsapp,
+            tautkanPasien: db.ubahWaPercakapanUntukBuatRuteWhatsapp,
+            ubahTautan: db.ubahWaPercakapanUntukBuatRuteWhatsapp2,
+        },
     });
     // Badan berlampiran (hingga 8 MB, base64) baru diurai di sini: sesi, izin, dan kepemilikan percakapan sudah diperiksa.
     rute.post('/whatsapp/percakapan/:id/pesan', wajibIzin('whatsapp', 'lihat'), express.json({ limit: '12mb' }), audit.lihat({ entitas: 'wa_pesan', ringkasan: 'Permintaan kirim pesan WhatsApp' }), async (req, res) => {
