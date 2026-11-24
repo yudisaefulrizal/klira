@@ -544,8 +544,8 @@ export function TabArsitektur() {
         tabelTerpilih = t.nama;
         cariTeks = '';
         subAktif = 'erd';
-        butuhFit = false;
-        butuhFokus = true;
+        butuhFit = true;
+        butuhFokus = false;
         subTabs.pilih('erd');
         lukis();
     };
@@ -622,14 +622,23 @@ export function TabArsitektur() {
     function lukisErd() {
         const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
         const q = cariTeks.trim().toLowerCase();
-        const tabelTampil = (data.tabel || []).filter((t) => {
+        let tabelTampil = (data.tabel || []).filter((t) => {
             if (!q) return true;
             return t.nama.toLowerCase().includes(q) || t.kolom.some((c) => c.nama.toLowerCase().includes(q));
         });
         const namaSet = new Set(tabelTampil.map((t) => t.nama));
-        const relasiTampil = (data.relasi || []).filter((r) => namaSet.has(r.dari_tabel) && namaSet.has(r.ke_tabel));
-
         if (tabelTerpilih && !namaSet.has(tabelTerpilih)) tabelTerpilih = null;
+
+        let relasiTampil = (data.relasi || []).filter((r) => namaSet.has(r.dari_tabel) && namaSet.has(r.ke_tabel));
+        if (tabelTerpilih) {
+            const terkaitSet = new Set([tabelTerpilih]);
+            for (const r of relasiTampil) {
+                if (r.dari_tabel === tabelTerpilih) terkaitSet.add(r.ke_tabel);
+                if (r.ke_tabel === tabelTerpilih) terkaitSet.add(r.dari_tabel);
+            }
+            tabelTampil = tabelTampil.filter((t) => terkaitSet.has(t.nama));
+            relasiTampil = relasiTampil.filter((r) => r.dari_tabel === tabelTerpilih || r.ke_tabel === tabelTerpilih);
+        }
 
         const peta = hitungTataLetakPeta(tabelTampil, relasiTampil, data.domain);
 
@@ -825,7 +834,7 @@ export function TabArsitektur() {
             card.addEventListener('click', (e) => {
                 e.stopPropagation();
                 tabelTerpilih = tabelTerpilih === t.nama ? null : t.nama;
-                butuhFit = false;
+                butuhFit = true;
                 butuhFokus = false;
                 lukisErd();
             });
