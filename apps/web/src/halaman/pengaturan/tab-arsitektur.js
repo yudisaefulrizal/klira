@@ -16,6 +16,8 @@ const JARAK_MIN_X = 84;
 const JARAK_MIN_Y = 68;
 const PAD_KANVAS = 64;
 
+const hitungTinggiKartu = (t) => Math.max(96, 50 + (t?.kolom?.length || 0) * 17);
+
 function gayaInput(el) {
     Object.assign(el.style, {
         height: token.ukuran.isian,
@@ -324,35 +326,55 @@ function hitungTataLetakPeta(tabelList, relasiList) {
         maxRow = Math.max(maxRow, s.row);
     }
 
+    const jmlKolAktif = Math.max(1, maxCol - minCol + 1);
+    const jmlBrsAktif = Math.max(1, maxRow - minRow + 1);
+    const tinggiBaris = new Array(jmlBrsAktif).fill(KARTU_T);
+    for (const s of daftarSimpul) {
+        const r = s.row - minRow;
+        tinggiBaris[r] = Math.max(tinggiBaris[r], hitungTinggiKartu(s.tabel));
+    }
+    const yBaris = new Array(jmlBrsAktif).fill(PAD_KANVAS);
+    for (let r = 1; r < jmlBrsAktif; r += 1) {
+        yBaris[r] = yBaris[r - 1] + tinggiBaris[r - 1] + JARAK_MIN_Y;
+    }
+
     for (const s of daftarSimpul) {
         const col = s.col - minCol;
         const row = s.row - minRow;
         posisiTabel.set(s.tabel.nama, {
             tabel: s.tabel,
             x: PAD_KANVAS + col * butuhX,
-            y: PAD_KANVAS + row * butuhY,
+            y: yBaris[row],
             w: KARTU_L,
-            h: KARTU_T,
+            h: hitungTinggiKartu(s.tabel),
         });
     }
 
-    const jmlKolAktif = Math.max(1, maxCol - minCol + 1);
-    const jmlBrsAktif = Math.max(1, maxRow - minRow + 1);
     let lebarTotal = Math.max(960, PAD_KANVAS * 2 + (jmlKolAktif - 1) * butuhX + KARTU_L);
-    let tinggiTotal = Math.max(560, PAD_KANVAS * 2 + (jmlBrsAktif - 1) * butuhY + KARTU_T);
+    let tinggiTotal = Math.max(560, yBaris[jmlBrsAktif - 1] + tinggiBaris[jmlBrsAktif - 1] + PAD_KANVAS);
 
     // Jika ada tabel terisolasi (tanpa relasi), susun rata kiri di baris bawah kanvas
     if (tabelTerhubung.length && tabelTerisolasi.length) {
         const perBaris = Math.max(4, jmlKolAktif);
-        const awalBrs = jmlBrsAktif;
+        const jmlBrsIso = Math.ceil(tabelTerisolasi.length / perBaris);
+        const tinggiIso = new Array(jmlBrsIso).fill(KARTU_T);
+        tabelTerisolasi.forEach((t, idx) => {
+            const brs = Math.floor(idx / perBaris);
+            tinggiIso[brs] = Math.max(tinggiIso[brs], hitungTinggiKartu(t));
+        });
+        const yIso = new Array(jmlBrsIso).fill(tinggiTotal);
+        for (let r = 1; r < jmlBrsIso; r += 1) {
+            yIso[r] = yIso[r - 1] + tinggiIso[r - 1] + JARAK_MIN_Y;
+        }
         tabelTerisolasi.forEach((t, idx) => {
             const kol = idx % perBaris;
-            const brs = awalBrs + Math.floor(idx / perBaris);
+            const brs = Math.floor(idx / perBaris);
             const x = PAD_KANVAS + kol * butuhX;
-            const y = PAD_KANVAS + brs * butuhY;
-            posisiTabel.set(t.nama, { tabel: t, x, y, w: KARTU_L, h: KARTU_T });
+            const y = yIso[brs];
+            const h = hitungTinggiKartu(t);
+            posisiTabel.set(t.nama, { tabel: t, x, y, w: KARTU_L, h });
             lebarTotal = Math.max(lebarTotal, x + KARTU_L + PAD_KANVAS);
-            tinggiTotal = Math.max(tinggiTotal, y + KARTU_T + PAD_KANVAS);
+            tinggiTotal = Math.max(tinggiTotal, y + h + PAD_KANVAS);
         });
     }
 
@@ -369,7 +391,7 @@ function hitungTataLetakPeta(tabelList, relasiList) {
  * agar garis relasi memutari kartu dan tidak pernah menembus tabel lain.
  */
 function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
-    const CELL = 14;
+    const CELL = 16;
     const PAD_OBS = 10;
     const cols = Math.max(4, Math.ceil(lebarKanvas / CELL));
     const rows = Math.max(4, Math.ceil(tinggiKanvas / CELL));
@@ -511,7 +533,7 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
 
         let ketemu = false;
         let ekspansi = 0;
-        while (heapSize > 0 && ekspansi < 22000) {
+        while (heapSize > 0 && ekspansi < 42000) {
             const cur = pop();
             if (closedStamp[cur] === stamp) continue;
             closedStamp[cur] = stamp;
@@ -949,18 +971,12 @@ export function TabArsitektur() {
             kep.append(nm, cnt);
 
             const kolList = document.createElement('div');
-            Object.assign(kolList.style, { display: 'flex', flexDirection: 'column', gap: '1.5px', fontSize: '11px', color: token.warna.teksRedup });
-            for (const c of t.kolom.slice(0, 4)) {
+            Object.assign(kolList.style, { display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px', lineHeight: '15px', color: token.warna.teksRedup });
+            for (const c of t.kolom) {
                 const row = document.createElement('div');
                 Object.assign(row.style, { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' });
                 row.textContent = `${c.kunci === 'PRI' ? '🔑 ' : c.nama.endsWith('_id') ? '🔗 ' : ''}${c.nama}`;
                 kolList.append(row);
-            }
-            if (t.kolom.length > 4) {
-                const more = document.createElement('small');
-                more.textContent = `+ ${t.kolom.length - 4} kolom lainnya`;
-                more.style.color = token.warna.utama;
-                kolList.append(more);
             }
 
             card.append(kep, kolList);
