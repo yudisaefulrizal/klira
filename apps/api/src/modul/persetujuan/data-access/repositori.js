@@ -10,7 +10,7 @@ export class RepositoriPersetujuanMysql {
         return (await db.cariTeksPersetujuanUntukTeksAktif('tindakan', true)) ?? null;
     }
     async teksUntukPakai(id) {
-        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, 'tindakan', true, null);
+        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, 'tindakan', true);
     }
     async wali(pasienId) {
         return db.daftarWaliKeluargaUntukWali(pasienId);

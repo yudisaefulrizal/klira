@@ -17,18 +17,18 @@ export async function seedDemo(env = process.env) {
         let dibuat = 0;
         for (const akun of AKUN_DEMO) {
             const nik = akun.nik;
-            const ada = await db.cariPenggunaDemo(fas.id, akun.username, koneksi);
+            const ada = await db.cariPenggunaDemo(akun.username, koneksi);
             if (ada) {
                 if (ada.nik !== nik)
                     throw new Error(`Username ${akun.username} sudah dipakai akun lain.`);
                 continue;
             }
-            const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(fas.id, akun.jenis, koneksi);
-            const id = await db.tambahPenggunaDemo(fas.id, akun.nama, nik, akun.username, hash, koneksi);
-            await db.tambahPenugasanJenisUntukSeedPimpinanPertama(fas.id, id, jenis.id, new Date(), koneksi);
+            const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(akun.jenis, koneksi);
+            const id = await db.tambahPenggunaDemo(akun.nama, nik, akun.username, hash, koneksi);
+            await db.tambahPenugasanJenisUntukSeedPimpinanPertama(id, jenis.id, new Date(), koneksi);
             if ('profil' in akun)
-                await db.tambahProfilDemo(fas.id, id, akun.profil.profesi, akun.profil.nomor_sip, new Date(`${akun.profil.masa_berlaku_sip}T00:00:00Z`), koneksi);
-            await db.tambahLogAuditUntukSeedPimpinanPertama(fas.id, id, 'input', 'pengguna', 'Akun demo dibuat (seed)', koneksi);
+                await db.tambahProfilDemo(id, akun.profil.profesi, akun.profil.nomor_sip, new Date(`${akun.profil.masa_berlaku_sip}T00:00:00Z`), koneksi);
+            await db.tambahLogAuditUntukSeedPimpinanPertama(id, 'input', 'pengguna', 'Akun demo dibuat (seed)', koneksi);
             dibuat++;
         }
         return dibuat;

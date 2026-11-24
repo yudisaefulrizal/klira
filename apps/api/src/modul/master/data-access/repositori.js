@@ -191,7 +191,7 @@ export class RepositoriMasterMysql {
         const baris = await db.hitungAnakLokasi([id]);
         return Number(baris[0]?.jumlah ?? 0) > 0;
     }
-    async hapusLokasi() {
+    async hapusLokasi(id) {
         await db.hapusLokasi(id);
     }
     async simpanHargaRuang(ruangId, namaRuang, tarifIdLama, hargaUmum, hargaJkn, oleh) {

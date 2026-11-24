@@ -242,7 +242,7 @@ export class RepositoriPasienMysql {
         return t ? { ...t, jenis: t.jenis } : null;
     }
     async teksUntukPakai(id, jenis) {
-        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, jenis, true, null);
+        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, jenis, true);
     }
     async perbaiki(id, oleh, data) {
         try {
