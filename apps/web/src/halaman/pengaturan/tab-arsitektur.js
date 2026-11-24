@@ -492,7 +492,7 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
     };
 }
 
-/** Halaman dinamis Diagram Database (ERD) bergaya peta auto-layout, Alur Data Sistem, dan Peta Endpoint API. */
+/** Halaman dinamis Diagram Database (ERD) bergaya peta auto-layout, Alur Layanan, dan Peta Endpoint API. */
 export function TabArsitektur() {
     const el = document.createElement('div');
     Object.assign(el.style, { display: 'flex', flexDirection: 'column', gap: token.jarak.md });
@@ -501,7 +501,7 @@ export function TabArsitektur() {
     Object.assign(header.style, { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.sm });
     const kiriH = document.createElement('div');
     const h2 = document.createElement('h2');
-    h2.textContent = 'Diagram Database & Alur Data Sistem';
+    h2.textContent = 'Diagram Database & Alur Layanan';
     Object.assign(h2.style, { margin: '0', fontSize: token.huruf.ukuran.judul, fontWeight: token.huruf.berat.tebal });
     const subH = document.createElement('small');
     subH.style.color = token.warna.teksRedup;
@@ -528,7 +528,7 @@ export function TabArsitektur() {
     let aktif = true;
 
     const subTabs = tab([
-        { id: 'alur', label: 'Alur Data Sistem' },
+        { id: 'alur', label: 'Alur Layanan' },
         { id: 'erd', label: 'Diagram Database (ERD)' },
         { id: 'api', label: 'Peta Endpoint API' },
     ], 'alur', 'Tampilan Arsitektur', (id) => {
