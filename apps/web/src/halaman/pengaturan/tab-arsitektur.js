@@ -107,153 +107,43 @@ function hitungTataLetakPeta(tabelList, relasiList) {
 
     const simpul = new Map();
     const n = terurut.length;
-    const sudutEmas = Math.PI * (3 - Math.sqrt(5));
-    terurut.forEach((t, idx) => {
-        const r = idx === 0 ? 0 : 210 * Math.sqrt(idx);
-        const theta = idx * sudutEmas;
-        simpul.set(t.nama, {
-            tabel: t,
-            cx: r * Math.cos(theta) * 1.55,
-            cy: r * Math.sin(theta) * 0.92,
-            vx: 0,
-            vy: 0,
-        });
-    });
-
-    const daftarSimpul = [...simpul.values()];
     const butuhX = KARTU_L + JARAK_MIN_X;
-    const butuhY = KARTU_T + JARAK_MIN_Y;
-    const jarakIdeal = 315;
-    const maksIterasi = 260;
-
-    // Optimasi gaya global dengan rasio lanskap
-    for (let iter = 0; iter < maksIterasi; iter += 1) {
-        const redam = 0.86 * (1 - iter / (maksIterasi * 1.2));
-
-        for (let i = 0; i < n; i += 1) {
-            const a = daftarSimpul[i];
-            for (let j = i + 1; j < n; j += 1) {
-                const b = daftarSimpul[j];
-                let dx = b.cx - a.cx;
-                let dy = b.cy - a.cy;
-                // Normalisasi jarak ke ukuran kartu agar jarak X dan Y seimbang
-                const nx = dx / butuhX;
-                const ny = dy / butuhY;
-                let nd2 = nx * nx + ny * ny;
-                if (nd2 < 0.01) {
-                    dx = ((i % 3) - 1) * 12 || 9;
-                    dy = ((j % 3) - 1) * 12 || -9;
-                    nd2 = 0.02;
-                }
-                const dist = Math.max(1, Math.hypot(dx, dy));
-                const tolak = Math.min(34, 1.35 / nd2);
-                const fx = (dx / dist) * tolak * 16;
-                const fy = (dy / dist) * tolak * 12;
-                a.vx -= fx;
-                a.vy -= fy;
-                b.vx += fx;
-                b.vy += fy;
-            }
-        }
-
-        // Pegas relasi menarik tabel berelasi saling mendekat
-        for (const [dari, ke] of sisiUnik) {
-            const a = simpul.get(dari);
-            const b = simpul.get(ke);
-            if (!a || !b) continue;
-            const dx = b.cx - a.cx;
-            const dy = b.cy - a.cy;
-            const dist = Math.max(1, Math.hypot(dx, dy));
-            const gaya = (dist - jarakIdeal) * 0.055;
-            const fx = (dx / dist) * gaya;
-            const fy = (dy / dist) * gaya;
-            a.vx += fx;
-            a.vy += fy;
-            b.vx -= fx;
-            b.vy -= fy;
-        }
-
-        // Gravitasi elips ke pusat: sedikit lebih kuat secara vertikal agar peta melebar horizontal
-        for (const s of daftarSimpul) {
-            s.vx -= s.cx * 0.007;
-            s.vy -= s.cy * 0.014;
-            s.cx += s.vx * redam;
-            s.cy += s.vy * redam;
-            s.vx *= 0.42;
-            s.vy *= 0.42;
-        }
-    }
-
-    // Resolusi tabrakan AABB ternormalisasi (overlapX / butuhX vs overlapY / butuhY) agar bentuk lanskap terjaga
-    const selesaikanTabrakan = () => {
-        for (let pass = 0; pass < 160; pass += 1) {
-            let adaTabrakan = false;
-            for (let i = 0; i < n; i += 1) {
-                const a = daftarSimpul[i];
-                for (let j = i + 1; j < n; j += 1) {
-                    const b = daftarSimpul[j];
-                    const dx = b.cx - a.cx;
-                    const dy = b.cy - a.cy;
-                    const overlapX = butuhX - Math.abs(dx);
-                    const overlapY = butuhY - Math.abs(dy);
-                    if (overlapX > 0 && overlapY > 0) {
-                        adaTabrakan = true;
-                        if (overlapX / butuhX < overlapY / butuhY) {
-                            const geser = (overlapX / 2) + 1;
-                            const arah = dx >= 0 ? 1 : -1;
-                            a.cx -= arah * geser;
-                            b.cx += arah * geser;
-                        } else {
-                            const geser = (overlapY / 2) + 1;
-                            const arah = dy >= 0 ? 1 : -1;
-                            a.cy -= arah * geser;
-                            b.cy += arah * geser;
-                        }
-                    }
-                }
-            }
-            if (!adaTabrakan) break;
-        }
-    };
-
-    // Penempatan ke slot grid rata-kiri & atas yang terkompaksi + optimasi panjang kabel global
-    let minCx = Infinity;
-    let maxCx = -Infinity;
-    let minCy = Infinity;
-    let maxCy = -Infinity;
-    for (const s of daftarSimpul) {
-        minCx = Math.min(minCx, s.cx);
-        maxCx = Math.max(maxCx, s.cx);
-        minCy = Math.min(minCy, s.cy);
-        maxCy = Math.max(maxCy, s.cy);
-    }
-    const spanX = Math.max(1, maxCx - minCx);
-    const spanY = Math.max(1, maxCy - minCy);
-
     const kolTotal = Math.max(4, Math.min(14, Math.ceil(Math.sqrt(n * 1.75))));
     const brsTotal = Math.max(2, Math.ceil(n / kolTotal));
     const slotTerisi = new Set();
-    const slotSimpul = new Map();
 
-    // Hub berderajat tertinggi ditempatkan lebih dulu agar mendapat posisi paling optimal
-    const urutSlot = daftarSimpul.slice().sort((a, b) => {
-        const dB = derajat.get(b.tabel.nama) ?? 0;
-        const dA = derajat.get(a.tabel.nama) ?? 0;
-        if (dB !== dA) return dB - dA;
-        return a.tabel.nama.localeCompare(b.tabel.nama);
-    });
+    // Titik pusat di pojok kiri-atas (0, 0), mengalir ke kanan dan ke bawah mengikuti alur BFS
+    terurut.forEach((t, idx) => {
+        let tx = 0;
+        let ty = 0;
+        if (idx > 0) {
+            let sumC = 0;
+            let sumR = 0;
+            let cnt = 0;
+            for (const nbNama of tetangga.get(t.nama) || []) {
+                const nb = simpul.get(nbNama);
+                if (nb) {
+                    sumC += nb.col;
+                    sumR += nb.row;
+                    cnt += 1;
+                }
+            }
+            if (cnt > 0) {
+                tx = Math.min(kolTotal - 1, sumC / cnt + 0.55);
+                ty = Math.min(brsTotal - 1, sumR / cnt + 0.35);
+            } else {
+                tx = 0;
+                ty = Math.min(brsTotal - 1, Math.floor(idx / kolTotal));
+            }
+        }
 
-    for (const s of urutSlot) {
-        const tx = ((s.cx - minCx) / spanX) * (kolTotal - 1);
-        const ty = ((s.cy - minCy) / spanY) * (brsTotal - 1);
         let bestC = 0;
         let bestR = 0;
         let bestSkor = Infinity;
         for (let r = 0; r < brsTotal; r += 1) {
             for (let c = 0; c < kolTotal; c += 1) {
-                const key = `${c},${r}`;
-                if (slotTerisi.has(key)) continue;
-                const dist2 = (c - tx) * (c - tx) + (r - ty) * (r - ty) + 0.015 * (c + r);
+                if (slotTerisi.has(`${c},${r}`)) continue;
+                const dist2 = (c - tx) * (c - tx) + (r - ty) * (r - ty) + 0.06 * (c + r);
                 if (dist2 < bestSkor) {
                     bestSkor = dist2;
                     bestC = c;
@@ -262,10 +152,10 @@ function hitungTataLetakPeta(tabelList, relasiList) {
             }
         }
         slotTerisi.add(`${bestC},${bestR}`);
-        s.col = bestC;
-        s.row = bestR;
-        slotSimpul.set(`${bestC},${bestR}`, s);
-    }
+        simpul.set(t.nama, { tabel: t, col: bestC, row: bestR });
+    });
+
+    const daftarSimpul = [...simpul.values()];
 
     // Optimasi keterbacaan jalur (2-opt): beri ruang napas antar-hub berderajat tinggi dan kurangi jalur menyilang
     const skorKeterbacaanNode = (node, col, row) => {
@@ -294,7 +184,7 @@ function hitungTataLetakPeta(tabelList, relasiList) {
     };
     for (let putaran = 0; putaran < 3; putaran += 1) {
         let adaTukar = false;
-        for (let i = 0; i < n; i += 1) {
+        for (let i = 1; i < n; i += 1) {
             const a = daftarSimpul[i];
             for (let j = i + 1; j < n; j += 1) {
                 const b = daftarSimpul[j];
@@ -533,7 +423,7 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
 
         let ketemu = false;
         let ekspansi = 0;
-        while (heapSize > 0 && ekspansi < 42000) {
+        while (heapSize > 0 && ekspansi < 120000) {
             const cur = pop();
             if (closedStamp[cur] === stamp) continue;
             closedStamp[cur] = stamp;
