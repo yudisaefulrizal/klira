@@ -15,7 +15,7 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
     const kedaluwarsaMs = KEDALUWARSA_DRAF_KLINIS_JAM * 3_600_000;
     // Penyedia isi untuk deteksi perubahan setelah pengesahan: entitas = nama bagian, entitas_id = id kunjungan.
     for (const bagian of BAGIAN_KLINIS)
-        pengesahan.daftarkanPenyedia(bagian, (fas, id) => repo.bacaBagian(fas, id, bagian));
+        pengesahan.daftarkanPenyedia(bagian, (id) => repo.bacaBagian(id, bagian));
     async function bagianDto(kunjunganId, bagian) {
         const [isi, k] = await Promise.all([repo.bacaBagian(kunjunganId, bagian), pengesahan.keadaan(bagian, kunjunganId)]);
         return {

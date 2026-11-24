@@ -7,7 +7,7 @@ const G = REKAM_MEDIS.galat;
  * (ditinjau orang lain), penyampaian rekam medis, dan laporan. Semua tercatat di audit; tidak ada hapus.
  */
 export function buatLayananDokumen({ repo, repoRm, pengesahan, baca, audit }) {
-    pengesahan.daftarkanPenyedia('resume_medis', async (fas, id) => (await repo.resume(fas, id))?.isi ?? null);
+    pengesahan.daftarkanPenyedia('resume_medis', async (id) => (await repo.resume(id))?.isi ?? null);
     const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
     async function dokumen(p, kunjunganId) {
         const k = await repoRm.kunjungan(kunjunganId);

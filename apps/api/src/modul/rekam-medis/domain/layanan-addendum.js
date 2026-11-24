@@ -8,7 +8,7 @@ export const ENTITAS_PENGESAHAN_ADDENDUM = 'addendum';
  * (mis. validasi hasil lab) lewat `tulisAddendumDalam`, sehingga CPPT dan resume cukup memakai antarmuka yang sama.
  */
 export function buatLayananAddendum({ repo, audit, pengesahan }) {
-    pengesahan.daftarkanPenyedia(ENTITAS_PENGESAHAN_ADDENDUM, (fas, id) => repo.isi(fas, id));
+    pengesahan.daftarkanPenyedia(ENTITAS_PENGESAHAN_ADDENDUM, (id) => repo.isi(id));
     async function keDto(b) {
         const k = await pengesahan.keadaan(ENTITAS_PENGESAHAN_ADDENDUM, b.id);
         return {

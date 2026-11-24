@@ -15,7 +15,7 @@ const dariGalat = (e) => (e instanceof GalatRi ? gagal(PESAN[e.kode].kode, PESAN
  * dan pemulangan (bed dikosongkan, biaya kamar ke tagihan, lanjut ke kasir). Semua tercatat di audit; tidak ada hapus.
  */
 export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, sekarang = () => new Date() }) {
-    pengesahan.daftarkanPenyedia('cppt', async (fas, id) => repo.isiCatatan(fas, id));
+    pengesahan.daftarkanPenyedia('cppt', async (id) => repo.isiCatatan(id));
     const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
     const pelaku = (p) => ({ oleh: p.id });
     async function detail(p, id) {

@@ -9,7 +9,7 @@ import { BentrokError } from '../data-access/repositori.js';
 export const ENTITAS_HASIL = 'hasil_penunjang';
 export function buatLayananPenunjang({ repo, audit, pengesahan, addendum, sekarang = () => new Date() }) {
     // Isi hasil sekarang untuk deteksi perubahan setelah divalidasi: entitas = hasil_penunjang, entitas_id = id order.
-    pengesahan.daftarkanPenyedia(ENTITAS_HASIL, (fas, id) => repo.isiHasil(fas, id));
+    pengesahan.daftarkanPenyedia(ENTITAS_HASIL, (id) => repo.isiHasil(id));
     async function ordersDto(baris) {
         const divalidasi = baris.filter((b) => b.status === 'divalidasi').map((b) => b.id);
         const [keadaan, susulan] = await Promise.all([
