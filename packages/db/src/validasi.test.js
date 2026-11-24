@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { nikValid, pastikanNik, tanggalValid } = await import("./validasi.js");
 

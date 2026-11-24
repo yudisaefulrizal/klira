@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { POLA_ICD9CM } from '../klinis/klinis.js';
 import { MASTER } from '../umum/teks.js';
 import { profilProfesiMasukan, statusOperasional } from './entitas.js';
-import { idPositif, tanggal, teksOpsional, teksWajib } from './umum.js';
+import { idPositif, teksOpsional, teksWajib } from './umum.js';
 /** Jenis master pada tab Master data (3.1); Wilayah hanya baca. SIP tenaga ada di Praktisi. */
 export const JENIS_MASTER_UBAH = ['poli', 'ruang_periksa', 'ruang', 'bed', 'praktisi', 'jadwal', 'tarif'];
 export const JENIS_MASTER = [...JENIS_MASTER_UBAH, 'wilayah'];

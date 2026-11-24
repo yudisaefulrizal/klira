@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { ambilKatalogKfa, cariKatalogKfa } = await import("./katalog-kfa.js");
 

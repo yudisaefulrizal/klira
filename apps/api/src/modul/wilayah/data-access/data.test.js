@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { ambilWilayah, cariWilayah, dataWilayah } = await import("./data.js");
 

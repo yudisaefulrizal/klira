@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { evaluasiPeringatan, hitungAksesEfektif, peringatanBaru, relevanUntukTindakan } = await import("./mesin-izin.js");
 

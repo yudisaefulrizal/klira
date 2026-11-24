@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { tabRekamMedisDiizinkan } from './tab-rekam-medis.js';
 const ids = (izin) => tabRekamMedisDiizinkan({ izin }).map((t) => t.id);
 describe('tab Rekam medis menurut izin', () => {

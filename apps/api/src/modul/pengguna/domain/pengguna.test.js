@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { filterPengguna } = await import("@klira/shared");
 const { buatLayananPengguna } = await import("./layanan.js");
@@ -7,7 +6,7 @@ function siapkan(aktifAwal = true) {
     const audit = [];
     const repo = {
         daftar: async () => ({ total: 1, baris: [{ id: 2, nama: 'B', username: 'b', aktif: true, jenis_akun_aktif: [], jumlah_izin_tambahan: 0, jumlah_peringatan_terbuka: 0 }] }),
-        ubahAktif: async (_f, id, aktif) => (id === 99 ? null : { id, nama: 'B', aktif, aktifSebelumnya: aktifAwal }),
+        ubahAktif: async (id, aktif) => (id === 99 ? null : { id, nama: 'B', aktif, aktifSebelumnya: aktifAwal }),
     };
     const layanan = buatLayananPengguna({ repo, audit: { catat: async (e) => void audit.push(e) } });
     return { layanan, audit };

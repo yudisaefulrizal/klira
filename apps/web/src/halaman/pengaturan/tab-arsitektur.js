@@ -2110,7 +2110,6 @@ export function TabArsitektur() {
             card.type = 'button';
             Object.assign(card.style, {
                 position: 'absolute',
-                zIndex: '2',
                 left: `${pos.x}px`,
                 top: `${pos.y}px`,
                 width: `${pos.w}px`,

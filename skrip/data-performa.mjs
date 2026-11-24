@@ -6,7 +6,6 @@
 import crypto from 'node:crypto';
 import { pool, baca, tulis } from '../packages/db/src/koneksi.js';
 
-const FASYANKES_ID = 1;
 const JUMLAH_PASIEN = Number(process.env.PERF_PASIEN ?? 2000);
 const JUMLAH_KUNJUNGAN = Number(process.env.PERF_KUNJUNGAN ?? 5000);
 const UKURAN_BATCH = 500;

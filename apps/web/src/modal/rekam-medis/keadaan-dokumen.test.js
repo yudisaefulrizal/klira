@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { adaSuratBaru, awalLaporan, awalPembukaan, awalPenyampaian, awalResume, bisaCetakDokumen, galatLaporan, galatPembukaan, galatPenyampaian, galatResume, langkahBermasalahResume, resumeSama, susunLembarDokumen } from './keadaan-dokumen.js';
 const dok = (resume = null) => ({
     kunjungan: { id: 1, pasien_id: 1, pasien_nama: 'A', pasien_nomor_rm: 'RM1', tahap_layanan: 'ditutup' }, resume, saran: { diagnosis_akhir: 'I10 Hipertensi', terapi: 'Amlodipin', kondisi_pulang: '' }, surat: [],

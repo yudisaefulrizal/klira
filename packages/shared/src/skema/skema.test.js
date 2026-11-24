@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { nik, tanggal, pasienMasukan, paginasi, izinPerAkunMasukan, penugasanJenisMasukan, peringatanIzinMasukan, gantiKredensial, kredensialAwal } = await import("./index.js");
 

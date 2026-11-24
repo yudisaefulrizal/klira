@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { samarNomor, anamnesisIsi, cariTerminologiMasukan, diagnosisIsi, favoritMasukan, keluargaMasukan, pemeriksaanIsi, SKEMA_BAGIAN, STATUS_PENGESAHAN, tandaVitalIsi, templatMasukan, tindakanIsi, tindakLanjutIsi, ubahKeluargaMasukan } = await import("../index.js");
 

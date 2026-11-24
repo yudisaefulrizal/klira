@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { cocokKataSandi, hashKataSandi } = await import("./kata-sandi.js");
 

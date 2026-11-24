@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { awalanUntukJenis, aksiAntreanTersedia, bolehAksiAntrean, CARA_PEMBAYARAN, bolehPindahTahap, cekDuplikatMasukan, filterPasien, formatIdLayanan, formatNomorRm, kodeAntrean, kunjunganMasukan, registrasiPasienMasukan, statusIdentitasDari, tanggalWib, umurTahun } = await import("../index.js");
 

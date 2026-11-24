@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { bentukKeamanan, formDariPengaturan, galatKeamanan, keamananBerubah } from './keadaan-keamanan.js';
 const sah = { masa_sesi_jam: '12', batas_percobaan_masuk: '5', panjang_minimum_kata_sandi: '8' };
 describe('keadaan keamanan', () => {

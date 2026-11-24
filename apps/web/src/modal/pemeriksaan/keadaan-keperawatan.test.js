@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { BAGIAN_KLINIS, DEFAULT_KEPERAWATAN, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import { defaultKeperawatan, keperawatanDiubah, keperawatanKosong, kosongKeperawatan, ringkasanKeperawatan, ubahJenisNyeri, } from './keadaan-keperawatan.js';
 import { adaPerubahanBagian, galatBagian, isiBagian, keadaanAwalForm, keadaanDariServer, mulaiUbahKeperawatan, pulihkanKeadaan, rencanaSimpan, ringkasanIsi, } from './keadaan-pemeriksaan.js';

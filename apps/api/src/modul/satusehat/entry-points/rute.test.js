@@ -104,7 +104,7 @@ describe('cari ulang IHS Number pasien', () => {
         const r = await panggil('POST', '/satusehat/pasien/9/ihs', { auth: 'pendaftaran' });
         expect(r.status).toBe(200);
         expect((await r.json()).data.status).toBe('terhubung');
-        expect(sinkronIhs).toHaveBeenCalledWith(expect.objectContaining({ fasyankes_id: 7 }), 9, expect.objectContaining({ paksa: true }));
+        expect(sinkronIhs).toHaveBeenCalledWith(expect.objectContaining({ id: 3 }), 9, expect.objectContaining({ paksa: true }));
         expect((await panggil('POST', '/satusehat/pasien/9/ihs', { auth: 'penuh' })).status).toBe(200);
     });
     it('id bukan angka dan pasien tidak ada memberi 404', async () => {

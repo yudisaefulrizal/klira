@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { ringkasanSip } = await import("./layanan.js");
 const { buatLayananMaster } = await import("./layanan.js");
@@ -36,19 +35,19 @@ describe('profil klinik', () => {
 describe('layanan master dengan repositori tiruan', () => {
     const catatan = [];
     const repo = {
-        lokasiAda: async (f, id) => f === 1 && id === 10,
+        lokasiAda: async (id) => id === 10,
         penggunaAda: async () => true,
         punyaProfil: async () => true,
         tarifKodeAda: async () => false,
-        namaLokasiAda: async (f, jenis, nama, kecuali) => jenis === 'poli' && nama === 'Poli Umum' && kecuali !== 1,
+        namaLokasiAda: async (jenis, nama, kecuali) => jenis === 'poli' && nama === 'Poli Umum' && kecuali !== 1,
         ambil: async () => null,
         buat: async () => ({ id: 5, aktif: true }),
         shiftAda: async () => true,
-        jadwalBentrok: async (f, pengguna, hari, shift, kecuali) => (pengguna === 7 && hari === 1 && shift === 1 && kecuali !== 99 ? { id: 99, lokasi_nama: 'Poli Gigi' } : null),
+        jadwalBentrok: async (pengguna, hari, shift, kecuali) => (pengguna === 7 && hari === 1 && shift === 1 && kecuali !== 99 ? { id: 99, lokasi_nama: 'Poli Gigi' } : null),
     };
     const layanan = buatLayananMaster({ repo, audit: { catat: async (e) => void catatan.push(e) } });
-    it('rujukan di luar fasyankes ditolak tanpa menyimpan atau mencatat audit', async () => {
-        const h = await layanan.buat({ id: 1 }, 'ruang_periksa', { nama: 'R', induk_id: 10, status_operasional: 'O' });
+    it('rujukan induk tidak ada ditolak tanpa menyimpan atau mencatat audit', async () => {
+        const h = await layanan.buat({ id: 1 }, 'ruang_periksa', { nama: 'R', induk_id: 11, status_operasional: 'O' });
         expect(h).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(catatan).toHaveLength(0);
     });

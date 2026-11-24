@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { AKSI_AUDIT, eksporAudit, filterAudit } = await import("./audit.js");
 

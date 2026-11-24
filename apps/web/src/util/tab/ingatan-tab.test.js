@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from './ingatan-tab.js';
 const buatSimpanan = () => {
     const m = new Map();

@@ -7,7 +7,7 @@ import { aksiAntrean } from '../../api-klien/kunjungan.js';
 import { daftarPasien, detailPasien } from '../../api-klien/pasien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
-import { baris, bidang, kartu, lencana, peringatan, sel, tab, tabel, tombol } from '../../komponen/ui/primitif.js';
+import { bidang, kartu, lencana, peringatan, tab } from '../../komponen/ui/primitif.js';
 import { TombolIkonPasien } from '../../komponen/klinis/ikon-pasien.js';
 import { bukaEditPasien } from '../../modal/pasien/edit-pasien.js';
 import { bukaPanelKeluarga } from '../../modal/pasien/panel-keluarga.js';
@@ -15,7 +15,6 @@ import { bukaPendaftaranKunjungan } from '../../modal/pasien/pendaftaran-kunjung
 import { bukaAdmisiRawatInap } from '../../modal/rawat-inap/admisi-rawat-inap.js';
 import { tanggalPendek, tanggalWaktuPendek } from '../../util/format.js';
 import { TAHAP_PENYARING, lamaMenunggu, tahapBawaan } from '../../util/penyaring/penyaring-pasien.js';
-import { tanggalLengkapSah } from '../../util/tanggal-tiga.js';
 import { alamatProfil, keadaanAlamat, kepesertaan, saringRiwayat, umurTahun } from './keadaan-profil-pasien.js';
 import { PanelKunjungan } from './panel-kunjungan.js';
 import { TabelHistoriRawatJalan } from './histori-rawat-jalan.js';

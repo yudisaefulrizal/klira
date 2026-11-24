@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { PembatasPercobaan } = await import("./pembatas.js");
 

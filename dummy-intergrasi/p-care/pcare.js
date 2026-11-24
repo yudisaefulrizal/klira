@@ -65,11 +65,6 @@ export function buatAplikasiPcare(konfigSebagian = {}, store = buatStorePcare())
     tambah('GET', pola, fn);
     tambah('GET', `${pola}/:start/:limit`, fn);
   };
-  const daftarSederhana = (pola, data, saring) =>
-    daftar(pola, (c) => {
-      const cocok = saring ? data.filter((d) => saring(d, c.param)) : data;
-      return c.daftar(cocok);
-    });
 
   /* ---------- Peserta ---------- */
   const kirimPeserta = (c, p) => (p ? c.ok(p) : c.tidakAda('Data tidak ditemukan'));

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { bayarMasukan, rincianBayar } = await import("./kasir.js");
 

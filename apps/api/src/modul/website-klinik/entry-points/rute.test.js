@@ -65,7 +65,7 @@ test('penyimpanan terikat fasilitas sesi, bukan ID dalam payload', async () => {
 });
 
 test('nilai tidak valid ditolak sebelum menulis', async () => {
-    expect((await ambil('ubah', { ...WEBSITE_KLINIK_BAWAAN, hero_url: 'javascript:alert(1)' })).status).toBe(400);
+    expect((await ambil('/fasyankes/website', 'ubah', { ...WEBSITE_KLINIK_BAWAAN, hero_url: 'javascript:alert(1)' })).status).toBe(400);
     expect(db.simpanWebsiteKlinikUntukBuatRuteWebsitePengaturan).not.toHaveBeenCalled();
 });
 

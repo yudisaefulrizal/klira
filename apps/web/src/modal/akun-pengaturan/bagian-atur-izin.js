@@ -1,4 +1,4 @@
-import { h, Fragment, lokal } from '../../util/h.js';
+import { h, lokal } from '../../util/h.js';
 import { ATUR_IZIN, NAVIGASI, STATUS_PERIODE } from '@klira/shared';
 import { token } from '../../gaya/token.js';
 import { HanyaDenganIzin } from '../../komponen/izin/izin-saja.js';

@@ -1,4 +1,4 @@
-import { h, Fragment } from '../../util/h.js';
+import { h } from '../../util/h.js';
                                        
 import { PENANDA_NORMAL } from '@klira/shared';
 import { Bingkai } from '../ui/kartu.js';

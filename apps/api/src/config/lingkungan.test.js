@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { bacaKonfigurasi, bacaTrustProxy } = await import("./lingkungan.js");
 

@@ -140,7 +140,6 @@ export class RepositoriMasterMysql {
         return barisTarif(await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahTarifLayananUntukBuat((dataTarif(d))?.kode, (dataTarif(d))?.nama, (dataTarif(d))?.jenis, (dataTarif(d))?.harga_umum, (dataTarif(d))?.harga_jkn, (dataTarif(d))?.kode_icd9cm, oleh, koneksiBaru); return db.tambahTarifLayananUntukBuatHasil(_hasil.id, koneksiBaru); }));
     }
     async ubah(jenis, id, data) {
-        // Kunci fasyankes_id di where agar tidak pernah melintasi klinik, walau pemanggil lupa memeriksa.
         if (LOKASI.includes(jenis)) {
             const d = data;
             // Awalan antrean poli tidak berubah saat poli diganti nama (nomor hari ini tetap berurutan); pemetaan kode BPJS ikut nama baru.

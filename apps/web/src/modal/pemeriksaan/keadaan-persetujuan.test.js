@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { awalPersetujuan, bentukPersetujuan, galatPersetujuan, langkahBermasalahPersetujuan, PILIHAN_MANUAL, pilihTindakan } from './keadaan-persetujuan.js';
 const siap = (p = {}) => ({
     pasien: { id: 2, nama: 'Siti', tidak_cakap: false },

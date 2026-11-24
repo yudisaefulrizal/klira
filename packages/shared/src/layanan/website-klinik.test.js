@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { WEBSITE_KLINIK_BAWAAN, websiteKlinikMasukan, nomorWhatsappPublik, tautanWhatsappPublik } = await import("./website-klinik.js");
 

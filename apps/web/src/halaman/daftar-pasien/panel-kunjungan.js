@@ -65,7 +65,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const subTerbatas = [...(boleh('penunjang', 'lihat') ? ['penunjang'] : []), ...(boleh('kasir', 'lihat') ? ['penutup'] : [])];
     const isImp = ringkas?.jenis === 'IMP';
     const subSah = terbatas ? subTerbatas : (isImp ? SUB_TAB_IMP : SUB_TAB);
-    let aktif = true, sub = subSah.includes(subAwal) ? subAwal : subSah[0], klinis = null, konteks = null, galatMuat = null, k = null, awal = null, tensiTeks = '', modal;
+    let aktif = true, sub = subSah.includes(subAwal) ? subAwal : subSah[0], klinis = null, konteks = null, galatMuat = null, k = null, tensiTeks = '', modal;
     let bangsalPanel = null;
     let tampilGalat = false, tampilWajib = false, galat = null, pesan = null, memproses = false, alasan = '', konfirmasiUbahTutup = false, konfirmasiMulaiPemeriksaan = false, konfirmasiBukanDpjp = false;
     let resep = awalResep(), resepGalat = null, resepPesan = null, resepProses = false, resepTampilGalat = false, obatMaster = null, obatGalat = null, obatMemuat = false, resepSinkron = false;
@@ -926,7 +926,6 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         data[nama] = { memuat: true };
         ambil().then((nilai) => { data[nama] = { nilai }; }).catch((e) => { data[nama] = { galat: pesanGalat(e, T[nama].gagal) }; }).finally(() => { if (aktif && sub === nama) { lukis(); lukisKepala(); } });
     }
-    const judulSeksi = (teks) => buat('h3', 'profil-judul-seksi', teks);
     /** Pesan hasil telaah terakhir (disimpan, stok kurang) yang tetap terlihat setelah resep siap dan kunjungan maju. */
     const infoTelaah = () => [
         ...(telaahInfo ? [peringatan(telaahInfo, 'biru')] : []),

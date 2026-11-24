@@ -1,5 +1,5 @@
 import * as db from '@klira/db';
-import { mulaiAntreanDalam, selesaiAntreanDalam } from '../domain/antrean-otomatis.js';
+import { selesaiAntreanDalam } from '../domain/antrean-otomatis.js';
 import { ANTREAN_LAB, TAHAP_BERJALAN, formatIdLayanan, kodeAntrean, tanggalWib } from '@klira/shared';
 import { namaPanggil, pilihRuangPanggil } from './ruang-panggil.js';
 const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);

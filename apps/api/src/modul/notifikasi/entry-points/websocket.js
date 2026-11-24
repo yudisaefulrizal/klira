@@ -8,7 +8,7 @@ export const cocokSocketNotifikasi = (path) => path === '/api/notifikasi/ws';
 
 /**
  * Menentukan apakah sebuah koneksi pengguna berhak menerima event notifikasi tertentu.
- * @param {object} info - Metadata klien yang terhubung (`pengguna`, `fasyankesId`).
+ * @param {object} info - Metadata klien yang terhubung (`pengguna`).
  * @param {object} event - Event domain yang dipancarkan dari layanan.
  */
 function cocokPenerima(info, event) {

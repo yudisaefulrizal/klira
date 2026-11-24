@@ -1,7 +1,6 @@
-import { jest } from '@jest/globals';
 import { putuskanRute } from './penjaga-rute.js';
 const dasar = {
-    id: 1, nama: 'A', username: 'a', fasyankes_id: 1, wajib_ganti_kredensial: false,
+    id: 1, nama: 'A', username: 'a', wajib_ganti_kredensial: false,
     jenis_akun: [], fitur: [], izin: [], halaman_awal: '/pasien',
 };
 describe('penjaga rute', () => {

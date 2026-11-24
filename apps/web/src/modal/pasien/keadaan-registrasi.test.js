@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { awalRegistrasi, BIDANG_SENSITIF_REGISTRASI, bentukRegistrasi, bisaCariDuplikat, galatRegistrasi, hapusWali, isianCariDuplikat, ubahJalur, ubahTidakCakap, } from './keadaan-registrasi.js';
 import { saringSensitif } from '../../util/draf/draf.js';
 import { awalKunjungan, bentukKunjungan, dokterPoli, galatKunjungan, keteranganAsuransi, ubahKunjungan } from './keadaan-kunjungan.js';

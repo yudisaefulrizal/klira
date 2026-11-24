@@ -1,5 +1,5 @@
 import * as db from '@klira/db';
-import { tanggalWib, WEBSITE_KLINIK_BAWAAN } from '@klira/shared';
+import { WEBSITE_KLINIK_BAWAAN } from '@klira/shared';
 export const pilihWebsite = {
     aktif: true, slug: true, domain: true, judul: true, ringkasan: true, tentang: true, alamat: true,
     whatsapp: true, telepon: true, email: true, jam_operasional: true, warna_utama: true, logo_url: true, hero_url: true,
@@ -19,7 +19,6 @@ export async function bacaKlinikPublik(host, slug) {
     }
     if (!web)
         return null;
-    const tanggal = new Date(`${tanggalWib(new Date())}T00:00:00Z`);
     const layanan = await db.daftarLokasiUntukBacaKlinikPublik('poli', 'O');
     const baris = web.tampilkan_jadwal ? await db.daftarJadwalPraktikUntukBacaKlinikPublik(true, layanan.map(l => l.id)) : [];
     const shift = new Map((await db.daftarShiftUntukDaftar()).map(x => [x.id, x]));

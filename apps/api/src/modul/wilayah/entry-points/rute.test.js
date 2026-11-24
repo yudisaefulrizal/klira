@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { default: express } = await import("express");
 const { buatRutePasien } = await import("../../pasien/entry-points/rute.js");

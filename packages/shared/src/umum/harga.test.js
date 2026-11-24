@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { ringkasPerubahanHarga, rupiahTeks } = await import("./harga.js");
 

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { bidangKelompok, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, DEFINISI_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, PEMERIKSAAN_BIDANG, pemeriksaanIsi, anamnesisIsi, ringkasanPemeriksaan, alergiTercatat, berartiTidakAda, DEFAULT_KEPERAWATAN, hasilRisikoGizi, isiDefault, isianDiubah, jumlahDiubah, keperawatanIsi, kembalikanNormal, samaDenganDefault } = await import("../index.js");
 

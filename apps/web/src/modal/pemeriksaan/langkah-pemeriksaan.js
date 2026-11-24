@@ -1,4 +1,4 @@
-import { h, Fragment, lokal } from '../../util/h.js';
+import { h, lokal } from '../../util/h.js';
 import { KESADARAN, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KELOMPOK_PEMERIKSAAN, LABEL_NARASI, KLINIS, MAKS_NARASI, STATUS_PERAN_DIAGNOSIS, STATUS_RINGKASAN_BAGIAN, TANDA_VITAL, bidangKelompok, isianDiubah, labelBidangPemeriksaan, samaDenganDefault } from '@klira/shared';
 import { KelompokNormal } from '../../komponen/klinis/kelompok-normal.js';
 import { cariTerminologi, cariTindakanKlinik } from '../../api-klien/klinis.js';
@@ -148,12 +148,6 @@ export function LangkahPemeriksaan({
   server
 }) {
   const pm = k.pemeriksaan;
-  const set = p => ubah({
-    pemeriksaan: {
-      ...pm,
-      ...p
-    }
-  });
   const diubah = new Set(isianDiubah(pm, DEFAULT_PEMERIKSAAN));
   const p = KLINIS.pemeriksaan;
   return lokal({

@@ -1,4 +1,4 @@
-import { h, Fragment } from '../../util/h.js';
+import { h } from '../../util/h.js';
                                        
 import { BAGIAN_SOAPIE, CARA_PEMBAYARAN, KLINIS, LABEL_NARASI, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
                                                                       

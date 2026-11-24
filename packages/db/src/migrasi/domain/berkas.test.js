@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { mkdtemp, rm, writeFile } = await import("node:fs/promises");
 const { tmpdir } = await import("node:os");

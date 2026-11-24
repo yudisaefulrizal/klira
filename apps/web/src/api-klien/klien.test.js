@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { GalatApi, panggilApi } from './klien.js';
 const balas = (status, badan) => (async () => new Response(JSON.stringify(badan), { status }));
 describe('panggilApi', () => {

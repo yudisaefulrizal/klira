@@ -25,25 +25,24 @@ export function buatMemori() {
     const antreanJenis = (jenis, tanggal) => s.antrean.filter((a) => a.jenis_poli === jenis && a.tanggal.getTime() === tglDb(tanggal).getTime());
     const repoJkn = {
         pengaturan: async () => s.atur,
-        fasyankesAktif: async () => (s.atur?.aktif ? [s.atur.fasyankes_id] : []),
         pemetaan: async () => s.peta,
-        simpan: async (f, d, pemetaan) => {
+        simpan: async (d, pemetaan) => {
             s.atur = { ...(s.atur ?? {}), aktif: d.aktif, service_name: d.service_name, ...(d.user_key_terenkripsi ? { user_key_terenkripsi: d.user_key_terenkripsi } : {}) };
             s.peta = pemetaan;
         },
-        cariPasien: async (_f, noka, nik) => s.pasien.find((p) => p.jkn_nomor_kartu === noka) ?? s.pasien.find((p) => nik && p.nik === nik) ?? null,
-        isiNomorKartu: async (_f, id, noka) => { pasienDari(id).jkn_nomor_kartu ||= noka; },
-        buatPasien: async (_f, d) => {
+        cariPasien: async (noka, nik) => s.pasien.find((p) => p.jkn_nomor_kartu === noka) ?? s.pasien.find((p) => nik && p.nik === nik) ?? null,
+        isiNomorKartu: async (id, noka) => { pasienDari(id).jkn_nomor_kartu ||= noka; },
+        buatPasien: async (d) => {
             s.urutRm += 1;
             const p = { id: s.pasien.length + 1, nomor_rm: `RM-${String(s.urutRm).padStart(6, '0')}`, ...d };
             s.pasien.push(p);
             return { id: p.id, nomor_rm: p.nomor_rm };
         },
-        antreanPasien: async (_f, pasienId, jenis, tanggal) => antreanJenis(jenis, tanggal).filter((a) => s.kunjungan.find((k) => k.id === a.kunjungan_id).pasien_id === pasienId).at(-1) ?? null,
-        antreanPcare: async (_f, tanggal) => s.antrean.filter((a) => a.pcare_no_urut && a.tanggal.getTime() === tglDb(tanggal).getTime())
+        antreanPasien: async (pasienId, jenis, tanggal) => antreanJenis(jenis, tanggal).filter((a) => s.kunjungan.find((k) => k.id === a.kunjungan_id).pasien_id === pasienId).at(-1) ?? null,
+        antreanPcare: async (tanggal) => s.antrean.filter((a) => a.pcare_no_urut && a.tanggal.getTime() === tglDb(tanggal).getTime())
             .map((a) => ({ id: a.id, jenis_poli: a.jenis_poli, pcare_no_urut: a.pcare_no_urut, status: a.status, sumber: a.sumber, jkn_nomor_kartu: pasienDari(s.kunjungan.find((k) => k.id === a.kunjungan_id).pasien_id).jkn_nomor_kartu })),
-        kaitkanPcare: async (_f, id, noUrut) => { s.antrean.find((a) => a.id === id).pcare_no_urut = noUrut; },
-        antreanUntukBpjs: async (_f, id) => {
+        kaitkanPcare: async (id, noUrut) => { s.antrean.find((a) => a.id === id).pcare_no_urut = noUrut; },
+        antreanUntukBpjs: async (id) => {
             const a = s.antrean.find((x) => x.id === id);
             if (!a)
                 return null;
@@ -52,16 +51,16 @@ export function buatMemori() {
             const d = s.dokter.find((x) => x.id === k.dpjp_id);
             return { ...a, jenis: k.jenis, cara_pembayaran: k.cara_pembayaran, nomor_rm: p.nomor_rm, nik: p.nik, nomor_hp: p.nomor_hp ?? null, jkn_nomor_kartu: p.jkn_nomor_kartu ?? null, dokter_id: d?.id ?? null, dokter_nama: d?.nama ?? null };
         },
-        catatSinkron: async (_f, id, status, pesan) => Object.assign(s.antrean.find((x) => x.id === id), { bpjs_status: status, bpjs_pesan: pesan }),
+        catatSinkron: async (id, status, pesan) => Object.assign(s.antrean.find((x) => x.id === id), { bpjs_status: status, bpjs_pesan: pesan }),
     };
     const dtoAntrean = (a) => ({ id: a.id, nomor: a.nomor, kode: kodeAntrean(a.nomor, a.awalan), jenis_poli: a.jenis_poli, status: a.status });
     const repoKunjungan = {
-        pasienAda: async (_f, id) => Boolean(pasienDari(id)),
-        jenisPoliOperasional: async (_f, jenis) => s.poli.find((p) => p.jenis_poli.toLowerCase() === String(jenis).toLowerCase()) ?? null,
-        dpjpSah: async (_f, id) => s.dokter.some((d) => d.id === id),
-        dokterDiJenis: async (_f, id, jenis) => s.dokter.some((d) => d.id === id && d.jenis_poli === jenis),
-        kunjunganBerjalan: async (_f, pasienId) => s.kunjungan.some((k) => k.pasien_id === pasienId && s.antrean.some((a) => a.kunjungan_id === k.id && !['batal', 'selesai'].includes(a.status))),
-        daftarkan: async (_f, _oleh, d, waktu) => {
+        pasienAda: async (id) => Boolean(pasienDari(id)),
+        jenisPoliOperasional: async (jenis) => s.poli.find((p) => p.jenis_poli.toLowerCase() === String(jenis).toLowerCase()) ?? null,
+        dpjpSah: async (id) => s.dokter.some((d) => d.id === id),
+        dokterDiJenis: async (id, jenis) => s.dokter.some((d) => d.id === id && d.jenis_poli === jenis),
+        kunjunganBerjalan: async (pasienId) => s.kunjungan.some((k) => k.pasien_id === pasienId && s.antrean.some((a) => a.kunjungan_id === k.id && !['batal', 'selesai'].includes(a.status))),
+        daftarkan: async (_oleh, d, waktu) => {
             const k = { id: s.kunjungan.length + 1, pasien_id: d.pasien_id, jenis: d.jenis, cara_pembayaran: d.cara_pembayaran, dpjp_id: d.dpjp_id ?? null };
             s.kunjungan.push(k);
             const tanggal = tglDb(tanggalWib(waktu));
@@ -70,9 +69,9 @@ export function buatMemori() {
             s.antrean.push(a);
             return { id: k.id, pasien_id: k.pasien_id, jenis: k.jenis, cara_pembayaran: k.cara_pembayaran, antrean: dtoAntrean(a) };
         },
-        statusAntrean: async (_f, id) => s.antrean.find((a) => a.id === id)?.status ?? null,
+        statusAntrean: async (id) => s.antrean.find((a) => a.id === id)?.status ?? null,
         tahapAntrean: async () => 'pemeriksaan',
-        ubahAntrean: async (_f, id, aksi, _dari, ke, waktu) => {
+        ubahAntrean: async (id, aksi, _dari, ke, waktu) => {
             const a = s.antrean.find((x) => x.id === id);
             a.status = ke;
             if (aksi === 'panggil')

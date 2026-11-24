@@ -12,7 +12,6 @@ export function penandaUsername(username) {
 }
 export function buatLayananAkses(dep) {
     const sekarang = dep.sekarang ?? (() => new Date());
-    const bacaPengaturan = dep.bacaPengaturan ?? (async () => pengaturanKeamananEfektif(null));
     const sesiMsDari = (p) => dep.sesiMs ?? p.masa_sesi_jam * 3_600_000;
     // Hash tiruan agar waktu respons username tak dikenal setara dengan kata sandi salah.
     const awal = dep.kredensialAwal ?? kredensialAwal(process.env);

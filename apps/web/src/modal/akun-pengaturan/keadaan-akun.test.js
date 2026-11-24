@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { penggunaBaru } from '@klira/shared';
 import { awalAkun, bentukPermintaan, galatData, galatLangkah, galatPenugasan, galatProfil, hariIniLokal, opsiIzin, ringkasanAkun } from './keadaan-akun.js';
 const izin = [

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { BAWAAN_AUDIT, BAWAAN_PERINGATAN, bacaPenyaring, formatWaktu, penggunaIdSah, queryPenyaring, rentangIso, rentangTerbalik, saringanAudit, saringanEkspor, saringanPeringatan, totalHalaman, ubahPenyaring } from './penyaring-tab.js';
 describe('penyaring tab', () => {
     it('membaca penyaring dari alamat dengan bawaan dan halaman sah', () => {

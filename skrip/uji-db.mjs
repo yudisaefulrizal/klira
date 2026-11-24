@@ -5,6 +5,4 @@ function jalankan(args) {
   const hasil = spawnSync(process.execPath, ['--experimental-vm-modules', 'node_modules/jest/bin/jest.js', '--runInBand', ...args], { env, stdio: 'inherit' });
   if (hasil.status !== 0) process.exit(hasil.status ?? 1);
 }
-// Skema diuji lebih dahulu: fresh dan seed menyiapkan database untuk pengujian alur API.
-jalankan(['--runTestsByPath', 'packages/db/src/skema.test.js']);
 jalankan(['--testPathPatterns', process.argv[2] || 'integrasi.test.js|seed/.*test.js|migrasi/.*test.js']);

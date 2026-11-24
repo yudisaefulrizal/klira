@@ -1,5 +1,4 @@
 // Layanan antrean tiruan dan simulator Mobile JKN, diuji di memori tanpa membuka port.
-import { jest } from '@jest/globals';
 import { buatAplikasiPcare, KONFIG_PCARE_BAWAAN as K } from './pcare.js';
 import { buatAuthorization, buatSignature, dekripsiRespons } from './pcare-crypto.js';
 import { tanggalWib } from './mobile-jkn.js';

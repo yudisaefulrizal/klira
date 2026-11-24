@@ -48,11 +48,11 @@ describe('resep teks bebas dan item oleh farmasi (P3)', () => {
         const p = { id: 7 };
         const dasar = { administratif: true, farmasetik: true, klinis: true };
         expect(await l.telaah(p, 5, telaahMasukan.parse(dasar))).toMatchObject({ ok: true });
-        expect(repo.catatTelaah).toHaveBeenLastCalledWith(1, 5, 7, expect.anything(), null, []);
+        expect(repo.catatTelaah).toHaveBeenLastCalledWith(5, 7, expect.anything(), null, []);
         expect(repo.obatAktifDari).not.toHaveBeenCalled();
         await l.telaah(p, 5, telaahMasukan.parse({ ...dasar, item: [] }));
-        expect(repo.catatTelaah).toHaveBeenLastCalledWith(1, 5, 7, expect.anything(), [], []);
+        expect(repo.catatTelaah).toHaveBeenLastCalledWith(5, 7, expect.anything(), [], []);
         await l.telaah(p, 5, telaahMasukan.parse({ ...dasar, item: [{ master_obat_id: 1, aturan_pakai: '3 x 1', jumlah: 10 }] }));
-        expect(repo.catatTelaah).toHaveBeenLastCalledWith(1, 5, 7, expect.anything(), [expect.objectContaining({ master_obat_id: 1, jumlah: 10 })], expect.any(Array));
+        expect(repo.catatTelaah).toHaveBeenLastCalledWith(5, 7, expect.anything(), [expect.objectContaining({ master_obat_id: 1, jumlah: 10 })], expect.any(Array));
     });
 });

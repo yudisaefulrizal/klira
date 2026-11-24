@@ -21,7 +21,7 @@ jest.unstable_mockModule('@klira/db', () => {
         transaksi: jest.fn(async (fn) => fn({})) };
 });
 const db = await import("@klira/db");
-const { WEBSITE_KLINIK_BAWAAN, tanggalWib } = await import("@klira/shared");
+const { WEBSITE_KLINIK_BAWAAN } = await import("@klira/shared");
 const { bacaKlinikPublik, pengaturanWebsite } = await import("./data.js");
 
 const web = { ...WEBSITE_KLINIK_BAWAAN, aktif: true, slug: 'klinik-a', domain: 'klinik.example', fasyankes: { nama: 'Klinik A' } };

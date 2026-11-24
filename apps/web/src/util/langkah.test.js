@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { adalahPertama, adalahTerakhir, batasi, langkahBermasalah, langkahBerikut, langkahSebelum, posisiLangkah, statusLangkah } from './langkah.js';
 describe('navigasi langkah modal bertahap', () => {
     it('maju dan mundur dibatasi di ujung', () => {

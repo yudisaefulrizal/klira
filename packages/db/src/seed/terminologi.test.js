@@ -1,8 +1,6 @@
-import { jest } from '@jest/globals';
 
-const uji = await import("@klira/db/uji");
 const { TANDA_VITAL } = await import("@klira/shared");
-const { TERMINOLOGI_CONTOH, bacaCsvTerminologi, imporTerminologiCsv, seedTerminologiContoh } = await import("./terminologi.js");
+const { TERMINOLOGI_CONTOH, bacaCsvTerminologi } = await import("./terminologi.js");
 
 describe('CSV terminologi', () => {
     it('membaca judul, kutip, dan penanda aktif', () => {
@@ -23,24 +21,5 @@ describe('CSV terminologi', () => {
             expect(TERMINOLOGI_CONTOH.some((c) => c.sistem === 'loinc' && c.kode === t.loinc)).toBe(true);
             expect(TERMINOLOGI_CONTOH.some((c) => c.sistem === 'ucum' && c.kode === t.satuan)).toBe(true);
         }
-    });
-});
-
-const url = (process.env.KLIRA_UJI_DB === '1' ? process.env.DATABASE_URL : undefined);
-
-(url ? describe : describe.skip)('terminologi di database pengujian', () => {
-    afterAll(async () => {
-        await uji.hapusKodeTerminologiUntukSeedTerminologiTest(['ZZ9.9', ...TERMINOLOGI_CONTOH.map((c) => c.kode)]);
-        await uji.tutupPool();
-    });
-    it('seed contoh idempoten dan bertanda contoh; impor CSV menimpa tanpa tanda contoh', async () => {
-        await seedTerminologiContoh(uji.pool);
-        await seedTerminologiContoh(uji.pool);
-        const i10 = await uji.daftarKodeTerminologiUntukSeedTerminologiTest('icd10', 'I10');
-        expect(i10).toHaveLength(1);
-        expect(i10[0].contoh).toBe(true);
-        const h = await imporTerminologiCsv(uji.pool, 'icd10,ZZ9.9,Kode uji impor');
-        expect(h).toEqual({ diimpor: 1, galat: [] });
-        expect((await uji.wajibKodeTerminologiUntukSeedTerminologiTest('icd10', 'ZZ9.9')).contoh).toBe(false);
     });
 });

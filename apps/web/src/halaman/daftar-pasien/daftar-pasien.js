@@ -1,7 +1,7 @@
 import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js';
 import { bukaUbahDpjp } from '../../modal/pasien/ubah-dpjp.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
-import { bidang,tombol,kartu,tabel,baris,sel,lencana,peringatan,tab,bantuanKecil } from '../../komponen/ui/primitif.js';
+import { bidang, tombol, kartu, tabel, baris, sel, lencana, peringatan, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { TabJadwal } from '../../komponen/master/tab-jadwal.js';
 import { TabShift } from '../../komponen/master/tab-shift.js';
 import { KelolaMasterTab } from '../../komponen/master/kelola-master-tab.js';
@@ -24,7 +24,6 @@ import { bukaPendaftaranKunjungan } from '../../modal/pasien/pendaftaran-kunjung
 import { alamatProfil } from './keadaan-profil-pasien.js';
 import { bukaRegistrasiPasien } from '../../modal/pasien/registrasi-pasien.js';
 import { TabPasien } from './tab-pasien.js';
-const UKURAN = 20;
 const KOLOM = [
     { judul: DAFTAR_PASIEN.kolom.antrean }, { judul: DAFTAR_PASIEN.kolom.pasien }, { judul: DAFTAR_PASIEN.kolom.nomorRm }, { judul: DAFTAR_PASIEN.kolom.poliDpjp },
     { judul: DAFTAR_PASIEN.kolom.pembayaran }, { judul: DAFTAR_PASIEN.kolom.tindakan, rataKanan: true },

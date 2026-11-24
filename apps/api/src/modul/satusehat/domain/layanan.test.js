@@ -12,15 +12,15 @@ function buat(opsi = {}) {
     const repo = {
         organizationId: async () => (opsi.organizationId === undefined ? 'org-1' : opsi.organizationId),
         daftar: async () => [...baris.values()],
-        ambil: async (_f, e) => baris.get(e) ?? null,
+        ambil: async (e) => baris.get(e) ?? null,
         ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (f, d, oleh) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, dibuat_oleh: oleh, ...d }); },
+        tambah: async (d, oleh) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, dibuat_oleh: oleh, ...d }); },
         ubah: async (id, d) => {
             const k = [...baris.values()].find((x) => x.id === id);
             Object.assign(k, { client_id: d.client_id, base_url: d.base_url, diuji_pada: null, hasil_uji: null });
             if (d.client_secret_terenkripsi) k.client_secret_terenkripsi = d.client_secret_terenkripsi;
         },
-        aktifkan: async (_f, id) => { for (const k of baris.values()) k.aktif = k.id === id; },
+        aktifkan: async (id) => { for (const k of baris.values()) k.aktif = k.id === id; },
         catatUji: async (id, hasil, waktu) => { const k = [...baris.values()].find((x) => x.id === id); k.hasil_uji = hasil; k.diuji_pada = waktu; },
     };
     const klienDibuat = [];

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { alasanPerbaikanSah, ringkasIsi, selisihBaris } from './keadaan-rm.js';
 describe('tinjau perbaikan', () => {
     it('meringkas isi menjadi baris dan menandai yang berbeda', () => {

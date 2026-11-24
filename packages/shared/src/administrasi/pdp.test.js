@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { batasPdp, butirKurang, BUTIR_PERJANJIAN, hakTerlambat, sisaJamPdp, tahapHakBerikut, tahapMusnahBerikut } = await import("./pdp.js");
 

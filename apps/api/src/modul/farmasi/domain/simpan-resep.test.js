@@ -8,7 +8,7 @@ const masukan = { item: [{ master_obat_id: 3, aturan_pakai: ' 3 x 1 ', jumlah: 1
 function buat(sisa = {}) {
     const repo = {
         kunjungan: async () => ({ id: 5, tahap_layanan: 'pemeriksaan', cara_pembayaran: 'umum' }),
-        obatAktifDari: async (_f, ids) => ids.filter((i) => i === 3).map((id) => ({ id, nama_tampil: 'Parasetamol 500 mg', harga: 500, rute: 'Oral' })),
+        obatAktifDari: async (ids) => ids.filter((i) => i === 3).map((id) => ({ id, nama_tampil: 'Parasetamol 500 mg', harga: 500, rute: 'Oral' })),
         simpanResep: jest.fn(async () => ({ resepId: 9, diubah: false, tagihan: { total: 5000 } })),
         resep: async () => ({ id: 9, nomor_resep: 'R-20261116-001', item: [] }),
         ...sisa,

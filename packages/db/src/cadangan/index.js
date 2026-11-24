@@ -8,7 +8,6 @@ import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { daftarIdFasyankes } from '../data-access/fasyankes.js';
 import { tambahLogAuditUntukTambah } from '../data-access/log_audit.js';
 import { tambahRiwayatBackup } from '../data-access/riwayat_backup.js';
 /** Akar repositori; sama untuk src (uji) maupun dist karena kedalaman folder sama. */

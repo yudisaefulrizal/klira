@@ -1,5 +1,3 @@
-import { fileURLToPath as kliraFilePath } from 'node:url';
-const __dirname = kliraFilePath(new URL('.', import.meta.url));
 import { pasangWebsocketLayarPanggilan } from './modul/layar-panggilan/entry-points/websocket.js';
 import { pasangWebsocketNotifikasi } from './modul/notifikasi/entry-points/websocket.js';
 import { perbaruiTokenInstagram } from './modul/instagram/domain/token.js';

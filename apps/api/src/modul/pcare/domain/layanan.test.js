@@ -12,15 +12,15 @@ function buat(opsi = {}) {
     const klienDibuat = [];
     const repo = {
         daftar: async () => [...baris.values()],
-        ambil: async (_f, e) => baris.get(e) ?? null,
+        ambil: async (e) => baris.get(e) ?? null,
         ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (f, d) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
+        tambah: async (d) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
         ubah: async (id, d) => {
             const k = [...baris.values()].find((x) => x.id === id);
             for (const [kunci, nilai] of Object.entries(d)) if (nilai !== null || ['base_url'].includes(kunci)) k[kunci] = nilai;
             k.diuji_pada = null; k.hasil_uji = null;
         },
-        aktifkan: async (_f, id) => { for (const k of baris.values()) k.aktif = k.id === id; },
+        aktifkan: async (id) => { for (const k of baris.values()) k.aktif = k.id === id; },
         catatUji: async (id, hasil, waktu) => { const k = [...baris.values()].find((x) => x.id === id); k.hasil_uji = hasil; k.diuji_pada = waktu; },
     };
     const l = buatLayananPcare({

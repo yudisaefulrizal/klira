@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { alihButir, awalDpia, awalHak, awalInsiden, awalPemberitahuan, awalProsesHak, awalProsesMusnah, awalProsesor, awalRencanaMusnah, awalRopa, buangPasienTerdampak, galatDpia, galatHak, galatInsiden, galatPemberitahuan, galatProsesHak, galatProsesMusnah, galatProsesor, galatRencanaMusnah, galatRopa, galatTarik, indeksTahapHak, indeksTahapMusnah, keIsianWaktu, langkahBermasalahHak, langkahBermasalahInsiden, langkahBermasalahRopa, tambahPasienTerdampak, } from './keadaan-pdp.js';
 describe('permintaan hak', () => {
     it('butuh pasien, pemohon, verifikasi, dan jenis; langkah bermasalah mengikuti bidang', () => {

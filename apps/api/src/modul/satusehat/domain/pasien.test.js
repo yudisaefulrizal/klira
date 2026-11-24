@@ -13,10 +13,10 @@ function buat({ pasien = { id: 9, nik: '9999000000000001', ihs_number: null }, k
     const panggilanKlien = [];
     const sinkron = buatSinkronIhs({
         repo: {
-            pasienUntukSinkron: async (_f, id) => (state && id === state.id ? { ...state } : null),
-            isiIhs: async (_f, _id, ihs) => { state.ihs_number = ihs; },
+            pasienUntukSinkron: async (id) => (state && id === state.id ? { ...state } : null),
+            isiIhs: async (_id, ihs) => { state.ihs_number = ihs; },
         },
-        klienAktif: async (f, opsi) => { panggilanKlien.push([f, opsi]); return aktif ? { environment: 'sandbox', organizationId: 'org', klien } : null; },
+        klienAktif: async (opsi) => { panggilanKlien.push([opsi]); return aktif ? { environment: 'sandbox', organizationId: 'org', klien } : null; },
         audit: { catat: async (e) => void catatan.push(e) },
     });
     return { sinkron, state, catatan, panggilanKlien };
@@ -32,7 +32,7 @@ describe('buatSinkronIhs (repositori dan klien tiruan)', () => {
         expect(h).toMatchObject({ status: 'terhubung', ihs_number: 'P02478375538' });
         expect(state.ihs_number).toBe('P02478375538');
         expect(catatan).toEqual([expect.objectContaining({ aksi: 'perbaikan', entitas: 'pasien', entitas_id: 9, alamat: '::1' })]);
-        expect(panggilanKlien[0]).toEqual([1, { batasWaktuMs: BATAS_WAKTU_PENDAFTARAN_MS }]);
+        expect(panggilanKlien[0]).toEqual([{ batasWaktuMs: BATAS_WAKTU_PENDAFTARAN_MS }]);
         expect(BATAS_WAKTU_PENDAFTARAN_MS).toBeLessThanOrEqual(5000);
     });
 

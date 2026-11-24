@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { awalOrderLab, bentukOrderLab, galatOrderLab, gantiPilihan, perkiraanBiaya, rupiah, saringPemeriksaan } from './keadaan-order-lab.js';
 import { awalSpesimen, bentukSpesimen, galatSpesimen, gantiOrderSpesimen, menungguSpesimen } from './keadaan-spesimen.js';
 import { awalHasilLab, galatHasilLab, langkahBermasalahHasil, menungguHasil, pulihkanHasilLab, rencanaHasil, saranUntuk, terapkanSaran, ubahIsian, } from './keadaan-hasil-lab.js';

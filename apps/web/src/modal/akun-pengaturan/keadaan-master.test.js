@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { DEFINISI_MASTER, JENIS_MASTER_UBAH, MASTER } from '@klira/shared';
 import { awalMaster, bentukMasukan, bidangAktif, bidangTampil, galatMaster, masterBerubah, opsiDenganNilaiSaatIni, petunjukSaatIni, wajibSaatIni } from './keadaan-master.js';
 describe('bentuk generik master', () => {

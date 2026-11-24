@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { buatLayananPengesahan } = await import("../../rekam-medis/domain/layanan.js");
 const { hashIsi } = await import("../../rekam-medis/domain/pengesahan.js");
@@ -28,7 +27,7 @@ function buat(opsi = {}) {
     const pengesahanTerakhir = new Map();
     const pengesahan = buatLayananPengesahan({
         repo: {
-            terakhir: async (_f, e, id) => pengesahanTerakhir.get(`${e}:${id}`) ?? null,
+            terakhir: async (e, id) => pengesahanTerakhir.get(`${e}:${id}`) ?? null,
             jenisAkunPemberiHak: async () => [{ id: 3, nama: 'Analis lab' }],
             riwayatVersi: async () => [],
         },
@@ -38,14 +37,14 @@ function buat(opsi = {}) {
     const repo = {
         kunjungan: async () => (opsi.kunjungan === null ? null : { id: 5, pasien_id: 2, tahap_layanan: 'pemeriksaan', cara_pembayaran: 'umum', ...opsi.kunjungan }),
         bagianDisahkan: async () => opsi.disahkan ?? [],
-        masterAktifDari: async (_f, ids) => (opsi.masterAktif ?? [master(1), master(2)]).filter((m) => ids.includes(m.id)),
+        masterAktifDari: async (ids) => (opsi.masterAktif ?? [master(1), master(2)]).filter((m) => ids.includes(m.id)),
         buatOrder: async (d) => {
             catat('buatOrder', d);
             return { orderIds: d.master.map((m) => 100 + m.id), tagihan: { status_tagihan: 'lengkap', status_pembayaran: 'belum', total: 0 } };
         },
         order: async () => o,
         ordersKunjungan: async () => [order({ id: 101 }), order({ id: 102 })],
-        penggunaAda: async (_f, id) => id !== 99,
+        penggunaAda: async (id) => id !== 99,
         catatSpesimen: async (d) => (catat('catatSpesimen', d), true),
         simpanHasil: async (d) => (catat('simpanHasil', d), true),
         validasi: async (d) => (catat('validasi', d), opsi.validasiOk ?? true),

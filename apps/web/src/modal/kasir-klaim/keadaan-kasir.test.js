@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { awalSerah, bentukSerah, galatSerah } from '../farmasi/keadaan-farmasi.js';
 import { KASIR } from '@klira/shared';
 import { awalBayar, awalShift, bentukBayar, bisaTutup, daftarSyarat, galatBayar, galatBukaShift, galatTambahItem, galatTutupShift, galatUbahHarga, hapusBaris, hargaDiubah, ringkasBayar, selisihShift, tambahBaris, ubahBaris, ubahHargaTersedia } from './keadaan-kasir.js';

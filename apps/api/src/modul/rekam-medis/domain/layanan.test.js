@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { buatLayananPengesahan } = await import("./layanan.js");
 const { hashIsi } = await import("./pengesahan.js");
@@ -11,7 +10,7 @@ function buat(opsi = {}) {
     const terakhir = opsi.terakhir === null || opsi.terakhir === undefined ? null : { versi: 1, pengguna_id: 7, pengguna_nama: 'Dr. A', jenis_akun_id: 2, jenis_akun_nama: 'Dokter', waktu: T0, hash: hashIsi({ v: 1 }), ...opsi.terakhir };
     const repo = {
         terakhir: async () => terakhir,
-        jenisAkunPemberiHak: async (_f, _p, _fitur, aksi) => {
+        jenisAkunPemberiHak: async (_p, _fitur, aksi) => {
             diminta.push(aksi);
             return opsi.jenis ?? [{ id: 5, nama: 'Perawat' }, { id: 2, nama: 'Dokter' }];
         },
@@ -64,13 +63,13 @@ describe('pengesahan generik: deteksi perubahan dan verifikasi', () => {
     it('belum disahkan, sah bila hash cocok, berubah bila isi berubah', async () => {
         const belum = buat();
         belum.l.daftarkanPenyedia('anamnesis', async () => ({ v: 1 }));
-        expect((await belum.l.keadaan(1, 'anamnesis', 10)).status).toBe('belum_disahkan');
+        expect((await belum.l.keadaan('anamnesis', 10)).status).toBe('belum_disahkan');
         const ada = buat({ terakhir: {} });
         ada.l.daftarkanPenyedia('anamnesis', async () => ({ v: 1 }));
-        expect((await ada.l.keadaan(1, 'anamnesis', 10)).status).toBe('sah');
+        expect((await ada.l.keadaan('anamnesis', 10)).status).toBe('sah');
         const ubah = buat({ terakhir: {} });
         ubah.l.daftarkanPenyedia('anamnesis', async () => ({ v: 'diubah' }));
-        expect((await ubah.l.keadaan(1, 'anamnesis', 10)).status).toBe('berubah');
+        expect((await ubah.l.keadaan('anamnesis', 10)).status).toBe('berubah');
     });
     it('API verifikasi: entitas tak dikenal 404, hasil dicatat lihat dan memuat pengesahan', async () => {
         const { l, catatan } = buat({ terakhir: {} });

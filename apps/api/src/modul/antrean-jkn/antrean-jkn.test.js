@@ -24,7 +24,7 @@ async function rakit({ aktif = true, pcare = true, jam } = {}) {
     const dummy = buatAplikasiPcare();
     const waktu = { geser: 0 };
     const sekarang = jam ?? (() => new Date(Date.now() + waktu.geser));
-    const klienPcare = async (_f, tambahan = {}) => (pcare ? {
+    const klienPcare = async (tambahan = {}) => (pcare ? {
         environment: 'sandbox',
         klien: buatKlienPcare({ baseUrl: 'http://dummy.uji', serviceName: K.serviceName, consId: K.consId, secretKey: K.secretKey, userKey: K.userKey, username: K.username, password: K.password, appCode: K.appCode, ...tambahan, fetchFn: jembatan(dummy) }),
     } : null);
@@ -41,7 +41,7 @@ async function rakit({ aktif = true, pcare = true, jam } = {}) {
     expect(simpan.ok).toBe(true);
     /** HP peserta (simulator Mobile JKN di dummy). */
     const hp = async (jalur, badan) => (await panggilTanpaPort(dummy, { metode: badan === undefined ? 'GET' : 'POST', url: `/mobile-jkn/api/${jalur}`, badan })).json();
-    const tarik = () => layanan.tarik(1, { paksa: true });
+    const tarik = () => layanan.tarik({ paksa: true });
     return { mem, layanan, kunjungan, dummy, hp, tarik, audit, waktu };
 }
 const pasienSiti = (mem) => { mem.s.pasien.push({ id: mem.s.pasien.length + 1, nomor_rm: 'RM-000900', nik: '3201010202850002', nama: 'SITI CONTOH', jkn_nomor_kartu: SITI, nomor_hp: '0812' }); return mem.s.pasien.at(-1); };
@@ -214,7 +214,7 @@ describe('klinik mengabarkan antrean ke BPJS', () => {
         const sementara = [];
         r.mem.repoJkn.sesiAntreanAktif = async () => null;
         r.mem.repoJkn.daftarSementaraJkn = async () => sementara;
-        r.mem.repoJkn.cariSementaraJkn = async (_f, jp, no, nk) => sementara.find((x) => x.jenis_poli === jp && x.pcare_no_urut === no && x.jkn_nomor_kartu === nk) ?? null;
+        r.mem.repoJkn.cariSementaraJkn = async (jp, no, nk) => sementara.find((x) => x.jenis_poli === jp && x.pcare_no_urut === no && x.jkn_nomor_kartu === nk) ?? null;
         r.mem.repoJkn.tambahSementaraJkn = async (d) => { sementara.push({ id: sementara.length + 1, ...d }); return { id: sementara.length, count: 1 }; };
         await r.hp('ambil', { noKartu: BUDI, kodepoli: '001' });
         const h = await r.tarik();

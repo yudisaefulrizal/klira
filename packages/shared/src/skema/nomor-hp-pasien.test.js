@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { nomorHpPasien, perbaikanPasienMasukan, registrasiPasienMasukan } = await import("./pasien.js");
 

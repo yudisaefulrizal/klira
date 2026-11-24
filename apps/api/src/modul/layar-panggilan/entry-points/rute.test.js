@@ -24,7 +24,6 @@ jest.unstable_mockModule('@klira/db', () => {
 });
 const db = await import("@klira/db");
 const { default: express } = await import("express");
-const { tanggalWib } = await import("@klira/shared");
 const { buatRuteLayarPanggilan } = await import("./rute.js");
 
 let server;

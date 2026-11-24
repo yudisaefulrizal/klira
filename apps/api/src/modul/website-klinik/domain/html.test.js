@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { WEBSITE_KLINIK_BAWAAN } = await import("@klira/shared");
 const { htmlKlinikPublik } = await import("./html.js");

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { hitungStatistik, persentil } = await import("./hitung.js");
 

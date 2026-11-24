@@ -1,7 +1,7 @@
 import * as db from '@klira/db';
 import { cariIcd, kamusIcd, sistemIcd } from './terminologi-icd.js';
 import { mulaiAntreanDalam } from '../../kunjungan/domain/antrean-otomatis.js';
-import { alergiTercatat, nomorDokumen, PEMERIKSAAN_BIDANG, samarNomor, TANDA_VITAL, umurTahun } from '@klira/shared';
+import { alergiTercatat, nomorDokumen, PEMERIKSAAN_BIDANG, samarNomor, umurTahun } from '@klira/shared';
 import { sinkronItemTindakanDalam } from '../../kasir/data-access/repositori.js';
 import { ambilKunjungan, keDto } from '../../kunjungan/data-access/repositori.js';
 import { tulisPengesahanDalam } from '../../rekam-medis/data-access/repositori.js';

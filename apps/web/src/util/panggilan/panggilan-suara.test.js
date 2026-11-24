@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { PemilihPanggilanSuara, teksPanggilan } from './panggilan-suara.js';
 const hari = '2026-10-29';
 const panggilan = (poli_id = 9, waktu_panggil = '2026-10-29T03:00:00Z') => ({ kode: 'A-023', poli_id, poli_nama: 'Poli Umum', waktu_panggil });

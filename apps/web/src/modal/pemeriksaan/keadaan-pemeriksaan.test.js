@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { BAGIAN_KLINIS, DEFAULT_ANAMNESIS, DEFAULT_PEMERIKSAAN, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import { barisPemeriksaanFisik, keadaanAwalForm, langkahDraf, bagianLangkah, VERSI_DRAF, adaPerubahanBagian, awalKeadaan, bagianDapatDisalin, bagianDiModal, bagianKosong, dariInputLokal, daftarAlergi, daftarLangkah, disahkanDari, galatBagian, hapusDiagnosis, hapusTindakan, isiBagian, isiTemplatDari, jadikanUtama, keadaanDariServer, keInputLokal, LANGKAH_PEMERIKSAAN, pakaiTemplat, perluAlasan, perluDisimpan, pulihkanKeadaan, rencanaSimpan, ringkasanIsi, ringkasTandaVital, salinKeKeadaan, statusRingkasan, tambahDiagnosis, tambahTindakan, kunciItemTindakan, ubahTindakan, } from './keadaan-pemeriksaan.js';
 const bagianKosongServer = () => Object.fromEntries(BAGIAN_KLINIS.map((b) => [b, { bagian: b, isi: null, pengesahan: null, verifikasi: 'belum_disahkan' }]));

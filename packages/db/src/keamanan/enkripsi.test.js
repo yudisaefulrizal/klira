@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { randomBytes } = await import("node:crypto");
 const { dekripsiRahasia, enkripsiRahasia } = await import("./enkripsi.js");

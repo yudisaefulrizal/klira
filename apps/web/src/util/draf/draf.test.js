@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { adaPerubahan, adaptorLokal, bacaDraf, hapusDrafKlinisLama, hapusDraf, hapusSemuaDraf, kunciDraf, saringSensitif, simpanDraf } from './draf.js';
 import { saringTeks } from '../penyaring/saring-teks.js';
 function memori() {

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { BATAS_KEAMANAN, filterPeringatan, formatUkuranByte, pengaturanKeamananEfektif, pengaturanKeamananMasukan } = await import("../index.js");
 

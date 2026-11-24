@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { jidWhatsappPribadi, bukaPercakapanWa, kirimPesanWa, nomorWhatsapp } = await import("./whatsapp.js");
 

@@ -45,10 +45,10 @@ describe('layanan pasien dengan repositori tiruan', () => {
     const buat = (sisa) => buatLayananPasien({
         repo: {
             perbaiki: async () => true,
-            teksUntukPakai: async (_f, id) => (id === 7 ? teks : null),
+            teksUntukPakai: async (id) => (id === 7 ? teks : null),
             duplikat: async () => [],
             daftarkan: async () => ({ id: 9, nomor_rm: '00-00-001', nama: 'Siti Rahma', status_identitas: 'lengkap', persetujuan_id: 4 }),
-            detail: async (f, id) => (f === 1 && id === 9 ? { id: 9 } : null),
+            detail: async (id) => (id === 9 ? { id: 9 } : null),
             ...sisa,
         },
         audit,
@@ -80,11 +80,11 @@ describe('layanan pasien dengan repositori tiruan', () => {
         expect(h).toMatchObject({ ok: false, kode: 'konflik' });
         expect(catatan).toHaveLength(0);
     });
-    it('detail dicatat lihat; lintas fasyankes tidak ditemukan dan tidak dicatat', async () => {
+    it('detail dicatat lihat; pasien tidak ada tidak ditemukan dan tidak dicatat', async () => {
         const l = buat({});
         expect(await l.detail(saya, 9)).toMatchObject({ ok: true });
         expect(catatan).toEqual([expect.objectContaining({ aksi: 'lihat', entitas: 'pasien', keterangan: 'Membuka data pasien' })]);
-        expect(await l.detail({ id: 3 }, 9)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.detail(saya, 8)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         expect(catatan).toHaveLength(1);
     });
     it('cek duplikat tanpa kriteria cukup tidak mencari', async () => {

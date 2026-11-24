@@ -1,4 +1,4 @@
-import { h, Fragment } from '../../util/h.js';
+import { h } from '../../util/h.js';
 import { KLINIS, STATUS_PENGESAHAN } from '@klira/shared';
                                                      
 import { token } from '../../gaya/token.js';

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { DEFINISI_MASTER, FITUR_IZIN, IZIN_AWAL, JENIS_AKUN_AWAL, MASTER, SKEMA_MASTER, SKEMA_MASTER_UBAH, filterMaster, kodeTindakanBerikut, profilKlinikMasukan, shiftUbah, teksSelMaster } = await import("../index.js");
 

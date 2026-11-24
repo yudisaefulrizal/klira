@@ -22,7 +22,7 @@ describe('penyerahan hasil lab (penunjang saja) di kasir', () => {
         const { repo, l } = buat();
         const h = await l.serahHasil(p, 20, { penerima_nama: 'Putu', hubungan: 'Pasien' }, '127.0.0.1');
         expect(h).toMatchObject({ ok: true });
-        expect(repo.serahHasil).toHaveBeenCalledWith(1, 4, 20, { penerima_nama: 'Putu', hubungan: 'Pasien' });
+        expect(repo.serahHasil).toHaveBeenCalledWith(4, 20, { penerima_nama: 'Putu', hubungan: 'Pasien' });
         expect(catatan).toEqual([expect.objectContaining({ aksi: 'input', entitas: 'penyerahan_hasil', entitas_id: 20 })]);
     });
     it('ditolak untuk kunjungan yang bukan penunjang saja dan kunjungan yang tidak ada', async () => {

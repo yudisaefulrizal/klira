@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { awalAdmisi, awalCatatan, awalPenempatan, awalPulang, galatAdmisi, galatCatatan, galatPenempatan, galatPulang, isiSpriAsal, langkahBermasalahAdmisi, langkahBermasalahPulang } from './keadaan-rawat-inap.js';
 describe('keadaan admisi', () => {
     it('butuh pasien dan DPJP; DPJP bersama tidak boleh memuat DPJP utama; bed boleh kosong', () => {

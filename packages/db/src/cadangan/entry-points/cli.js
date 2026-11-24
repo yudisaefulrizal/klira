@@ -3,7 +3,6 @@ import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { tutupPool } from '../../koneksi.js';
-import { daftarIdFasyankes } from '../../data-access/fasyankes.js';
 import { tambahLogAuditUntukTambah } from '../../data-access/log_audit.js';
 import { tambahRiwayatBackup } from '../../data-access/riwayat_backup.js';
 import { GalatFasyankesGanda, pastikanFasyankesTunggal } from '../../fasyankes-tunggal.js';

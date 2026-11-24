@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { opsiCookieSesi } = await import("./cookie.js");
 

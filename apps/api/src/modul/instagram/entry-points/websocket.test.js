@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { createServer } = await import("node:http");
 const { default: WebSocket } = await import("ws");

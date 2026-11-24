@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { eksporAudit } from './audit.js';
 describe('eksporAudit', () => {
     it('mengembalikan isi CSV dan mengirim filter via POST', async () => {

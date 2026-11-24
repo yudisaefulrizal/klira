@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { bolehPerbaikiSendiri, hashIsi, isiKanonik, pilihJenisAkun } = await import("./pengesahan.js");
 

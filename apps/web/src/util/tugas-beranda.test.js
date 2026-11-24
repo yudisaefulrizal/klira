@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { tugasPdp } from './tugas-beranda.js';
 const nol = { hak_aktif: 0, hak_terlambat: 0, insiden_belum_notifikasi: 0, insiden_terlambat: 0, dpia_jatuh_tempo: 0, pemusnahan_terlambat: 0 };
 describe('tugas Beranda PDP', () => {

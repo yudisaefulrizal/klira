@@ -9,7 +9,6 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   moduleNameMapper: {
     '^@klira/shared$': '<rootDir>/packages/shared/src/index.js',
-    '^@klira/db/uji$': '<rootDir>/packages/db/src/uji/index.js',
     '^@klira/db$': '<rootDir>/packages/db/src/index.js',
   },
   modulePathIgnorePatterns: ['/dist/'],

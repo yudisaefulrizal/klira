@@ -65,9 +65,7 @@ npm run seed -w packages/db
 
 ## Pengujian
 
-`npm test` menjalankan uji tanpa mengaktifkan pengujian database. `npm run test:db` menjalankan `fresh` dan seed melalui uji skema terlebih dahulu, kemudian uji integrasi pada database yang dikonfigurasi. Perintah ini menghapus data dev dan menolak lingkungan produksi. Jangan menjalankannya bersamaan dengan aplikasi yang memakai database tersebut.
-
-Fixture query berada di `src/uji/data-access/` dan hanya diimpor pengujian melalui `@klira/db/uji`.
+`npm test` menjalankan uji tanpa mengaktifkan pengujian database. `npm run test:db` menjalankan uji migrasi pada database yang dikonfigurasi. Perintah ini menghapus data dev dan menolak lingkungan produksi. Jangan menjalankannya bersamaan dengan aplikasi yang memakai database tersebut.
 
 ## Akun demo
 

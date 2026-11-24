@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { hashKataSandi } = await import("@klira/db");
 const { buatApp } = await import("../../../app.js");

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { kodeOrderLab, adalahMaju, angkaDariNilai, bolehAksiOrder, hargaTarif, hasilJadiAddendum, orderBerjalan, sarankanInterpretasi, teksRujukan, URUTAN_STATUS_ORDER } = await import("./penunjang.js");
 const { rentangHariWib } = await import("../umum/alur.js");

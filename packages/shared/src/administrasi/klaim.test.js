@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { aksiKlaimTersedia, batasAjukanUlang, batasPengajuan, berkasKurang, kodeKlaimBeda, sisaHariBatas, statusAwalKlaim, statusKlaimEfektif } = await import("./klaim.js");
 

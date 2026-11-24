@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const s = await import("./status.js");
 const { IZIN_AWAL, JENIS_AKUN_AWAL } = await import("../administrasi/izin.js");

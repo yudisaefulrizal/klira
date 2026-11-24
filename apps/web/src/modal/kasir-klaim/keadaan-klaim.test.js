@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { BERKAS_KLAIM } from '@klira/shared';
 import { alihBerkas, awalKlaim, awalStatusKlaim, galatKlaim, galatStatusKlaim, kurangBerkas, langkahBermasalahKlaim, pilihKandidat } from './keadaan-klaim.js';
 describe('keadaan penyiapan klaim', () => {

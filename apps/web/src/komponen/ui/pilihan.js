@@ -1,4 +1,4 @@
-import { h, Fragment } from '../../util/h.js';
+import { h } from '../../util/h.js';
                                                   
 import { token } from '../../gaya/token.js';
 import { InfoBantuan } from './info-bantuan.js';

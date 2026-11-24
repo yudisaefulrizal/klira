@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { buatLayananPersetujuan } = await import("./layanan.js");
 
@@ -16,13 +15,13 @@ function buat(opsi = {}) {
     const dicatat = [];
     const audit = [];
     const repo = {
-        kunjungan: async (_f, id) => (id === 404 ? null : { id, pasien_id: 2, tahap_layanan: opsi.tahap ?? 'pemeriksaan' }),
+        kunjungan: async (id) => (id === 404 ? null : { id, pasien_id: 2, tahap_layanan: opsi.tahap ?? 'pemeriksaan' }),
         pasien: async () => ({ id: 2, nama: 'Siti', tidak_cakap: false, ...opsi.pasien }),
         teksAktif: async () => (opsi.teks === undefined ? teks : opsi.teks),
-        teksUntukPakai: async (_f, id) => (id === teks.id && opsi.teks !== null ? teks : null),
+        teksUntukPakai: async (id) => (id === teks.id && opsi.teks !== null ? teks : null),
         wali: async () => [{ id: 6, hubungan: 'Ibu', nama: 'Ibu Siti' }],
         saksiOpsi: async () => [{ id: 9, nama: 'Ns. Budi' }],
-        saksi: async (_f, id) => (opsi.saksiAda === false || id !== 9 ? null : { id: 9, nama: 'Ns. Budi' }),
+        saksi: async (id) => (opsi.saksiAda === false || id !== 9 ? null : { id: 9, nama: 'Ns. Budi' }),
         catat: async (d) => {
             dicatat.push(d);
             return {

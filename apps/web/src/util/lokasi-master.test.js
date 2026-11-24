@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { HALAMAN_KELOLA_MASTER, jenisMasterDiHalaman } from './lokasi-master.js';
 test('halaman pemilik master: Daftar pasien, Rawat inap, dan Kasir dan klaim', () => {
     expect([...HALAMAN_KELOLA_MASTER]).toEqual(['/pasien', '/rawat-inap', '/kasir-klaim']);

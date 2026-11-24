@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { keadaanDariQuery, queryDariKeadaan, ubahKeadaan } from './penyaring-daftar.js';
 describe('penyaring daftar pengguna', () => {
     it('keadaan dari alamat: bawaan, nilai tak valid diabaikan', () => {

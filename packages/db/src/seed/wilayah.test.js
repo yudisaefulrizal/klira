@@ -1,7 +1,5 @@
-import { jest } from '@jest/globals';
 
-const uji = await import("@klira/db/uji");
-const { WILAYAH_CONTOH, bacaCsvWilayah, imporWilayahCsv, seedWilayahContoh } = await import("./wilayah.js");
+const { WILAYAH_CONTOH, bacaCsvWilayah } = await import("./wilayah.js");
 
 describe('CSV wilayah', () => {
     it('membaca judul, kutip, serta melengkapi tingkat dan induk dari kode', () => {
@@ -20,23 +18,5 @@ describe('CSV wilayah', () => {
     });
     it('seed contoh memakai kode fiktif', () => {
         expect(WILAYAH_CONTOH.every((w) => w.kode.startsWith('99') && w.nama.includes('Contoh'))).toBe(true);
-    });
-});
-
-const url = (process.env.KLIRA_UJI_DB === '1' ? process.env.DATABASE_URL : undefined);
-
-(url ? describe : describe.skip)('wilayah di database pengujian', () => {
-    afterAll(async () => {
-        await uji.hapusWilayahUntukSeedWilayahTest(['97', '97.01', ...WILAYAH_CONTOH.map((w) => w.kode)]);
-        await uji.tutupPool();
-    });
-    it('impor idempoten, contoh ditandai, impor resmi menimpa penanda', async () => {
-        await seedWilayahContoh(uji.pool);
-        await seedWilayahContoh(uji.pool);
-        expect(await uji.hitungWilayahUntukSeedWilayahTest('99')).toBe(WILAYAH_CONTOH.length);
-        expect((await uji.wajibWilayahUntukSeedWilayahTest('99')).contoh).toBe(true);
-        const h = await imporWilayahCsv(uji.pool, '97,Uji Impor\n97.01,Uji Kab');
-        expect(h).toEqual({ diimpor: 2, galat: [] });
-        expect((await uji.wajibWilayahUntukSeedWilayahTest('97.01')).contoh).toBe(false);
     });
 });

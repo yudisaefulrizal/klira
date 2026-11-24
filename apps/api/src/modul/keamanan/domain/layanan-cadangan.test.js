@@ -9,7 +9,7 @@ function siapkan({ lewatWeb = true } = {}) {
     const urutan = [];
     const audit = { catat: jest.fn(async (e) => void urutan.push(`audit:${e.aksi}`)) };
     const repo = {
-        catatBackup: jest.fn(async (_f, status) => { urutan.push(`riwayat:${status}`); return 11; }),
+        catatBackup: jest.fn(async (status) => { urutan.push(`riwayat:${status}`); return 11; }),
         selesaiBackup: jest.fn(async (_id, _f, status) => void urutan.push(`riwayat:${status}`)),
     };
     const alat = {
@@ -37,10 +37,10 @@ describe('unduh cadangan', () => {
         const { aliran, selesai } = await layanan.mulaiUnduh(p, '203.0.113.9');
         expect(urutan.slice(0, 3)).toEqual(['audit:ekspor', 'riwayat:berjalan', 'dump']);
         expect(audit.catat).toHaveBeenCalledWith(expect.objectContaining({ aksi: 'ekspor', entitas: 'cadangan', pengguna_id: 7, alamat: '203.0.113.9' }));
-        expect(repo.catatBackup).toHaveBeenCalledWith(3, 'berjalan', 'Unduhan lewat web', 7);
+        expect(repo.catatBackup).toHaveBeenCalledWith('berjalan', 'Unduhan lewat web', 7);
         expect(await baca(aliran)).toBe('abcde');
         await selesai;
-        expect(repo.selesaiBackup).toHaveBeenCalledWith(11, 3, 'berhasil', 5);
+        expect(repo.selesaiBackup).toHaveBeenCalledWith(11, 'berhasil', 5);
     });
     it('gagal mencatat audit berarti dump tidak pernah dimulai', async () => {
         const { audit, repo, alat, layanan } = siapkan();
@@ -56,7 +56,7 @@ describe('unduh cadangan', () => {
         const { selesai } = await layanan.mulaiUnduh(p, 'x');
         sumber.end('ab');
         await expect(selesai).rejects.toThrow('putus');
-        expect(repo.selesaiBackup).toHaveBeenCalledWith(11, 3, 'gagal', expect.any(Number));
+        expect(repo.selesaiBackup).toHaveBeenCalledWith(11, 'gagal', expect.any(Number));
     });
     it('penerima yang memutus sebelum tuntas menandai riwayat gagal dan menghentikan dump', async () => {
         const { repo, alat, layanan } = siapkan();
@@ -68,7 +68,7 @@ describe('unduh cadangan', () => {
         batal();
         await expect(selesai).rejects.toThrow();
         expect(hentikan).toHaveBeenCalled();
-        expect(repo.selesaiBackup).toHaveBeenCalledWith(11, 3, 'gagal', expect.any(Number));
+        expect(repo.selesaiBackup).toHaveBeenCalledWith(11, 'gagal', expect.any(Number));
     });
 });
 
@@ -91,7 +91,7 @@ describe('pulihkan dan reset lewat web', () => {
         const { repo, alat, layanan } = siapkan();
         alat.pulihkanBackup.mockRejectedValue(new Error('bukan dump'));
         await expect(layanan.pulihkan(p, Readable.from(['x']), 'x')).rejects.toThrow('bukan dump');
-        expect(repo.catatBackup).toHaveBeenCalledWith(3, 'gagal', 'Pemulihan lewat web', 7);
+        expect(repo.catatBackup).toHaveBeenCalledWith('gagal', 'Pemulihan lewat web', 7);
         expect(alat.catatSetelahGantiData).not.toHaveBeenCalled();
     });
     it('reset: audit lebih dulu, lalu jejak ditulis ke data baru', async () => {

@@ -19,11 +19,11 @@ function repoMemori(organizationId) {
     return {
         organizationId: async () => organizationId,
         daftar: async () => [...baris.values()],
-        ambil: async (_f, e) => baris.get(e) ?? null,
+        ambil: async (e) => baris.get(e) ?? null,
         ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (f, d) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
+        tambah: async (d) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
         ubah: async () => {},
-        aktifkan: async (_f, id) => { for (const k of baris.values()) k.aktif = k.id === id; },
+        aktifkan: async (id) => { for (const k of baris.values()) k.aktif = k.id === id; },
         catatUji: async () => {},
     };
 }

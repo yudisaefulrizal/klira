@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { adalahPintasanCari, aksiBaris, kelompokAksi, keadaanPasienDariQuery, lamaMenunggu, queryPasien, tahapBawaan, ubahKeadaanPasien } from './penyaring-pasien.js';
 import { queryDaftarPasien } from '../../api-klien/pasien.js';
 describe('satu daftar pasien', () => {

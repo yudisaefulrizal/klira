@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { adaPerubahanJenis, alihIzin, awalJenis, bentukBuat, bentukUbah, galatJenis, kelompokkanIzin, semuaTerpilih, setKelompok } from './keadaan-jenis-akun.js';
 const katalog = [
     { id: 1, fitur: 'audit', aksi: 'lihat', cakupan: 'unit' },

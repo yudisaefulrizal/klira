@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 
 const { AKUN_BARU, penggunaBaru } = await import("@klira/shared");
 const { buatKataSandiAwal } = await import("./kata-sandi-awal.js");
@@ -110,7 +109,7 @@ describe('pembuatan akun', () => {
         expect(disimpan[0].peringatan[0]).toMatchObject({ alasan_pimpinan: 'Dokter tamu, SIP menyusul', diterima_untuk_akun: true });
         const aksi = audit.map((e) => `${e.aksi}:${e.entitas}`);
         expect(aksi).toEqual(expect.arrayContaining(['input:pengguna', 'input:penugasan_jenis', 'input:izin_per_akun', 'peringatan_izin:peringatan_izin']));
-        expect(audit.every((e) => e.pengguna_id === 1 && e.fasyankes_id === 7)).toBe(true);
+        expect(audit.every((e) => e.pengguna_id === 1)).toBe(true);
     });
     it('audit tidak memuat kata sandi maupun NIK', async () => {
         const { layanan, audit } = siapkan();

@@ -1,4 +1,3 @@
-import { jest } from '@jest/globals';
 import { bacaPreferensiSuara, kunciPreferensiSuara, simpanPreferensiSuara } from './preferensi-suara.js';
 const buat = () => { const data = new Map(); return { data, getItem: (k) => data.get(k) ?? null, setItem: (k, v) => { data.set(k, v); } }; };
 test('pilihan aktif dan nonaktif bertahan pada pembacaan ulang', () => {
