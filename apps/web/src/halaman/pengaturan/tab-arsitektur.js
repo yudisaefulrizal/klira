@@ -754,7 +754,7 @@ export function TabArsitektur() {
                 endpoint: ['POST /api/rawat-inap/admisi', 'GET /api/rawat-inap/papan', 'PUT /api/kunjungan/:id/penempatan'],
                 x: 24,
                 y: 1178,
-                w: 215,
+                w: 205,
                 h: 90,
             },
             {
@@ -765,9 +765,9 @@ export function TabArsitektur() {
                 ringkas: 'Catatan CPPT harian & ringkasan pemulangan rawat inap.',
                 tabel: ['cppt', 'pemeriksaan'],
                 endpoint: ['POST /api/kunjungan/:id/cppt', 'POST /api/kunjungan/:id/pemulangan'],
-                x: 278,
+                x: 274,
                 y: 1178,
-                w: 215,
+                w: 205,
                 h: 90,
             },
             {
@@ -778,9 +778,9 @@ export function TabArsitektur() {
                 ringkas: 'Tindak lanjut rujukan ke RS/FKTL atau jadwal kontrol ulang.',
                 tabel: ['tindak_lanjut', 'kunjungan'],
                 endpoint: ['POST /api/kunjungan/:id/selesai'],
-                x: 532,
+                x: 564,
                 y: 1178,
-                w: 205,
+                w: 200,
                 h: 90,
             },
             {
@@ -791,8 +791,8 @@ export function TabArsitektur() {
                 ringkas: 'Tagihan kunjungan, pembayaran kasir, klaim JKN, & jurnal.',
                 tabel: ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
                 endpoint: ['GET /api/kunjungan/:id/tagihan', 'POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
-                x: 435,
-                y: 1332,
+                x: 420,
+                y: 1348,
                 w: 220,
                 h: 90,
             },
@@ -805,7 +805,7 @@ export function TabArsitektur() {
                 tabel: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
                 endpoint: ['GET /api/satusehat/status', 'GET /api/pcare/status'],
                 x: 750,
-                y: 1332,
+                y: 1348,
                 w: 225,
                 h: 90,
             },
@@ -817,8 +817,8 @@ export function TabArsitektur() {
                 ringkas: 'Kunjungan selesai dan seluruh data pelayanan tersimpan.',
                 tabel: ['kunjungan', 'pembayaran'],
                 endpoint: ['POST /api/kunjungan/:id/selesai'],
-                x: 450,
-                y: 1478,
+                x: 435,
+                y: 1492,
                 w: 190,
                 h: 48,
             },
@@ -884,7 +884,7 @@ export function TabArsitektur() {
 
         const stage = document.createElement('div');
         const lebarStage = 1040;
-        const tinggiStage = 1550;
+        const tinggiStage = 1565;
         Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px auto' });
 
         // SVG panah antar bentuk flowchart menggunakan router koridor A*
@@ -965,13 +965,17 @@ export function TabArsitektur() {
             } else if (e.dari === 'lab_saja' && e.ke === 'kasir') {
                 sisiA = 'R';
                 sisiB = 'R';
+            } else if (e.dari === 'farmasi' && e.ke === 'kasir') {
+                sisiA = 'B';
+                sisiB = 'R';
             }
             const kA = `${e.dari}:${sisiA}`;
             const kB = `${e.ke}:${sisiB}`;
             if (!portKeluar.has(kA)) portKeluar.set(kA, []);
             if (!portMasuk.has(kB)) portMasuk.set(kB, []);
+            const xEfektifA = e.dari === 'dec_lanjut' ? a.x + a.w + 40 : a.x;
             portKeluar.get(kA).push({ idx, kunciUrut: sisiA === 'B' || sisiA === 'T' ? b.x : b.y });
-            portMasuk.get(kB).push({ idx, kunciUrut: sisiB === 'T' || sisiB === 'B' ? a.x : a.y });
+            portMasuk.get(kB).push({ idx, kunciUrut: sisiB === 'T' || sisiB === 'B' ? xEfektifA : a.y });
             return { e, a, b, sisiA, sisiB, kA, kB, idx };
         });
 
