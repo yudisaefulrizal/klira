@@ -560,32 +560,32 @@ export function TabArsitektur() {
         const petaTabel = new Map((data.tabel || []).map((t) => [t.nama, t]));
         const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
 
-        // Flowchart standar ISO (ke bawah, tanpa penomoran): Oval (Mulai/Selesai), Diamond (Keputusan), Persegi (Proses), Silinder (Eksternal)
+        // Flowchart standar ISO lengkap: Pintu masuk (Rajal / UGD / Lab-Obat Mandiri), Poli, Lab (kembali/mandiri), Rawat Inap (Bed -> CPPT), Rujukan, Kasir, & Eksternal
         const nodeAlur = [
             {
                 id: 'start',
                 bentuk: 'oval',
                 judul: 'Pasien Datang',
                 domain: 'pasien',
-                ringkas: 'Pasien tiba di fasyankes (datang langsung, rujukan, atau via antrean online).',
+                ringkas: 'Pasien tiba di fasyankes untuk layanan rawat jalan, gawat darurat, atau langsung lab/farmasi.',
                 tabel: ['pasien'],
                 endpoint: ['POST /api/pasien'],
-                x: 410,
+                x: 460,
                 y: 24,
                 w: 180,
                 h: 48,
             },
             {
-                id: 'dec_darurat',
+                id: 'dec_masuk',
                 bentuk: 'diamond',
-                judul: 'Kondisi Darurat?',
+                judul: 'Jenis Kedatangan?',
                 domain: 'klinis',
-                ringkas: 'Penilaian awal apakah pasien mengalami kondisi gawat darurat (Triase Merah/Kuning).',
-                tabel: ['kunjungan', 'ugd_kunjungan'],
+                ringkas: 'Menentukan jalur masuk: Rawat Jalan reguler, Gawat Darurat (UGD), atau Layanan Lab/Obat mandiri.',
+                tabel: ['kunjungan', 'antrean', 'ugd_kunjungan'],
                 endpoint: ['POST /api/kunjungan'],
-                x: 400,
+                x: 440,
                 y: 120,
-                w: 200,
+                w: 220,
                 h: 84,
             },
             {
@@ -596,10 +596,10 @@ export function TabArsitektur() {
                 ringkas: 'Pasien baru/lama didaftarkan ke poli tujuan & sesi antrean.',
                 tabel: ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'],
                 endpoint: ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'],
-                x: 120,
+                x: 140,
                 y: 256,
                 w: 210,
-                h: 86,
+                h: 84,
             },
             {
                 id: 'triase',
@@ -609,10 +609,23 @@ export function TabArsitektur() {
                 ringkas: 'Kondisi darurat (Merah/Kuning) langsung ditangani di UGD tanpa antrean poli.',
                 tabel: ['kunjungan', 'ugd_kunjungan'],
                 endpoint: ['POST /api/kunjungan', 'PUT /api/kunjungan/:id/ugd'],
-                x: 670,
+                x: 445,
                 y: 256,
                 w: 210,
-                h: 86,
+                h: 84,
+            },
+            {
+                id: 'loket_mandiri',
+                bentuk: 'rect',
+                judul: 'Loket Lab / Obat Mandiri',
+                domain: 'penunjang',
+                ringkas: 'Pasien datang langsung hanya untuk cek lab (rujukan luar/mandiri) atau beli obat.',
+                tabel: ['pasien', 'order_penunjang', 'resep'],
+                endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/kunjungan/:id/resep'],
+                x: 760,
+                y: 256,
+                w: 220,
+                h: 84,
             },
             {
                 id: 'skrining',
@@ -622,10 +635,10 @@ export function TabArsitektur() {
                 ringkas: 'Tanda Vital, Alergi, Keluhan awal, Nyeri, Risiko Jatuh & Gizi.',
                 tabel: ['pemeriksaan', 'pengesahan_catatan'],
                 endpoint: ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 120,
+                x: 140,
                 y: 394,
                 w: 210,
-                h: 86,
+                h: 84,
             },
             {
                 id: 'ugd',
@@ -635,20 +648,33 @@ export function TabArsitektur() {
                 ringkas: 'Penanganan emergensi, observasi tanda vital berkala, & stabilisasi.',
                 tabel: ['ugd_kunjungan', 'observasi', 'tindakan'],
                 endpoint: ['GET /api/kunjungan/:id/ugd', 'PUT /api/kunjungan/:id/ugd'],
-                x: 670,
+                x: 445,
                 y: 394,
                 w: 210,
-                h: 86,
+                h: 84,
+            },
+            {
+                id: 'dec_mandiri',
+                bentuk: 'diamond',
+                judul: 'Hanya Lab atau Obat?',
+                domain: 'penunjang',
+                ringkas: 'Memilah pasien mandiri tanpa poli: langsung ke Lab & Penunjang atau langsung ke Farmasi.',
+                tabel: ['order_penunjang', 'resep'],
+                endpoint: ['POST /api/kunjungan/:id/penunjang/order'],
+                x: 770,
+                y: 394,
+                w: 200,
+                h: 84,
             },
             {
                 id: 'dec_poli',
                 bentuk: 'diamond',
-                judul: 'Jenis Poli / Kondisi?',
+                judul: 'Jenis Poli?',
                 domain: 'klinis',
                 ringkas: 'Menentukan layanan poli tujuan sesuai keluhan dan kebutuhan pasien.',
                 tabel: ['kunjungan', 'lokasi'],
                 endpoint: ['GET /api/kunjungan/:id'],
-                x: 125,
+                x: 145,
                 y: 532,
                 w: 200,
                 h: 84,
@@ -663,7 +689,7 @@ export function TabArsitektur() {
                 endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'],
                 x: 28,
                 y: 672,
-                w: 196,
+                w: 192,
                 h: 84,
             },
             {
@@ -674,9 +700,9 @@ export function TabArsitektur() {
                 ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan dental.',
                 tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'],
                 endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'],
-                x: 264,
+                x: 256,
                 y: 672,
-                w: 196,
+                w: 192,
                 h: 84,
             },
             {
@@ -687,9 +713,9 @@ export function TabArsitektur() {
                 ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & pencatatan imunisasi.',
                 tabel: ['kia_kunjungan', 'pemeriksaan'],
                 endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'],
-                x: 500,
+                x: 484,
                 y: 672,
-                w: 196,
+                w: 192,
                 h: 84,
             },
             {
@@ -700,7 +726,7 @@ export function TabArsitektur() {
                 ringkas: 'Opsional: jika perlu pemeriksaan lab/radiologi, hasil dikembalikan ke Dokter/Poli.',
                 tabel: ['order_penunjang', 'hasil_penunjang'],
                 endpoint: ['POST /api/kunjungan/:id/penunjang/order'],
-                x: 262,
+                x: 252,
                 y: 816,
                 w: 200,
                 h: 84,
@@ -710,12 +736,12 @@ export function TabArsitektur() {
                 bentuk: 'rect',
                 judul: 'Lab & Penunjang',
                 domain: 'penunjang',
-                ringkas: 'Pengambilan spesimen, analisis hasil, & pengembalian hasil tervalidasi ke dokter.',
+                ringkas: 'Spesimen & hasil validasi (kembali ke dokter, atau langsung ke kasir jika pasien mandiri).',
                 tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'],
                 endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/:id/hasil'],
-                x: 670,
+                x: 760,
                 y: 816,
-                w: 210,
+                w: 220,
                 h: 84,
             },
             {
@@ -723,11 +749,11 @@ export function TabArsitektur() {
                 bentuk: 'diamond',
                 judul: 'Tindak Lanjut?',
                 domain: 'farmasi',
-                ringkas: 'Menentukan tindak lanjut setelah pemeriksaan: Farmasi, Opname, Rujukan, atau langsung Kasir.',
+                ringkas: 'Menentukan tindak lanjut: Farmasi, Rawat Inap (Opname), Rujukan, atau langsung Kasir.',
                 tabel: ['resep', 'rawat_inap', 'tindak_lanjut'],
                 endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/kunjungan/:id/selesai'],
-                x: 262,
-                y: 956,
+                x: 252,
+                y: 958,
                 w: 200,
                 h: 84,
             },
@@ -739,22 +765,35 @@ export function TabArsitektur() {
                 ringkas: 'Resep obat, telaah resep, peracikan puyer/racikan, & penyerahan.',
                 tabel: ['resep', 'item_resep', 'stok_obat'],
                 endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/farmasi/telaah'],
-                x: 28,
-                y: 1098,
-                w: 196,
+                x: 760,
+                y: 958,
+                w: 220,
                 h: 84,
             },
             {
-                id: 'ranap',
+                id: 'ranap_bed',
                 bentuk: 'rect',
-                judul: 'Rawat Inap (Opname)',
+                judul: 'Rawat Inap & Alokasi Bed',
                 domain: 'penunjang',
-                ringkas: 'Kondisi perlu perawatan lanjutan: alokasi kamar/bed & CPPT harian.',
-                tabel: ['rawat_inap', 'tempat_tidur', 'cppt'],
+                ringkas: 'Admisi opname dari Poli/UGD, pemilihan kelas kamar & tempat tidur.',
+                tabel: ['rawat_inap', 'tempat_tidur'],
                 endpoint: ['POST /api/rawat-inap', 'GET /api/rawat-inap/kamar'],
-                x: 264,
-                y: 1098,
-                w: 196,
+                x: 40,
+                y: 1102,
+                w: 210,
+                h: 84,
+            },
+            {
+                id: 'ranap_cppt',
+                bentuk: 'rect',
+                judul: 'Perawatan Ranap & CPPT',
+                domain: 'penunjang',
+                ringkas: 'Visitasi dokter/perawat, CPPT harian, pemberian obat & lab selama dirawat.',
+                tabel: ['cppt', 'pemeriksaan', 'resep'],
+                endpoint: ['POST /api/rawat-inap/:id/cppt', 'POST /api/rawat-inap/:id/pulang'],
+                x: 290,
+                y: 1102,
+                w: 210,
                 h: 84,
             },
             {
@@ -765,9 +804,9 @@ export function TabArsitektur() {
                 ringkas: 'Kondisi rujuk ke FKTL/RS, rujuk balik, atau jadwal kontrol ulang.',
                 tabel: ['tindak_lanjut', 'kunjungan'],
                 endpoint: ['PUT /api/kunjungan/:id/tindak-lanjut', 'POST /api/kunjungan/:id/selesai'],
-                x: 500,
-                y: 1098,
-                w: 196,
+                x: 540,
+                y: 1102,
+                w: 200,
                 h: 84,
             },
             {
@@ -778,9 +817,9 @@ export function TabArsitektur() {
                 ringkas: 'Tagihan otomatis, shift kasir, klaim JKN, piutang/hutang, & jurnal.',
                 tabel: ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
                 endpoint: ['POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
-                x: 395,
-                y: 1244,
-                w: 210,
+                x: 445,
+                y: 1248,
+                w: 220,
                 h: 86,
             },
             {
@@ -791,9 +830,9 @@ export function TabArsitektur() {
                 ringkas: 'Sinkronisasi FHIR (Patient, Encounter, Observation) & Antrean JKN.',
                 tabel: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
                 endpoint: ['GET /api/satusehat/status', 'GET /api/pcare/status'],
-                x: 700,
-                y: 1244,
-                w: 210,
+                x: 760,
+                y: 1248,
+                w: 220,
                 h: 86,
             },
             {
@@ -804,8 +843,8 @@ export function TabArsitektur() {
                 ringkas: 'Pelayanan selesai dan catatan rekam medis serta tagihan telah tuntas.',
                 tabel: ['kunjungan', 'pembayaran'],
                 endpoint: ['POST /api/kunjungan/:id/selesai'],
-                x: 410,
-                y: 1384,
+                x: 465,
+                y: 1392,
                 w: 180,
                 h: 48,
             },
@@ -813,11 +852,15 @@ export function TabArsitektur() {
 
         const petaNode = new Map(nodeAlur.map((n) => [n.id, n]));
         const panahAlur = [
-            { dari: 'start', ke: 'dec_darurat', label: '' },
-            { dari: 'dec_darurat', ke: 'daftar', label: 'Tidak' },
-            { dari: 'dec_darurat', ke: 'triase', label: 'Ya' },
+            { dari: 'start', ke: 'dec_masuk', label: '' },
+            { dari: 'dec_masuk', ke: 'daftar', label: 'Rawat Jalan' },
+            { dari: 'dec_masuk', ke: 'triase', label: 'Darurat' },
+            { dari: 'dec_masuk', ke: 'loket_mandiri', label: 'Lab / Obat Saja', jenis: 'opsional' },
             { dari: 'daftar', ke: 'skrining', label: 'Antrean' },
             { dari: 'triase', ke: 'ugd', label: 'Stabilisasi' },
+            { dari: 'loket_mandiri', ke: 'dec_mandiri', label: '' },
+            { dari: 'dec_mandiri', ke: 'lab', label: 'Lab Saja', jenis: 'opsional' },
+            { dari: 'dec_mandiri', ke: 'farmasi', label: 'Obat Saja', jenis: 'opsional' },
             { dari: 'skrining', ke: 'dec_poli', label: '' },
             { dari: 'dec_poli', ke: 'poli_umum', label: 'Umum' },
             { dari: 'dec_poli', ke: 'poli_gigi', label: 'Gigi' },
@@ -829,19 +872,22 @@ export function TabArsitektur() {
             { dari: 'ugd', ke: 'dec_lab', label: '' },
             { dari: 'dec_lab', ke: 'lab', label: 'Ya (Order)', jenis: 'opsional' },
             { dari: 'lab', ke: 'dec_lab', label: 'Hasil kembali', jenis: 'kembali' },
+            { dari: 'lab', ke: 'kasir', label: 'Mandiri Selesai', jenis: 'opsional' },
             { dari: 'dec_lab', ke: 'dec_lanjut', label: 'Tidak / Ada' },
             { dari: 'dec_lanjut', ke: 'farmasi', label: 'Resep', jenis: 'opsional' },
-            { dari: 'dec_lanjut', ke: 'ranap', label: 'Opname', jenis: 'opsional' },
+            { dari: 'dec_lanjut', ke: 'ranap_bed', label: 'Opname', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'rujukan', label: 'Rujuk', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'kasir', label: 'Langsung', jenis: 'opsional' },
+            { dari: 'ranap_bed', ke: 'ranap_cppt', label: 'Dirawat' },
+            { dari: 'ranap_cppt', ke: 'rujukan', label: 'Rujuk RS', jenis: 'opsional' },
+            { dari: 'ranap_cppt', ke: 'kasir', label: 'Pulang Ranap' },
             { dari: 'farmasi', ke: 'kasir', label: '' },
-            { dari: 'ranap', ke: 'kasir', label: '' },
             { dari: 'rujukan', ke: 'kasir', label: '' },
             { dari: 'kasir', ke: 'integrasi', label: 'FHIR / PCare', jenis: 'opsional' },
             { dari: 'kasir', ke: 'selesai', label: '' },
         ];
 
-        if (!tahapTerpilih || !petaNode.has(tahapTerpilih)) tahapTerpilih = 'dec_darurat';
+        if (!tahapTerpilih || !petaNode.has(tahapTerpilih)) tahapTerpilih = 'dec_masuk';
 
         const info = document.createElement('p');
         info.textContent = 'Diagram alur layanan standar flowchart (Oval: Mulai/Selesai, Belah Ketupat: Keputusan, Persegi: Proses, Silinder: Sistem Eksternal). Klik bentuk apa saja untuk melihat detail.';
@@ -868,8 +914,8 @@ export function TabArsitektur() {
         });
 
         const stage = document.createElement('div');
-        const lebarStage = 950;
-        const tinggiStage = 1460;
+        const lebarStage = 1040;
+        const tinggiStage = 1470;
         Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px auto' });
 
         // SVG panah antar bentuk flowchart menggunakan router koridor A*
@@ -920,12 +966,27 @@ export function TabArsitektur() {
             } else if (e.dari === 'kasir' && e.ke === 'integrasi') {
                 sisiA = 'R';
                 sisiB = 'L';
+            } else if (e.dari === 'dec_lanjut' && e.ke === 'farmasi') {
+                sisiA = 'R';
+                sisiB = 'L';
             } else if (e.dari === 'dec_lanjut' && e.ke === 'kasir') {
                 sisiA = 'R';
                 sisiB = 'T';
             } else if (e.dari === 'dec_poli' && e.ke === 'ugd') {
                 sisiA = 'R';
                 sisiB = 'L';
+            } else if (e.dari === 'ranap_bed' && e.ke === 'ranap_cppt') {
+                sisiA = 'R';
+                sisiB = 'L';
+            } else if (e.dari === 'ranap_cppt' && e.ke === 'rujukan') {
+                sisiA = 'R';
+                sisiB = 'L';
+            } else if (e.dari === 'dec_mandiri' && e.ke === 'farmasi') {
+                sisiA = 'R';
+                sisiB = 'R';
+            } else if (e.dari === 'lab' && e.ke === 'kasir') {
+                sisiA = 'R';
+                sisiB = 'T';
             }
             const kA = `${e.dari}:${sisiA}`;
             const kB = `${e.ke}:${sisiB}`;
