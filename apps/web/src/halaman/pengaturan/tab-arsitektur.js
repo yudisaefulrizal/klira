@@ -926,7 +926,19 @@ export function TabArsitektur() {
             const b = petaNode.get(e.ke);
             let sisiA = 'B';
             let sisiB = 'T';
-            if (e.dari === 'dec_lab' && e.ke === 'lab') {
+            if (e.dari === 'dec_layanan' && e.ke === 'skrining') {
+                sisiA = 'L';
+                sisiB = 'T';
+            } else if (e.dari === 'dec_layanan' && e.ke === 'lab_saja') {
+                sisiA = 'R';
+                sisiB = 'T';
+            } else if (e.dari === 'dec_poli' && e.ke === 'poli_umum') {
+                sisiA = 'L';
+                sisiB = 'T';
+            } else if (e.dari === 'dec_poli' && e.ke === 'poli_kia') {
+                sisiA = 'R';
+                sisiB = 'T';
+            } else if (e.dari === 'dec_lab' && e.ke === 'lab') {
                 sisiA = 'R';
                 sisiB = 'L';
             } else if (e.dari === 'lab' && e.ke === 'dec_lab') {
@@ -935,6 +947,9 @@ export function TabArsitektur() {
             } else if (e.dari === 'kasir' && e.ke === 'integrasi') {
                 sisiA = 'R';
                 sisiB = 'L';
+            } else if (e.dari === 'dec_lanjut' && e.ke === 'ranap_admisi') {
+                sisiA = 'L';
+                sisiB = 'T';
             } else if (e.dari === 'dec_lanjut' && e.ke === 'farmasi') {
                 sisiA = 'R';
                 sisiB = 'L';
@@ -965,7 +980,7 @@ export function TabArsitektur() {
 
         const titikPortAlur = (n, sisi, daftar, idx) => {
             const posIdx = Math.max(0, daftar.findIndex((x) => x.idx === idx));
-            const fraksi = daftar.length <= 1 ? 0.5 : 0.25 + (posIdx / (daftar.length - 1)) * 0.5;
+            const fraksi = n.bentuk === 'diamond' || daftar.length <= 1 ? 0.5 : 0.25 + (posIdx / (daftar.length - 1)) * 0.5;
             if (sisi === 'R') return { x: n.x + n.w, y: n.y + n.h * fraksi };
             if (sisi === 'L') return { x: n.x, y: n.y + n.h * fraksi };
             if (sisi === 'B') return { x: n.x + n.w * fraksi, y: n.y + n.h };
@@ -1002,12 +1017,14 @@ export function TabArsitektur() {
                 const lebarLbl = Math.max(26, e.label.length * 6.2 + 10);
                 const bgTxt = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
                 bgTxt.setAttribute('x', String(lx - lebarLbl / 2));
-                bgTxt.setAttribute('y', String(ly - 10));
+                bgTxt.setAttribute('y', String(ly - 11));
                 bgTxt.setAttribute('width', String(lebarLbl));
-                bgTxt.setAttribute('height', '14');
-                bgTxt.setAttribute('rx', '4');
+                bgTxt.setAttribute('height', '15');
+                bgTxt.setAttribute('rx', '5');
                 bgTxt.setAttribute('fill', token.warna.permukaan);
-                bgTxt.setAttribute('opacity', '0.92');
+                bgTxt.setAttribute('stroke', token.warna.garis);
+                bgTxt.setAttribute('stroke-width', '0.7');
+                bgTxt.setAttribute('opacity', '0.96');
                 const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 txt.setAttribute('x', String(lx));
                 txt.setAttribute('y', String(ly));
@@ -1074,8 +1091,9 @@ export function TabArsitektur() {
                 const lbl = document.createElement('span');
                 lbl.textContent = n.judul;
                 Object.assign(lbl.style, {
-                    position: 'relative', zIndex: '1', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: '100%', height: '100%', padding: '0 36px', textAlign: 'center',
+                    position: 'absolute', inset: '0', boxSizing: 'border-box', zIndex: '1',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '0 34px', textAlign: 'center',
                     fontSize: '11px', fontWeight: token.huruf.berat.tebal, lineHeight: '1.2',
                 });
                 card.append(dSvg, lbl);
