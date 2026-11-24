@@ -228,7 +228,7 @@ function hitungTataLetakPeta(tabelList, relasiList) {
     const spanX = Math.max(1, maxCx - minCx);
     const spanY = Math.max(1, maxCy - minCy);
 
-    const kolTotal = Math.max(4, Math.min(13, Math.ceil(Math.sqrt(n * 1.45))));
+    const kolTotal = Math.max(4, Math.min(14, Math.ceil(Math.sqrt(n * 1.75))));
     const brsTotal = Math.max(2, Math.ceil(n / kolTotal));
     const slotTerisi = new Set();
     const slotSimpul = new Map();
@@ -772,8 +772,8 @@ export function TabArsitektur() {
             style: {
                 padding: '0',
                 overflow: 'hidden',
-                height: '74vh',
-                minHeight: '520px',
+                height: 'calc(100vh - 300px)',
+                minHeight: '460px',
                 position: 'relative',
                 cursor: 'grab',
                 userSelect: 'none',
@@ -1059,7 +1059,7 @@ export function TabArsitektur() {
         const sesuaikanLayar = () => {
             const vw = (kanvasBox.clientWidth || 900) - 24;
             const vh = (kanvasBox.clientHeight || 540) - 24;
-            skala = Math.max(0.24, Math.min(1.05, Math.min(vw / peta.lebarKanvas, vh / peta.tinggiKanvas)));
+            skala = Math.max(0.18, Math.min(1.05, Math.min(vw / peta.lebarKanvas, vh / peta.tinggiKanvas)));
             panX = 12;
             panY = 12;
             terapkanTransform();
@@ -1136,7 +1136,7 @@ export function TabArsitektur() {
         kanvasBox.append(stage, minimap, legenda);
 
         // Panel Inspector Detail Tabel di kanan
-        const insp = kartu({ susun: 'sm', style: { maxHeight: '74vh', overflowY: 'auto' } });
+        const insp = kartu({ susun: 'sm', style: { maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' } });
         const detail = (data.tabel || []).find((t) => t.nama === tabelTerpilih);
         if (!detail) {
             insp.append('Pilih salah satu tabel di peta untuk melihat detail kolom dan relasinya.');
