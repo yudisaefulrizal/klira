@@ -1,14 +1,6 @@
 import { panggilApi, GalatApi } from '../../api-klien/klien.js';
-import { kartu, tombol, lencana, peringatan, tab, tabel, baris, sel } from '../../komponen/ui/primitif.js';
+import { kartu, tombol, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-
-const WARNA_METODE = {
-    GET: 'biru',
-    POST: 'hijau',
-    PUT: 'kuning',
-    PATCH: 'ungu',
-    DELETE: 'merah',
-};
 
 const KARTU_L = 216;
 const KARTU_T = 128;
@@ -512,7 +504,6 @@ export function TabArsitektur() {
     kananH.append(ringkasBadge, btnMuat);
     header.append(kiriH, kananH);
 
-    let subAktif = 'alur';
     let domainAktif = 'semua';
     let cariTeks = '';
     let tabelTerpilih = null;
@@ -524,102 +515,9 @@ export function TabArsitektur() {
     let data = null;
     let aktif = true;
 
-    const subTabs = tab([
-        { id: 'alur', label: 'Alur Data Sistem' },
-        { id: 'erd', label: 'Diagram Database (ERD)' },
-        { id: 'api', label: 'Peta Endpoint API' },
-    ], 'alur', 'Tampilan Arsitektur', (id) => {
-        subAktif = id;
-        subTabs.pilih(id);
-        if (id === 'erd') butuhFit = true;
-        lukis();
-    });
-
     const status = document.createElement('div');
     const isi = document.createElement('div');
-    el.append(header, subTabs.el, status, isi);
-
-    const bukaTabelDiErd = (namaTabel) => {
-        const t = data?.tabel?.find((x) => x.nama === namaTabel);
-        if (!t) return;
-        tabelTerpilih = t.nama;
-        domainAktif = 'semua';
-        cariTeks = '';
-        subAktif = 'erd';
-        butuhFit = false;
-        butuhFokus = true;
-        subTabs.pilih('erd');
-        lukis();
-    };
-
-    function lukisAlur() {
-        const petaTabel = new Map((data.tabel || []).map((t) => [t.nama, t]));
-        const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
-
-        const info = document.createElement('p');
-        info.textContent = 'Klik nama tabel pada setiap tahap untuk langsung menyorot posisi, kolom, dan relasinya di Peta Database (ERD).';
-        Object.assign(info.style, { margin: `0 0 ${token.jarak.md}`, color: token.warna.teksRedup, fontSize: token.huruf.ukuran.dasar });
-
-        const grid = document.createElement('div');
-        Object.assign(grid.style, {
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
-            gap: token.jarak.md,
-        });
-
-        for (const tahap of data.alur || []) {
-            const dom = petaDomain.get(tahap.domain);
-            const w = token.warna.status[dom?.warna || 'biru'];
-            const k = kartu({ susun: 'sm', style: { borderTop: `4px solid ${w.teks}` } });
-
-            const atas = document.createElement('div');
-            Object.assign(atas.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.xs });
-            const judul = document.createElement('strong');
-            judul.textContent = `${tahap.urutan}. ${tahap.judul}`;
-            judul.style.fontSize = token.huruf.ukuran.besar;
-            atas.append(judul, lencana(dom?.label || tahap.domain, dom?.warna || 'biru'));
-
-            const desk = document.createElement('div');
-            desk.textContent = tahap.ringkas;
-            Object.assign(desk.style, { fontSize: token.huruf.ukuran.dasar, color: token.warna.teksRedup, lineHeight: '1.45' });
-
-            const lblT = document.createElement('small');
-            lblT.textContent = 'Tabel Terkait:';
-            lblT.style.fontWeight = token.huruf.berat.tebal;
-            const chips = document.createElement('div');
-            Object.assign(chips.style, { display: 'flex', flexWrap: 'wrap', gap: '6px' });
-            for (const namaT of tahap.tabel_utama || []) {
-                const infoT = petaTabel.get(namaT);
-                const btnT = document.createElement('button');
-                btnT.type = 'button';
-                btnT.textContent = infoT ? `${namaT} (${infoT.estimasi_baris})` : namaT;
-                Object.assign(btnT.style, {
-                    padding: '4px 9px', borderRadius: token.radius.pil, cursor: 'pointer',
-                    border: `${token.ukuran.garis} solid ${token.warna.garis}`,
-                    background: token.warna.kepalaTabel, color: token.warna.teks,
-                    fontSize: token.huruf.ukuran.kecil, fontWeight: token.huruf.berat.sedang,
-                });
-                btnT.addEventListener('click', () => bukaTabelDiErd(namaT));
-                chips.append(btnT);
-            }
-
-            const lblE = document.createElement('small');
-            lblE.textContent = 'Endpoint Kunci:';
-            lblE.style.fontWeight = token.huruf.berat.tebal;
-            const eps = document.createElement('div');
-            Object.assign(eps.style, { display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'monospace', fontSize: '11.5px', color: token.warna.teksRedup });
-            for (const ep of tahap.endpoint_kunci || []) {
-                const d = document.createElement('div');
-                d.textContent = ep;
-                eps.append(d);
-            }
-
-            k.append(atas, desk, lblT, chips, lblE, eps);
-            grid.append(k);
-        }
-
-        isi.replaceChildren(info, grid);
-    }
+    el.append(header, status, isi);
 
     function lukisErd() {
         const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
@@ -684,7 +582,7 @@ export function TabArsitektur() {
             style: {
                 padding: '0',
                 overflow: 'hidden',
-                height: 'calc(100vh - 300px)',
+                height: 'calc(100vh - 250px)',
                 minHeight: '460px',
                 position: 'relative',
                 cursor: 'grab',
@@ -1042,7 +940,7 @@ export function TabArsitektur() {
         kanvasBox.append(stage, minimap, legenda);
 
         // Panel Inspector Detail Tabel di kanan
-        const insp = kartu({ susun: 'sm', style: { maxHeight: 'calc(100vh - 300px)', overflowY: 'auto' } });
+        const insp = kartu({ susun: 'sm', style: { maxHeight: 'calc(100vh - 250px)', overflowY: 'auto' } });
         const detail = (data.tabel || []).find((t) => t.nama === tabelTerpilih);
         if (!detail) {
             insp.append('Pilih salah satu tabel di peta untuk melihat detail kolom dan relasinya.');
@@ -1121,36 +1019,6 @@ export function TabArsitektur() {
         });
     }
 
-    function lukisApi() {
-        const q = cariTeks.trim().toLowerCase();
-        const daftar = (data.endpoint || []).filter((e) => !q || e.jalur.toLowerCase().includes(q) || e.metode.toLowerCase().includes(q));
-
-        const bar = document.createElement('div');
-        Object.assign(bar.style, { display: 'flex', gap: token.jarak.sm, alignItems: 'center', marginBottom: token.jarak.md });
-        const inCari = document.createElement('input');
-        inCari.type = 'search';
-        inCari.placeholder = 'Cari endpoint (mis. /keuangan, /pasien, POST)...';
-        inCari.value = cariTeks;
-        gayaInput(inCari);
-        inCari.style.flex = '1';
-        inCari.addEventListener('input', (e) => { cariTeks = e.target.value; lukisApi(); });
-        const info = document.createElement('small');
-        info.textContent = `${daftar.length} dari ${data.endpoint?.length ?? 0} endpoint`;
-        info.style.color = token.warna.teksRedup;
-        bar.append(inCari, info);
-
-        const box = kartu({ style: { padding: '0', overflow: 'hidden' } });
-        const tbl = tabel(['Metode', 'Jalur Endpoint API', 'Modul'], 'Peta Endpoint API');
-        for (const r of daftar) {
-            const modul = r.jalur.replace(/^\/api\//, '').split('/')[0] || 'umum';
-            const jalurEl = document.createElement('code');
-            jalurEl.textContent = r.jalur;
-            tbl.tbody.append(baris(sel(lencana(r.metode, WARNA_METODE[r.metode] || 'abu')), sel(jalurEl), sel(modul)));
-        }
-        box.append(tbl.el);
-        isi.replaceChildren(bar, box);
-    }
-
     function lukis() {
         if (!data) return;
         ringkasBadge.replaceChildren(
@@ -1158,9 +1026,7 @@ export function TabArsitektur() {
             lencana(`${data.relasi?.length ?? 0} Relasi`, 'hijau'),
             lencana(`${data.endpoint?.length ?? 0} Endpoint`, 'ungu'),
         );
-        if (subAktif === 'alur') lukisAlur();
-        else if (subAktif === 'erd') lukisErd();
-        else lukisApi();
+        lukisErd();
     }
 
     async function muat() {
