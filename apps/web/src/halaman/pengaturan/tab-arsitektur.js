@@ -11,18 +11,10 @@ const WARNA_METODE = {
 };
 
 const KARTU_L = 216;
-const KARTU_T = 132;
-const JARAK_X = 46;
-const JARAK_Y = 24;
-const ZONA_PAD_X = 24;
-const ZONA_PAD_ATAS = 48;
-const ZONA_PAD_BAWAH = 24;
-const ZONA_GAP = 56;
-const URUTAN_DOMAIN_PETA = [
-    ['pasien', 'klinis', 'farmasi'],
-    ['penunjang', 'keuangan', 'integrasi'],
-    ['akses'],
-];
+const KARTU_T = 128;
+const JARAK_MIN_X = 58;
+const JARAK_MIN_Y = 44;
+const PAD_KANVAS = 64;
 
 function gayaInput(el) {
     Object.assign(el.style, {
@@ -40,155 +32,186 @@ function gayaInput(el) {
 }
 
 /**
- * Hitung tata letak peta otomatis (auto-layout):
- * - Mengelompokkan tabel ke dalam zona wilayah domain.
- * - Di dalam tiap zona, tabel disusun topologis dari Induk (kiri) -> Anak (kanan).
- * - Zona disusun menjadi grid peta tanpa tumpang-tindih.
+ * Hitung tata letak peta grafis fleksibel (force-directed + anti-tumpang-tindih):
+ * - Tidak terpaku pada kotak domain: tabel yang saling berelasi otomatis saling mendekat.
+ * - Menyelesaikan semua tabrakan kotak (AABB) dengan jarak aman agar kartu tidak saling menutupi.
  */
-function hitungTataLetakPeta(tabelList, relasiList, domainList) {
-    const petaDomain = new Map((domainList || []).map((d) => [d.id, d]));
-    const perDomain = new Map();
-    for (const t of tabelList) {
-        if (!perDomain.has(t.domain)) perDomain.set(t.domain, []);
-        perDomain.get(t.domain).push(t);
-    }
-
-    // Hitung derajat total untuk pengurutan simpul hub di tiap level
-    const derajatTotal = new Map();
-    for (const r of relasiList) {
-        derajatTotal.set(r.dari_tabel, (derajatTotal.get(r.dari_tabel) ?? 0) + 1);
-        derajatTotal.set(r.ke_tabel, (derajatTotal.get(r.ke_tabel) ?? 0) + 1);
-    }
-
-    const zonaMap = new Map();
-
-    for (const [domId, daftar] of perDomain.entries()) {
-        const namaSet = new Set(daftar.map((t) => t.nama));
-        // Relasi internal dalam domain: dari_tabel (anak) -> ke_tabel (induk)
-        const indukDari = new Map();
-        for (const t of daftar) indukDari.set(t.nama, new Set());
-        for (const r of relasiList) {
-            if (namaSet.has(r.dari_tabel) && namaSet.has(r.ke_tabel) && r.dari_tabel !== r.ke_tabel) {
-                indukDari.get(r.dari_tabel).add(r.ke_tabel);
-            }
-        }
-
-        // Hitung level topologis (0 = tabel induk tanpa ketergantungan internal; anak mendapat max(induk) + 1)
-        const levelMap = new Map();
-        const sedang = new Set();
-        const hitungLevel = (nama) => {
-            if (levelMap.has(nama)) return levelMap.get(nama);
-            if (sedang.has(nama)) return 0; // cegah siklus
-            sedang.add(nama);
-            let maks = 0;
-            for (const induk of indukDari.get(nama) || []) {
-                maks = Math.max(maks, hitungLevel(induk) + 1);
-            }
-            sedang.delete(nama);
-            const lvl = Math.min(maks, 4);
-            levelMap.set(nama, lvl);
-            return lvl;
-        };
-        for (const t of daftar) hitungLevel(t.nama);
-
-        // Kelompokkan per level, pecah kolom panjang agar zona tetap proporsional (maks 4 kartu per sub-kolom)
-        const perLevel = new Map();
-        for (const t of daftar) {
-            const lvl = levelMap.get(t.nama) ?? 0;
-            if (!perLevel.has(lvl)) perLevel.set(lvl, []);
-            perLevel.get(lvl).push(t);
-        }
-
-        const kolomList = [];
-        const levelUrut = [...perLevel.keys()].sort((a, b) => a - b);
-        for (const lvl of levelUrut) {
-            const grup = perLevel.get(lvl).slice().sort((a, b) => {
-                const dB = derajatTotal.get(b.nama) ?? 0;
-                const dA = derajatTotal.get(a.nama) ?? 0;
-                if (dB !== dA) return dB - dA;
-                return a.nama.localeCompare(b.nama);
-            });
-            const maksBaris = daftar.length > 16 ? 5 : 4;
-            for (let i = 0; i < grup.length; i += maksBaris) {
-                kolomList.push(grup.slice(i, i + maksBaris));
-            }
-        }
-
-        const jmlKol = Math.max(1, kolomList.length);
-        const maksBaris = Math.max(1, ...kolomList.map((k) => k.length));
-        const lebar = ZONA_PAD_X * 2 + jmlKol * KARTU_L + (jmlKol - 1) * JARAK_X;
-        const tinggi = ZONA_PAD_ATAS + ZONA_PAD_BAWAH + maksBaris * KARTU_T + (maksBaris - 1) * JARAK_Y;
-
-        const posisiLokal = [];
-        kolomList.forEach((kol, ki) => {
-            kol.forEach((t, bi) => {
-                posisiLokal.push({
-                    tabel: t,
-                    lx: ZONA_PAD_X + ki * (KARTU_L + JARAK_X),
-                    ly: ZONA_PAD_ATAS + bi * (KARTU_T + JARAK_Y),
-                });
-            });
-        });
-
-        const infoDom = petaDomain.get(domId) || { id: domId, label: domId, warna: 'abu' };
-        zonaMap.set(domId, {
-            id: domId,
-            label: infoDom.label,
-            warna: infoDom.warna,
-            jumlah: daftar.length,
-            lebar,
-            tinggi,
-            posisiLokal,
-        });
-    }
-
-    // Susun zona ke dalam baris peta sesuai URUTAN_DOMAIN_PETA (plus domain baru jika ada)
-    const sudahMasuk = new Set();
-    const barisZona = [];
-    for (const barisIds of URUTAN_DOMAIN_PETA) {
-        const ada = barisIds.filter((id) => zonaMap.has(id));
-        if (ada.length) {
-            ada.forEach((id) => sudahMasuk.add(id));
-            barisZona.push(ada);
-        }
-    }
-    const sisa = [...zonaMap.keys()].filter((id) => !sudahMasuk.has(id));
-    if (sisa.length) barisZona.push(sisa);
-
-    const zonaHasil = [];
+function hitungTataLetakPeta(tabelList, relasiList) {
     const posisiTabel = new Map();
-    let curY = ZONA_GAP;
-    let maxLebar = 800;
+    if (!tabelList.length) {
+        return { zona: [], posisiTabel, lebarKanvas: 900, tinggiKanvas: 520 };
+    }
 
-    for (const barisIds of barisZona) {
-        let curX = ZONA_GAP;
-        let tinggiBaris = 0;
-        for (const id of barisIds) {
-            const z = zonaMap.get(id);
-            z.x = curX;
-            z.y = curY;
-            zonaHasil.push(z);
-            for (const p of z.posisiLokal) {
-                posisiTabel.set(p.tabel.nama, {
-                    tabel: p.tabel,
-                    x: curX + p.lx,
-                    y: curY + p.ly,
-                    w: KARTU_L,
-                    h: KARTU_T,
-                });
-            }
-            curX += z.lebar + ZONA_GAP;
-            tinggiBaris = Math.max(tinggiBaris, z.tinggi);
+    const namaSet = new Set(tabelList.map((t) => t.nama));
+    const derajat = new Map();
+    const sisiUnik = [];
+    const kunciSisi = new Set();
+
+    for (const t of tabelList) derajat.set(t.nama, 0);
+    for (const r of relasiList) {
+        if (!namaSet.has(r.dari_tabel) || !namaSet.has(r.ke_tabel) || r.dari_tabel === r.ke_tabel) continue;
+        derajat.set(r.dari_tabel, (derajat.get(r.dari_tabel) ?? 0) + 1);
+        derajat.set(r.ke_tabel, (derajat.get(r.ke_tabel) ?? 0) + 1);
+        const k = r.dari_tabel < r.ke_tabel ? `${r.dari_tabel}|${r.ke_tabel}` : `${r.ke_tabel}|${r.dari_tabel}`;
+        if (!kunciSisi.has(k)) {
+            kunciSisi.add(k);
+            sisiUnik.push([r.dari_tabel, r.ke_tabel]);
         }
-        maxLebar = Math.max(maxLebar, curX);
-        curY += tinggiBaris + ZONA_GAP;
+    }
+
+    // Urutkan deterministik: hub berderajat tertinggi di tengah, lalu spiral emas
+    const urut = tabelList.slice().sort((a, b) => {
+        const dB = derajat.get(b.nama) ?? 0;
+        const dA = derajat.get(a.nama) ?? 0;
+        if (dB !== dA) return dB - dA;
+        return a.nama.localeCompare(b.nama);
+    });
+
+    const simpul = new Map();
+    const n = urut.length;
+    const sudutEmas = Math.PI * (3 - Math.sqrt(5));
+    urut.forEach((t, idx) => {
+        const r = idx === 0 ? 0 : 190 * Math.sqrt(idx);
+        const theta = idx * sudutEmas;
+        simpul.set(t.nama, {
+            tabel: t,
+            cx: r * Math.cos(theta) * 1.25,
+            cy: r * Math.sin(theta) * 0.9,
+            vx: 0,
+            vy: 0,
+        });
+    });
+
+    const daftarSimpul = [...simpul.values()];
+    const jarakIdeal = 310;
+    const maksIterasi = 200;
+
+    // Simulasi gaya: tolak-menolak antar simpul + tarik-menarik antar tabel berelasi
+    for (let iter = 0; iter < maksIterasi; iter += 1) {
+        const redam = 0.82 * (1 - iter / (maksIterasi * 1.25));
+
+        for (let i = 0; i < n; i += 1) {
+            const a = daftarSimpul[i];
+            for (let j = i + 1; j < n; j += 1) {
+                const b = daftarSimpul[j];
+                let dx = b.cx - a.cx;
+                let dy = b.cy - a.cy;
+                let d2 = dx * dx + dy * dy;
+                if (d2 < 1) {
+                    dx = ((i + 1) % 3) - 1 || 0.7;
+                    dy = ((j + 1) % 3) - 1 || -0.7;
+                    d2 = dx * dx + dy * dy;
+                }
+                const dist = Math.sqrt(d2);
+                // Skala elips sesuai rasio kartu agar lebih menyebar horizontal & tidak menumpuk
+                const tolak = Math.min(28, 72000 / d2);
+                const fx = (dx / dist) * tolak;
+                const fy = (dy / dist) * tolak;
+                a.vx -= fx;
+                a.vy -= fy;
+                b.vx += fx;
+                b.vy += fy;
+
+                // Afinitas sangat ringan untuk domain yang sama jika tidak punya relasi langsung
+                if (a.tabel.domain === b.tabel.domain && dist > jarakIdeal * 1.4) {
+                    const af = 0.008;
+                    a.vx += dx * af * 0.05;
+                    a.vy += dy * af * 0.05;
+                    b.vx -= dx * af * 0.05;
+                    b.vy -= dy * af * 0.05;
+                }
+            }
+        }
+
+        // Gaya pegas untuk setiap relasi
+        for (const [dari, ke] of sisiUnik) {
+            const a = simpul.get(dari);
+            const b = simpul.get(ke);
+            const dx = b.cx - a.cx;
+            const dy = b.cy - a.cy;
+            const dist = Math.max(1, Math.hypot(dx, dy));
+            const gaya = (dist - jarakIdeal) * 0.045;
+            const fx = (dx / dist) * gaya;
+            const fy = (dy / dist) * gaya;
+            a.vx += fx;
+            a.vy += fy;
+            b.vx -= fx;
+            b.vy -= fy;
+        }
+
+        // Gravitasi ringan ke pusat agar komponen terpisah tetap dekat
+        for (const s of daftarSimpul) {
+            s.vx -= s.cx * 0.012;
+            s.vy -= s.cy * 0.012;
+            s.cx += s.vx * redam;
+            s.cy += s.vy * redam;
+            s.vx *= 0.45;
+            s.vy *= 0.45;
+        }
+    }
+
+    // Resolusi tabrakan AABB ketat agar 0% kartu saling menutupi
+    const butuhX = KARTU_L + JARAK_MIN_X;
+    const butuhY = KARTU_T + JARAK_MIN_Y;
+    for (let pass = 0; pass < 140; pass += 1) {
+        let adaTabrakan = false;
+        for (let i = 0; i < n; i += 1) {
+            const a = daftarSimpul[i];
+            for (let j = i + 1; j < n; j += 1) {
+                const b = daftarSimpul[j];
+                const dx = b.cx - a.cx;
+                const dy = b.cy - a.cy;
+                const overlapX = butuhX - Math.abs(dx);
+                const overlapY = butuhY - Math.abs(dy);
+                if (overlapX > 0 && overlapY > 0) {
+                    adaTabrakan = true;
+                    if (overlapX < overlapY) {
+                        const geser = (overlapX / 2) + 1;
+                        const arah = dx >= 0 ? 1 : -1;
+                        a.cx -= arah * geser;
+                        b.cx += arah * geser;
+                    } else {
+                        const geser = (overlapY / 2) + 1;
+                        const arah = dy >= 0 ? 1 : -1;
+                        a.cy -= arah * geser;
+                        b.cy += arah * geser;
+                    }
+                }
+            }
+        }
+        if (!adaTabrakan) break;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const s of daftarSimpul) {
+        const x = s.cx - KARTU_L / 2;
+        const y = s.cy - KARTU_T / 2;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x + KARTU_L);
+        maxY = Math.max(maxY, y + KARTU_T);
+    }
+
+    const geserX = PAD_KANVAS - minX;
+    const geserY = PAD_KANVAS - minY;
+    for (const s of daftarSimpul) {
+        posisiTabel.set(s.tabel.nama, {
+            tabel: s.tabel,
+            x: Math.round(s.cx - KARTU_L / 2 + geserX),
+            y: Math.round(s.cy - KARTU_T / 2 + geserY),
+            w: KARTU_L,
+            h: KARTU_T,
+        });
     }
 
     return {
-        zona: zonaHasil,
+        zona: [],
         posisiTabel,
-        lebarKanvas: maxLebar,
-        tinggiKanvas: Math.max(520, curY),
+        lebarKanvas: Math.max(960, Math.round(maxX - minX + PAD_KANVAS * 2)),
+        tinggiKanvas: Math.max(560, Math.round(maxY - minY + PAD_KANVAS * 2)),
     };
 }
 
@@ -422,40 +445,7 @@ export function TabArsitektur() {
             }
         }
 
-        // 1. Render Zona Wilayah Domain
-        for (const z of peta.zona) {
-            const w = token.warna.status[z.warna || 'abu'];
-            const zBox = document.createElement('div');
-            Object.assign(zBox.style, {
-                position: 'absolute',
-                left: `${z.x}px`,
-                top: `${z.y}px`,
-                width: `${z.lebar}px`,
-                height: `${z.tinggi}px`,
-                borderRadius: '14px',
-                border: `1.5px dashed ${w.teks}`,
-                background: w.latar,
-                opacity: '0.78',
-                pointerEvents: 'none',
-            });
-            const zHdr = document.createElement('div');
-            Object.assign(zHdr.style, {
-                position: 'absolute',
-                left: '14px',
-                top: '10px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                color: w.teks,
-                fontWeight: token.huruf.berat.tebal,
-                fontSize: '13px',
-            });
-            zHdr.textContent = `${z.label} (${z.jumlah})`;
-            zBox.append(zHdr);
-            stage.append(zBox);
-        }
-
-        // 2. Render SVG Garis Relasi + Panah
+        // 1. Render SVG Garis Relasi + Panah (di bawah kartu tabel)
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', String(peta.lebarKanvas));
         svg.setAttribute('height', String(peta.tinggiKanvas));
@@ -493,39 +483,51 @@ export function TabArsitektur() {
             const aktifGaris = keluar || masuk;
             if (tabelTerpilih && !aktifGaris && relasiTampil.length > 45) continue;
 
-            // Titik sambung sisi kartu paling dekat
+            // Titik sambung sisi kartu paling dekat dengan kurva tegak lurus sisi
             const cxA = a.x + a.w / 2;
             const cyA = a.y + a.h / 2;
             const cxB = b.x + b.w / 2;
             const cyB = b.y + b.h / 2;
+            const horizontal = Math.abs(cxB - cxA) >= Math.abs(cyB - cyA);
             let x1 = cxA;
             let y1 = cyA;
             let x2 = cxB;
             let y2 = cyB;
-            if (Math.abs(cxB - cxA) >= Math.abs(cyB - cyA)) {
+            let c1x;
+            let c1y;
+            let c2x;
+            let c2y;
+            if (horizontal) {
                 x1 = cxB >= cxA ? a.x + a.w : a.x;
                 x2 = cxB >= cxA ? b.x : b.x + b.w;
+                const dx = Math.max(36, Math.abs(x2 - x1) * 0.45);
+                c1x = cxB >= cxA ? x1 + dx : x1 - dx;
+                c1y = y1;
+                c2x = cxB >= cxA ? x2 - dx : x2 + dx;
+                c2y = y2;
             } else {
                 y1 = cyB >= cyA ? a.y + a.h : a.y;
                 y2 = cyB >= cyA ? b.y : b.y + b.h;
+                const dy = Math.max(32, Math.abs(y2 - y1) * 0.45);
+                c1x = x1;
+                c1y = cyB >= cyA ? y1 + dy : y1 - dy;
+                c2x = x2;
+                c2y = cyB >= cyA ? y2 - dy : y2 + dy;
             }
-            const dx = Math.max(36, Math.abs(x2 - x1) * 0.45);
-            const c1x = cxB >= cxA ? x1 + dx : x1 - dx;
-            const c2x = cxB >= cxA ? x2 - dx : x2 + dx;
 
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            path.setAttribute('d', `M ${x1} ${y1} C ${c1x} ${y1}, ${c2x} ${y2}, ${x2} ${y2}`);
+            path.setAttribute('d', `M ${x1} ${y1} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x2} ${y2}`);
             path.setAttribute('fill', 'none');
             path.setAttribute('stroke', keluar ? 'var(--warna-utama)' : masuk ? '#10b981' : 'var(--warna-garis)');
-            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.1');
+            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.15');
             path.setAttribute('stroke-dasharray', r.jenis === 'konvensi' ? '5 4' : '');
-            path.setAttribute('opacity', aktifGaris ? '0.95' : '0.32');
+            path.setAttribute('opacity', aktifGaris ? '0.95' : tabelTerpilih ? '0.12' : '0.26');
             path.setAttribute('marker-end', `url(#${keluar ? 'panah-keluar' : masuk ? 'panah-masuk' : 'panah-redup'})`);
             svg.append(path);
         }
         stage.append(svg);
 
-        // 3. Render Kartu Tabel pada Posisi Peta
+        // 2. Render Kartu Tabel pada Posisi Peta
         for (const pos of peta.posisiTabel.values()) {
             const t = pos.tabel;
             const dom = petaDomain.get(t.domain);
@@ -537,6 +539,7 @@ export function TabArsitektur() {
             card.type = 'button';
             Object.assign(card.style, {
                 position: 'absolute',
+                zIndex: '2',
                 left: `${pos.x}px`,
                 top: `${pos.y}px`,
                 width: `${pos.w}px`,
@@ -614,20 +617,21 @@ export function TabArsitektur() {
             cursor: 'crosshair',
             boxShadow: '0 4px 12px rgba(0,0,0,0.28)',
         });
-        for (const z of peta.zona) {
-            const w = token.warna.status[z.warna || 'abu'];
-            const mz = document.createElement('div');
-            Object.assign(mz.style, {
+        for (const pos of peta.posisiTabel.values()) {
+            const dom = petaDomain.get(pos.tabel.domain);
+            const w = token.warna.status[dom?.warna || 'abu'];
+            const mt = document.createElement('div');
+            Object.assign(mt.style, {
                 position: 'absolute',
-                left: `${z.x * miniSkala}px`,
-                top: `${z.y * miniSkala}px`,
-                width: `${Math.max(4, z.lebar * miniSkala)}px`,
-                height: `${Math.max(4, z.tinggi * miniSkala)}px`,
+                left: `${pos.x * miniSkala}px`,
+                top: `${pos.y * miniSkala}px`,
+                width: `${Math.max(4, pos.w * miniSkala)}px`,
+                height: `${Math.max(3, pos.h * miniSkala)}px`,
                 background: w.latar,
                 border: `1px solid ${w.teks}`,
-                borderRadius: '2px',
+                borderRadius: '1px',
             });
-            minimap.append(mz);
+            minimap.append(mt);
         }
         if (tabelTerpilih && peta.posisiTabel.has(tabelTerpilih)) {
             const tp = peta.posisiTabel.get(tabelTerpilih);
