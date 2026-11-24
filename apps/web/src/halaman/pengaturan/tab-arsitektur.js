@@ -432,10 +432,6 @@ export function TabArsitektur() {
         const relasiTampil = (data.relasi || []).filter((r) => namaSet.has(r.dari_tabel) && namaSet.has(r.ke_tabel));
 
         if (tabelTerpilih && !namaSet.has(tabelTerpilih)) tabelTerpilih = null;
-        if (!tabelTerpilih && tabelTampil.length) {
-            const favorit = tabelTampil.find((t) => t.nama === 'kunjungan') || tabelTampil[0];
-            tabelTerpilih = favorit.nama;
-        }
 
         const peta = hitungTataLetakPeta(tabelTampil, relasiTampil, data.domain);
 
@@ -542,7 +538,7 @@ export function TabArsitektur() {
         defs.append(
             buatMarker('panah-keluar', 'var(--warna-utama)'),
             buatMarker('panah-masuk', '#10b981'),
-            buatMarker('panah-redup', 'var(--warna-garis)'),
+            buatMarker('panah-redup', '#64748b'),
         );
         svg.append(defs);
 
@@ -610,10 +606,10 @@ export function TabArsitektur() {
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', `M ${p1.x} ${p1.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x} ${p2.y}`);
             path.setAttribute('fill', 'none');
-            path.setAttribute('stroke', keluar ? 'var(--warna-utama)' : masuk ? '#10b981' : 'var(--warna-garis)');
-            path.setAttribute('stroke-width', aktifGaris ? '2.4' : '1.25');
+            path.setAttribute('stroke', keluar ? 'var(--warna-utama)' : masuk ? '#10b981' : '#64748b');
+            path.setAttribute('stroke-width', aktifGaris ? '2.4' : tabelTerpilih ? '1.25' : '1.45');
             path.setAttribute('stroke-dasharray', r.jenis === 'konvensi' ? '5 4' : '');
-            path.setAttribute('opacity', aktifGaris ? '0.96' : tabelTerpilih ? '0.24' : '0.45');
+            path.setAttribute('opacity', aktifGaris ? '0.96' : tabelTerpilih ? '0.28' : '0.72');
             path.setAttribute('marker-end', `url(#${keluar ? 'panah-keluar' : masuk ? 'panah-masuk' : 'panah-redup'})`);
             svg.append(path);
         }
@@ -654,7 +650,7 @@ export function TabArsitektur() {
             });
             card.addEventListener('click', (e) => {
                 e.stopPropagation();
-                tabelTerpilih = t.nama;
+                tabelTerpilih = tabelTerpilih === t.nama ? null : t.nama;
                 butuhFit = false;
                 butuhFokus = false;
                 lukisErd();
