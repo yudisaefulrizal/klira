@@ -18,6 +18,7 @@ const modul = {
   'test-endpoint': ['../test-endpoint/test-endpoint.js', 'HalamanTestEndpoint', 'komponen'],
   'pelindungan-data': ['../pelindungan-data/pelindungan-data.js', 'pasangPelindunganData', 'pdp'],
   'log-audit': ['../log-audit/log-audit.js', 'pasangLogAudit', 'audit'],
+  arsitektur: ['./tab-arsitektur.js', 'TabArsitektur', 'komponen'],
 };
 function buatHalamanPengaturan(kunci) {
   const pengguna = penggunaSaatIni().pengguna, { path, search, ganti } = navigasiSaatIni(), h = HALAMAN_PENGATURAN[kunci], daftar = pengguna ? tabDiizinkan(h.tab, pengguna) : [], ids = daftar.map(t => t.id);

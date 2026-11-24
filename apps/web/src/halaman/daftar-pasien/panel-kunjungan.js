@@ -26,6 +26,7 @@ import { bukaModalUgd, sisipkanBlokUgd } from '../../modal/pemeriksaan/form-ugd.
 import { bukaModalFisikUmum, sisipkanBlokFisik } from '../../modal/pemeriksaan/form-fisik-umum.js';
 import { bukaModalAnamnesisSkrining, sisipkanBlokAnamnesis } from '../../modal/pemeriksaan/form-anamnesis-skrining.js';
 import { bukaModalTulisResep } from '../../modal/farmasi/modal-tulis-resep.js';
+import { bukaPerbaikiCatatan } from '../../modal/rekam-medis/perbaiki-catatan.js';
 import { DaftarOrderLab } from '../../modal/penunjang/daftar-order-lab.js';
 import { bukaOrderLab } from '../../modal/penunjang/order-lab.js';
 import { bukaAmbilSpesimen } from '../../modal/penunjang/ambil-spesimen.js';
@@ -79,16 +80,35 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const tabs = tab(subSah.map((id) => ({ id: `kunjungan-${id}`, label: T.tab[id] })), `kunjungan-${sub}`, T.riwayat.judul, (id) => onSub(id.replace('kunjungan-', '')));
     navTab.append(tabs.el);
 
-    const mode = () => modeCatatan(klinis.kunjungan, boleh);
+    let modePerbaiki = false;
+    const mode = () => {
+        const dasar = modeCatatan(klinis.kunjungan, boleh);
+        const pascaPemeriksaan = !['menunggu_skrining', 'pemeriksaan'].includes(klinis.kunjungan.tahap_layanan);
+        if (pascaPemeriksaan && dasar.ubah && !modePerbaiki) {
+            return { ...dasar, ubah: false, ubahVital: false, perluPerbaiki: true };
+        }
+        return { ...dasar, perluPerbaiki: false };
+    };
     const server = () => keadaanDariServer(klinis.bagian);
     function setelKeadaan() {
+        modePerbaiki = false;
         const s = server();
         awal = s;
-        // Isi otomatis alergi di awal pemeriksaan bila riwayat sebelumnya mencatat alergi dan kunjungan ini belum punya catatan keperawatan.
+        // Isi otomatis alergi, GCS (15), dan kesadaran (Compos mentis) bila masih kosong dan dapat diubah.
         const alergiSebelumnya = konteks?.alergi;
         k = mode().ubahVital && klinis.bagian.keperawatan?.verifikasi !== 'sah' && !s.keperawatan.alergi.trim() && alergiSebelumnya
             ? { ...s, keperawatan: { ...s.keperawatan, alergi: alergiSebelumnya } }
             : s;
+        if (mode().ubahVital && (!k.tanda_vital.gcs || !k.tanda_vital.kesadaran)) {
+            k = {
+                ...k,
+                tanda_vital: {
+                    ...k.tanda_vital,
+                    gcs: k.tanda_vital.gcs || '15',
+                    kesadaran: k.tanda_vital.kesadaran || 'compos_mentis',
+                },
+            };
+        }
         alasan = ''; tampilGalat = false; konfirmasiUbahTutup = false; konfirmasiMulaiPemeriksaan = false; tensiTeks = teksTensi(k.tanda_vital); awalDraf = bentukDraf(k, tensiTeks);
     }
     // Draf otomatis di server (bukan penyimpanan peramban): isian yang belum disimpan bertahan saat berpindah pasien atau menutup halaman.
@@ -356,7 +376,11 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             if (x.title) l.title = x.title;
             tanda.append(l);
         }
-        kepala.append(tanda, ...aksiKepala(), bantuanKecil('Panduan Pemeriksaan', [
+        const idLayananEl = buat('span', 'profil-id-layanan', klinis.kunjungan.id_layanan ?? '-');
+        idLayananEl.id = 'profil-nomor-dokumen';
+        idLayananEl.title = 'ID Layanan kunjungan';
+        Object.assign(idLayananEl.style, { fontSize: '12px', fontWeight: '600', color: 'var(--warna-teks-redup)', fontVariantNumeric: 'tabular-nums', userSelect: 'all' });
+        kepala.append(idLayananEl, tanda, ...aksiKepala(), bantuanKecil('Panduan Pemeriksaan', [
             'Saat status Menunggu skrining, bagian non-skrining diredupkan agar fokus ke Subjek, Tanda Vital, dan Alergi.',
             'Gunakan tombol Diagnosis (ICD-10) dan Tulis resep → di pojok kolom untuk mempercepat pengisian.',
             'Klik Selesaikan pemeriksaan agar data disahkan dan siap lanjut ke tahap berikutnya.',
@@ -368,7 +392,6 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const BANTUAN_BIDANG = {
         subjek: ['Isian Subjek (S)', 'Keluhan utama pasien, sejak kapan dirasakan, riwayat penyakit sekarang/dahulu, dan faktor pemicu. Contoh: "Demam sejak 3 hari lalu disertai batuk kering."'],
         objek: ['Isian Objek (O)', 'Hasil pemeriksaan fisik dokter (keadaan umum, kepala/leher, toraks, abdomen, ekstremitas) serta temuan khusus poli (Odontogram/KIA/UGD).'],
-        alergi: ['Isian Alergi', 'Riwayat alergi obat, makanan, atau bahan medis (mis. "Amoksisilin", "Debu", atau "Tidak ada").'],
         asesmen: ['Isian Asesmen (A)', 'Kesimpulan diagnosis kerja atau diagnosis banding dokter. Gunakan tombol Diagnosis (ICD-10) di pojok kanan bawah untuk memilih kode ICD-10 resmi.'],
         plan: ['Isian Plan (P)', 'Rencana terapi obat, tindakan medis, edukasi pasien, dan rencana kontrol. Gunakan tombol Tulis resep → untuk meresepkan obat.'],
         instruksi: ['Isian Instruksi', 'Instruksi lanjutan untuk perawat atau pasien (mis. observasi tanda vital tiap 15 menit, rawat luka, diet khusus).'],
@@ -507,9 +530,10 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
         kotak.append(l, c); return kotak;
     }
     /** Tanda vital terpisah dari enam teks SOAPIE: suhu, tinggi, berat, tensi, respirasi, nadi, SpO2, GCS, kesadaran (tiga kolom). */
-    function tandaVital(m) {
+    function tandaVital(m, alergiKotak = null) {
         const kotak = buat('div', 'profil-vital'), grid = buat('div', 'profil-vital-grid');
         grid.append(...['suhu', 'tinggi_badan', 'berat_badan', 'lingkar_perut', 'tensi', 'respirasi', 'nadi', 'spo2', 'gcs', 'kesadaran'].map((x) => selVital(x, m)));
+        if (alergiKotak) grid.append(alergiKotak);
         const g = !parseTensi(tensiTeks).sah ? S.vital.galatTensi : galatDi('tanda_vital'), sah = penandaSah(klinis.bagian.tanda_vital);
         kotak.append(...[grid, g && kecil(g, 'profil-galat'), sah].filter(Boolean));
         return kotak;
@@ -517,7 +541,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     const dpjpNama = () => klinis.kunjungan.dpjp_nama ?? konteks?.kunjungan?.dpjp_nama ?? ringkas?.dpjp_nama ?? null;
     function isiPemeriksaan() {
         const m = mode(), bungkus = buat('div', 'profil-soapie'), pengguna = penggunaSaatIni().pengguna;
-        if (!m.ubah) bungkus.append(peringatan(S.bacaSaja[m.alasan], 'biru'));
+        if (!m.ubah && !m.perluPerbaiki) bungkus.append(peringatan(S.bacaSaja[m.alasan], 'biru'));
         if (m.alasan !== 'lab') {
             const form = buat('div', 'profil-form'), kiri = buat('div', 'profil-form-kolom'), kanan = buat('div', 'profil-form-kolom profil-form-kanan');
             const p = pelaksana(klinis.bagian, ['tanda_vital', ...BAGIAN_SOAPIE]);
@@ -563,11 +587,8 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             }
             const alergi = isian('profil-alergi', k.keperawatan.alergi, { boleh: m.ubahVital, maxLength: 500, onInput: (v) => ubah({ keperawatan: { ...k.keperawatan, alergi: v } }) });
             alergi.placeholder = konteks?.alergi ? S.alergiTercatat(konteks.alergi) : S.tanpaAlergi;
-            const idLayanan = buat('span', 'profil-form-teks', klinis.kunjungan.id_layanan ?? '-');
-            idLayanan.id = 'profil-nomor-dokumen';
-            Object.assign(idLayanan.style, { fontWeight: '600', padding: '6px 0', display: 'inline-block', userSelect: 'all' });
             const galatAlergi = galatDi('keperawatan');
-            const planEl = teksSoapie('plan', m, 3);
+            const planEl = teksSoapie('plan', m, 4);
             if (m.ubah && subSah.includes('resep')) {
                 const sisiPlan = planEl.querySelector('.profil-form-sisi');
                 const areaPlan = sisiPlan?.querySelector('textarea');
@@ -598,7 +619,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                     sisiPlan.append(btnResep);
                 }
             }
-            const objekEl = teksSoapie('objek', m, 3);
+            const objekEl = teksSoapie('objek', m, 4);
             const terapkanObjek = (baru) => {
                 ubah({ objek: baru });
                 const area = document.getElementById('narasi-objek');
@@ -630,6 +651,10 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 }
             }
             const sedangSkrining = klinis.kunjungan.tahap_layanan === 'menunggu_skrining';
+            const alergiKotak = buat('div', 'profil-vital-sel profil-vital-alergi');
+            const alergiLbl = buat('label', null, S.alergi);
+            alergiLbl.htmlFor = 'profil-alergi';
+            alergiKotak.append(...[alergiLbl, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')].filter(Boolean));
             const subjekEl = teksSoapie('subjek', m, 3);
             if (m.ubah || m.ubahVital) {
                 const sisiSubjek = subjekEl.querySelector('.profil-form-sisi');
@@ -653,8 +678,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                     sisiSubjek.append(btnAnm);
                 }
             }
-            const vitalEl = tandaVital(m);
-            const alergiEl = pasangBantuan(barisForm(S.alergi, alergi, galatAlergi && kecil(galatAlergi, 'profil-galat')), 'alergi');
+            const vitalEl = tandaVital(m, alergiKotak);
             const asesmenEl = teksSoapie('asesmen', m, 3);
             const instruksiEl = teksSoapie('instruksi', m, 3);
             const evaluasiEl = teksSoapie('evaluasi', m, 3);
@@ -663,7 +687,7 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                     elNonSkrining.classList.add('profil-bagian-redup');
                 }
             }
-            kiri.append(barisForm('ID Layanan', idLayanan), barisForm('Dokter (DPJP)', dokter), subjekEl, objekEl, vitalEl, alergiEl);
+            kiri.append(barisForm('Dokter (DPJP)', dokter), subjekEl, objekEl, vitalEl);
             kanan.append(asesmenEl, planEl, instruksiEl, evaluasiEl);
             form.append(kiri, kanan); bungkus.append(form);
         }
@@ -687,6 +711,11 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 btn.disabled = memproses;
                 const baris = buat('div', 'profil-soapie-tombol');
                 baris.append(btn);
+                if (dipanggil) {
+                    const btnPanggilLagi = tombol('Panggil lagi', () => void jalankanAksiAntrean(antrean.id, 'panggil'), 'sekunder');
+                    btnPanggilLagi.disabled = memproses;
+                    baris.append(btnPanggilLagi);
+                }
                 kaki.append(baris);
                 return kaki;
             }
@@ -714,7 +743,15 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                         : S.simpanPerubahan;
             const selesai = tombol(labelUtama, () => void selesaikan({ akhiri: true }));
             selesai.disabled = memproses || (!(m.ubah && tahap === 'pemeriksaan') && !r.length);
-            // Di luar tahap kerja (setelah pemeriksaan selesai) tombol Simpan perubahan hanya muncul bila ada perubahan.
+            // Di luar tahap kerja (setelah pemeriksaan selesai): tampilkan tombol Perbaiki bila belum masuk mode edit.
+            if (modePerbaiki) {
+                const barisP = buat('div', 'profil-soapie-tombol');
+                const btnBatal = tombol('Batal', () => { setelKeadaan(); lukis(); }, 'sekunder');
+                btnBatal.disabled = memproses;
+                barisP.append(btnBatal, selesai);
+                kaki.append(barisP);
+                return kaki;
+            }
             if (!tahapKerja && !r.length) return kaki;
             const baris = buat('div', 'profil-soapie-tombol');
             if (m.ubah && tahap === 'pemeriksaan' && r.length > 0) {
@@ -723,6 +760,37 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
                 baris.append(simpanSaja);
             }
             baris.append(selesai); kaki.append(baris);
+        } else if (m.perluPerbaiki) {
+            const barisP = buat('div', 'profil-soapie-tombol');
+            barisP.append(tombol('Perbaiki', () => {
+                tutupModal();
+                modal = bukaKonfirmasi({
+                    judul: 'Perbaiki catatan pemeriksaan?',
+                    pesan: 'Pemeriksaan pada kunjungan ini sudah selesai. Perubahan setelah tahap pemeriksaan akan tercatat di jejak audit; lanjutkan memperbaiki catatan?',
+                    labelYa: 'Lanjutkan perbaiki',
+                    onYa() {
+                        tutupModal();
+                        modePerbaiki = true;
+                        pesan = 'Mode perbaikan aktif. Ubah isian lalu klik Simpan perubahan.';
+                        lukis();
+                        document.getElementById('narasi-subjek')?.focus();
+                    },
+                    onTutup: tutupModal,
+                });
+            }, 'sekunder'));
+            kaki.append(barisP);
+        } else if (m.alasan === 'ditutup' && (boleh('klinis', 'input') || boleh('rekam-medis', 'perbaikan'))) {
+            const barisP = buat('div', 'profil-soapie-tombol');
+            barisP.append(tombol('Perbaiki catatan', () => {
+                tutupModal();
+                modal = bukaPerbaikiCatatan({
+                    kunjunganId,
+                    pasien: pasienRingkas,
+                    onTutup: tutupModal,
+                    onSelesai() { tutupModal(); void muat(true); onBerubah(); },
+                });
+            }, 'sekunder'));
+            kaki.append(barisP);
         }
         return kaki;
     }

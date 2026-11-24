@@ -163,25 +163,30 @@
 .profil-kotak-kepala { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
 .profil-soapie { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 /* Kolom kanan (Alergi sampai Evaluasi, teks panjang) sedikit lebih lebar daripada kolom kiri. */
-.profil-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px 24px; align-items: stretch; }
+.profil-form { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px 20px; align-items: stretch; }
 .profil-form-kolom { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.profil-form-baris { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 0 12px; align-items: start; }
-.profil-form-kanan > .profil-form-baris { grid-template-columns: 76px minmax(0, 1fr); gap: 0 10px; }
-.profil-form-baris > label { padding-top: 9px; text-align: right; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; }
+.profil-form-baris { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 0 8px; align-items: start; }
+.profil-form-kanan > .profil-form-baris { grid-template-columns: 74px minmax(0, 1fr); gap: 0 8px; }
+.profil-form-baris > label { padding-top: 9px; text-align: left; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: flex-start; gap: 4px; }
 .profil-form-sisi { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .profil-form-isian { box-sizing: border-box; width: 100%; padding: 8px 12px; font: inherit; line-height: 1.5; color: var(--warna-teks); background: var(--warna-permukaan); border: 1px solid var(--warna-garis); border-radius: 10px; }
 textarea.profil-form-isian { resize: vertical; min-height: 72px; }
 /* Baris yang tumbuh (Plan): mengisi sisa tinggi kolom dan tidak lebih rendah dari satu setengah kali isian biasa. */
 .profil-form-baris.profil-form-tumbuh { flex: 1 1 auto; align-items: stretch; }
-.profil-form-tumbuh .profil-form-sisi > textarea.profil-form-isian { flex: 1 1 auto; min-height: 108px; }
+.profil-form-tumbuh .profil-form-sisi > textarea.profil-form-isian { flex: 1 1 auto; min-height: 132px; }
+#narasi-objek { min-height: 92px; }
 .profil-form-isian:focus-visible { outline: 2px solid var(--warna-utama); outline-offset: 1px; }
 .profil-form-isian[readonly], .profil-form-isian:disabled { background: var(--warna-kepala-tabel); }
 .profil-form-isian[aria-invalid='true'] { border-color: var(--status-merah-teks); }
 .profil-vital { display: flex; flex-direction: column; gap: 6px; padding-top: 4px; }
-.profil-vital-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.profil-vital-sel { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.profil-vital-sel label { font-size: 11px; font-weight: 600; color: var(--warna-teks-redup); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.profil-vital-sel .profil-form-isian { padding: 6px 8px; font-variant-numeric: tabular-nums; }
+.profil-vital-grid { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: start; }
+.profil-vital-sel { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 0 0 76px; }
+.profil-vital-sel:nth-child(5), .profil-vital-sel:nth-child(6) { flex: 0 0 86px; }
+.profil-vital-sel:nth-child(10) { flex: 0 0 136px; }
+.profil-vital-sel.profil-vital-alergi { flex: 1 1 150px; }
+.profil-vital-sel label { font-size: 11px; font-weight: 600; color: var(--warna-teks-redup); white-space: nowrap; line-height: 16px; min-height: 16px; display: inline-flex; align-items: center; gap: 4px; }
+.profil-vital-sel .profil-form-isian { padding: 5px 7px; font-variant-numeric: tabular-nums; text-align: center; }
+.profil-vital-sel:nth-child(10) .profil-form-isian, .profil-vital-sel.profil-vital-alergi .profil-form-isian { text-align: left; }
 .profil-galat { color: var(--status-merah-teks); }
 .profil-bagian-redup { opacity: 0.45; transition: opacity 0.15s ease; }
 .profil-bagian-redup:hover, .profil-bagian-redup:focus-within { opacity: 0.85; }

@@ -95,6 +95,7 @@ import { RepositoriPersetujuanMysql } from './modul/persetujuan/data-access/repo
 import { buatRutePersetujuan } from './modul/persetujuan/entry-points/rute.js';
 import { buatLayananKeuangan } from './modul/keuangan/domain/layanan.js';
 import { buatRuteKeuangan } from './modul/keuangan/entry-points/rute.js';
+import { buatRuteArsitektur } from './modul/arsitektur/rute.js';
 import { buatLayananPengguna } from './modul/pengguna/domain/layanan.js';
 import { RepositoriPenggunaMysql } from './modul/pengguna/data-access/repositori.js';
 import { buatLayananPembuatanAkun } from './modul/pengguna/domain/pembuatan.js';
@@ -241,6 +242,7 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.use('/api', buatRuteKasirLengkap(layananAkses, layananIzin, buatLayananKasir({ repo: new RepositoriKasirMysql(), farmasi: repoFarmasi, audit: new PenampungAuditMysql(), keuangan: repoKeuangan })));
     app.use('/api', buatRuteKasir(layananAkses, layananIzin, buatLayananTagihan({ repo: new RepositoriTagihanMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRuteKeuangan(layananAkses, layananIzin, buatLayananKeuangan({ repo: repoKeuangan, audit: new PenampungAuditMysql() })));
+    app.use('/api', buatRuteArsitektur(layananAkses, layananIzin));
     app.use('/api', buatRutePengesahan(layananAkses, layananIzin, layananPengesahan));
     app.use('/api', buatRuteAudit(layananAkses, layananIzin, buatLayananAudit({ repo: new RepositoriAuditMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRutePengguna(layananAkses, layananIzin, buatLayananPengguna({ repo: new RepositoriPenggunaMysql(), audit: new PenampungAuditMysql() }), buatLayananPembuatanAkun({ repo: new RepositoriAkunBaruMysql(), repoIzin: new RepositoriIzinMysql(), audit: new PenampungAuditMysql() })));

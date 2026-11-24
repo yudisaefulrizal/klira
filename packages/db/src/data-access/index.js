@@ -1,6 +1,7 @@
 export * from '../koneksi.js';
 export * from '../tipe.js';
 export * from './addendum.js';
+export * from './arsitektur.js';
 export * from './antrean.js';
 export * from './antrean_jkn.js';
 export * from './diagnosis.js';

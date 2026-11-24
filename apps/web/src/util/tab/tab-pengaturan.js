@@ -13,6 +13,7 @@ export const HALAMAN_PENGATURAN = {
             { id: 'test-endpoint', label: 'Test endpoint', izin: ['satusehat', 'lihat'] },
             { id: 'pelindungan-data', label: 'Pelindungan data', izin: ['pdp', 'lihat'] },
             { id: 'log-audit', label: 'Log audit', izin: ['audit', 'lihat'] },
+            { id: 'arsitektur', label: 'Diagram DB & Alur', izin: ['akses', 'lihat'] },
         ],
     },
     klinik: {
