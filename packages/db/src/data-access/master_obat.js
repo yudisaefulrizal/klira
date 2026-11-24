@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungMasterObatUntukHitungKesiapan(aktif, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `master_obat` t WHERE ((? OR t.`aktif` <=> ?))", [aktif === undefined, aktif ?? null], koneksi);
     return Number(baris.jumlah);
@@ -12,6 +13,7 @@ export async function daftarMasterObatUntukDaftarMaster(aktif, nama_tampil, paka
     return baris;
 }
 export async function cariMasterObatUntukMaster(id, koneksi = pool) {
+    wajibId('cariMasterObatUntukMaster', id);
     const baris = await baca("SELECT t.`id`, t.`kfa_kode`, t.`kfa_nama`, t.`bentuk_sediaan`, t.`rute`, t.`nama_tampil`, t.`satuan`, t.`harga`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diubah_pada` FROM `master_obat` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -20,16 +22,19 @@ export async function tambahMasterObatUntukBuatMaster(kfa_kode, kfa_nama, bentuk
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahMasterObatUntukBuatMasterHasil(id, koneksi = pool) {
+    wajibId('tambahMasterObatUntukBuatMasterHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kfa_kode`, t.`kfa_nama`, t.`bentuk_sediaan`, t.`rute`, t.`nama_tampil`, t.`satuan`, t.`harga`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diubah_pada` FROM `master_obat` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris master_obat tidak ditemukan.');
     return baris[0];
 }
 export async function ubahMasterObatUntukUbahMaster(rute, nama_tampil, satuan, harga, aktif, diubah_pada, id, koneksi = pool) {
+    wajibId('ubahMasterObatUntukUbahMaster', id);
     const hasil = await tulis("UPDATE `master_obat` t SET `rute` = IF(?, t.`rute`, ?), `nama_tampil` = IF(?, t.`nama_tampil`, ?), `satuan` = IF(?, t.`satuan`, ?), `harga` = IF(?, t.`harga`, ?), `aktif` = IF(?, t.`aktif`, ?), `diubah_pada` = IF(?, t.`diubah_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [rute === undefined, rute ?? null, nama_tampil === undefined, nama_tampil ?? null, satuan === undefined, satuan ?? null, harga === undefined, harga ?? null, aktif === undefined, aktif ?? null, diubah_pada === undefined, diubah_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariMasterObatUntukMutasi(id, koneksi = pool) {
+    wajibId('cariMasterObatUntukMutasi', id);
     const baris = await baca("SELECT t.`id` FROM `master_obat` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }

@@ -1,14 +1,17 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function hapusIgPercakapanUntukBersihkanDalam(koneksi = pool) {
     const hasil = await tulis("DELETE t FROM `ig_percakapan` t WHERE TRUE", [], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ambilIgPercakapanUntukPerbarui(id, koneksi = pool) {
+    wajibId('ambilIgPercakapanUntukPerbarui', id);
     const baris = await baca("SELECT t.`id`, t.`jid`, t.`nama`, t.`foto_profil`, t.`profil_diperbarui_pada`, t.`pasien_id`, t.`status`, t.`penanggung_jawab`, t.`diperbarui_pada` FROM `ig_percakapan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahIgPercakapanUntukPerbarui(nama, foto_profil, profil_diperbarui_pada, id, jid, nama2, koneksi = pool) {
+    wajibId('ubahIgPercakapanUntukPerbarui', id);
     const hasil = await tulis("UPDATE `ig_percakapan` t SET `nama` = IF(?, t.`nama`, ?), `foto_profil` = IF(?, t.`foto_profil`, ?), `profil_diperbarui_pada` = IF(?, t.`profil_diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jid` <=> ?)) AND ((? OR t.`nama` <=> ?))", [nama === undefined, nama ?? null, foto_profil === undefined, foto_profil ?? null, profil_diperbarui_pada === undefined, profil_diperbarui_pada ?? null, id === undefined, id ?? null, jid === undefined, jid ?? null, nama2 === undefined, nama2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -50,18 +53,22 @@ export async function daftarIgPercakapanUntukBuatRuteInstagram(batas, lewati, pe
     return hasil;
 }
 export async function cariIgPercakapanUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('cariIgPercakapanUntukBuatRuteInstagram', id);
     const baris = await baca("SELECT t.`id`, t.`jid`, t.`nama`, t.`foto_profil`, t.`profil_diperbarui_pada`, t.`pasien_id`, t.`status`, t.`penanggung_jawab`, t.`diperbarui_pada` FROM `ig_percakapan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahIgPercakapanUntukBuatRuteInstagram(pasien_id, penanggung_jawab, id, pasien_id2, pasien_id3, koneksi = pool) {
+    wajibId('ubahIgPercakapanUntukBuatRuteInstagram', id);
     const hasil = await tulis("UPDATE `ig_percakapan` t SET `pasien_id` = IF(?, t.`pasien_id`, ?), `penanggung_jawab` = IF(?, t.`penanggung_jawab`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((((? OR t.`pasien_id` <=> ?))) OR (((? OR t.`pasien_id` <=> ?))))", [pasien_id === undefined, pasien_id ?? null, penanggung_jawab === undefined, penanggung_jawab ?? null, id === undefined, id ?? null, pasien_id2 === undefined, pasien_id2 ?? null, pasien_id3 === undefined, pasien_id3 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahIgPercakapanUntukBuatRuteInstagram2(pasien_id, penanggung_jawab, id, koneksi = pool) {
+    wajibId('ubahIgPercakapanUntukBuatRuteInstagram2', id);
     const hasil = await tulis("UPDATE `ig_percakapan` t SET `pasien_id` = IF(?, t.`pasien_id`, ?), `penanggung_jawab` = IF(?, t.`penanggung_jawab`, ?) WHERE ((? OR t.`id` <=> ?))", [pasien_id === undefined, pasien_id ?? null, penanggung_jawab === undefined, penanggung_jawab ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahIgPercakapanUntukBuatRuteInstagram3(diperbarui_pada, id, koneksi = pool) {
+    wajibId('ubahIgPercakapanUntukBuatRuteInstagram3', id);
     const hasil = await tulis("UPDATE `ig_percakapan` t SET `diperbarui_pada` = IF(?, t.`diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [diperbarui_pada === undefined, diperbarui_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

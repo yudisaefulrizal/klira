@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hapusWaMediaUntukBersihkanDalam(koneksi = pool) {
     const hasil = await tulis("DELETE t FROM `wa_media` t WHERE TRUE", [], koneksi);
     return { count: hasil.affectedRows };
@@ -8,6 +9,7 @@ export async function tambahWaMediaUntukBuatRuteWhatsapp(id, isi, mime, nama, ko
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function cariWaMediaUntukBuatRuteWhatsapp(id, koneksi = pool) {
+    wajibId('cariWaMediaUntukBuatRuteWhatsapp', id);
     const baris = await baca("SELECT t.`id`, t.`isi`, t.`mime`, t.`nama` FROM `wa_media` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -16,6 +18,7 @@ export async function tambahWaMediaUntukTerima(koneksi = pool) {
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function wajibWaMediaUntukKirim(id, koneksi = pool) {
+    wajibId('wajibWaMediaUntukKirim', id);
     const baris = await baca("SELECT t.`id`, t.`isi`, t.`mime`, t.`nama` FROM `wa_media` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris wa_media tidak ditemukan.');

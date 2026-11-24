@@ -1,5 +1,7 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function ambilIgEventUntukWebhookInstagram(id, koneksi = pool) {
+    wajibId('ambilIgEventUntukWebhookInstagram', id);
     const baris = await baca("SELECT t.`id` FROM `ig_event` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }

@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function kelompokOrderPenunjangUntukPetakan(kunjungan_id, status, koneksi = pool) {
     const baris = await baca("SELECT t.`kunjungan_id`, t.`status`, COUNT(*) AS `_count__all` FROM `order_penunjang` t WHERE ((? OR t.`kunjungan_id` IN (?))) AND ((? OR NOT (t.`status` <=> ?))) GROUP BY t.`kunjungan_id`, t.`status`", [kunjungan_id === undefined, (kunjungan_id)?.length ? (kunjungan_id) : [null], status === undefined, status ?? null], koneksi);
     const hasil = baris.map(b => ({ kunjungan_id: b.kunjungan_id, status: b.status, _count: { _all: Number(b._count__all) } }));
@@ -28,6 +29,7 @@ export async function tambahOrderPenunjangUntukBuatOrder(kunjungan_id, pasien_id
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahOrderPenunjangUntukBuatOrderHasil(id, koneksi = pool) {
+    wajibId('tambahOrderPenunjangUntukBuatOrderHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`pasien_id`, t.`jenis`, t.`master_pemeriksaan_id`, t.`kode_loinc`, t.`nama`, t.`prioritas`, t.`catatan`, t.`status`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `order_penunjang` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris order_penunjang tidak ditemukan.');
@@ -96,10 +98,12 @@ export async function daftarOrderPenunjangUntukOrdersKunjungan(kunjungan_id, kon
     return hasil;
 }
 export async function ubahOrderPenunjangUntukCatatSpesimen(status, id, status2, koneksi = pool) {
+    wajibId('ubahOrderPenunjangUntukCatatSpesimen', id);
     const hasil = await tulis("UPDATE `order_penunjang` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` <=> ?))", [status === undefined, (status ?? null), id === undefined, id ?? null, status2 === undefined, status2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahOrderPenunjangUntukSimpanHasil(status, id, status2, koneksi = pool) {
+    wajibId('ubahOrderPenunjangUntukSimpanHasil', id);
     const hasil = await tulis("UPDATE `order_penunjang` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` IN (?)))", [status === undefined, (status ?? null), id === undefined, id ?? null, status2 === undefined, (status2)?.length ? (status2) : [null]], koneksi);
     return { count: hasil.affectedRows };
 }

@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function hapusWaPercakapanUntukBersihkanDalam(koneksi = pool) {
     const hasil = await tulis("DELETE t FROM `wa_percakapan` t WHERE TRUE", [], koneksi);
     return { count: hasil.affectedRows };
@@ -52,18 +53,22 @@ export async function simpanWaPercakapanUntukBuatRuteWhatsappHasil(jid, koneksi 
     return baris[0];
 }
 export async function cariWaPercakapanUntukBuatRuteWhatsapp(id, koneksi = pool) {
+    wajibId('cariWaPercakapanUntukBuatRuteWhatsapp', id);
     const baris = await baca("SELECT t.`id`, t.`jid`, t.`nama`, t.`foto_profil`, t.`foto_periksa_setelah`, t.`pasien_id`, t.`status`, t.`penanggung_jawab`, t.`diperbarui_pada` FROM `wa_percakapan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahWaPercakapanUntukBuatRuteWhatsapp(pasien_id, penanggung_jawab, id, pasien_id2, pasien_id3, koneksi = pool) {
+    wajibId('ubahWaPercakapanUntukBuatRuteWhatsapp', id);
     const hasil = await tulis("UPDATE `wa_percakapan` t SET `pasien_id` = IF(?, t.`pasien_id`, ?), `penanggung_jawab` = IF(?, t.`penanggung_jawab`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((((? OR t.`pasien_id` <=> ?))) OR (((? OR t.`pasien_id` <=> ?))))", [pasien_id === undefined, pasien_id ?? null, penanggung_jawab === undefined, penanggung_jawab ?? null, id === undefined, id ?? null, pasien_id2 === undefined, pasien_id2 ?? null, pasien_id3 === undefined, pasien_id3 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahWaPercakapanUntukBuatRuteWhatsapp2(pasien_id, penanggung_jawab, id, koneksi = pool) {
+    wajibId('ubahWaPercakapanUntukBuatRuteWhatsapp2', id);
     const hasil = await tulis("UPDATE `wa_percakapan` t SET `pasien_id` = IF(?, t.`pasien_id`, ?), `penanggung_jawab` = IF(?, t.`penanggung_jawab`, ?) WHERE ((? OR t.`id` <=> ?))", [pasien_id === undefined, pasien_id ?? null, penanggung_jawab === undefined, penanggung_jawab ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahWaPercakapanUntukBuatRuteWhatsapp3(diperbarui_pada, id, koneksi = pool) {
+    wajibId('ubahWaPercakapanUntukBuatRuteWhatsapp3', id);
     const hasil = await tulis("UPDATE `wa_percakapan` t SET `diperbarui_pada` = IF(?, t.`diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [diperbarui_pada === undefined, diperbarui_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -72,6 +77,7 @@ export async function cariWaPercakapanUntukBuatPembaruanFotoWhatsapp(jid, jid2, 
     return (baris[0] ?? null);
 }
 export async function ubahWaPercakapanUntukBuatPembaruanFotoWhatsapp(foto_profil, foto_periksa_setelah, id, jid, koneksi = pool) {
+    wajibId('ubahWaPercakapanUntukBuatPembaruanFotoWhatsapp', id);
     const hasil = await tulis("UPDATE `wa_percakapan` t SET `foto_profil` = IF(?, t.`foto_profil`, ?), `foto_periksa_setelah` = IF(?, t.`foto_periksa_setelah`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jid` <=> ?))", [foto_profil === undefined, foto_profil ?? null, foto_periksa_setelah === undefined, foto_periksa_setelah ?? null, id === undefined, id ?? null, jid === undefined, jid ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

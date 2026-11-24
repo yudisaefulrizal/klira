@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function ringkasanAddendumUntukTulisAddendumDalam(entitas, entitas_id, koneksi = pool) {
     const baris = await baca("SELECT MAX(t.`versi`) AS `_max_versi` FROM `addendum` t WHERE ((? OR t.`entitas` <=> ?)) AND ((? OR t.`entitas_id` <=> ?))", [entitas === undefined, entitas ?? null, entitas_id === undefined, entitas_id ?? null], koneksi);
     const hasil = baris.map(b => ({ _max: { versi: b._max_versi } }));
@@ -9,6 +10,7 @@ export async function tambahAddendumUntukTulisAddendumDalam(kunjungan_id, entita
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahAddendumUntukTulisAddendumDalamHasil(id, koneksi = pool) {
+    wajibId('tambahAddendumUntukTulisAddendumDalamHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`entitas`, t.`entitas_id`, t.`versi`, t.`isi`, t.`alasan`, t.`waktu`, t.`perlu_kirim_ulang`, t.`dikirim_pada`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `addendum` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     for (const b of baris)
         if (typeof b.isi === 'string')
@@ -32,6 +34,7 @@ export async function daftarAddendumUntukUntukEntitas(entitas, entitas_id, konek
     return baris;
 }
 export async function cariAddendumUntukIsi(id, koneksi = pool) {
+    wajibId('cariAddendumUntukIsi', id);
     const baris = await baca("SELECT t.`isi` FROM `addendum` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     for (const b of baris)
         if (typeof b.isi === 'string')

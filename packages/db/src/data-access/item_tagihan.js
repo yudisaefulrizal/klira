@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function tambahItemTagihanUntukTambahItemTagihanDalam(tagihan_id, jenis, tarif_layanan_id, kode, nama, jumlah, harga, order_penunjang_id, item_resep_id, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `item_tagihan` (`tagihan_id`, `jenis`, `tarif_layanan_id`, `kode`, `nama`, `jumlah`, `harga`, `order_penunjang_id`, `item_resep_id`, `harga_acuan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [(tagihan_id === undefined ? null : tagihan_id) ?? null, ((jenis === undefined ? null : jenis) ?? null), (tarif_layanan_id === undefined ? null : tarif_layanan_id) ?? null, (kode === undefined ? null : kode) ?? null, (nama === undefined ? null : nama) ?? null, (jumlah === undefined ? 1 : jumlah) ?? null, (harga === undefined ? null : harga) ?? null, (order_penunjang_id === undefined ? null : order_penunjang_id) ?? null, (item_resep_id === undefined ? null : item_resep_id) ?? null, (harga === undefined ? null : harga) ?? null, (dibuat_oleh === undefined ? null : dibuat_oleh) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
@@ -50,14 +51,17 @@ export async function cariItemTagihanUntukLengkapiHarga(id, kunjungan_id, koneks
     return (hasil[0] ?? null);
 }
 export async function ubahItemTagihanUntukLengkapiHarga(harga, id, harga2, koneksi = pool) {
+    wajibId('ubahItemTagihanUntukLengkapiHarga', id);
     const hasil = await tulis("UPDATE `item_tagihan` t SET `harga` = IF(?, t.`harga`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`harga` <=> ?))", [harga === undefined, harga ?? null, id === undefined, id ?? null, harga2 === undefined, harga2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariItemTagihanUntukUbahHarga(id, tagihan_id, koneksi = pool) {
+    wajibId('cariItemTagihanUntukUbahHarga', id);
     const baris = await baca("SELECT t.`id`, t.`tagihan_id`, t.`jenis`, t.`tarif_layanan_id`, t.`kode`, t.`nama`, t.`jumlah`, t.`harga`, t.`order_penunjang_id`, t.`item_resep_id`, t.`manual`, t.`tindakan_sumber`, t.`harga_acuan`, t.`alasan_ubah_harga`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `item_tagihan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`tagihan_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, tagihan_id === undefined, tagihan_id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahItemTagihanUntukUbahHarga(harga, harga_acuan, alasan_ubah_harga, id, koneksi = pool) {
+    wajibId('ubahItemTagihanUntukUbahHarga', id);
     const hasil = await tulis("UPDATE `item_tagihan` t SET `harga` = IF(?, t.`harga`, ?), `harga_acuan` = IF(?, t.`harga_acuan`, ?), `alasan_ubah_harga` = IF(?, t.`alasan_ubah_harga`, ?) WHERE ((? OR t.`id` <=> ?))", [harga === undefined, harga ?? null, harga_acuan === undefined, harga_acuan ?? null, alasan_ubah_harga === undefined, alasan_ubah_harga ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -66,6 +70,7 @@ export async function tambahItemTagihanUntukTambahItem(tagihan_id, jenis, tarif_
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function hapusItemTagihanUntukHapusItem(id, koneksi = pool) {
+    wajibId('hapusItemTagihanUntukHapusItem', id);
     const hasil = await tulis("DELETE t FROM `item_tagihan` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarResepUntukPetakan(kunjungan_id, koneksi = pool) {
     const baris = await baca("SELECT DISTINCT t.`kunjungan_id` FROM `resep` t WHERE ((? OR t.`kunjungan_id` IN (?)))", [kunjungan_id === undefined, (kunjungan_id)?.length ? (kunjungan_id) : [null]], koneksi);
     return baris;
@@ -105,20 +106,24 @@ export async function tambahResepUntukBuatResep(kunjungan_id, dpjp_id, nomor_res
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahResepUntukBuatResepHasil(id, koneksi = pool) {
+    wajibId('tambahResepUntukBuatResepHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`dpjp_id`, t.`nomor_resep`, t.`teks`, t.`jenis_pembiayaan`, t.`status`, t.`waktu_siap`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `resep` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris resep tidak ditemukan.');
     return baris[0];
 }
 export async function ubahResepUntukCatatTelaah(status, id, koneksi = pool) {
+    wajibId('ubahResepUntukCatatTelaah', id);
     const hasil = await tulis("UPDATE `resep` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, (status ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariResepUntukTandaiSiap(id, koneksi = pool) {
+    wajibId('cariResepUntukTandaiSiap', id);
     const baris = await baca("SELECT t.`kunjungan_id` FROM `resep` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahResepUntukTandaiSiap(status, waktu_siap, id, status2, koneksi = pool) {
+    wajibId('ubahResepUntukTandaiSiap', id);
     const hasil = await tulis("UPDATE `resep` t SET `status` = IF(?, t.`status`, ?), `waktu_siap` = IF(?, t.`waktu_siap`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` <=> ?)) AND (EXISTS (SELECT 1 FROM `item_resep` r1 WHERE t.`id` = r1.`resep_id` AND (TRUE)))", [status === undefined, (status ?? null), waktu_siap === undefined, waktu_siap ?? null, id === undefined, id ?? null, status2 === undefined, status2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

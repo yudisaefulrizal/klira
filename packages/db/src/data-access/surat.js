@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function cariSuratUntukDataCetak(kunjungan_id, jenis, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`jenis`, t.`nomor_surat`, t.`tujuan`, t.`isi`, t.`dokter_id`, t.`dibuat_pada` FROM `surat` t WHERE ((? OR t.`kunjungan_id` <=> ?)) AND ((? OR t.`jenis` <=> ?)) ORDER BY t.`id` DESC LIMIT 1", [kunjungan_id === undefined, kunjungan_id ?? null, jenis === undefined, jenis ?? null], koneksi);
     return (baris[0] ?? null);
@@ -16,6 +17,7 @@ export async function tambahSuratUntukBuatSurat(kunjungan_id, jenis, nomor_surat
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahSuratUntukBuatSuratHasil(id, koneksi = pool) {
+    wajibId('tambahSuratUntukBuatSuratHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`jenis`, t.`nomor_surat`, t.`tujuan`, t.`isi`, t.`dokter_id`, t.`dibuat_pada` FROM `surat` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris surat tidak ditemukan.');

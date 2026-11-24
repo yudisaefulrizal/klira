@@ -1,9 +1,11 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function cariTeksPersetujuanUntukTeksAktif(jenis, aktif, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`jenis`, t.`versi`, t.`judul`, t.`tujuan`, t.`isi` FROM `teks_persetujuan` t WHERE ((? OR t.`jenis` <=> ?)) AND ((? OR t.`aktif` <=> ?)) ORDER BY t.`versi` DESC LIMIT 1", [jenis === undefined, jenis ?? null, aktif === undefined, aktif ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function cariTeksPersetujuanUntukTeksUntukPakai(id, jenis, aktif, koneksi = pool) {
+    wajibId('cariTeksPersetujuanUntukTeksUntukPakai', id);
     const baris = await baca("SELECT t.`id`, t.`jenis`, t.`versi`, t.`judul`, t.`tujuan`, t.`isi` FROM `teks_persetujuan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jenis` <=> ?)) AND ((? OR t.`aktif` <=> ?)) AND (TRUE OR TRUE) LIMIT 1", [id === undefined, id ?? null, jenis === undefined, jenis ?? null, aktif === undefined, aktif ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -25,6 +27,7 @@ export async function tambahTeksPersetujuanUntukBuatTeksPdp(jenis, versi, judul,
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahTeksPersetujuanUntukBuatTeksPdpHasil(id, koneksi = pool) {
+    wajibId('tambahTeksPersetujuanUntukBuatTeksPdpHasil', id);
     const baris = await baca("SELECT t.`id`, t.`jenis`, t.`versi`, t.`judul`, t.`tujuan`, t.`isi`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `teks_persetujuan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris teks_persetujuan tidak ditemukan.');

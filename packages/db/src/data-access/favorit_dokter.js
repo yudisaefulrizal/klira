@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function daftarFavoritDokterUntukDaftarFavorit(pengguna_id, jenis, batas, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`jenis`, t.`kode`, t.`nama`, t.`urutan`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `favorit_dokter` t WHERE ((? OR t.`pengguna_id` <=> ?)) AND ((? OR t.`jenis` <=> ?)) ORDER BY t.`urutan` ASC, t.`id` ASC LIMIT ? OFFSET ?", [pengguna_id === undefined, pengguna_id ?? null, jenis === undefined, jenis ?? null, batas ?? 2147483647, 0], koneksi);
     return baris;
@@ -13,16 +14,19 @@ export async function tambahFavoritDokterUntukTambahFavorit(pengguna_id, jenis, 
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahFavoritDokterUntukTambahFavoritHasil(id, koneksi = pool) {
+    wajibId('tambahFavoritDokterUntukTambahFavoritHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`jenis`, t.`kode`, t.`nama`, t.`urutan`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `favorit_dokter` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris favorit_dokter tidak ditemukan.');
     return baris[0];
 }
 export async function ubahFavoritDokterUntukUbahUrutanFavorit(urutan, id, pengguna_id, koneksi = pool) {
+    wajibId('ubahFavoritDokterUntukUbahUrutanFavorit', id);
     const hasil = await tulis("UPDATE `favorit_dokter` t SET `urutan` = IF(?, t.`urutan`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`pengguna_id` <=> ?))", [urutan === undefined, urutan ?? null, id === undefined, id ?? null, pengguna_id === undefined, pengguna_id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function hapusFavoritDokterUntukHapusFavorit(id, pengguna_id, koneksi = pool) {
+    wajibId('hapusFavoritDokterUntukHapusFavorit', id);
     const hasil = await tulis("DELETE t FROM `favorit_dokter` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`pengguna_id` <=> ?))", [id === undefined, id ?? null, pengguna_id === undefined, pengguna_id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

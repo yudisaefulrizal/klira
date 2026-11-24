@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungProsesorDataUntukDaftarProsesor(koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `prosesor_data` t WHERE TRUE", [], koneksi);
     return Number(baris.jumlah);
@@ -14,6 +15,7 @@ export async function daftarProsesorDataUntukDaftarProsesor(batas, lewati, konek
     return baris;
 }
 export async function cariProsesorDataUntukProsesor(id, koneksi = pool) {
+    wajibId('cariProsesorDataUntukProsesor', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`layanan`, t.`lokasi_data`, t.`nomor_perjanjian`, t.`butir_perjanjian`, t.`sub_prosesor`, t.`sla_lapor_jam`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diperbarui_pada` FROM `prosesor_data` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     for (const b of baris)
         if (typeof b.butir_perjanjian === 'string')
@@ -36,6 +38,7 @@ export async function tambahProsesorDataUntukBuatProsesor(nama, layanan, lokasi_
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahProsesorDataUntukBuatProsesorHasil(id, koneksi = pool) {
+    wajibId('tambahProsesorDataUntukBuatProsesorHasil', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`layanan`, t.`lokasi_data`, t.`nomor_perjanjian`, t.`butir_perjanjian`, t.`sub_prosesor`, t.`sla_lapor_jam`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diperbarui_pada` FROM `prosesor_data` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     for (const b of baris)
         if (typeof b.butir_perjanjian === 'string')
@@ -48,6 +51,7 @@ export async function tambahProsesorDataUntukBuatProsesorHasil(id, koneksi = poo
     return baris[0];
 }
 export async function ubahProsesorDataUntukUbahProsesor(nama, layanan, lokasi_data, nomor_perjanjian, butir_perjanjian, sub_prosesor, sla_lapor_jam, aktif, diperbarui_pada, id, koneksi = pool) {
+    wajibId('ubahProsesorDataUntukUbahProsesor', id);
     const hasil = await tulis("UPDATE `prosesor_data` t SET `nama` = IF(?, t.`nama`, ?), `layanan` = IF(?, t.`layanan`, ?), `lokasi_data` = IF(?, t.`lokasi_data`, ?), `nomor_perjanjian` = IF(?, t.`nomor_perjanjian`, ?), `butir_perjanjian` = IF(?, t.`butir_perjanjian`, ?), `sub_prosesor` = IF(?, t.`sub_prosesor`, ?), `sla_lapor_jam` = IF(?, t.`sla_lapor_jam`, ?), `aktif` = IF(?, t.`aktif`, ?), `diperbarui_pada` = IF(?, t.`diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [nama === undefined, nama ?? null, layanan === undefined, layanan ?? null, lokasi_data === undefined, lokasi_data ?? null, nomor_perjanjian === undefined, nomor_perjanjian ?? null, butir_perjanjian === undefined, JSON.stringify(butir_perjanjian ?? null), sub_prosesor === undefined, JSON.stringify(sub_prosesor ?? null), sla_lapor_jam === undefined, sla_lapor_jam ?? null, aktif === undefined, aktif ?? null, diperbarui_pada === undefined, diperbarui_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

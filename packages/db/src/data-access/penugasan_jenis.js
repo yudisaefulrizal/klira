@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarPenugasanJenisUntukDaftarJenisAkun(mulai, selesai, selesai2, koneksi = pool) {
     const baris = await baca("SELECT DISTINCT t.`jenis_akun_id`, t.`pengguna_id` FROM `penugasan_jenis` t WHERE ((? OR t.`mulai` <= ?)) AND ((((? OR t.`selesai` <=> ?))) OR (((? OR t.`selesai` > ?))))", [mulai === undefined, mulai ?? null, selesai === undefined, selesai ?? null, selesai2 === undefined, selesai2 ?? null], koneksi);
     return baris;
@@ -9,6 +10,7 @@ export async function daftarPenugasanJenisUntukDaftarPenugasan(pengguna_id, kone
     return baris;
 }
 export async function cariPenugasanJenisUntukAmbilPenugasan(id, pengguna_id, koneksi = pool) {
+    wajibId('cariPenugasanJenisUntukAmbilPenugasan', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`jenis_akun_id`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh` FROM `penugasan_jenis` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`pengguna_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, pengguna_id === undefined, pengguna_id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -17,12 +19,14 @@ export async function tambahPenugasanJenisUntukBuatPenugasan(pengguna_id, jenis_
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPenugasanJenisUntukBuatPenugasanHasil(id, koneksi = pool) {
+    wajibId('tambahPenugasanJenisUntukBuatPenugasanHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`jenis_akun_id`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh` FROM `penugasan_jenis` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris penugasan_jenis tidak ditemukan.');
     return baris[0];
 }
 export async function ubahPenugasanJenisUntukAkhiriPenugasan(selesai, id, koneksi = pool) {
+    wajibId('ubahPenugasanJenisUntukAkhiriPenugasan', id);
     const hasil = await tulis("UPDATE `penugasan_jenis` t SET `selesai` = IF(?, t.`selesai`, ?) WHERE ((? OR t.`id` <=> ?))", [selesai === undefined, selesai ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -46,6 +50,7 @@ export async function tambahPenugasanJenisUntukBuatAkun(pengguna_id, jenis_akun_
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPenugasanJenisUntukBuatAkunHasil(id, koneksi = pool) {
+    wajibId('tambahPenugasanJenisUntukBuatAkunHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`jenis_akun_id`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `penugasan_jenis` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris penugasan_jenis tidak ditemukan.');

@@ -1,9 +1,11 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function daftarIzinPerAkunUntukDaftarIzinAkun(pengguna_id, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`izin_id`, t.`tipe`, t.`alasan`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh` FROM `izin_per_akun` t WHERE ((? OR t.`pengguna_id` <=> ?)) ORDER BY t.`id` ASC", [pengguna_id === undefined, pengguna_id ?? null], koneksi);
     return baris;
 }
 export async function cariIzinPerAkunUntukAmbilIzinAkun(id, pengguna_id, koneksi = pool) {
+    wajibId('cariIzinPerAkunUntukAmbilIzinAkun', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`izin_id`, t.`tipe`, t.`alasan`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh` FROM `izin_per_akun` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`pengguna_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, pengguna_id === undefined, pengguna_id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -12,12 +14,14 @@ export async function tambahIzinPerAkunUntukBuatIzinAkun(pengguna_id, izin_id, t
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahIzinPerAkunUntukBuatIzinAkunHasil(id, koneksi = pool) {
+    wajibId('tambahIzinPerAkunUntukBuatIzinAkunHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`izin_id`, t.`tipe`, t.`alasan`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh` FROM `izin_per_akun` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris izin_per_akun tidak ditemukan.');
     return baris[0];
 }
 export async function ubahIzinPerAkunUntukAkhiriIzinAkun(selesai, id, koneksi = pool) {
+    wajibId('ubahIzinPerAkunUntukAkhiriIzinAkun', id);
     const hasil = await tulis("UPDATE `izin_per_akun` t SET `selesai` = IF(?, t.`selesai`, ?) WHERE ((? OR t.`id` <=> ?))", [selesai === undefined, selesai ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -26,6 +30,7 @@ export async function tambahIzinPerAkunUntukBuatAkun(pengguna_id, izin_id, tipe,
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahIzinPerAkunUntukBuatAkunHasil(id, koneksi = pool) {
+    wajibId('tambahIzinPerAkunUntukBuatAkunHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`izin_id`, t.`tipe`, t.`alasan`, t.`mulai`, t.`selesai`, t.`ditetapkan_oleh`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `izin_per_akun` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris izin_per_akun tidak ditemukan.');

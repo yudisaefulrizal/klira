@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarKunjunganUntukBuatRuteStatistik(jenis, lokasi_id, mulai, mulai2, koneksi = pool) {
     function petakt1(semua) {
         return kelompokkan(semua, 't1', [
@@ -81,6 +82,7 @@ export async function hitungKunjunganUntukHitungTahap(mulai, status, koneksi = p
     return Number(baris.jumlah);
 }
 export async function ubahKunjunganUntukMulaiAntreanDalam(status, id, tahap_layanan, status2, status3, koneksi = pool) {
+    wajibId('ubahKunjunganUntukMulaiAntreanDalam', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`tahap_layanan` IN (?))) AND (NOT (((EXISTS (SELECT 1 FROM `antrean` r1 WHERE t.`id` = r1.`kunjungan_id` AND (((? OR r1.`status` <=> ?)))))))) AND ((? OR t.`status` IN (?)))", [status === undefined, (status ?? null), id === undefined, id ?? null, tahap_layanan === undefined, (tahap_layanan)?.length ? (tahap_layanan) : [null], status2 === undefined, status2 ?? null, status3 === undefined, (status3)?.length ? (status3) : [null]], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -124,32 +126,39 @@ export async function tambahKunjunganUntukDaftarkan(id_layanan, pasien_id, jenis
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahKunjunganUntukDaftarkanHasil(id, koneksi = pool) {
+    wajibId('tambahKunjunganUntukDaftarkanHasil', id);
     const baris = await baca("SELECT t.`id`, t.`id_layanan`, t.`pasien_id`, t.`jenis`, t.`status`, t.`tahap_layanan`, t.`kunjungan_asal_id`, t.`lokasi_id`, t.`cara_pembayaran`, t.`nomor_sep`, t.`spri`, t.`keluhan_singkat`, t.`service_type`, t.`encounter_id`, t.`mulai`, t.`selesai`, t.`waktu_tutup`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diarsipkan_pada`, t.`retensi_sampai` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris kunjungan tidak ditemukan.');
     return baris[0];
 }
 export async function cariKunjunganUntukTahapSekarang(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukTahapSekarang', id);
     const baris = await baca("SELECT t.`tahap_layanan` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahKunjunganUntukUbahTahap(tahap_layanan, id, tahap_layanan2, koneksi = pool) {
+    wajibId('ubahKunjunganUntukUbahTahap', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `tahap_layanan` = IF(?, t.`tahap_layanan`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`tahap_layanan` <=> ?))", [tahap_layanan === undefined, (tahap_layanan ?? null), id === undefined, id ?? null, tahap_layanan2 === undefined, tahap_layanan2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahKunjunganUntukUbahAntrean(status, id, status2, koneksi = pool) {
+    wajibId('ubahKunjunganUntukUbahAntrean', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` IN (?)))", [status === undefined, (status ?? null), id === undefined, id ?? null, status2 === undefined, (status2)?.length ? (status2) : [null]], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariKunjunganUntukSinkronItemTindakanDalam(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukSinkronItemTindakanDalam', id);
     const baris = await baca("SELECT t.`tahap_layanan`, t.`cara_pembayaran` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function hitungKunjunganUntukKunjunganAda(id, koneksi = pool) {
+    wajibId('hitungKunjunganUntukKunjunganAda', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return Number(baris.jumlah);
 }
 export async function cariKunjunganUntukKunjungan(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukKunjungan', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`tahap_layanan` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -219,6 +228,7 @@ export async function daftarKunjunganUntukRiwayatPasien(pasien_id, id, batas, ko
     return baris;
 }
 export async function cariKunjunganUntukSalinan(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukSalinan', id);
     const baris = await baca("SELECT t.`id`, t.`mulai` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -281,6 +291,7 @@ export async function daftarKunjunganUntukBerkas(tahap_layanan, nama, nik, pakai
     return hasil;
 }
 export async function hitungKunjunganUntukKunjunganAda2(id, pasien_id, koneksi = pool) {
+    wajibId('hitungKunjunganUntukKunjunganAda2', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`pasien_id` <=> ?))", [id === undefined, id ?? null, pasien_id === undefined, pasien_id ?? null], koneksi);
     return Number(baris.jumlah);
 }
@@ -316,6 +327,7 @@ export async function daftarKunjunganUntukDaftar(nama, batas, koneksi = pool) {
     return baris;
 }
 export async function cariKunjunganUntukKunjungan4(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukKunjungan4', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`tahap_layanan`, t.`cara_pembayaran` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -376,6 +388,7 @@ export async function tambahKunjunganUntukAdmisi(id_layanan, pasien_id, jenis, s
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function ubahKunjunganUntukTeruskanDariRawatJalan(status, tahap_layanan, selesai, retensi_sampai, id, koneksi = pool) {
+    wajibId('ubahKunjunganUntukTeruskanDariRawatJalan', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `status` = IF(?, t.`status`, ?), `tahap_layanan` = IF(?, t.`tahap_layanan`, ?), `selesai` = IF(?, t.`selesai`, ?), `waktu_tutup` = IF(?, t.`waktu_tutup`, ?), `diarsipkan_pada` = IF(?, t.`diarsipkan_pada`, ?), `retensi_sampai` = IF(?, t.`retensi_sampai`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, (status ?? null), tahap_layanan === undefined, (tahap_layanan ?? null), selesai === undefined, selesai ?? null, selesai === undefined, selesai ?? null, selesai === undefined, selesai ?? null, retensi_sampai === undefined, retensi_sampai ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -398,28 +411,34 @@ export async function cariKunjunganUntukDetail(id, jenis, koneksi = pool) {
     return (hasil[0] ?? null);
 }
 export async function cariKunjunganUntukUbahPenempatan(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukUbahPenempatan', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`status`, t.`tahap_layanan`, t.`kunjungan_asal_id`, t.`lokasi_id`, t.`cara_pembayaran`, t.`nomor_sep`, t.`spri`, t.`keluhan_singkat`, t.`service_type`, t.`encounter_id`, t.`mulai`, t.`selesai`, t.`waktu_tutup`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diarsipkan_pada`, t.`retensi_sampai` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahKunjunganUntukUbahPenempatan(status, id, koneksi = pool) {
+    wajibId('ubahKunjunganUntukUbahPenempatan', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, (status ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahKunjunganUntukPulangkan(status, tahap_layanan, selesai, id, koneksi = pool) {
+    wajibId('ubahKunjunganUntukPulangkan', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `status` = IF(?, t.`status`, ?), `tahap_layanan` = IF(?, t.`tahap_layanan`, ?), `selesai` = IF(?, t.`selesai`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, (status ?? null), tahap_layanan === undefined, (tahap_layanan ?? null), selesai === undefined, selesai ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariKunjunganUntukKunjungan5(id, koneksi = pool) {
+    wajibId('cariKunjunganUntukKunjungan5', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`tahap_layanan`, t.`cara_pembayaran` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function wajibKunjunganUntukTandaiSiap(id, koneksi = pool) {
+    wajibId('wajibKunjunganUntukTandaiSiap', id);
     const baris = await baca("SELECT t.`tahap_layanan` FROM `kunjungan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris kunjungan tidak ditemukan.');
     return baris[0];
 }
 export async function ubahKunjunganUntukTutup(status, tahap_layanan, selesai, retensi_sampai, id, tahap_layanan2, koneksi = pool) {
+    wajibId('ubahKunjunganUntukTutup', id);
     const hasil = await tulis("UPDATE `kunjungan` t SET `status` = IF(?, t.`status`, ?), `tahap_layanan` = IF(?, t.`tahap_layanan`, ?), `selesai` = IF(?, t.`selesai`, ?), `waktu_tutup` = IF(?, t.`waktu_tutup`, ?), `diarsipkan_pada` = IF(?, t.`diarsipkan_pada`, ?), `retensi_sampai` = IF(?, t.`retensi_sampai`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`tahap_layanan` <=> ?))", [status === undefined, (status ?? null), tahap_layanan === undefined, (tahap_layanan ?? null), selesai === undefined, selesai ?? null, selesai === undefined, selesai ?? null, selesai === undefined, selesai ?? null, retensi_sampai === undefined, retensi_sampai ?? null, id === undefined, id ?? null, tahap_layanan2 === undefined, tahap_layanan2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

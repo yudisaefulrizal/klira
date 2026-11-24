@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungIgPesanUntukBersihkanDalam(status, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `ig_pesan` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id`)) AND ((? OR t.`status` IN (?)))", [status === undefined, (status)?.length ? (status) : [null]], koneksi);
     return Number(baris.jumlah);
@@ -16,6 +17,7 @@ export async function daftarIgPesanUntukBuatRuteInstagram(percakapan_id, batas, 
     return baris;
 }
 export async function cariIgPesanUntukBuatRuteInstagram(id, percakapan_id, koneksi = pool) {
+    wajibId('cariIgPesanUntukBuatRuteInstagram', id);
     const baris = await baca("SELECT t.`id`, t.`percakapan_id`, t.`ig_id`, t.`arah`, t.`isi`, t.`jenis`, t.`media_id`, t.`status`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `ig_pesan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`percakapan_id` <=> ?)) LIMIT 1", [id === undefined, id ?? null, percakapan_id === undefined, percakapan_id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -24,12 +26,14 @@ export async function tambahIgPesanUntukBuatRuteInstagram(percakapan_id, arah, i
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahIgPesanUntukBuatRuteInstagramHasil(id, koneksi = pool) {
+    wajibId('tambahIgPesanUntukBuatRuteInstagramHasil', id);
     const baris = await baca("SELECT t.`id`, t.`percakapan_id`, t.`ig_id`, t.`arah`, t.`isi`, t.`jenis`, t.`media_id`, t.`status`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `ig_pesan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris ig_pesan tidak ditemukan.');
     return baris[0];
 }
 export async function ambilIgPesanUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('ambilIgPesanUntukBuatRuteInstagram', id);
     const baris = await baca("SELECT t.`id`, t.`percakapan_id`, t.`ig_id`, t.`arah`, t.`isi`, t.`jenis`, t.`media_id`, t.`status`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `ig_pesan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -38,14 +42,17 @@ export async function ambilIgPesanUntukBuatRuteInstagram2(ig_id, koneksi = pool)
     return (baris[0] ?? null);
 }
 export async function hapusIgPesanUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('hapusIgPesanUntukBuatRuteInstagram', id);
     const hasil = await tulis("DELETE t FROM `ig_pesan` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahIgPesanUntukBuatRuteInstagram(ig_id, status, id, koneksi = pool) {
+    wajibId('ubahIgPesanUntukBuatRuteInstagram', id);
     const hasil = await tulis("UPDATE `ig_pesan` t SET `ig_id` = IF(?, t.`ig_id`, ?), `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?))", [ig_id === undefined, ig_id ?? null, status === undefined, status ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahIgPesanUntukBuatRuteInstagram2(status, id, koneksi = pool) {
+    wajibId('ubahIgPesanUntukBuatRuteInstagram2', id);
     const hasil = await tulis("UPDATE `ig_pesan` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, status ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -58,6 +65,7 @@ export async function daftarIgPesanUntukPulihkanPengirimanInstagram(arah, status
     return baris;
 }
 export async function ubahIgPesanUntukPulihkanPengirimanInstagram(status, id, status2, dibuat_pada, koneksi = pool) {
+    wajibId('ubahIgPesanUntukPulihkanPengirimanInstagram', id);
     const hasil = await tulis("UPDATE `ig_pesan` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` <=> ?)) AND ((? OR t.`dibuat_pada` < ?))", [status === undefined, status ?? null, id === undefined, id ?? null, status2 === undefined, status2 ?? null, dibuat_pada === undefined, dibuat_pada ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungPermintaanHakUntukRingkasan(status, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `permintaan_hak` t WHERE ((? OR NOT (t.`status` <=> ?)))", [status === undefined, status ?? null], koneksi);
     return Number(baris.jumlah);
@@ -12,12 +13,14 @@ export async function tambahPermintaanHakUntukBuatHak(pasien_id, jenis, saluran,
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPermintaanHakUntukBuatHakHasil(id, koneksi = pool) {
+    wajibId('tambahPermintaanHakUntukBuatHakHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`saluran`, t.`pemohon_nama`, t.`pemohon_hubungan`, t.`verifikasi`, t.`rincian`, t.`diterima_pada`, t.`batas_waktu`, t.`status`, t.`keputusan_oleh`, t.`waktu_keputusan`, t.`alasan_keputusan`, t.`pelaksanaan`, t.`pelaksana_id`, t.`waktu_pelaksanaan`, t.`notifikasi_pada`, t.`notifikasi_oleh`, t.`catatan_notifikasi`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `permintaan_hak` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris permintaan_hak tidak ditemukan.');
     return baris[0];
 }
 export async function cariPermintaanHakUntukHak(id, koneksi = pool) {
+    wajibId('cariPermintaanHakUntukHak', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`saluran`, t.`pemohon_nama`, t.`pemohon_hubungan`, t.`verifikasi`, t.`rincian`, t.`diterima_pada`, t.`batas_waktu`, t.`status`, t.`keputusan_oleh`, t.`waktu_keputusan`, t.`alasan_keputusan`, t.`pelaksanaan`, t.`pelaksana_id`, t.`waktu_pelaksanaan`, t.`notifikasi_pada`, t.`notifikasi_oleh`, t.`catatan_notifikasi`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `permintaan_hak` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -30,10 +33,12 @@ export async function daftarPermintaanHakUntukDaftarHak(status, pemohon_nama, pa
     return baris;
 }
 export async function ubahPermintaanHakUntukMajuHak(pasien_id, jenis, saluran, pemohon_nama, pemohon_hubungan, verifikasi, rincian, diterima_pada, batas_waktu, status, keputusan_oleh, waktu_keputusan, alasan_keputusan, pelaksanaan, pelaksana_id, waktu_pelaksanaan, notifikasi_pada, notifikasi_oleh, catatan_notifikasi, dibuat_oleh, dibuat_pada, id, status2, koneksi = pool) {
+    wajibId('ubahPermintaanHakUntukMajuHak', id);
     const hasil = await tulis("UPDATE `permintaan_hak` t SET `pasien_id` = IF(?, t.`pasien_id`, ?), `jenis` = IF(?, t.`jenis`, ?), `saluran` = IF(?, t.`saluran`, ?), `pemohon_nama` = IF(?, t.`pemohon_nama`, ?), `pemohon_hubungan` = IF(?, t.`pemohon_hubungan`, ?), `verifikasi` = IF(?, t.`verifikasi`, ?), `rincian` = IF(?, t.`rincian`, ?), `diterima_pada` = IF(?, t.`diterima_pada`, ?), `batas_waktu` = IF(?, t.`batas_waktu`, ?), `status` = IF(?, t.`status`, ?), `keputusan_oleh` = IF(?, t.`keputusan_oleh`, ?), `waktu_keputusan` = IF(?, t.`waktu_keputusan`, ?), `alasan_keputusan` = IF(?, t.`alasan_keputusan`, ?), `pelaksanaan` = IF(?, t.`pelaksanaan`, ?), `pelaksana_id` = IF(?, t.`pelaksana_id`, ?), `waktu_pelaksanaan` = IF(?, t.`waktu_pelaksanaan`, ?), `notifikasi_pada` = IF(?, t.`notifikasi_pada`, ?), `notifikasi_oleh` = IF(?, t.`notifikasi_oleh`, ?), `catatan_notifikasi` = IF(?, t.`catatan_notifikasi`, ?), `dibuat_oleh` = IF(?, t.`dibuat_oleh`, ?), `dibuat_pada` = IF(?, t.`dibuat_pada`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` IN (?)))", [pasien_id === undefined, pasien_id ?? null, jenis === undefined, (jenis ?? null), saluran === undefined, (saluran ?? null), pemohon_nama === undefined, pemohon_nama ?? null, pemohon_hubungan === undefined, pemohon_hubungan ?? null, verifikasi === undefined, verifikasi ?? null, rincian === undefined, rincian ?? null, diterima_pada === undefined, diterima_pada ?? null, batas_waktu === undefined, batas_waktu ?? null, status === undefined, (status ?? null), keputusan_oleh === undefined, keputusan_oleh ?? null, waktu_keputusan === undefined, waktu_keputusan ?? null, alasan_keputusan === undefined, alasan_keputusan ?? null, pelaksanaan === undefined, pelaksanaan ?? null, pelaksana_id === undefined, pelaksana_id ?? null, waktu_pelaksanaan === undefined, waktu_pelaksanaan ?? null, notifikasi_pada === undefined, notifikasi_pada ?? null, notifikasi_oleh === undefined, notifikasi_oleh ?? null, catatan_notifikasi === undefined, catatan_notifikasi ?? null, dibuat_oleh === undefined, dibuat_oleh ?? null, dibuat_pada === undefined, dibuat_pada ?? null, id === undefined, id ?? null, status2 === undefined, (status2)?.length ? (status2) : [null]], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function hitungPermintaanHakUntukHakAda(id, koneksi = pool) {
+    wajibId('hitungPermintaanHakUntukHakAda', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `permintaan_hak` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return Number(baris.jumlah);
 }

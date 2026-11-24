@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function daftarIgMediaUntukBersihkanDalam(koneksi = pool) {
     const baris = await baca("SELECT t.`id` FROM `ig_media` t WHERE TRUE", [], koneksi);
     return baris;
@@ -12,10 +13,12 @@ export async function tambahIgMediaUntukBuatRuteInstagram(id, isi, mime, nama, k
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function hapusIgMediaUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('hapusIgMediaUntukBuatRuteInstagram', id);
     const hasil = await tulis("DELETE t FROM `ig_media` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariIgMediaUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('cariIgMediaUntukBuatRuteInstagram', id);
     const baris = await baca("SELECT t.`id`, t.`isi`, t.`mime`, t.`nama` FROM `ig_media` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }

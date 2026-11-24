@@ -1,5 +1,7 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function cariKlaimUntukKlaim(id, koneksi = pool) {
+    wajibId('cariKlaimUntukKlaim', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`nomor_sep`, t.`status`, t.`tanggal_selesai`, t.`batas_pengajuan`, t.`diagnosis`, t.`tindakan`, t.`berkas`, t.`catatan`, t.`diajukan_pada`, t.`dikembalikan_pada`, t.`berita_acara`, t.`batas_ajukan_ulang`, t.`alasan`, t.`jumlah_dibayar`, t.`dibayar_pada`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diperbarui_pada` FROM `klaim` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     for (const b of baris)
         if (typeof b.diagnosis === 'string')
@@ -38,6 +40,7 @@ export async function tambahKlaimUntukBuat(kunjungan_id, nomor_sep, status, tang
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahKlaimUntukBuatHasil(id, koneksi = pool) {
+    wajibId('tambahKlaimUntukBuatHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`nomor_sep`, t.`status`, t.`tanggal_selesai`, t.`batas_pengajuan`, t.`diagnosis`, t.`tindakan`, t.`berkas`, t.`catatan`, t.`diajukan_pada`, t.`dikembalikan_pada`, t.`berita_acara`, t.`batas_ajukan_ulang`, t.`alasan`, t.`jumlah_dibayar`, t.`dibayar_pada`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diperbarui_pada` FROM `klaim` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     for (const b of baris)
         if (typeof b.diagnosis === 'string')
@@ -53,10 +56,12 @@ export async function tambahKlaimUntukBuatHasil(id, koneksi = pool) {
     return baris[0];
 }
 export async function ubahKlaimUntukUbahBerkas(nomor_sep, status, berkas, catatan, diperbarui_pada, id, status2, koneksi = pool) {
+    wajibId('ubahKlaimUntukUbahBerkas', id);
     const hasil = await tulis("UPDATE `klaim` t SET `nomor_sep` = IF(?, t.`nomor_sep`, ?), `status` = IF(?, t.`status`, ?), `berkas` = IF(?, t.`berkas`, ?), `catatan` = IF(?, t.`catatan`, ?), `diperbarui_pada` = IF(?, t.`diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` <=> ?))", [nomor_sep === undefined, nomor_sep ?? null, status === undefined, (status ?? null), berkas === undefined, JSON.stringify(berkas ?? null), catatan === undefined, catatan ?? null, diperbarui_pada === undefined, diperbarui_pada ?? null, id === undefined, id ?? null, status2 === undefined, status2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahKlaimUntukUbahStatus(status, diajukan_pada, dikembalikan_pada, berita_acara, batas_ajukan_ulang, alasan, jumlah_dibayar, dibayar_pada, diperbarui_pada, id, status2, koneksi = pool) {
+    wajibId('ubahKlaimUntukUbahStatus', id);
     const hasil = await tulis("UPDATE `klaim` t SET `status` = IF(?, t.`status`, ?), `diajukan_pada` = IF(?, t.`diajukan_pada`, ?), `dikembalikan_pada` = IF(?, t.`dikembalikan_pada`, ?), `berita_acara` = IF(?, t.`berita_acara`, ?), `batas_ajukan_ulang` = IF(?, t.`batas_ajukan_ulang`, ?), `alasan` = IF(?, t.`alasan`, ?), `jumlah_dibayar` = IF(?, t.`jumlah_dibayar`, ?), `dibayar_pada` = IF(?, t.`dibayar_pada`, ?), `diperbarui_pada` = IF(?, t.`diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` <=> ?))", [status === undefined, (status ?? null), diajukan_pada === undefined, diajukan_pada ?? null, dikembalikan_pada === undefined, dikembalikan_pada ?? null, berita_acara === undefined, berita_acara ?? null, batas_ajukan_ulang === undefined, batas_ajukan_ulang ?? null, alasan === undefined, alasan ?? null, jumlah_dibayar === undefined, jumlah_dibayar ?? null, dibayar_pada === undefined, dibayar_pada ?? null, diperbarui_pada === undefined, diperbarui_pada ?? null, id === undefined, id ?? null, status2 === undefined, status2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

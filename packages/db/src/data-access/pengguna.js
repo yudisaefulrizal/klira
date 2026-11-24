@@ -1,10 +1,12 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarPenggunaUntukNamaPengguna(id, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `pengguna` t WHERE ((? OR t.`id` IN (?)))", [id === undefined, (id)?.length ? (id) : [null]], koneksi);
     return baris;
 }
 export async function hitungPenggunaUntukPenggunaAda(id, koneksi = pool) {
+    wajibId('hitungPenggunaUntukPenggunaAda', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `pengguna` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return Number(baris.jumlah);
 }
@@ -71,14 +73,17 @@ export async function cariPenggunaUntukUsernameDipakai(username, id, koneksi = p
     return (baris[0] ?? null);
 }
 export async function ubahPenggunaUntukGantiKredensial(username, kata_sandi_hash, wajib_ganti_kredensial, id, koneksi = pool) {
+    wajibId('ubahPenggunaUntukGantiKredensial', id);
     const hasil = await tulis("UPDATE `pengguna` t SET `username` = IF(?, t.`username`, ?), `kata_sandi_hash` = IF(?, t.`kata_sandi_hash`, ?), `wajib_ganti_kredensial` = IF(?, t.`wajib_ganti_kredensial`, ?) WHERE ((? OR t.`id` <=> ?))", [username === undefined, username ?? null, kata_sandi_hash === undefined, kata_sandi_hash ?? null, wajib_ganti_kredensial === undefined, wajib_ganti_kredensial ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function cariPenggunaUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('cariPenggunaUntukBuatRuteInstagram', id);
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function cariPenggunaUntukBuatRuteInstagram2(id, aktif, koneksi = pool) {
+    wajibId('cariPenggunaUntukBuatRuteInstagram2', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`nik`, t.`username`, t.`kata_sandi_hash`, t.`aktif`, t.`wajib_ganti_kredensial`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`aktif` <=> ?)) LIMIT 1", [id === undefined, id ?? null, aktif === undefined, aktif ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -95,6 +100,7 @@ export async function daftarPenggunaUntukRiwayat(id, koneksi = pool) {
     return baris;
 }
 export async function hitungPenggunaUntukDpjpSah(id, aktif, koneksi = pool) {
+    wajibId('hitungPenggunaUntukDpjpSah', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`aktif` <=> ?)) AND (EXISTS (SELECT 1 FROM `profil_profesi` r1 WHERE t.`id` = r1.`pengguna_id` AND (((? OR r1.`aktif` <=> ?)))))", [id === undefined, id ?? null, aktif === undefined, aktif ?? null, aktif === undefined, aktif ?? null], koneksi);
     return Number(baris.jumlah);
 }
@@ -115,14 +121,17 @@ export async function daftarPenggunaUntukOpsi3(aktif, batas, profil_profesi_bata
     return hasil;
 }
 export async function ambilPenggunaUntukTerakhir(id, koneksi = pool) {
+    wajibId('ambilPenggunaUntukTerakhir', id);
     const baris = await baca("SELECT t.`nama` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function hitungPenggunaUntukPenggunaAda3(id, aktif, koneksi = pool) {
+    wajibId('hitungPenggunaUntukPenggunaAda3', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`aktif` <=> ?))", [id === undefined, id ?? null, aktif === undefined, aktif ?? null], koneksi);
     return Number(baris.jumlah);
 }
 export async function cariPenggunaUntukKonteks(id, koneksi = pool) {
+    wajibId('cariPenggunaUntukKonteks', id);
     const baris = await baca("SELECT t.`nama` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -135,6 +144,7 @@ export async function daftarPenggunaUntukSaksiOpsi(aktif, batas, koneksi = pool)
     return baris;
 }
 export async function cariPenggunaUntukSaksi(id, aktif, koneksi = pool) {
+    wajibId('cariPenggunaUntukSaksi', id);
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`aktif` <=> ?)) AND (EXISTS (SELECT 1 FROM `profil_profesi` r1 WHERE t.`id` = r1.`pengguna_id` AND (((? OR r1.`aktif` <=> ?))))) LIMIT 1", [id === undefined, id ?? null, aktif === undefined, aktif ?? null, aktif === undefined, aktif ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -176,10 +186,12 @@ export async function daftarPenggunaUntukDaftar(nama, pakai, aktif, pakai2, jeni
     return hasil;
 }
 export async function cariPenggunaUntukUbahAktif(id, koneksi = pool) {
+    wajibId('cariPenggunaUntukUbahAktif', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`aktif` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahPenggunaUntukUbahAktif(aktif, id, koneksi = pool) {
+    wajibId('ubahPenggunaUntukUbahAktif', id);
     const hasil = await tulis("UPDATE `pengguna` t SET `aktif` = IF(?, t.`aktif`, ?) WHERE ((? OR t.`id` <=> ?))", [aktif === undefined, aktif ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -196,6 +208,7 @@ export async function tambahPenggunaUntukBuatAkun(nama, nik, username, kata_sand
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPenggunaUntukBuatAkunHasil(id, koneksi = pool) {
+    wajibId('tambahPenggunaUntukBuatAkunHasil', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`nik`, t.`username`, t.`kata_sandi_hash`, t.`aktif`, t.`wajib_ganti_kredensial`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `pengguna` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris pengguna tidak ditemukan.');

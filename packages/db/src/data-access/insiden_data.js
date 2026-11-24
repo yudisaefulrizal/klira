@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungInsidenDataUntukRingkasan(notifikasi_pasien_pada, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `insiden_data` t WHERE ((((? OR t.`notifikasi_pasien_pada` <=> ?))) OR (((? OR t.`notifikasi_lembaga_pada` <=> ?))))", [notifikasi_pasien_pada === undefined, notifikasi_pasien_pada ?? null, notifikasi_pasien_pada === undefined, notifikasi_pasien_pada ?? null], koneksi);
     return Number(baris.jumlah);
@@ -16,6 +17,7 @@ export async function daftarInsidenDataUntukDaftarInsiden(batas, lewati, koneksi
     return baris;
 }
 export async function cariInsidenDataUntukInsiden(id, koneksi = pool) {
+    wajibId('cariInsidenDataUntukInsiden', id);
     const baris = await baca("SELECT t.`id`, t.`waktu_kejadian`, t.`waktu_diketahui`, t.`siber`, t.`uraian`, t.`data_terungkap`, t.`penanganan`, t.`pemulihan`, t.`kontak_ppdp`, t.`batas_notifikasi`, t.`notifikasi_pasien_pada`, t.`notifikasi_lembaga_pada`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diperbarui_pada` FROM `insiden_data` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -24,12 +26,14 @@ export async function tambahInsidenDataUntukBuatInsiden(waktu_kejadian, waktu_di
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahInsidenDataUntukBuatInsidenHasil(id, koneksi = pool) {
+    wajibId('tambahInsidenDataUntukBuatInsidenHasil', id);
     const baris = await baca("SELECT t.`id`, t.`waktu_kejadian`, t.`waktu_diketahui`, t.`siber`, t.`uraian`, t.`data_terungkap`, t.`penanganan`, t.`pemulihan`, t.`kontak_ppdp`, t.`batas_notifikasi`, t.`notifikasi_pasien_pada`, t.`notifikasi_lembaga_pada`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diperbarui_pada` FROM `insiden_data` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris insiden_data tidak ditemukan.');
     return baris[0];
 }
 export async function ubahInsidenDataUntukUbahInsiden(waktu_kejadian, waktu_diketahui, siber, uraian, data_terungkap, penanganan, pemulihan, kontak_ppdp, batas_notifikasi, notifikasi_pasien_pada, notifikasi_lembaga_pada, diperbarui_pada, id, koneksi = pool) {
+    wajibId('ubahInsidenDataUntukUbahInsiden', id);
     const hasil = await tulis("UPDATE `insiden_data` t SET `waktu_kejadian` = IF(?, t.`waktu_kejadian`, ?), `waktu_diketahui` = IF(?, t.`waktu_diketahui`, ?), `siber` = IF(?, t.`siber`, ?), `uraian` = IF(?, t.`uraian`, ?), `data_terungkap` = IF(?, t.`data_terungkap`, ?), `penanganan` = IF(?, t.`penanganan`, ?), `pemulihan` = IF(?, t.`pemulihan`, ?), `kontak_ppdp` = IF(?, t.`kontak_ppdp`, ?), `batas_notifikasi` = IF(?, t.`batas_notifikasi`, ?), `notifikasi_pasien_pada` = IF(?, t.`notifikasi_pasien_pada`, ?), `notifikasi_lembaga_pada` = IF(?, t.`notifikasi_lembaga_pada`, ?), `diperbarui_pada` = IF(?, t.`diperbarui_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [waktu_kejadian === undefined, waktu_kejadian ?? null, waktu_diketahui === undefined, waktu_diketahui ?? null, siber === undefined, siber ?? null, uraian === undefined, uraian ?? null, data_terungkap === undefined, data_terungkap ?? null, penanganan === undefined, penanganan ?? null, pemulihan === undefined, pemulihan ?? null, kontak_ppdp === undefined, kontak_ppdp ?? null, batas_notifikasi === undefined, batas_notifikasi ?? null, notifikasi_pasien_pada === undefined, notifikasi_pasien_pada ?? null, notifikasi_lembaga_pada === undefined, notifikasi_lembaga_pada ?? null, diperbarui_pada === undefined, diperbarui_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

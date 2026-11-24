@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarJadwalPraktikUntukBacaKlinikPublik(aktif, lokasi_id, koneksi = pool) {
     function petakt1(semua) {
         return kelompokkan(semua, 't1', [
@@ -93,6 +94,7 @@ export async function tambahJadwalPraktikUntukBuatHasil(id, koneksi = pool) {
     return hasil[0];
 }
 export async function ubahJadwalPraktikUntukUbah(pengguna_id, lokasi_id, hari, shift_id, kuota, id, koneksi = pool) {
+    wajibId('ubahJadwalPraktikUntukUbah', id);
     const hasil = await tulis("UPDATE `jadwal_praktik` t SET `pengguna_id` = IF(?, t.`pengguna_id`, ?), `lokasi_id` = IF(?, t.`lokasi_id`, ?), `hari` = IF(?, t.`hari`, ?), `shift_id` = IF(?, t.`shift_id`, ?), `kuota` = IF(?, t.`kuota`, ?) WHERE ((? OR t.`id` <=> ?))", [pengguna_id === undefined, pengguna_id ?? null, lokasi_id === undefined, lokasi_id ?? null, hari === undefined, hari ?? null, shift_id === undefined, shift_id ?? null, kuota === undefined, kuota ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

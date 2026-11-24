@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarAntreanUntukBuatRuteLayarPanggilan(sesi_id, lokasi_id, status, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`lokasi_id`, t.`ruang_id`, t.`nomor`, t.`awalan`, t.`jenis_poli`, t.`status`, t.`waktu_panggil`, (SELECT k.`tahap_layanan` FROM `kunjungan` k WHERE k.`id` = t.`kunjungan_id`) AS `tahap_layanan` FROM `antrean` t WHERE ((? OR t.`sesi_id` <=> ?)) AND ((? OR t.`lokasi_id` IN (?) OR t.`lokasi_id` IS NULL)) AND ((? OR t.`status` IN (?))) ORDER BY t.`waktu_panggil` DESC, t.`id` DESC", [sesi_id === undefined, sesi_id ?? null, lokasi_id === undefined, (lokasi_id)?.length ? (lokasi_id) : [null], status === undefined, (status)?.length ? (status) : [null]], koneksi);
     return baris;
@@ -26,20 +27,24 @@ export async function tambahAntreanUntukDaftarkan(sesi_id, kunjungan_id, lokasi_
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function cariAntreanUntukStatusAntrean(id, koneksi = pool) {
+    wajibId('cariAntreanUntukStatusAntrean', id);
     const baris = await baca("SELECT t.`status` FROM `antrean` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahAntreanUntukUbahAntrean(status, waktu_panggil, waktu_mulai, waktu_selesai, id, status2, koneksi = pool) {
+    wajibId('ubahAntreanUntukUbahAntrean', id);
     const hasil = await tulis("UPDATE `antrean` t SET `status` = IF(?, t.`status`, ?), `waktu_panggil` = IF(?, t.`waktu_panggil`, ?), `waktu_mulai` = IF(?, t.`waktu_mulai`, ?), `waktu_selesai` = IF(?, t.`waktu_selesai`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` IN (?)))", [status === undefined, (status ?? null), waktu_panggil === undefined, waktu_panggil ?? null, waktu_mulai === undefined, waktu_mulai ?? null, waktu_selesai === undefined, waktu_selesai ?? null, id === undefined, id ?? null, status2 === undefined, (status2)?.length ? (status2) : [null]], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function wajibAntreanUntukUbahAntrean(id, koneksi = pool) {
+    wajibId('wajibAntreanUntukUbahAntrean', id);
     const baris = await baca("SELECT t.`sesi_id`, t.`lokasi_id`, t.`ruang_id`, t.`nomor`, t.`awalan`, t.`jenis_poli`, t.`kunjungan_id`, t.`tanggal` FROM `antrean` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris antrean tidak ditemukan.');
     return baris[0];
 }
 export async function wajibAntreanUntukUbahAntrean2(id, koneksi = pool) {
+    wajibId('wajibAntreanUntukUbahAntrean2', id);
     const baris = await baca("SELECT t.`kunjungan_id` FROM `antrean` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris antrean tidak ditemukan.');

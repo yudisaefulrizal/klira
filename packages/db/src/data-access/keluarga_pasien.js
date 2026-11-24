@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function cariKeluargaPasienUntukDataCetak(anggota_pasien_id, koneksi = pool) {
     function petakt1(semua) {
         return kelompokkan(semua, 't1', [
@@ -55,6 +56,7 @@ export async function tambahKeluargaPasienUntukTautkanKeluargaHasil(id, koneksi 
     return hasil[0];
 }
 export async function ubahKeluargaPasienUntukUbahKeluarga(hubungan, dibatasi, id, pasien_id, koneksi = pool) {
+    wajibId('ubahKeluargaPasienUntukUbahKeluarga', id);
     const hasil = await tulis("UPDATE `keluarga_pasien` t SET `hubungan` = IF(?, t.`hubungan`, ?), `dibatasi` = IF(?, t.`dibatasi`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`pasien_id` <=> ?))", [hubungan === undefined, hubungan ?? null, dibatasi === undefined, dibatasi ?? null, id === undefined, id ?? null, pasien_id === undefined, pasien_id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

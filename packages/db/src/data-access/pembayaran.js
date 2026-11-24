@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungPembayaranUntukSinkronItemTindakanDalam(tagihan_id, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `pembayaran` t WHERE ((? OR t.`tagihan_id` <=> ?))", [tagihan_id === undefined, tagihan_id ?? null], koneksi);
     return Number(baris.jumlah);
@@ -26,6 +27,7 @@ export async function tambahPembayaranUntukBayar(tagihan_id, shift_id, metode, j
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPembayaranUntukBayarHasil(id, koneksi = pool) {
+    wajibId('tambahPembayaranUntukBayarHasil', id);
     const baris = await baca("SELECT t.`id`, t.`tagihan_id`, t.`shift_id`, t.`metode`, t.`jumlah`, t.`waktu`, t.`kasir_id` FROM `pembayaran` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris pembayaran tidak ditemukan.');

@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function daftarLokasiUntukBacaKlinikPublik(jenis, status_operasional, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `lokasi` t WHERE ((? OR t.`jenis` <=> ?)) AND ((? OR t.`status_operasional` <=> ?)) ORDER BY t.`nama` ASC", [jenis === undefined, jenis ?? null, status_operasional === undefined, status_operasional ?? null], koneksi);
     return baris;
@@ -67,10 +68,12 @@ export async function tambahLokasiUntukBuatHasil(id, koneksi = pool) {
     return hasil[0];
 }
 export async function ubahLokasiUntukUbah(nama, induk_id, status_operasional, ihs_location_id, id, koneksi = pool) {
+    wajibId('ubahLokasiUntukUbah', id);
     const hasil = await tulis("UPDATE `lokasi` t SET `nama` = IF(?, t.`nama`, ?), `induk_id` = IF(?, t.`induk_id`, ?), `status_operasional` = IF(?, t.`status_operasional`, ?), `ihs_location_id` = IF(?, t.`ihs_location_id`, ?) WHERE ((? OR t.`id` <=> ?))", [nama === undefined, nama ?? null, induk_id === undefined, induk_id ?? null, status_operasional === undefined, (status_operasional ?? null), ihs_location_id === undefined, ihs_location_id ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahLokasiUntukSetAktif(status_operasional, id, koneksi = pool) {
+    wajibId('ubahLokasiUntukSetAktif', id);
     const hasil = await tulis("UPDATE `lokasi` t SET `status_operasional` = IF(?, t.`status_operasional`, ?) WHERE ((? OR t.`id` <=> ?))", [status_operasional === undefined, (status_operasional ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -84,6 +87,7 @@ export async function hitungLokasiUntukNamaAda(jenis, nama, kecuali_id, koneksi 
     return Number(baris.jumlah);
 }
 export async function hitungLokasiUntukLokasiAda(id, jenis, koneksi = pool) {
+    wajibId('hitungLokasiUntukLokasiAda', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jenis` <=> ?))", [id === undefined, id ?? null, jenis === undefined, jenis ?? null], koneksi);
     return Number(baris.jumlah);
 }
@@ -104,6 +108,7 @@ export async function daftarLokasiUntukOpsi2(jenis, status_operasional, batas, k
     return baris;
 }
 export async function wajibLokasiUntukUbahAntrean(id, koneksi = pool) {
+    wajibId('wajibLokasiUntukUbahAntrean', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`status_operasional` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris lokasi tidak ditemukan.');
@@ -114,6 +119,7 @@ export async function daftarLokasiUntukPetakanAntrean(id, koneksi = pool) {
     return baris;
 }
 export async function cariLokasiUntukKonteks(id, koneksi = pool) {
+    wajibId('cariLokasiUntukKonteks', id);
     const baris = await baca("SELECT t.`nama`, t.`kategori_poli` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -126,14 +132,17 @@ export async function daftarLokasiUntukBedSemua(jenis, batas, koneksi = pool) {
     return baris;
 }
 export async function cariLokasiUntukAsal(id, koneksi = pool) {
+    wajibId('cariLokasiUntukAsal', id);
     const baris = await baca("SELECT t.`nama` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function cariLokasiUntukPastikanBedBebas(id, jenis, koneksi = pool) {
+    wajibId('cariLokasiUntukPastikanBedBebas', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`jenis`, t.`induk_id`, t.`status_operasional`, t.`ihs_location_id`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `lokasi` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jenis` <=> ?)) LIMIT 1", [id === undefined, id ?? null, jenis === undefined, jenis ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahLokasiUntukTempatkan(status_operasional, id, koneksi = pool) {
+    wajibId('ubahLokasiUntukTempatkan', id);
     const hasil = await tulis("UPDATE `lokasi` t SET `status_operasional` = IF(?, t.`status_operasional`, ?) WHERE ((? OR t.`id` <=> ?))", [status_operasional === undefined, (status_operasional ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

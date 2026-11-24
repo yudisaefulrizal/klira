@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function daftarItemResepUntukCatatTelaah(resep_id, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`resep_id`, t.`master_obat_id`, t.`aturan_pakai`, t.`bentuk`, t.`rute`, t.`jumlah`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `item_resep` t WHERE ((? OR t.`resep_id` <=> ?)) ORDER BY t.`id` ASC", [resep_id === undefined, resep_id ?? null], koneksi);
     return baris;
@@ -12,6 +13,7 @@ export async function tambahItemResepUntukCatatTelaah(resep_id, master_obat_id, 
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahItemResepUntukCatatTelaahHasil(id, koneksi = pool) {
+    wajibId('tambahItemResepUntukCatatTelaahHasil', id);
     const baris = await baca("SELECT t.`id`, t.`resep_id`, t.`master_obat_id`, t.`aturan_pakai`, t.`bentuk`, t.`rute`, t.`jumlah`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `item_resep` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris item_resep tidak ditemukan.');

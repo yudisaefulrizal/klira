@@ -1,13 +1,16 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hapusWaAuthUntukPutuskanDanBersihkan(koneksi = pool) {
     const hasil = await tulis("DELETE t FROM `wa_auth` t WHERE TRUE", [], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ambilWaAuthUntukBaca(id, koneksi = pool) {
+    wajibId('ambilWaAuthUntukBaca', id);
     const baris = await baca("SELECT t.`id`, t.`isi` FROM `wa_auth` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function hapusWaAuthUntukSimpan(id, koneksi = pool) {
+    wajibId('hapusWaAuthUntukSimpan', id);
     const hasil = await tulis("DELETE t FROM `wa_auth` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

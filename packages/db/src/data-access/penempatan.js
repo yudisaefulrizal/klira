@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function daftarPenempatanUntukBedSemua(selesai, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`lokasi_id`, t.`tarif_id`, t.`mulai`, t.`selesai`, t.`dibuat_oleh` FROM `penempatan` t WHERE ((? OR t.`selesai` <=> ?))", [selesai === undefined, selesai ?? null], koneksi);
     return baris;
@@ -16,6 +17,7 @@ export async function cariPenempatanUntukUbahPenempatan(kunjungan_id, selesai, k
     return (baris[0] ?? null);
 }
 export async function ubahPenempatanUntukUbahPenempatan(selesai, id, koneksi = pool) {
+    wajibId('ubahPenempatanUntukUbahPenempatan', id);
     const hasil = await tulis("UPDATE `penempatan` t SET `selesai` = IF(?, t.`selesai`, ?) WHERE ((? OR t.`id` <=> ?))", [selesai === undefined, selesai ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

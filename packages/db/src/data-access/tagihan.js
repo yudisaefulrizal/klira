@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function simpanTagihanUntukTambahItemTagihanDalam(kunjungan_id, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `tagihan` (`kunjungan_id`, `dibuat_oleh`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `id` = `id`, `id` = LAST_INSERT_ID(`id`)", [(kunjungan_id === undefined ? null : kunjungan_id) ?? null, (dibuat_oleh === undefined ? null : dibuat_oleh) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
@@ -11,6 +12,7 @@ export async function simpanTagihanUntukTambahItemTagihanDalamHasil(kunjungan_id
     return baris[0];
 }
 export async function ubahTagihanUntukTambahItemTagihanDalam(status_tagihan, id, koneksi = pool) {
+    wajibId('ubahTagihanUntukTambahItemTagihanDalam', id);
     const hasil = await tulis("UPDATE `tagihan` t SET `status_tagihan` = IF(?, t.`status_tagihan`, ?) WHERE ((? OR t.`id` <=> ?))", [status_tagihan === undefined, (status_tagihan ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -19,6 +21,7 @@ export async function tambahTagihanUntukSinkronItemTindakanDalam(kunjungan_id, d
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahTagihanUntukSinkronItemTindakanDalamHasil(id, koneksi = pool) {
+    wajibId('tambahTagihanUntukSinkronItemTindakanDalamHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kunjungan_id`, t.`status_tagihan`, t.`status_pembayaran`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`alasan_tutup_belum_lunas` FROM `tagihan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris tagihan tidak ditemukan.');
@@ -119,10 +122,12 @@ export async function wajibTagihanUntukBayar(id, koneksi = pool) {
     return hasil[0];
 }
 export async function ubahTagihanUntukBayar(status_pembayaran, id, koneksi = pool) {
+    wajibId('ubahTagihanUntukBayar', id);
     const hasil = await tulis("UPDATE `tagihan` t SET `status_pembayaran` = IF(?, t.`status_pembayaran`, ?) WHERE ((? OR t.`id` <=> ?))", [status_pembayaran === undefined, (status_pembayaran ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahTagihanUntukHitungUlang(status_tagihan, status_pembayaran, id, koneksi = pool) {
+    wajibId('ubahTagihanUntukHitungUlang', id);
     const hasil = await tulis("UPDATE `tagihan` t SET `status_tagihan` = IF(?, t.`status_tagihan`, ?), `status_pembayaran` = IF(?, t.`status_pembayaran`, ?) WHERE ((? OR t.`id` <=> ?))", [status_tagihan === undefined, (status_tagihan ?? null), status_pembayaran === undefined, (status_pembayaran ?? null), id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -150,6 +155,7 @@ export async function ambilTagihanUntukTutup(kunjungan_id, koneksi = pool) {
     return (hasil[0] ?? null);
 }
 export async function ubahTagihanUntukTutup(alasan_tutup_belum_lunas, id, koneksi = pool) {
+    wajibId('ubahTagihanUntukTutup', id);
     const hasil = await tulis("UPDATE `tagihan` t SET `alasan_tutup_belum_lunas` = IF(?, t.`alasan_tutup_belum_lunas`, ?) WHERE ((? OR t.`id` <=> ?))", [alasan_tutup_belum_lunas === undefined, alasan_tutup_belum_lunas ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

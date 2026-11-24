@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function ambilFasyankesUntukPengaturanWebsite(id, koneksi = pool) {
     function petakt1(semua) {
         return kelompokkan(semua, 't1', [
@@ -42,16 +43,19 @@ export async function hitungFasyankesUntukKodeDipakaiLain(kode_registrasi, id, k
     return Number(baris.jumlah);
 }
 export async function ubahFasyankesUntukSimpan(nama, jenis, bentuk_usaha, kode_registrasi, organization_id, status_akreditasi, tanggal_akreditasi, puskesmas_wilayah, id, koneksi = pool) {
+    wajibId('ubahFasyankesUntukSimpan', id);
     const hasil = await tulis("UPDATE `fasyankes` t SET `nama` = IF(?, t.`nama`, ?), `jenis` = IF(?, t.`jenis`, ?), `bentuk_usaha` = IF(?, t.`bentuk_usaha`, ?), `kode_registrasi` = IF(?, t.`kode_registrasi`, ?), `organization_id` = IF(?, t.`organization_id`, ?), `status_akreditasi` = IF(?, t.`status_akreditasi`, ?), `tanggal_akreditasi` = IF(?, t.`tanggal_akreditasi`, ?), `puskesmas_wilayah` = IF(?, t.`puskesmas_wilayah`, ?) WHERE ((? OR t.`id` <=> ?))", [nama === undefined, nama ?? null, jenis === undefined, (jenis ?? null), bentuk_usaha === undefined, bentuk_usaha ?? null, kode_registrasi === undefined, kode_registrasi ?? null, organization_id === undefined, organization_id ?? null, status_akreditasi === undefined, status_akreditasi ?? null, tanggal_akreditasi === undefined, tanggal_akreditasi ?? null, puskesmas_wilayah === undefined, puskesmas_wilayah ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahFasyankesUntukSimpanHasil(id, koneksi = pool) {
+    wajibId('ubahFasyankesUntukSimpanHasil', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`jenis`, t.`bentuk_usaha`, t.`kode_registrasi`, t.`organization_id`, t.`status_akreditasi`, t.`tanggal_akreditasi`, t.`puskesmas_wilayah` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris fasyankes tidak ditemukan.');
     return baris[0];
 }
 export async function ambilFasyankesUntukUpgrade(id, koneksi = pool) {
+    wajibId('ambilFasyankesUntukUpgrade', id);
     const baris = await baca("SELECT t.`id` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -60,6 +64,7 @@ export async function tambahFasyankesUntukJalankanSeed(nama, jenis, kode_registr
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahFasyankesUntukJalankanSeedHasil(id, koneksi = pool) {
+    wajibId('tambahFasyankesUntukJalankanSeedHasil', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`jenis`, t.`bentuk_usaha`, t.`kode_registrasi`, t.`organization_id`, t.`status_akreditasi`, t.`tanggal_akreditasi`, t.`puskesmas_wilayah`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris fasyankes tidak ditemukan.');

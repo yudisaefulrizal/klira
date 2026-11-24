@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function hitungTarifLayananUntukDaftar(aktif, kode, kode_icd9cm, pakai, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `tarif_layanan` t WHERE ((? OR t.`aktif` <=> ?)) AND ((? OR ((((? OR t.`kode` LIKE ? ESCAPE '!'))) OR (((? OR t.`nama` LIKE ? ESCAPE '!'))) OR (((? OR t.`kode_icd9cm` LIKE ? ESCAPE '!'))))))", [aktif === undefined, aktif ?? null, !pakai, kode === undefined, '%' + String(kode ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', kode === undefined, '%' + String(kode ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', kode_icd9cm === undefined, String(kode_icd9cm ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%'], koneksi);
     return Number(baris.jumlah);
@@ -8,6 +9,7 @@ export async function daftarTarifLayananUntukDaftar(aktif, kode, kode_icd9cm, pa
     return baris;
 }
 export async function cariTarifLayananUntukAmbil(id, koneksi = pool) {
+    wajibId('cariTarifLayananUntukAmbil', id);
     const baris = await baca("SELECT t.`id`, t.`kode`, t.`nama`, t.`jenis`, t.`harga_umum`, t.`harga_jkn`, t.`kode_icd9cm`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `tarif_layanan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -16,16 +18,19 @@ export async function tambahTarifLayananUntukBuat(kode, nama, jenis, harga_umum,
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahTarifLayananUntukBuatHasil(id, koneksi = pool) {
+    wajibId('tambahTarifLayananUntukBuatHasil', id);
     const baris = await baca("SELECT t.`id`, t.`kode`, t.`nama`, t.`jenis`, t.`harga_umum`, t.`harga_jkn`, t.`kode_icd9cm`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `tarif_layanan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris tarif_layanan tidak ditemukan.');
     return baris[0];
 }
 export async function ubahTarifLayananUntukUbah(kode, nama, jenis, harga_umum, harga_jkn, kode_icd9cm, id, koneksi = pool) {
+    wajibId('ubahTarifLayananUntukUbah', id);
     const hasil = await tulis("UPDATE `tarif_layanan` t SET `kode` = IF(?, t.`kode`, ?), `nama` = IF(?, t.`nama`, ?), `jenis` = IF(?, t.`jenis`, ?), `harga_umum` = IF(?, t.`harga_umum`, ?), `harga_jkn` = IF(?, t.`harga_jkn`, ?), `kode_icd9cm` = IF(?, t.`kode_icd9cm`, ?) WHERE ((? OR t.`id` <=> ?))", [kode === undefined, kode ?? null, nama === undefined, nama ?? null, jenis === undefined, (jenis ?? null), harga_umum === undefined, harga_umum ?? null, harga_jkn === undefined, harga_jkn ?? null, kode_icd9cm === undefined, kode_icd9cm ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahTarifLayananUntukSetAktif(aktif, id, koneksi = pool) {
+    wajibId('ubahTarifLayananUntukSetAktif', id);
     const hasil = await tulis("UPDATE `tarif_layanan` t SET `aktif` = IF(?, t.`aktif`, ?) WHERE ((? OR t.`id` <=> ?))", [aktif === undefined, aktif ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -54,6 +59,7 @@ export async function daftarTarifLayananUntukTindakanKlinik(jenis, aktif, nama, 
     return baris;
 }
 export async function hitungTarifLayananUntukTarifKamarSah(id, jenis, aktif, koneksi = pool) {
+    wajibId('hitungTarifLayananUntukTarifKamarSah', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `tarif_layanan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jenis` <=> ?)) AND ((? OR t.`aktif` <=> ?))", [id === undefined, id ?? null, jenis === undefined, jenis ?? null, aktif === undefined, aktif ?? null], koneksi);
     return Number(baris.jumlah);
 }
@@ -74,6 +80,7 @@ export async function daftarTarifLayananUntukTarifAktif(aktif, jenis, koneksi = 
     return baris;
 }
 export async function cariTarifLayananUntukTambahItem(id, aktif, jenis, koneksi = pool) {
+    wajibId('cariTarifLayananUntukTambahItem', id);
     const baris = await baca("SELECT t.`id`, t.`kode`, t.`nama`, t.`jenis`, t.`harga_umum`, t.`harga_jkn`, t.`kode_icd9cm`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `tarif_layanan` t WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`aktif` <=> ?)) AND ((? OR NOT (t.`jenis` <=> ?))) LIMIT 1", [id === undefined, id ?? null, aktif === undefined, aktif ?? null, jenis === undefined, jenis ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -86,6 +93,7 @@ export async function daftarTarifLayananUntukBuatOrder(aktif, jenis, id, koneksi
     return baris;
 }
 export async function ubahTarifLayananUntukPastikanTarif(harga_umum, harga_jkn, aktif, id, jenis, koneksi = pool) {
+    wajibId('ubahTarifLayananUntukPastikanTarif', id);
     const hasil = await tulis("UPDATE `tarif_layanan` t SET `harga_umum` = IF(?, t.`harga_umum`, ?), `harga_jkn` = IF(?, t.`harga_jkn`, ?), `aktif` = IF(?, t.`aktif`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`jenis` <=> ?))", [harga_umum === undefined, harga_umum ?? null, harga_jkn === undefined, harga_jkn ?? null, aktif === undefined, aktif ?? null, id === undefined, id ?? null, jenis === undefined, jenis ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -94,6 +102,7 @@ export async function ambilTarifLayananUntukPastikanTarif(kode, koneksi = pool) 
     return (baris[0] ?? null);
 }
 export async function ubahTarifLayananUntukPastikanTarif2(harga_umum, harga_jkn, aktif, id, koneksi = pool) {
+    wajibId('ubahTarifLayananUntukPastikanTarif2', id);
     const hasil = await tulis("UPDATE `tarif_layanan` t SET `harga_umum` = IF(?, t.`harga_umum`, ?), `harga_jkn` = IF(?, t.`harga_jkn`, ?), `aktif` = IF(?, t.`aktif`, ?) WHERE ((? OR t.`id` <=> ?))", [harga_umum === undefined, harga_umum ?? null, harga_jkn === undefined, harga_jkn ?? null, aktif === undefined, aktif ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

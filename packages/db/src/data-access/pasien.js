@@ -1,10 +1,13 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function cariPasienUntukBuatRuteInstagram(id, koneksi = pool) {
+    wajibId('cariPasienUntukBuatRuteInstagram', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`nomor_rm` FROM `pasien` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function cariPasienUntukBuatRuteInstagram2(id, koneksi = pool) {
+    wajibId('cariPasienUntukBuatRuteInstagram2', id);
     const baris = await baca("SELECT t.`id` FROM `pasien` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -76,6 +79,7 @@ export async function daftarPasienUntukDuplikat2(nama, tanggal_lahir, ibu_kandun
     return baris;
 }
 export async function ubahPasienUntukPerbaiki(nik, nama, nomor_hp, ibu_kandung, tempat_lahir, tanggal_lahir, jenis_kelamin, agama, suku, bahasa, pekerjaan, pendidikan, status_kawin, alamat, kode_wilayah, nomor_paspor, nomor_kitas, jkn_nomor_kartu, asuransi_nama, asuransi_nomor_polis, status_identitas, jalur_identitas, tidak_cakap, id, koneksi = pool) {
+    wajibId('ubahPasienUntukPerbaiki', id);
     const hasil = await tulis("UPDATE `pasien` t SET `nik` = IF(?, t.`nik`, ?), `nama` = IF(?, t.`nama`, ?), `nomor_hp` = IF(?, t.`nomor_hp`, ?), `ibu_kandung` = IF(?, t.`ibu_kandung`, ?), `tempat_lahir` = IF(?, t.`tempat_lahir`, ?), `tanggal_lahir` = IF(?, t.`tanggal_lahir`, ?), `jenis_kelamin` = IF(?, t.`jenis_kelamin`, ?), `agama` = IF(?, t.`agama`, ?), `suku` = IF(?, t.`suku`, ?), `bahasa` = IF(?, t.`bahasa`, ?), `pekerjaan` = IF(?, t.`pekerjaan`, ?), `pendidikan` = IF(?, t.`pendidikan`, ?), `status_kawin` = IF(?, t.`status_kawin`, ?), `alamat` = IF(?, t.`alamat`, ?), `kode_wilayah` = IF(?, t.`kode_wilayah`, ?), `nomor_paspor` = IF(?, t.`nomor_paspor`, ?), `nomor_kitas` = IF(?, t.`nomor_kitas`, ?), `jkn_nomor_kartu` = IF(?, t.`jkn_nomor_kartu`, ?), `asuransi_nama` = IF(?, t.`asuransi_nama`, ?), `asuransi_nomor_polis` = IF(?, t.`asuransi_nomor_polis`, ?), `status_identitas` = IF(?, t.`status_identitas`, ?), `jalur_identitas` = IF(?, t.`jalur_identitas`, ?), `tidak_cakap` = IF(?, t.`tidak_cakap`, ?) WHERE ((? OR t.`id` <=> ?))", [nik === undefined, nik ?? null, nama === undefined, nama ?? null, nomor_hp === undefined, nomor_hp ?? null, ibu_kandung === undefined, ibu_kandung ?? null, tempat_lahir === undefined, tempat_lahir ?? null, tanggal_lahir === undefined, tanggal_lahir ?? null, jenis_kelamin === undefined, (jenis_kelamin ?? null), agama === undefined, agama ?? null, suku === undefined, suku ?? null, bahasa === undefined, bahasa ?? null, pekerjaan === undefined, pekerjaan ?? null, pendidikan === undefined, pendidikan ?? null, status_kawin === undefined, status_kawin ?? null, alamat === undefined, alamat ?? null, kode_wilayah === undefined, kode_wilayah ?? null, nomor_paspor === undefined, nomor_paspor ?? null, nomor_kitas === undefined, nomor_kitas ?? null, jkn_nomor_kartu === undefined, jkn_nomor_kartu ?? null, asuransi_nama === undefined, asuransi_nama ?? null, asuransi_nomor_polis === undefined, asuransi_nomor_polis ?? null, status_identitas === undefined, (status_identitas ?? null), jalur_identitas === undefined, jalur_identitas ?? null, tidak_cakap === undefined, tidak_cakap ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -84,12 +88,14 @@ export async function tambahPasienUntukDaftarkan(nomor_rm, nik, nama, nomor_hp, 
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPasienUntukDaftarkanHasil(id, koneksi = pool) {
+    wajibId('tambahPasienUntukDaftarkanHasil', id);
     const baris = await baca("SELECT t.`id`, t.`nomor_rm`, t.`nik`, t.`nama`, t.`nomor_hp`, t.`ibu_kandung`, t.`tempat_lahir`, t.`tanggal_lahir`, t.`jenis_kelamin`, t.`agama`, t.`suku`, t.`bahasa`, t.`pekerjaan`, t.`pendidikan`, t.`status_kawin`, t.`alamat`, t.`kode_wilayah`, t.`nomor_paspor`, t.`nomor_kitas`, t.`ihs_number`, t.`jkn_nomor_kartu`, t.`asuransi_nama`, t.`asuransi_nomor_polis`, t.`status_identitas`, t.`jalur_identitas`, t.`tidak_cakap`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `pasien` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris pasien tidak ditemukan.');
     return baris[0];
 }
 export async function hitungPasienUntukPasienAda(id, koneksi = pool) {
+    wajibId('hitungPasienUntukPasienAda', id);
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `pasien` t WHERE ((? OR t.`id` <=> ?))", [id === undefined, id ?? null], koneksi);
     return Number(baris.jumlah);
 }
@@ -114,6 +120,7 @@ export async function daftarPasienUntukRekap(id, koneksi = pool) {
     return baris;
 }
 export async function cariPasienUntukPasien3(id, koneksi = pool) {
+    wajibId('cariPasienUntukPasien3', id);
     const baris = await baca("SELECT t.`id`, t.`nama`, t.`tidak_cakap` FROM `pasien` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -134,6 +141,7 @@ export async function cariPasienUntukBuatRuteWhatsapp(id, koneksi = pool) {
     return (hasil[0] ?? null);
 }
 export async function cariPasienUntukBuatRuteWhatsapp2(id, koneksi = pool) {
+    wajibId('cariPasienUntukBuatRuteWhatsapp2', id);
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `pasien` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }

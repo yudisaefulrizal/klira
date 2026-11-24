@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function tambahPesertaKunjunganUntukDaftarkan(kunjungan_id, pengguna_id, tipe, mulai, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `peserta_kunjungan` (`kunjungan_id`, `pengguna_id`, `tipe`, `mulai`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?)", [(kunjungan_id === undefined ? null : kunjungan_id) ?? null, (pengguna_id === undefined ? null : pengguna_id) ?? null, ((tipe === undefined ? null : tipe) ?? null), (mulai === undefined ? new Date() : mulai) ?? null, (dibuat_oleh === undefined ? null : dibuat_oleh) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
@@ -12,6 +13,7 @@ export async function daftarPesertaKunjunganUntukTerapkanDpjp(kunjungan_id, sele
     return baris;
 }
 export async function ubahPesertaKunjunganUntukTerapkanDpjp(selesai, id, koneksi = pool) {
+    wajibId('ubahPesertaKunjunganUntukTerapkanDpjp', id);
     const hasil = await tulis("UPDATE `peserta_kunjungan` t SET `selesai` = IF(?, t.`selesai`, ?) WHERE ((? OR t.`id` <=> ?))", [selesai === undefined, selesai ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

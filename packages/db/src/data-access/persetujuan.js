@@ -1,9 +1,11 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function tambahPersetujuanUntukDaftarkan(pasien_id, jenis, teks_persetujuan_id, versi_teks, tujuan, penjelasan, bentuk, status, penandatangan, wali_id, penandatangan_nama, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `persetujuan` (`pasien_id`, `jenis`, `teks_persetujuan_id`, `versi_teks`, `tujuan`, `penjelasan`, `bentuk`, `status`, `penandatangan`, `wali_id`, `penandatangan_nama`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [(pasien_id === undefined ? null : pasien_id) ?? null, ((jenis === undefined ? null : jenis) ?? null), (teks_persetujuan_id === undefined ? null : teks_persetujuan_id) ?? null, (versi_teks === undefined ? null : versi_teks) ?? null, (tujuan === undefined ? null : tujuan) ?? null, (penjelasan === undefined ? null : penjelasan) ?? null, (bentuk === undefined ? null : bentuk) ?? null, (status === undefined ? "diberikan" : status) ?? null, (penandatangan === undefined ? null : penandatangan) ?? null, (wali_id === undefined ? null : wali_id) ?? null, (penandatangan_nama === undefined ? null : penandatangan_nama) ?? null, (dibuat_oleh === undefined ? null : dibuat_oleh) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPersetujuanUntukDaftarkanHasil(id, koneksi = pool) {
+    wajibId('tambahPersetujuanUntukDaftarkanHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`teks_persetujuan_id`, t.`versi_teks`, t.`tujuan`, t.`penjelasan`, t.`bentuk`, t.`status`, t.`waktu`, t.`penandatangan`, t.`wali_id`, t.`penandatangan_nama`, t.`saksi_pengguna_id`, t.`kunjungan_id`, t.`tindakan_kode`, t.`tindakan_nama`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `persetujuan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris persetujuan tidak ditemukan.');
@@ -22,10 +24,12 @@ export async function daftarPersetujuanUntukDaftarPersetujuan(jenis, status, pas
     return baris;
 }
 export async function cariPersetujuanUntukPersetujuan(id, koneksi = pool) {
+    wajibId('cariPersetujuanUntukPersetujuan', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`jenis`, t.`teks_persetujuan_id`, t.`versi_teks`, t.`tujuan`, t.`penjelasan`, t.`bentuk`, t.`status`, t.`waktu`, t.`penandatangan`, t.`wali_id`, t.`penandatangan_nama`, t.`saksi_pengguna_id`, t.`kunjungan_id`, t.`tindakan_kode`, t.`tindakan_nama`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `persetujuan` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
 export async function ubahPersetujuanUntukTarik(status, id, status2, koneksi = pool) {
+    wajibId('ubahPersetujuanUntukTarik', id);
     const hasil = await tulis("UPDATE `persetujuan` t SET `status` = IF(?, t.`status`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((? OR t.`status` <=> ?))", [status === undefined, status ?? null, id === undefined, id ?? null, status2 === undefined, status2 ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

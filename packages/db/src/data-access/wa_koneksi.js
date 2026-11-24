@@ -1,5 +1,7 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function ambilWaKoneksi(id, koneksi = pool) {
+    wajibId('ambilWaKoneksi', id);
     const baris = await baca("SELECT t.`id`, t.`aktif`, t.`generasi`, t.`status`, t.`nomor`, t.`qr`, t.`detak`, t.`pemilik_engine`, t.`sewa_sampai` FROM `wa_koneksi` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
@@ -12,28 +14,34 @@ export async function simpanWaKoneksiUntukBuatRuteWhatsapp(id, aktif, status, no
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function ubahWaKoneksiUntukHubungkan(status, qr, id, koneksi = pool) {
+    wajibId('ubahWaKoneksiUntukHubungkan', id);
     const hasil = await tulis("UPDATE `wa_koneksi` t SET `status` = IF(?, t.`status`, ?), `qr` = IF(?, t.`qr`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, status ?? null, qr === undefined, qr ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahWaKoneksiUntukHubungkan3(status, nomor, qr, id, koneksi = pool) {
+    wajibId('ubahWaKoneksiUntukHubungkan3', id);
     const hasil = await tulis("UPDATE `wa_koneksi` t SET `status` = IF(?, t.`status`, ?), `nomor` = IF(?, t.`nomor`, ?), `qr` = IF(?, t.`qr`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, status ?? null, nomor === undefined, nomor ?? null, qr === undefined, qr ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahWaKoneksiUntukHubungkan4(aktif, status, nomor, qr, id, koneksi = pool) {
+    wajibId('ubahWaKoneksiUntukHubungkan4', id);
     const hasil = await tulis("UPDATE `wa_koneksi` t SET `aktif` = IF(?, t.`aktif`, ?), `status` = IF(?, t.`status`, ?), `nomor` = IF(?, t.`nomor`, ?), `qr` = IF(?, t.`qr`, ?) WHERE ((? OR t.`id` <=> ?))", [aktif === undefined, aktif ?? null, status === undefined, status ?? null, nomor === undefined, nomor ?? null, qr === undefined, qr ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahWaKoneksiUntukDetak(detak, pemilik_engine, sewa_sampai, id, sewa_sampai2, koneksi = pool) {
+    wajibId('ubahWaKoneksiUntukDetak', id);
     const hasil = await tulis("UPDATE `wa_koneksi` t SET `detak` = IF(?, t.`detak`, ?), `pemilik_engine` = IF(?, t.`pemilik_engine`, ?), `sewa_sampai` = IF(?, t.`sewa_sampai`, ?) WHERE ((? OR t.`id` <=> ?)) AND ((((? OR t.`pemilik_engine` <=> ?))) OR (((? OR t.`sewa_sampai` <=> ?))) OR (((? OR t.`sewa_sampai` < ?))))", [detak === undefined, detak ?? null, pemilik_engine === undefined, pemilik_engine ?? null, sewa_sampai === undefined, sewa_sampai ?? null, id === undefined, id ?? null, pemilik_engine === undefined, pemilik_engine ?? null, sewa_sampai2 === undefined, sewa_sampai2 ?? null, detak === undefined, detak ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function wajibWaKoneksiUntukDetak(id, koneksi = pool) {
+    wajibId('wajibWaKoneksiUntukDetak', id);
     const baris = await baca("SELECT t.`id`, t.`aktif`, t.`generasi`, t.`status`, t.`nomor`, t.`qr`, t.`detak`, t.`pemilik_engine`, t.`sewa_sampai` FROM `wa_koneksi` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris wa_koneksi tidak ditemukan.');
     return baris[0];
 }
 export async function ubahWaKoneksiUntukDetak2(status, nomor, id, koneksi = pool) {
+    wajibId('ubahWaKoneksiUntukDetak2', id);
     const hasil = await tulis("UPDATE `wa_koneksi` t SET `status` = IF(?, t.`status`, ?), `nomor` = IF(?, t.`nomor`, ?), `qr` = IF(?, t.`qr`, ?) WHERE ((? OR t.`id` <=> ?))", [status === undefined, status ?? null, nomor === undefined, nomor ?? null, nomor === undefined, nomor ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

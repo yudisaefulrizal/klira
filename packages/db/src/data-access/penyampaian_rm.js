@@ -1,9 +1,11 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function tambahPenyampaianRmUntukBuatPenyampaian(pasien_id, kunjungan_id, penerima_nama, hubungan, bentuk, bukti_persetujuan, catatan, petugas_id, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `penyampaian_rm` (`pasien_id`, `kunjungan_id`, `penerima_nama`, `hubungan`, `bentuk`, `bukti_persetujuan`, `catatan`, `petugas_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [(pasien_id === undefined ? null : pasien_id) ?? null, (kunjungan_id === undefined ? null : kunjungan_id) ?? null, (penerima_nama === undefined ? null : penerima_nama) ?? null, (hubungan === undefined ? null : hubungan) ?? null, ((bentuk === undefined ? null : bentuk) ?? null), (bukti_persetujuan === undefined ? null : bukti_persetujuan) ?? null, (catatan === undefined ? null : catatan) ?? null, (petugas_id === undefined ? null : petugas_id) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPenyampaianRmUntukBuatPenyampaianHasil(id, koneksi = pool) {
+    wajibId('tambahPenyampaianRmUntukBuatPenyampaianHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pasien_id`, t.`kunjungan_id`, t.`penerima_nama`, t.`hubungan`, t.`bentuk`, t.`bukti_persetujuan`, t.`catatan`, t.`petugas_id`, t.`waktu` FROM `penyampaian_rm` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris penyampaian_rm tidak ditemukan.');

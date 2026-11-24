@@ -1,9 +1,11 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function tambahPeringatanIzinUntukSimpanPeringatan(pengguna_id, izin_id, penugasan_id, jenis_peringatan, alasan_pimpinan, sumber, diterima_untuk_akun, keterangan, ditetapkan_oleh, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `peringatan_izin` (`pengguna_id`, `izin_id`, `penugasan_id`, `jenis_peringatan`, `alasan_pimpinan`, `sumber`, `diterima_untuk_akun`, `keterangan`, `ditetapkan_oleh`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [(pengguna_id === undefined ? null : pengguna_id) ?? null, (izin_id === undefined ? null : izin_id) ?? null, (penugasan_id === undefined ? null : penugasan_id) ?? null, (jenis_peringatan === undefined ? null : jenis_peringatan) ?? null, (alasan_pimpinan === undefined ? null : alasan_pimpinan) ?? null, (sumber === undefined ? "pemberian" : sumber) ?? null, (diterima_untuk_akun === undefined ? false : diterima_untuk_akun) ?? null, (keterangan === undefined ? null : keterangan) ?? null, (ditetapkan_oleh === undefined ? null : ditetapkan_oleh) ?? null, (dibuat_oleh === undefined ? null : dibuat_oleh) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPeringatanIzinUntukSimpanPeringatanHasil(id, koneksi = pool) {
+    wajibId('tambahPeringatanIzinUntukSimpanPeringatanHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`izin_id`, t.`penugasan_id`, t.`jenis_peringatan`, t.`alasan_pimpinan`, t.`sumber`, t.`diterima_untuk_akun`, t.`keterangan`, t.`ditetapkan_oleh`, t.`waktu` FROM `peringatan_izin` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris peringatan_izin tidak ditemukan.');
@@ -34,6 +36,7 @@ export async function tambahPeringatanIzinUntukBuatAkun(pengguna_id, izin_id, pe
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahPeringatanIzinUntukBuatAkunHasil(id, koneksi = pool) {
+    wajibId('tambahPeringatanIzinUntukBuatAkunHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`izin_id`, t.`penugasan_id`, t.`jenis_peringatan`, t.`alasan_pimpinan`, t.`sumber`, t.`diterima_untuk_akun`, t.`keterangan`, t.`ditetapkan_oleh`, t.`waktu`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `peringatan_izin` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris peringatan_izin tidak ditemukan.');

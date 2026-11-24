@@ -1,5 +1,7 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function ubahStokObatUntukSerahTerima(jumlah, diubah_pada, id, koneksi = pool) {
+    wajibId('ubahStokObatUntukSerahTerima', id);
     const hasil = await tulis("UPDATE `stok_obat` t SET `jumlah` = IF(?, t.`jumlah`, t.`jumlah` - ?), `diubah_pada` = IF(?, t.`diubah_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [jumlah === undefined, jumlah ?? null, diubah_pada === undefined, diubah_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -12,6 +14,7 @@ export async function daftarStokObatUntukStokMaster(master_obat_id, koneksi = po
     return baris;
 }
 export async function ubahStokObatUntukMutasi(kedaluwarsa, jumlah, diubah_pada, id, koneksi = pool) {
+    wajibId('ubahStokObatUntukMutasi', id);
     const hasil = await tulis("UPDATE `stok_obat` t SET `kedaluwarsa` = IF(?, t.`kedaluwarsa`, ?), `jumlah` = IF(?, t.`jumlah`, ?), `diubah_pada` = IF(?, t.`diubah_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [kedaluwarsa === undefined, kedaluwarsa ?? null, jumlah === undefined, jumlah ?? null, diubah_pada === undefined, diubah_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -20,12 +23,14 @@ export async function tambahStokObatUntukMutasi(master_obat_id, batch, kedaluwar
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahStokObatUntukMutasiHasil(id, koneksi = pool) {
+    wajibId('tambahStokObatUntukMutasiHasil', id);
     const baris = await baca("SELECT t.`id`, t.`master_obat_id`, t.`batch`, t.`kedaluwarsa`, t.`jumlah`, t.`dibuat_oleh`, t.`dibuat_pada`, t.`diubah_pada` FROM `stok_obat` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris stok_obat tidak ditemukan.');
     return baris[0];
 }
 export async function ubahStokObatUntukMutasi2(jumlah, diubah_pada, id, koneksi = pool) {
+    wajibId('ubahStokObatUntukMutasi2', id);
     const hasil = await tulis("UPDATE `stok_obat` t SET `jumlah` = IF(?, t.`jumlah`, ?), `diubah_pada` = IF(?, t.`diubah_pada`, ?) WHERE ((? OR t.`id` <=> ?))", [jumlah === undefined, jumlah ?? null, diubah_pada === undefined, diubah_pada ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }

@@ -1,5 +1,6 @@
 import { baca, tulis, pool } from '../koneksi.js';
 import { kelompokkan } from '../pemeta.js';
+import { wajibId } from '../wajib.js';
 export async function hitungProfilProfesiUntukDaftar(aktif, nama, nomor_sip, pakai, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `profil_profesi` t WHERE ((? OR t.`aktif` <=> ?)) AND ((? OR (((EXISTS (SELECT 1 FROM `pengguna` r1 WHERE t.`pengguna_id` = r1.`id` AND (((? OR r1.`nama` LIKE ? ESCAPE '!')))))) OR (((? OR t.`profesi` LIKE ? ESCAPE '!'))) OR (((? OR t.`nomor_sip` LIKE ? ESCAPE '!'))))))", [aktif === undefined, aktif ?? null, !pakai, nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', nomor_sip === undefined, '%' + String(nomor_sip ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%'], koneksi);
     return Number(baris.jumlah);
@@ -62,10 +63,12 @@ export async function tambahProfilProfesiUntukBuatHasil(id, koneksi = pool) {
     return hasil[0];
 }
 export async function ubahProfilProfesiUntukUbah(profesi, nomor_sip, masa_berlaku_sip, ihs_practitioner_id, id, koneksi = pool) {
+    wajibId('ubahProfilProfesiUntukUbah', id);
     const hasil = await tulis("UPDATE `profil_profesi` t SET `profesi` = IF(?, t.`profesi`, ?), `nomor_sip` = IF(?, t.`nomor_sip`, ?), `masa_berlaku_sip` = IF(?, t.`masa_berlaku_sip`, ?), `ihs_practitioner_id` = IF(?, t.`ihs_practitioner_id`, ?) WHERE ((? OR t.`id` <=> ?))", [profesi === undefined, profesi ?? null, nomor_sip === undefined, nomor_sip ?? null, masa_berlaku_sip === undefined, masa_berlaku_sip ?? null, ihs_practitioner_id === undefined, ihs_practitioner_id ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function ubahProfilProfesiUntukSetAktif(aktif, id, koneksi = pool) {
+    wajibId('ubahProfilProfesiUntukSetAktif', id);
     const hasil = await tulis("UPDATE `profil_profesi` t SET `aktif` = IF(?, t.`aktif`, ?) WHERE ((? OR t.`id` <=> ?))", [aktif === undefined, aktif ?? null, id === undefined, id ?? null], koneksi);
     return { count: hasil.affectedRows };
 }
@@ -82,6 +85,7 @@ export async function hitungProfilProfesiUntukHitungKesiapan2(aktif, masa_berlak
     return Number(baris.jumlah);
 }
 export async function tambahProfilProfesiUntukBuatAkunHasil(id, koneksi = pool) {
+    wajibId('tambahProfilProfesiUntukBuatAkunHasil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`profesi`, t.`nomor_sip`, t.`masa_berlaku_sip`, t.`ihs_practitioner_id`, t.`aktif`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `profil_profesi` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris profil_profesi tidak ditemukan.');

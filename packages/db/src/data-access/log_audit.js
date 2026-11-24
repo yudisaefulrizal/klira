@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { wajibId } from '../wajib.js';
 export async function tambahLogAuditUntukTambah(pengguna_id, aksi, entitas, entitas_id, keterangan, waktu, alamat, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `log_audit` (`pengguna_id`, `aksi`, `entitas`, `entitas_id`, `keterangan`, `waktu`, `alamat`) VALUES (?, ?, ?, ?, ?, ?, ?)", [(pengguna_id === undefined ? null : pengguna_id) ?? null, (aksi === undefined ? null : aksi) ?? null, (entitas === undefined ? null : entitas) ?? null, (entitas_id === undefined ? null : entitas_id) ?? null, (keterangan === undefined ? null : keterangan) ?? null, (waktu === undefined ? new Date() : waktu) ?? null, (alamat === undefined ? null : alamat) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
@@ -12,6 +13,7 @@ export async function daftarLogAuditUntukCari(pengguna_id, aksi, entitas, waktu,
     return baris;
 }
 export async function cariLogAuditUntukAmbil(id, koneksi = pool) {
+    wajibId('cariLogAuditUntukAmbil', id);
     const baris = await baca("SELECT t.`id`, t.`pengguna_id`, t.`aksi`, t.`entitas`, t.`entitas_id`, t.`keterangan`, t.`waktu`, t.`alamat` FROM `log_audit` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
