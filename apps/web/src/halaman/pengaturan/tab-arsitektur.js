@@ -737,56 +737,35 @@ export function TabArsitektur() {
         svg.append(defs);
 
         // Distribusi titik sambung di setiap sisi kartu agar garis paralel tidak bertumpuk
-        const portSisi = new Map();
-        const daftarGaris = [];
-        for (const r of relasiTampil) {
-            const a = peta.posisiTabel.get(r.dari_tabel);
-            const b = peta.posisiTabel.get(r.ke_tabel);
-            if (!a || !b) continue;
-            const cxA = a.x + a.w / 2;
-            const cyA = a.y + a.h / 2;
-            const cxB = b.x + b.w / 2;
-            const cyB = b.y + b.h / 2;
-            const horizontal = Math.abs(cxB - cxA) >= Math.abs(cyB - cyA);
-            const sisiA = horizontal ? (cxB >= cxA ? 'R' : 'L') : (cyB >= cyA ? 'B' : 'T');
-            const sisiB = horizontal ? (cxB >= cxA ? 'L' : 'R') : (cyB >= cyA ? 'T' : 'B');
-            const kA = `${r.dari_tabel}:${sisiA}`;
-            const kB = `${r.ke_tabel}:${sisiB}`;
-            if (!portSisi.has(kA)) portSisi.set(kA, []);
-            if (!portSisi.has(kB)) portSisi.set(kB, []);
-            const idxA = portSisi.get(kA).length;
-            portSisi.get(kA).push(horizontal ? cyB : cxB);
-            const idxB = portSisi.get(kB).length;
-            portSisi.get(kB).push(horizontal ? cyA : cxA);
-            daftarGaris.push({ r, a, b, horizontal, sisiA, sisiB, kA, kB, idxA, idxB });
-        }
-
-        const hitungPort = (pos, sisi, k, idx) => {
-            const daftar = portSisi.get(k) || [0];
-            const total = daftar.length;
-            const fraksi = total <= 1 ? 0.5 : 0.18 + (idx / (total - 1)) * 0.64;
-            if (sisi === 'R') return { x: pos.x + pos.w, y: pos.y + pos.h * fraksi };
-            if (sisi === 'L') return { x: pos.x, y: pos.y + pos.h * fraksi };
-            if (sisi === 'B') return { x: pos.x + pos.w * fraksi, y: pos.y + pos.h };
-            return { x: pos.x + pos.w * fraksi, y: pos.y };
+        // Arahkan pangkal dan ujung panah tepat ke baris kolom yang berelasi
+        const yKolom = (pos, namaKolom) => {
+            const idx = (pos.tabel?.kolom || []).findIndex((c) => c.nama === namaKolom);
+            if (idx < 0) return pos.y + Math.min(42, pos.h / 2);
+            return Math.min(pos.y + pos.h - 9, pos.y + 42 + idx * 17);
         };
 
         const ruteGaris = buatRouterGarisErd(peta.posisiTabel, peta.lebarKanvas, peta.tinggiKanvas);
 
-        for (const g of daftarGaris) {
-            const { r, a, b, sisiA, sisiB, kA, kB, idxA, idxB } = g;
+        for (const r of relasiTampil) {
+            const a = peta.posisiTabel.get(r.dari_tabel);
+            const b = peta.posisiTabel.get(r.ke_tabel);
+            if (!a || !b) continue;
             const keluar = tabelTerpilih && r.dari_tabel === tabelTerpilih;
             const masuk = tabelTerpilih && r.ke_tabel === tabelTerpilih;
             const aktifGaris = keluar || masuk;
 
             let dPath;
             if (r.dari_tabel === r.ke_tabel) {
+                const y1 = yKolom(a, r.dari_kolom);
+                const y2 = yKolom(a, r.ke_kolom);
                 const lx = a.x + a.w;
-                const ly = a.y + 24;
-                dPath = `M ${lx} ${ly} C ${lx + 38} ${ly - 22}, ${a.x + a.w - 18} ${a.y - 34}, ${a.x + a.w - 28} ${a.y}`;
+                dPath = `M ${lx} ${y1} C ${lx + 42} ${y1}, ${lx + 42} ${y2}, ${lx} ${y2}`;
             } else {
-                const p1 = hitungPort(a, sisiA, kA, idxA);
-                const p2 = hitungPort(b, sisiB, kB, idxB);
+                const samaKolom = Math.abs(a.x - b.x) < 10;
+                const sisiA = samaKolom ? 'R' : (b.x > a.x ? 'R' : 'L');
+                const sisiB = samaKolom ? 'R' : (b.x > a.x ? 'L' : 'R');
+                const p1 = { x: sisiA === 'R' ? a.x + a.w : a.x, y: yKolom(a, r.dari_kolom) };
+                const p2 = { x: sisiB === 'R' ? b.x + b.w : b.x, y: yKolom(b, r.ke_kolom) };
                 dPath = ruteGaris(p1, sisiA, p2, sisiB);
             }
 
