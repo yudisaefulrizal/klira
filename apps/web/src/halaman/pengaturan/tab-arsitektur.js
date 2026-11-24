@@ -554,73 +554,337 @@ export function TabArsitektur() {
         lukis();
     };
 
+    let tahapTerpilih = null;
+
     function lukisAlur() {
         const petaTabel = new Map((data.tabel || []).map((t) => [t.nama, t]));
         const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
+        const sumberAlur = data.alur || [];
+        const cariTahap = (urutan) => sumberAlur.find((x) => Number(x.urutan) === urutan) || {};
+
+        const t1 = cariTahap(1);
+        const t2 = cariTahap(2);
+        const t3 = cariTahap(3);
+        const t4 = cariTahap(4);
+        const t5 = cariTahap(5);
+        const t6 = cariTahap(6);
+
+        // Node diagram alur layanan dengan posisi 2D + percabangan klinis (Farmasi & Penunjang)
+        const nodeAlur = [
+            {
+                id: 'daftar',
+                kode: '1',
+                judul: t1.judul || 'Pendaftaran & Antrean',
+                domain: t1.domain || 'pasien',
+                ringkas: t1.ringkas || 'Pasien baru/lama didaftarkan ke poli & sesi antrean.',
+                tabel: t1.tabel_utama || ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'],
+                endpoint: t1.endpoint_kunci || ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'],
+                x: 24,
+                y: 120,
+            },
+            {
+                id: 'skrining',
+                kode: '2',
+                judul: t2.judul || 'Skrining Perawat',
+                domain: t2.domain || 'klinis',
+                ringkas: t2.ringkas || 'Pengisian Tanda Vital, Alergi, Keluhan awal, Nyeri & Gizi.',
+                tabel: t2.tabel_utama || ['pemeriksaan', 'pengesahan_catatan'],
+                endpoint: t2.endpoint_kunci || ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'],
+                x: 280,
+                y: 120,
+            },
+            {
+                id: 'dokter',
+                kode: '3',
+                judul: t3.judul || 'Pemeriksaan Dokter',
+                domain: t3.domain || 'klinis',
+                ringkas: t3.ringkas || 'SOAPIE, Pemeriksaan Fisik, KIA/Gigi/UGD, Diagnosis ICD-10, & Tindakan.',
+                tabel: t3.tabel_utama || ['pemeriksaan', 'diagnosis', 'odontogram_pasien', 'kia_kunjungan', 'ugd_kunjungan'],
+                endpoint: t3.endpoint_kunci || ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/ugd'],
+                x: 536,
+                y: 120,
+            },
+            {
+                id: 'farmasi',
+                kode: '4a',
+                judul: 'Farmasi & Obat',
+                domain: 'farmasi',
+                ringkas: 'Resep obat, telaah resep, peracikan puyer/racikan, & penyerahan.',
+                tabel: ['resep', 'item_resep', 'stok_obat'],
+                endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/farmasi/telaah'],
+                x: 804,
+                y: 28,
+            },
+            {
+                id: 'penunjang',
+                kode: '4b',
+                judul: 'Lab & Penunjang',
+                domain: 'penunjang',
+                ringkas: 'Order pemeriksaan lab/radiologi, pengambilan spesimen, hasil & validasi.',
+                tabel: (t4.tabel_utama || []).filter((x) => x.includes('penunjang')).length ? (t4.tabel_utama || []).filter((x) => x.includes('penunjang')) : ['order_penunjang', 'hasil_penunjang'],
+                endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/:id/hasil'],
+                x: 804,
+                y: 214,
+            },
+            {
+                id: 'kasir',
+                kode: '5',
+                judul: t5.judul || 'Kasir, Klaim & Akuntansi',
+                domain: t5.domain || 'keuangan',
+                ringkas: t5.ringkas || 'Tagihan otomatis, shift kasir, klaim JKN, piutang/hutang, & jurnal.',
+                tabel: t5.tabel_utama || ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
+                endpoint: t5.endpoint_kunci || ['POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
+                x: 1072,
+                y: 120,
+            },
+            {
+                id: 'integrasi',
+                kode: '6',
+                judul: t6.judul || 'SATUSEHAT & BPJS PCare',
+                domain: t6.domain || 'integrasi',
+                ringkas: t6.ringkas || 'Sinkronisasi FHIR (Patient, Encounter, Observation) & Antrean JKN.',
+                tabel: t6.tabel_utama || ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
+                endpoint: t6.endpoint_kunci || ['GET /api/satusehat/status', 'GET /api/pcare/status'],
+                x: 536,
+                y: 386,
+            },
+        ];
+
+        const sisiL = 212;
+        const sisiT = 114;
+        const petaNode = new Map(nodeAlur.map((n) => [n.id, n]));
+        const panahAlur = [
+            { dari: 'daftar', ke: 'skrining', label: 'Antrean' },
+            { dari: 'skrining', ke: 'dokter', label: 'Asesmen' },
+            { dari: 'dokter', ke: 'farmasi', label: 'Resep' },
+            { dari: 'dokter', ke: 'penunjang', label: 'Order Lab' },
+            { dari: 'farmasi', ke: 'kasir', label: 'Biaya Obat' },
+            { dari: 'penunjang', ke: 'kasir', label: 'Biaya Lab' },
+            { dari: 'dokter', ke: 'kasir', label: 'Tindakan' },
+            { dari: 'daftar', ke: 'integrasi', label: 'Patient / JKN', jenis: 'sinkron' },
+            { dari: 'dokter', ke: 'integrasi', label: 'Encounter / FHIR', jenis: 'sinkron' },
+            { dari: 'kasir', ke: 'integrasi', label: 'Klaim PCare', jenis: 'sinkron' },
+        ];
+
+        if (!tahapTerpilih || !petaNode.has(tahapTerpilih)) tahapTerpilih = 'daftar';
 
         const info = document.createElement('p');
-        info.textContent = 'Klik nama tabel pada setiap tahap untuk langsung menyorot posisi, kolom, dan relasinya di Peta Database (ERD).';
+        info.textContent = 'Klik tahapan pada diagram alur layanan untuk melihat detail proses, endpoint kunci, dan melompat ke tabel terkait di ERD.';
         Object.assign(info.style, { margin: `0 0 ${token.jarak.md}`, color: token.warna.teksRedup, fontSize: token.huruf.ukuran.dasar });
 
-        const grid = document.createElement('div');
-        Object.assign(grid.style, {
+        const layout = document.createElement('div');
+        Object.assign(layout.style, {
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+            gridTemplateColumns: 'minmax(0, 1fr) 340px',
             gap: token.jarak.md,
+            alignItems: 'start',
         });
 
-        for (const tahap of data.alur || []) {
-            const dom = petaDomain.get(tahap.domain);
+        const kanvasAlur = kartu({
+            style: {
+                padding: '0',
+                overflow: 'auto',
+                height: 'calc(100vh - 280px)',
+                minHeight: '480px',
+                position: 'relative',
+                backgroundImage: `radial-gradient(${token.warna.garis} 1px, transparent 1px)`,
+                backgroundSize: '20px 20px',
+            },
+        });
+
+        const stage = document.createElement('div');
+        const lebarStage = 1320;
+        const tinggiStage = 530;
+        Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px' });
+
+        // SVG panah antar tahapan layanan
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', String(lebarStage));
+        svg.setAttribute('height', String(tinggiStage));
+        Object.assign(svg.style, { position: 'absolute', left: '0', top: '0', pointerEvents: 'none', zIndex: '1' });
+
+        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const buatPanah = (id, warna) => {
+            const mk = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            mk.setAttribute('id', id);
+            mk.setAttribute('viewBox', '0 0 10 10');
+            mk.setAttribute('refX', '8');
+            mk.setAttribute('refY', '5');
+            mk.setAttribute('markerWidth', '6');
+            mk.setAttribute('markerHeight', '6');
+            mk.setAttribute('orient', 'auto-start-reverse');
+            const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            p.setAttribute('d', 'M 0 1.5 L 9 5 L 0 8.5 z');
+            p.setAttribute('fill', warna);
+            mk.append(p);
+            return mk;
+        };
+        defs.append(
+            buatPanah('alur-utama', '#0ea5e9'),
+            buatPanah('alur-sinkron', '#8b5cf6'),
+            buatPanah('alur-normal', '#64748b'),
+        );
+        svg.append(defs);
+
+        for (const e of panahAlur) {
+            const a = petaNode.get(e.dari);
+            const b = petaNode.get(e.ke);
+            if (!a || !b) continue;
+            const aktifGaris = e.dari === tahapTerpilih || e.ke === tahapTerpilih;
+            const sinkron = e.jenis === 'sinkron';
+
+            let x1;
+            let y1;
+            let x2;
+            let y2;
+            let dPath;
+            if (b.y > a.y + sisiT) {
+                x1 = a.x + sisiL / 2;
+                y1 = a.y + sisiT;
+                x2 = b.x + (a.x < b.x ? 32 : a.x > b.x ? sisiL - 32 : sisiL / 2);
+                y2 = b.y;
+                const midY = (y1 + y2) / 2;
+                dPath = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+            } else {
+                x1 = a.x + sisiL;
+                y1 = a.y + sisiT / 2;
+                x2 = b.x;
+                y2 = b.y + sisiT / 2;
+                const dx = Math.max(28, (x2 - x1) * 0.45);
+                dPath = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+            }
+
+            const warna = aktifGaris ? (sinkron ? '#8b5cf6' : '#0ea5e9') : '#64748b';
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', dPath);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke', warna);
+            path.setAttribute('stroke-width', aktifGaris ? '2.5' : '1.6');
+            if (sinkron) path.setAttribute('stroke-dasharray', '6 4');
+            path.setAttribute('opacity', aktifGaris ? '0.98' : '0.72');
+            path.setAttribute('marker-end', `url(#${aktifGaris ? (sinkron ? 'alur-sinkron' : 'alur-utama') : 'alur-normal'})`);
+            svg.append(path);
+
+            const lx = (x1 + x2) / 2;
+            const ly = (y1 + y2) / 2 - 6;
+            const txt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            txt.setAttribute('x', String(lx));
+            txt.setAttribute('y', String(ly));
+            txt.setAttribute('text-anchor', 'middle');
+            txt.setAttribute('font-size', '10.5');
+            txt.setAttribute('font-weight', aktifGaris ? '700' : '500');
+            txt.setAttribute('fill', warna);
+            txt.textContent = e.label;
+            svg.append(txt);
+        }
+        stage.append(svg);
+
+        // Render kartu node tahapan layanan
+        for (const n of nodeAlur) {
+            const dom = petaDomain.get(n.domain);
             const w = token.warna.status[dom?.warna || 'biru'];
-            const k = kartu({ susun: 'sm', style: { borderTop: `4px solid ${w.teks}` } });
+            const dipilih = n.id === tahapTerpilih;
+
+            const card = document.createElement('button');
+            card.type = 'button';
+            Object.assign(card.style, {
+                position: 'absolute',
+                zIndex: '2',
+                left: `${n.x}px`,
+                top: `${n.y}px`,
+                width: `${sisiL}px`,
+                height: `${sisiT}px`,
+                textAlign: 'left',
+                padding: '10px 12px',
+                borderRadius: token.radius.sedang,
+                border: `1.5px solid ${dipilih ? token.warna.utama : token.warna.garis}`,
+                borderTop: `4px solid ${w.teks}`,
+                background: token.warna.permukaan,
+                color: token.warna.teks,
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                gap: '4px',
+                boxShadow: dipilih ? `0 0 0 3px ${token.warna.utamaLatar}` : '0 2px 6px rgba(0,0,0,0.1)',
+            });
+            card.addEventListener('click', () => {
+                tahapTerpilih = n.id;
+                lukisAlur();
+            });
 
             const atas = document.createElement('div');
-            Object.assign(atas.style, { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: token.jarak.xs });
-            const judul = document.createElement('strong');
-            judul.textContent = `${tahap.urutan}. ${tahap.judul}`;
-            judul.style.fontSize = token.huruf.ukuran.besar;
-            atas.append(judul, lencana(dom?.label || tahap.domain, dom?.warna || 'biru'));
+            Object.assign(atas.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '4px' });
+            const jdl = document.createElement('strong');
+            jdl.textContent = `${n.kode}. ${n.judul}`;
+            jdl.style.fontSize = '12.5px';
+            atas.append(jdl);
 
-            const desk = document.createElement('div');
-            desk.textContent = tahap.ringkas;
-            Object.assign(desk.style, { fontSize: token.huruf.ukuran.dasar, color: token.warna.teksRedup, lineHeight: '1.45' });
+            const ringkas = document.createElement('div');
+            ringkas.textContent = n.ringkas;
+            Object.assign(ringkas.style, {
+                fontSize: '11px',
+                color: token.warna.teksRedup,
+                lineHeight: '1.35',
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: '2',
+                WebkitBoxOrient: 'vertical',
+            });
 
-            const lblT = document.createElement('small');
-            lblT.textContent = 'Tabel Terkait:';
-            lblT.style.fontWeight = token.huruf.berat.tebal;
-            const chips = document.createElement('div');
-            Object.assign(chips.style, { display: 'flex', flexWrap: 'wrap', gap: '6px' });
-            for (const namaT of tahap.tabel_utama || []) {
-                const infoT = petaTabel.get(namaT);
-                const btnT = document.createElement('button');
-                btnT.type = 'button';
-                btnT.textContent = infoT ? `${namaT} (${infoT.estimasi_baris})` : namaT;
-                Object.assign(btnT.style, {
-                    padding: '4px 9px', borderRadius: token.radius.pil, cursor: 'pointer',
-                    border: `${token.ukuran.garis} solid ${token.warna.garis}`,
-                    background: token.warna.kepalaTabel, color: token.warna.teks,
-                    fontSize: token.huruf.ukuran.kecil, fontWeight: token.huruf.berat.sedang,
-                });
-                btnT.addEventListener('click', () => bukaTabelDiErd(namaT));
-                chips.append(btnT);
-            }
+            const kaki = document.createElement('div');
+            Object.assign(kaki.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '10.5px', color: w.teks, fontWeight: token.huruf.berat.tebal });
+            kaki.textContent = `${dom?.label || n.domain} · ${n.tabel.length} tabel`;
 
-            const lblE = document.createElement('small');
-            lblE.textContent = 'Endpoint Kunci:';
-            lblE.style.fontWeight = token.huruf.berat.tebal;
-            const eps = document.createElement('div');
-            Object.assign(eps.style, { display: 'flex', flexDirection: 'column', gap: '2px', fontFamily: 'monospace', fontSize: '11.5px', color: token.warna.teksRedup });
-            for (const ep of tahap.endpoint_kunci || []) {
-                const d = document.createElement('div');
-                d.textContent = ep;
-                eps.append(d);
-            }
-
-            k.append(atas, desk, lblT, chips, lblE, eps);
-            grid.append(k);
+            card.append(atas, ringkas, kaki);
+            stage.append(card);
         }
 
-        isi.replaceChildren(info, grid);
+        kanvasAlur.append(stage);
+
+        // Panel kanan: detail tahap layanan yang dipilih
+        const aktifNode = petaNode.get(tahapTerpilih) || nodeAlur[0];
+        const domAktif = petaDomain.get(aktifNode.domain);
+        const insp = kartu({ susun: 'sm', style: { maxHeight: 'calc(100vh - 280px)', overflowY: 'auto' } });
+        const hD = document.createElement('h3');
+        hD.textContent = `${aktifNode.kode}. ${aktifNode.judul}`;
+        hD.style.margin = '0';
+        const deskD = document.createElement('p');
+        deskD.textContent = aktifNode.ringkas;
+        Object.assign(deskD.style, { margin: '0', fontSize: token.huruf.ukuran.dasar, color: token.warna.teksRedup, lineHeight: '1.45' });
+
+        const lblT = document.createElement('strong');
+        lblT.textContent = `Tabel Terkait (${aktifNode.tabel.length}):`;
+        const chips = document.createElement('div');
+        Object.assign(chips.style, { display: 'flex', flexWrap: 'wrap', gap: '6px' });
+        for (const namaT of aktifNode.tabel) {
+            const infoT = petaTabel.get(namaT);
+            const btnT = document.createElement('button');
+            btnT.type = 'button';
+            btnT.textContent = infoT ? `${namaT} (${infoT.estimasi_baris})` : namaT;
+            Object.assign(btnT.style, {
+                padding: '4px 9px', borderRadius: token.radius.pil, cursor: 'pointer',
+                border: `${token.ukuran.garis} solid ${token.warna.garis}`,
+                background: token.warna.kepalaTabel, color: token.warna.teks,
+                fontSize: token.huruf.ukuran.kecil, fontWeight: token.huruf.berat.sedang,
+            });
+            btnT.addEventListener('click', () => bukaTabelDiErd(namaT));
+            chips.append(btnT);
+        }
+
+        const lblE = document.createElement('strong');
+        lblE.textContent = 'Endpoint Kunci:';
+        const eps = document.createElement('div');
+        Object.assign(eps.style, { display: 'flex', flexDirection: 'column', gap: '4px', fontFamily: 'monospace', fontSize: '11.5px', color: token.warna.teksRedup });
+        for (const ep of aktifNode.endpoint) {
+            const d = document.createElement('div');
+            d.textContent = ep;
+            eps.append(d);
+        }
+
+        insp.append(hD, lencana(domAktif?.label || aktifNode.domain, domAktif?.warna || 'biru'), deskD, lblT, chips, lblE, eps);
+        layout.append(kanvasAlur, insp);
+        isi.replaceChildren(info, layout);
     }
 
     function lukisErd() {
