@@ -57,7 +57,6 @@ export function kredensialAwal(env) {
     };
 }
 export const jejak = z.object({
-    fasyankes_id: idPositif,
     dibuat_oleh: idPositif.nullable(),
     dibuat_pada: z.coerce.date(),
 });

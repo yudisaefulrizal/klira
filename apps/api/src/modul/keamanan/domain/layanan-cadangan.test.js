@@ -3,7 +3,7 @@ import { PassThrough, Readable } from 'node:stream';
 
 const { CadanganLewatWebMati, buatLayananCadangan, pulihkanLewatWebAktif, BATAS_UNGGAH_CADANGAN } = await import('./layanan-cadangan.js');
 
-const p = { id: 7, fasyankes_id: 3, username: 'pimpinan' };
+const p = { id: 7, username: 'pimpinan' };
 
 function siapkan({ lewatWeb = true } = {}) {
     const urutan = [];
@@ -36,7 +36,7 @@ describe('unduh cadangan', () => {
         alat.mulaiUnduhBackup.mockImplementation(async () => { urutan.push('dump'); return { aliran: Readable.from(['abc', 'de']), selesai: Promise.resolve(), batal: jest.fn() }; });
         const { aliran, selesai } = await layanan.mulaiUnduh(p, '203.0.113.9');
         expect(urutan.slice(0, 3)).toEqual(['audit:ekspor', 'riwayat:berjalan', 'dump']);
-        expect(audit.catat).toHaveBeenCalledWith(expect.objectContaining({ aksi: 'ekspor', entitas: 'cadangan', pengguna_id: 7, fasyankes_id: 3, alamat: '203.0.113.9' }));
+        expect(audit.catat).toHaveBeenCalledWith(expect.objectContaining({ aksi: 'ekspor', entitas: 'cadangan', pengguna_id: 7, alamat: '203.0.113.9' }));
         expect(repo.catatBackup).toHaveBeenCalledWith(3, 'berjalan', 'Unduhan lewat web', 7);
         expect(await baca(aliran)).toBe('abcde');
         await selesai;

@@ -1,7 +1,7 @@
 import { baca, tulis, pool } from '../koneksi.js';
 
 const KOLOM_PEMERIKSAAN = [
-    'id', 'fasyankes_id', 'kunjungan_id', 'jenis', 'bagian', 'versi',
+    'id', 'kunjungan_id', 'jenis', 'bagian', 'versi',
     'suhu', 'tensi_sistol', 'tensi_diastol', 'nadi', 'respirasi',
     'tinggi', 'berat', 'lingkar_perut', 'spo2', 'gcs', 'kesadaran',
     'alergi', 'subjek', 'objek', 'asesmen', 'plan', 'instruksi', 'evaluasi',
@@ -37,10 +37,10 @@ function normalkanBaris(b) {
 }
 
 /** Cari satu baris pemeriksaan berdasarkan kunjungan, bagian, dan versi. */
-export async function cariPemeriksaanBagian(fasyankes_id, kunjungan_id, versi, bagian, koneksi = pool) {
+export async function cariPemeriksaanBagian(kunjungan_id, versi, bagian, koneksi = pool) {
     const baris = await baca(
-        `SELECT ${SELECT_PEMERIKSAAN} FROM \`pemeriksaan\` t WHERE ((? OR t.\`fasyankes_id\` <=> ?)) AND ((? OR t.\`kunjungan_id\` <=> ?)) AND ((? OR t.\`versi\` <=> ?)) AND ((? OR t.\`bagian\` <=> ?)) LIMIT 1`,
-        [fasyankes_id === undefined, fasyankes_id ?? null, kunjungan_id === undefined, kunjungan_id ?? null, versi === undefined, versi ?? null, bagian === undefined, bagian ?? null],
+        `SELECT ${SELECT_PEMERIKSAAN} FROM \`pemeriksaan\` t WHERE ((? OR t.\`kunjungan_id\` <=> ?)) AND ((? OR t.\`versi\` <=> ?)) AND ((? OR t.\`bagian\` <=> ?)) LIMIT 1`,
+        [kunjungan_id === undefined, kunjungan_id ?? null, versi === undefined, versi ?? null, bagian === undefined, bagian ?? null],
         koneksi,
     );
     return normalkanBaris(baris[0] ?? null);
@@ -56,49 +56,49 @@ export async function tambahPemeriksaan(data, koneksi = pool) {
 }
 
 /** Daftar keluhan utama dari anamnesis untuk ringkasan riwayat kunjungan pasien. */
-export async function daftarAnamnesisUntukRiwayatPasien(fasyankes_id, kunjungan_id, koneksi = pool) {
+export async function daftarAnamnesisUntukRiwayatPasien(kunjungan_id, koneksi = pool) {
     return baca(
-        "SELECT t.`kunjungan_id`, t.`keluhan_utama` FROM `pemeriksaan` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND t.`bagian` = 'anamnesis' AND ((? OR t.`kunjungan_id` IN (?))) ORDER BY t.`versi` DESC",
-        [fasyankes_id === undefined, fasyankes_id ?? null, kunjungan_id === undefined, kunjungan_id?.length ? kunjungan_id : [null]],
+        "SELECT t.`kunjungan_id`, t.`keluhan_utama` FROM `pemeriksaan` t WHERE t.`bagian` = 'anamnesis' AND ((? OR t.`kunjungan_id` IN (?))) ORDER BY t.`versi` DESC",
+        [kunjungan_id === undefined, kunjungan_id?.length ? kunjungan_id : [null]],
         koneksi,
     );
 }
 
 /** Ambil alergi keperawatan terbaru milik pasien untuk konteks klinis. */
-export async function cariKeperawatanUntukKonteks(fasyankes_id, pasien_id, alergi, alergi2, koneksi = pool) {
+export async function cariKeperawatanUntukKonteks(pasien_id, alergi, alergi2, koneksi = pool) {
     const baris = await baca(
-        "SELECT t.`alergi` FROM `pemeriksaan` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND t.`bagian` = 'keperawatan' AND (EXISTS (SELECT 1 FROM `kunjungan` r1 WHERE t.`kunjungan_id` = r1.`id` AND (((? OR r1.`pasien_id` <=> ?))))) AND ((? OR NOT (t.`alergi` <=> ?))) AND (NOT ((((? OR t.`alergi` <=> ?))))) ORDER BY t.`id` DESC LIMIT 1",
-        [fasyankes_id === undefined, fasyankes_id ?? null, pasien_id === undefined, pasien_id ?? null, alergi === undefined, alergi ?? null, alergi2 === undefined, alergi2 ?? null],
+        "SELECT t.`alergi` FROM `pemeriksaan` t WHERE t.`bagian` = 'keperawatan' AND (EXISTS (SELECT 1 FROM `kunjungan` r1 WHERE t.`kunjungan_id` = r1.`id` AND (((? OR r1.`pasien_id` <=> ?))))) AND ((? OR NOT (t.`alergi` <=> ?))) AND (NOT ((((? OR t.`alergi` <=> ?))))) ORDER BY t.`id` DESC LIMIT 1",
+        [pasien_id === undefined, pasien_id ?? null, alergi === undefined, alergi ?? null, alergi2 === undefined, alergi2 ?? null],
         koneksi,
     );
     return baris[0] ?? null;
 }
 
 /** Ambil tanda vital terbaru milik pasien untuk konteks klinis. */
-export async function cariTandaVitalUntukKonteks(fasyankes_id, pasien_id, koneksi = pool) {
+export async function cariTandaVitalUntukKonteks(pasien_id, koneksi = pool) {
     const baris = await baca(
-        "SELECT t.`kunjungan_id`, t.`versi` FROM `pemeriksaan` t WHERE ((? OR t.`fasyankes_id` <=> ?)) AND t.`bagian` = 'tanda_vital' AND (EXISTS (SELECT 1 FROM `kunjungan` r1 WHERE t.`kunjungan_id` = r1.`id` AND (((? OR r1.`pasien_id` <=> ?))))) ORDER BY t.`id` DESC LIMIT 1",
-        [fasyankes_id === undefined, fasyankes_id ?? null, pasien_id === undefined, pasien_id ?? null],
+        "SELECT t.`kunjungan_id`, t.`versi` FROM `pemeriksaan` t WHERE t.`bagian` = 'tanda_vital' AND (EXISTS (SELECT 1 FROM `kunjungan` r1 WHERE t.`kunjungan_id` = r1.`id` AND (((? OR r1.`pasien_id` <=> ?))))) ORDER BY t.`id` DESC LIMIT 1",
+        [pasien_id === undefined, pasien_id ?? null],
         koneksi,
     );
     return baris[0] ?? null;
 }
 
 /** Daftar CPPT rawat inap terbaru untuk suatu kunjungan. */
-export async function daftarCppt(fasyankes_id, kunjungan_id, batas, koneksi = pool) {
+export async function daftarCppt(kunjungan_id, batas, koneksi = pool) {
     const baris = await baca(
-        `SELECT ${SELECT_PEMERIKSAAN} FROM \`pemeriksaan\` t WHERE ((? OR t.\`fasyankes_id\` <=> ?)) AND ((? OR t.\`kunjungan_id\` <=> ?)) AND t.\`jenis\` = 'cppt' ORDER BY t.\`id\` DESC LIMIT ? OFFSET ?`,
-        [fasyankes_id === undefined, fasyankes_id ?? null, kunjungan_id === undefined, kunjungan_id ?? null, batas ?? 2147483647, 0],
+        `SELECT ${SELECT_PEMERIKSAAN} FROM \`pemeriksaan\` t WHERE ((? OR t.\`kunjungan_id\` <=> ?)) AND t.\`jenis\` = 'cppt' ORDER BY t.\`id\` DESC LIMIT ? OFFSET ?`,
+        [kunjungan_id === undefined, kunjungan_id ?? null, batas ?? 2147483647, 0],
         koneksi,
     );
     return baris.map(normalkanBaris);
 }
 
-/** Cari satu baris CPPT berdasarkan id dan fasyankes. */
-export async function cariCppt(id, fasyankes_id, koneksi = pool) {
+/** Cari satu baris CPPT berdasarkan id. */
+export async function cariCppt(id, koneksi = pool) {
     const baris = await baca(
-        `SELECT ${SELECT_PEMERIKSAAN} FROM \`pemeriksaan\` t WHERE ((? OR t.\`id\` <=> ?)) AND ((? OR t.\`fasyankes_id\` <=> ?)) AND t.\`jenis\` = 'cppt' LIMIT 1`,
-        [id === undefined, id ?? null, fasyankes_id === undefined, fasyankes_id ?? null],
+        `SELECT ${SELECT_PEMERIKSAAN} FROM \`pemeriksaan\` t WHERE ((? OR t.\`id\` <=> ?)) AND t.\`jenis\` = 'cppt' LIMIT 1`,
+        [id === undefined, id ?? null],
         koneksi,
     );
     return normalkanBaris(baris[0] ?? null);

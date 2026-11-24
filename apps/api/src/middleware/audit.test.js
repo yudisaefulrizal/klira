@@ -15,7 +15,7 @@ function pasang(penampung) {
     app.set('trust proxy', true);
     app.use(express.json());
     app.use((_req, res, next) => {
-        res.locals.pengguna = { id: 7, fasyankes_id: 3 };
+        res.locals.pengguna = { id: 7 };
         next();
     });
     app.get('/pasien/:id', f.lihat({ entitas: 'pasien', id: idDariParam() }), (_req, res) => void res.json({ data: { nama: 'RAHASIA' } }));
@@ -36,7 +36,7 @@ describe('fasilitas audit', () => {
         server.close();
         expect(r.status).toBe(200);
         expect(entri).toHaveLength(1);
-        expect(entri[0]).toMatchObject({ aksi: 'lihat', entitas: 'pasien', entitas_id: 12, pengguna_id: 7, fasyankes_id: 3, alamat: '203.0.113.9', keterangan: 'GET /pasien/:id' });
+        expect(entri[0]).toMatchObject({ aksi: 'lihat', entitas: 'pasien', entitas_id: 12, pengguna_id: 7, alamat: '203.0.113.9', keterangan: 'GET /pasien/:id' });
         expect(JSON.stringify(entri)).not.toMatch(/RAHASIA|3201000000000001/);
     });
     it('input dicatat dengan id dari respons dan tanpa badan permintaan; perbaikan dengan id parameter', async () => {

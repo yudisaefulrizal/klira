@@ -1,7 +1,8 @@
 import { jest } from '@jest/globals';
 
 const kliraActual0 = await import("@klira/db");
-jest.unstable_mockModule('@klira/db', () => ({ ...kliraActual0,
+jest.unstable_mockModule('@klira/db', () => ({
+    ...kliraActual0,
     pool: {},
     simpanTagihanUntukTambahItemTagihanDalam: jest.fn(),
     simpanTagihanUntukTambahItemTagihanDalamHasil: jest.fn(),
@@ -16,7 +17,8 @@ jest.unstable_mockModule('@klira/db', () => ({ ...kliraActual0,
     tambahTagihanUntukSinkronItemTindakanDalam: jest.fn(),
     tambahTagihanUntukSinkronItemTindakanDalamHasil: jest.fn(),
     hapusItemTagihanUntukSinkronItemTindakanDalam: jest.fn(),
-    tambahBanyakItemTagihanUntukSinkronItemTindakanDalam: jest.fn() }));
+    tambahBanyakItemTagihanUntukSinkronItemTindakanDalam: jest.fn()
+}));
 const db = await import("@klira/db");
 const { rencanaItemTindakan, sinkronItemTindakanDalam, statusTagihanDari, totalTagihan, tambahItemTagihanDalam } = await import("../data-access/repositori.js");
 
@@ -35,13 +37,13 @@ describe('tagihan dasar', () => {
         const tx = {};
         jest.mocked(db.simpanTagihanUntukTambahItemTagihanDalamHasil).mockResolvedValue({ id: 9 });
         jest.mocked(db.daftarItemTagihanUntukTambahItemTagihanDalam).mockResolvedValue([{ harga: 30_000 }, { harga: null }]);
-        const id = await tambahItemTagihanDalam(tx, 1, 5, 7, [
+        const id = await tambahItemTagihanDalam(tx, 5, 7, [
             { jenis: 'lab', tarifId: 2, kode: 'LAB-HB', nama: 'Hemoglobin', harga: 30_000, orderPenunjangId: 10 },
             { jenis: 'lab', tarifId: null, kode: 'X', nama: 'Tanpa tarif', harga: null, orderPenunjangId: 11 },
         ]);
         expect(id).toBe(9);
         expect(db.tambahItemTagihanUntukTambahItemTagihanDalam).toHaveBeenCalledTimes(2);
-        expect(db.tambahItemTagihanUntukTambahItemTagihanDalam).toHaveBeenCalledWith(1, 9, 'lab', 2, 'LAB-HB', 'Hemoglobin', 1, 30_000, 10, null, 7, tx);
+        expect(db.tambahItemTagihanUntukTambahItemTagihanDalam).toHaveBeenCalledWith(9, 'lab', 2, 'LAB-HB', 'Hemoglobin', 1, 30_000, 10, null, 7, tx);
         expect(db.ubahTagihanUntukTambahItemTagihanDalam).toHaveBeenCalledWith('belum_lengkap', 9, tx);
     });
 });
@@ -88,7 +90,7 @@ describe('tagihan tindakan dari pencatatan dokter (P5)', () => {
     }
     it('sinkron mengganti item sumber tindakan saja dan menghitung ulang status tagihan', async () => {
         const { tx, tulis } = txTiruan({});
-        expect(await sinkronItemTindakanDalam(tx, 1, 5, 7, [t(1), t(3, '93.94')])).toBe('disinkron');
+        expect(await sinkronItemTindakanDalam(tx, 5, 7, [t(1), t(3, '93.94')])).toBe('disinkron');
         expect(tulis.hapus).toBe(1);
         expect(tulis.buat).toEqual([
             expect.objectContaining({ tindakan_sumber: true, jenis: 'tindakan', tarif_layanan_id: 1, harga: 75_000 }),
@@ -99,13 +101,13 @@ describe('tagihan tindakan dari pencatatan dokter (P5)', () => {
     it('terkunci bila sudah ada pembayaran atau kunjungan ditutup; tidak perlu bila tidak ada perubahan', async () => {
         for (const o of [{ pembayaran: 1 }, { tahap: 'ditutup' }]) {
             const { tx, tulis } = txTiruan(o);
-            expect(await sinkronItemTindakanDalam(tx, 1, 5, 7, [t(1)])).toBe('terkunci');
+            expect(await sinkronItemTindakanDalam(tx, 5, 7, [t(1)])).toBe('terkunci');
             expect(tulis.hapus).toBe(0);
         }
         const lama = [{ tarif_layanan_id: 1, kode: 'TND-001', nama: 'Jahit luka <= 5 cm', jumlah: 1, harga: 75_000, harga_acuan: 75_000, alasan_ubah_harga: null }];
         const { tx } = txTiruan({ tahap: 'ditutup', lama });
-        expect(await sinkronItemTindakanDalam(tx, 1, 5, 7, [t(1)])).toBe('tidak_perlu');
+        expect(await sinkronItemTindakanDalam(tx, 5, 7, [t(1)])).toBe('tidak_perlu');
         const kosong = txTiruan({ adaTagihan: false });
-        expect(await sinkronItemTindakanDalam(kosong.tx, 1, 5, 7, [])).toBe('tidak_perlu');
+        expect(await sinkronItemTindakanDalam(kosong.tx, 5, 7, [])).toBe('tidak_perlu');
     });
 });

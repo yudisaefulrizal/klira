@@ -64,27 +64,25 @@ export function buatLayananMaster({ repo, audit }) {
     }
     return {
         async daftar(p, jenis, filter) {
-            const { total, baris } = await repo.daftar(p.fasyankes_id, jenis, filter);
+            const { total, baris } = await repo.daftar(jenis, filter);
             return { data: baris, halaman: filter.halaman, ukuran: filter.ukuran, total };
         },
         daftarShift(p) {
-            return repo.daftarShift(p.fasyankes_id);
+            return repo.daftarShift();
         },
         /** Shift hanya diubah jamnya; jumlah dan namanya tetap. */
         async ubahShift(p, id, data, alamat) {
-            const f = p.fasyankes_id;
             const lama = await repo.ambilShift(f, id);
             if (!lama)
                 return tidakDitemukan;
             const baris = await repo.ubahShift(f, id, data);
-            await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'shift', entitas_id: id, keterangan: `Ubah jam shift ${lama.nama}: ${lama.jam_mulai}-${lama.jam_selesai} menjadi ${data.jam_mulai}-${data.jam_selesai}`, alamat });
+            await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: 'shift', entitas_id: id, keterangan: `Ubah jam shift ${lama.nama}: ${lama.jam_mulai}-${lama.jam_selesai} menjadi ${data.jam_mulai}-${data.jam_selesai}`, alamat });
             return { ok: true, data: baris };
         },
         opsi(p, sumber, cari) {
-            return repo.opsi(p.fasyankes_id, sumber, cari);
+            return repo.opsi(sumber, cari);
         },
         async buat(p, jenis, data, alamat) {
-            const f = p.fasyankes_id;
             if (jenis === 'praktisi') {
                 const d = data;
                 if (!(await repo.penggunaAda(f, d.pengguna_id)))
@@ -104,11 +102,10 @@ export function buatLayananMaster({ repo, audit }) {
                 if (ringkasan)
                     await repo.tambahRiwayatProfil(f, 'sip', baris.pengguna_id, ringkasan, p.id);
             }
-            await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'input', entitas: ENTITAS[jenis], entitas_id: baris.id, keterangan: `Tambah master ${jenis}${jenis === 'tarif' ? ` ${baris.kode}${baris.kode_icd9cm ? ` (ICD-9-CM ${baris.kode_icd9cm})` : ''}: ${ringkasPerubahanHarga([['harga umum', null, baris.harga_umum ?? null], ['harga JKN', null, baris.harga_jkn ?? null]]) ?? ''}` : ''}`, alamat });
+            await audit.catat({ pengguna_id: p.id, aksi: 'input', entitas: ENTITAS[jenis], entitas_id: baris.id, keterangan: `Tambah master ${jenis}${jenis === 'tarif' ? ` ${baris.kode}${baris.kode_icd9cm ? ` (ICD-9-CM ${baris.kode_icd9cm})` : ''}: ${ringkasPerubahanHarga([['harga umum', null, baris.harga_umum ?? null], ['harga JKN', null, baris.harga_jkn ?? null]]) ?? ''}` : ''}`, alamat });
             return { ok: true, data: baris };
         },
         async ubah(p, jenis, id, data, alamat) {
-            const f = p.fasyankes_id;
             const lama = await repo.ambil(f, jenis, id);
             if (!lama)
                 return tidakDitemukan;
@@ -125,21 +122,19 @@ export function buatLayananMaster({ repo, audit }) {
                     await repo.tambahRiwayatProfil(f, 'sip', lama.pengguna_id, ringkasan, p.id);
             }
             const harga = jenis === 'tarif' ? ringkasPerubahanHarga([['harga umum', lama.harga_umum ?? null, baris.harga_umum ?? null], ['harga JKN', lama.harga_jkn ?? null, baris.harga_jkn ?? null]]) : null;
-            await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Ubah master ${jenis}${harga ? `: ${harga}` : ''}`, alamat });
+            await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Ubah master ${jenis}${harga ? `: ${harga}` : ''}`, alamat });
             return { ok: true, data: baris };
         },
         /** Jadwal praktik tidak punya status aktif: ada berarti berlaku, dan dihapus bila tidak lagi dipakai. */
         async hapusJadwal(p, id, alamat) {
-            const f = p.fasyankes_id;
             const lama = await repo.ambil(f, 'jadwal', id);
             if (!lama)
                 return tidakDitemukan;
             await repo.hapusJadwal(f, id);
-            await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS.jadwal, entitas_id: id, keterangan: `Hapus jadwal ${lama.pengguna_nama}, ${lama.lokasi_nama}, hari ${lama.hari}, shift ${lama.shift_nama}`, alamat });
+            await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS.jadwal, entitas_id: id, keterangan: `Hapus jadwal ${lama.pengguna_nama}, ${lama.lokasi_nama}, hari ${lama.hari}, shift ${lama.shift_nama}`, alamat });
             return { ok: true, data: { id } };
         },
-        async hapusLokasi(p, jenis, id, alamat) {
-            const f = p.fasyankes_id;
+        async hapusLokasi(p, id, alamat) {
             const lama = await repo.ambil(f, jenis, id);
             if (!lama)
                 return tidakDitemukan;
@@ -147,12 +142,11 @@ export function buatLayananMaster({ repo, audit }) {
                 return { ok: false, kode: 'konflik', pesan: 'Bed sedang ditempati pasien dan tidak dapat dihapus.' };
             if (jenis === 'ruang' && (await repo.lokasiPunyaAnak(f, id)))
                 return { ok: false, kode: 'konflik', pesan: 'Ruang masih memiliki bed; hapus semua bed di ruang ini terlebih dahulu.' };
-            await repo.hapusLokasi(f, id);
-            await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Hapus master ${jenis} ${lama.nama}`, alamat });
+            await repo.hapusLokasi(f);
+            await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `Hapus master ${jenis} ${lama.nama}`, alamat });
             return { ok: true, data: { id } };
         },
         async ubahAktif(p, jenis, id, aktif, alamat) {
-            const f = p.fasyankes_id;
             if (jenis === 'jadwal')
                 return tidakValid('jenis', MASTER.galat.jadwalTanpaStatus);
             const lama = await repo.ambil(f, jenis, id);
@@ -164,7 +158,7 @@ export function buatLayananMaster({ repo, audit }) {
                 return { ok: false, kode: 'konflik', pesan: 'Ruang tidak dapat dinonaktifkan karena masih ada bed yang ditempati pasien.' };
             const baris = lama.aktif === aktif ? lama : await repo.setAktif(f, jenis, id, aktif);
             if (lama.aktif !== aktif) {
-                await audit.catat({ fasyankes_id: f, pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `${aktif ? 'Aktifkan' : 'Nonaktifkan'} master ${jenis}`, alamat });
+                await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: ENTITAS[jenis], entitas_id: id, keterangan: `${aktif ? 'Aktifkan' : 'Nonaktifkan'} master ${jenis}`, alamat });
             }
             return { ok: true, data: baris };
         },

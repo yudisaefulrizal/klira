@@ -3,7 +3,7 @@ import { jest } from '@jest/globals';
 const { buatApp } = await import('./app.js');
 const { panggilTanpaPort } = await import('./umum/panggil-tanpa-port.js');
 
-const pimpinan = { id: 7, fasyankes_id: 3, username: 'pimpinan', wajib_ganti_kredensial: false, izin: [{ fitur: 'akses', aksi: 'perbaikan', cakupan: 'unit' }] };
+const pimpinan = { id: 7, username: 'pimpinan', wajib_ganti_kredensial: false, izin: [{ fitur: 'akses', aksi: 'perbaikan', cakupan: 'unit' }] };
 const layananIzin = { catatPenolakan: jest.fn(async () => { }), catatTindakan: jest.fn(async () => []) };
 
 function siapkan({ pengguna = null, ...opsi } = {}) {

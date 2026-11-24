@@ -20,9 +20,9 @@ export async function bacaKlinikPublik(host, slug) {
     if (!web)
         return null;
     const tanggal = new Date(`${tanggalWib(new Date())}T00:00:00Z`);
-    const layanan = await db.daftarLokasiUntukBacaKlinikPublik(web.fasyankes_id, 'poli', 'O');
-    const baris = web.tampilkan_jadwal ? await db.daftarJadwalPraktikUntukBacaKlinikPublik(web.fasyankes_id, true, layanan.map(l => l.id)) : [];
-    const shift = new Map((await db.daftarShiftUntukDaftar(web.fasyankes_id)).map(x => [x.id, x]));
+    const layanan = await db.daftarLokasiUntukBacaKlinikPublik('poli', 'O');
+    const baris = web.tampilkan_jadwal ? await db.daftarJadwalPraktikUntukBacaKlinikPublik(true, layanan.map(l => l.id)) : [];
+    const shift = new Map((await db.daftarShiftUntukDaftar()).map(x => [x.id, x]));
     return {
         nama: web.fasyankes.nama, slug: web.slug, domain: web.domain ?? '', judul: web.judul, ringkasan: web.ringkasan,
         tentang: web.tentang, alamat: web.alamat, whatsapp: web.whatsapp, telepon: web.telepon, email: web.email,

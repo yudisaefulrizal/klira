@@ -15,11 +15,11 @@ export class RepositoriAksesMysql {
         const { jenis_akun, fitur, izin } = hitungAksesEfektif(snap, sekarang);
         return { jenis_akun, fitur, izin };
     }
-    async adalahPraktisi(penggunaId, fasyankesId) {
-        return (await db.hitungPenggunaUntukDpjpSah(penggunaId, fasyankesId, true)) > 0;
+    async adalahPraktisi(penggunaId) {
+        return (await db.hitungPenggunaUntukDpjpSah(penggunaId, true)) > 0;
     }
     async buatSesi(data) {
-        await db.tambahSesiUntukBuatSesi(data.akun.fasyankes_id, data.akun.id, data.idHash, data.alamat?.slice(0, 64), data.kedaluwarsa);
+        await db.tambahSesiUntukBuatSesi(data.akun.id, data.idHash, data.alamat?.slice(0, 64), data.kedaluwarsa);
     }
     async cariSesi(idHash, sekarang) {
         const sesi = await db.cariSesiUntukCariSesi(idHash, sekarang, true);
@@ -40,7 +40,7 @@ export class RepositoriAksesMysql {
             await db.transaksi(async (tx) => {
                 await db.ubahPenggunaUntukGantiKredensial(data.username, data.kataSandiHash, false, data.akun.id, tx);
                 await db.hapusSesiPengguna(data.akun.id, tx);
-                await db.tambahSesiUntukBuatSesi(data.akun.fasyankes_id, data.akun.id, data.sesiBaru.idHash, data.sesiBaru.alamat?.slice(0, 64), data.sesiBaru.kedaluwarsa, tx);
+                await db.tambahSesiUntukBuatSesi(data.akun.id, data.sesiBaru.idHash, data.sesiBaru.alamat?.slice(0, 64), data.sesiBaru.kedaluwarsa, tx);
             });
         }
         catch (galat) {

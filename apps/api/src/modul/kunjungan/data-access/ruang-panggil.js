@@ -8,19 +8,19 @@ export const namaPanggil = (poli, ruang) => (!ruang ? `Poli ${poli.nama}` : ruan
  * - Poli tanpa ruang periksa: dipanggil tanpa ruang (ruang null).
  * - Ruang pilihan petugas harus ruang poli itu yang aktif dan bebas; tanpa pilihan, ruang terakhir dokter pilihan bila bebas, lalu ruang bebas pertama.
  */
-export async function pilihRuangPanggil(fasyankesId, { poliId, sesiId, dpjpId, kecualiId = 0, ruangPilihan }, tx) {
+export async function pilihRuangPanggil({ poliId, sesiId, dpjpId, kecualiId = 0, ruangPilihan }, tx) {
     if (dpjpId) {
-        const sibuk = await db.cariAntreanDokterSibuk(fasyankesId, dpjpId, sesiId, kecualiId, tx);
+        const sibuk = await db.cariAntreanDokterSibuk(dpjpId, sesiId, kecualiId, tx);
         if (sibuk)
             return { galat: 'dokter_sibuk', kode: kodeAntrean(sibuk.nomor, sibuk.awalan) };
     }
-    const semua = await db.daftarRuangPeriksaUntukPoli(fasyankesId, poliId, tx);
+    const semua = await db.daftarRuangPeriksaUntukPoli(poliId, tx);
     if (!semua.length)
         return ruangPilihan ? { galat: 'ruang_pilihan_tidak_tersedia' } : { ruang: null };
     const aktif = semua.filter((r) => r.status_operasional === 'O');
     if (!aktif.length)
         return { galat: 'ruang_tidak_operasional' };
-    const sibuk = new Set((await db.daftarAntreanSibukUntukPetakan(fasyankesId, aktif.map((r) => r.id), sesiId, tx)).filter((a) => a.id !== kecualiId).map((a) => a.ruang_id));
+    const sibuk = new Set((await db.daftarAntreanSibukUntukPetakan(aktif.map((r) => r.id), sesiId, tx)).filter((a) => a.id !== kecualiId).map((a) => a.ruang_id));
     const bebas = aktif.filter((r) => !sibuk.has(r.id));
     if (ruangPilihan) {
         const r = bebas.find((x) => x.id === ruangPilihan);
@@ -29,7 +29,7 @@ export async function pilihRuangPanggil(fasyankesId, { poliId, sesiId, dpjpId, k
     if (!bebas.length)
         return { galat: 'ruang_sibuk' };
     if (dpjpId) {
-        const terakhir = await db.cariRuangTerakhirDokter(fasyankesId, dpjpId, sesiId, tx);
+        const terakhir = await db.cariRuangTerakhirDokter(dpjpId, sesiId, tx);
         const r = bebas.find((x) => x.id === terakhir);
         if (r)
             return { ruang: r };

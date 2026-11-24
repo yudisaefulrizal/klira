@@ -18,7 +18,7 @@ jest.unstable_mockModule('../../../middleware/auth.js', () => ({ wajibMasuk: () 
         if (!req.headers.authorization)
             return void res.status(401).end();
         const aksi = req.headers.authorization === 'ubah' ? ['lihat', 'perbaikan'] : req.headers.authorization === 'lihat' ? ['lihat'] : [];
-        res.locals.pengguna = { id: 3, fasyankes_id: 7, izin: aksi.map(aksi => ({ fitur: 'profil-klinik', aksi, cakupan: 'unit' })) };
+        res.locals.pengguna = { id: 3, izin: aksi.map(aksi => ({ fitur: 'profil-klinik', aksi, cakupan: 'unit' })) };
         next();
     } }));
 const db = await import("@klira/db");
@@ -58,14 +58,14 @@ test('pengaturan membutuhkan login dan izin; hak baca tidak memberi hak ubah', a
 });
 
 test('penyimpanan terikat fasilitas sesi, bukan ID dalam payload', async () => {
-    const res = await ambil('/fasyankes/website', 'ubah', { ...WEBSITE_KLINIK_BAWAAN, fasyankes_id: 999 });
+    const res = await ambil('/fasyankes/website', 'ubah', { ...WEBSITE_KLINIK_BAWAAN });
     expect(res.status).toBe(200);
-    expect(jest.mocked(db.simpanWebsiteKlinikUntukBuatRuteWebsitePengaturan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 3: null })]));
-    expect(jest.mocked(db.tambahRiwayatProfilUntukBuatRuteWebsitePengaturan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 3: 3 })]));
+    expect(jest.mocked(db.simpanWebsiteKlinikUntukBuatRuteWebsitePengaturan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 2: null })]));
+    expect(jest.mocked(db.tambahRiwayatProfilUntukBuatRuteWebsitePengaturan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 2: 3 })]));
 });
 
 test('nilai tidak valid ditolak sebelum menulis', async () => {
-    expect((await ambil('/fasyankes/website', 'ubah', { ...WEBSITE_KLINIK_BAWAAN, hero_url: 'javascript:alert(1)' })).status).toBe(400);
+    expect((await ambil('ubah', { ...WEBSITE_KLINIK_BAWAAN, hero_url: 'javascript:alert(1)' })).status).toBe(400);
     expect(db.simpanWebsiteKlinikUntukBuatRuteWebsitePengaturan).not.toHaveBeenCalled();
 });
 

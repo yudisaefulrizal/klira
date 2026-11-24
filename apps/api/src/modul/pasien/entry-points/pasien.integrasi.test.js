@@ -249,7 +249,7 @@ d('pasien, kunjungan, dan antrean terhadap database pengujian', () => {
         expect(k4.badan.data).toMatchObject({ jenis: 'IMP', lokasi_id: null, antrean: null });
         // Peserta kunjungan: DPJP tercatat ATND.
         const peserta = await uji.daftarPesertaKunjunganUntukPasienPasienIntegrasiTest(k1.badan.data.id);
-        expect(peserta).toMatchObject([{ pengguna_id: id.dokter, tipe: 'ATND', fasyankes_id: fas }]);
+        expect(peserta).toMatchObject([{ pengguna_id: id.dokter, tipe: 'ATND' }]);
         // Penolakan.
         expect((await panggil('POST', '/kunjungan', 'petugas', { pasien_id: p1.id, jenis: 'AMB', lokasi_id: poliA })).status).toBe(409);
         const p5 = await daftarPasien({ nama: 'Alur Lima', ibu_kandung: 'A5' });

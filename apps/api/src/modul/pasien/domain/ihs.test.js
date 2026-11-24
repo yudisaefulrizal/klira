@@ -8,7 +8,7 @@ const daftarMasukan = registrasiPasienMasukan.parse({
     nama: 'Siti Rahma', tanggal_lahir: '1990-05-01', jenis_kelamin: 'perempuan', nik: '3201010101900001', ibu_kandung: 'Rina',
     persetujuan: { teks_persetujuan_id: 7, bentuk: 'tertulis', penandatangan: 'pasien', setuju: true },
 });
-const saya = { id: 3, fasyankes_id: 1 };
+const saya = { id: 3 };
 const audit = { catat: async () => {} };
 
 function buat({ sinkronIhs, nik = ['3201010101900001', '3201010101900001'] }) {

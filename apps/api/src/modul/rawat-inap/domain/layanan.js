@@ -16,28 +16,28 @@ const dariGalat = (e) => (e instanceof GalatRi ? gagal(PESAN[e.kode].kode, PESAN
  */
 export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, sekarang = () => new Date() }) {
     pengesahan.daftarkanPenyedia('cppt', async (fas, id) => repo.isiCatatan(fas, id));
-    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
-    const pelaku = (p) => ({ fasyankesId: p.fasyankes_id, oleh: p.id });
+    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
+    const pelaku = (p) => ({ oleh: p.id });
     async function detail(p, id) {
-        const d = await repo.detail(p.fasyankes_id, id);
+        const d = await repo.detail(id);
         return d ? { ok: true, data: d } : gagal('tidak_ditemukan', G.kunjunganTidakAda);
     }
     return {
-        papan: (p) => repo.papan(p.fasyankes_id),
-        opsi: (p) => repo.opsi(p.fasyankes_id),
+        papan: (p) => repo.papan(),
+        opsi: (p) => repo.opsi(),
         async asal(p, pasienId) {
-            if (!(await repo.pasienAda(p.fasyankes_id, pasienId)))
+            if (!(await repo.pasienAda(pasienId)))
                 return gagal('tidak_ditemukan', G.pasienTidakAda);
-            return { ok: true, data: await repo.asal(p.fasyankes_id, pasienId) };
+            return { ok: true, data: await repo.asal(pasienId) };
         },
         async admisi(p, m, alamat) {
-            if (!(await repo.pasienAda(p.fasyankes_id, m.pasien_id)))
+            if (!(await repo.pasienAda(m.pasien_id)))
                 return gagal('tidak_ditemukan', G.pasienTidakAda);
-            if (!(await repo.dpjpSah(p.fasyankes_id, [m.dpjp_id, ...m.dpjp_bersama])))
+            if (!(await repo.dpjpSah([m.dpjp_id, ...m.dpjp_bersama])))
                 return gagal('tidak_valid', G.dpjpTidakSah);
             try {
                 const h = await repo.admisi(pelaku(p), m, sekarang());
-                kabarkanLayarPanggilan(p.fasyankes_id);
+                kabarkanLayarPanggilan();
                 await catat(p, 'input', 'rawat_inap', h.kunjungan_id, `Admisi rawat inap pasien ${m.pasien_id}${h.menunggu_ruangan ? ' (menunggu ruangan)' : ''}`, alamat);
                 return { ok: true, data: h };
             }
@@ -55,7 +55,7 @@ export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, se
             return h;
         },
         async ubahPenempatan(p, id, m, alamat) {
-            if (!(await repo.dpjpSah(p.fasyankes_id, [m.dpjp_id, ...m.dpjp_bersama])))
+            if (!(await repo.dpjpSah([m.dpjp_id, ...m.dpjp_bersama])))
                 return gagal('tidak_valid', G.dpjpTidakSah);
             try {
                 await repo.ubahPenempatan(pelaku(p), id, m, sekarang());
@@ -70,14 +70,14 @@ export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, se
             return detail(p, id);
         },
         async daftarCatatan(p, kunjunganId) {
-            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            const k = await repo.kunjungan(kunjunganId);
             if (!k || k.jenis !== 'IMP')
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const baris = await repo.daftarCatatan(p.fasyankes_id, kunjunganId);
+            const baris = await repo.daftarCatatan(kunjunganId);
             const nama = await repo.namaPengguna(baris.map((b) => b.dibuat_oleh));
             const data = [];
             for (const b of baris) {
-                const k2 = await pengesahan.keadaan(p.fasyankes_id, 'cppt', b.id);
+                const k2 = await pengesahan.keadaan('cppt', b.id);
                 data.push({
                     id: b.id, ...b.isi, tanda_vital: b.isi.tanda_vital ?? null, dibuat_oleh_nama: nama.get(b.dibuat_oleh) ?? null, waktu: b.dibuat_pada.toISOString(),
                     pengesahan: k2.pengesahan ? keDto(k2.pengesahan) : null, verifikasi: k2.status === 'sah' ? 'sah' : k2.status === 'berubah' ? 'berubah' : 'belum_disahkan',
@@ -86,19 +86,19 @@ export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, se
             return { ok: true, data };
         },
         async tambahCatatan(p, kunjunganId, m, alamat) {
-            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            const k = await repo.kunjungan(kunjunganId);
             if (!k || k.jenis !== 'IMP')
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
             if (k.tahap_layanan === 'kasir' || k.tahap_layanan === 'ditutup')
                 return gagal('konflik', G.sudahPulang);
             // Pengesahan tiap catatan: hash isi, versi 1; id catatan baru diketahui saat disimpan, maka rencananya disusun per id.
-            const siap = await pengesahan.siapkan({ fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: 'cppt', entitasId: 0, isiBaru: m, bacaIsiSekarang: async () => null });
+            const siap = await pengesahan.siapkan({ pelakuId: p.id, fitur: 'klinis', entitas: 'cppt', entitasId: 0, isiBaru: m, bacaIsiSekarang: async () => null });
             if (!siap.ok)
                 return siap;
             if (siap.data.jenis !== 'baru')
                 return gagal('konflik', G.bentrok);
             const rencana = siap.data.rencana;
-            const id = await repo.tambahCatatan(p.fasyankes_id, kunjunganId, m, p.id, () => rencana);
+            const id = await repo.tambahCatatan(kunjunganId, m, p.id, () => rencana);
             await catat(p, 'input', 'cppt', id, `Catatan harian kunjungan ${kunjunganId}`, alamat);
             return { ok: true, data: { id } };
         },
@@ -119,7 +119,7 @@ export function buatLayananRawatInap({ repo, pengesahan, audit, simpanResume, se
                 const h = await simpanResume(p, kunjunganId, { ringkasan: m.ringkasan, diagnosis_akhir: m.diagnosis_akhir, terapi: m.terapi, kondisi_pulang: m.kondisi_pulang, anjuran: m.tindak_lanjut, alasan: null }, alamat);
                 resumeDibuat = h.ok;
             }
-            const d = await repo.detail(p.fasyankes_id, kunjunganId);
+            const d = await repo.detail(kunjunganId);
             return d?.pemulangan ? { ok: true, data: { pemulangan: d.pemulangan, resume_dibuat: resumeDibuat, tagihan_kamar: r.tagihanKamar } } : gagal('tidak_ditemukan', G.kunjunganTidakAda);
         },
     };

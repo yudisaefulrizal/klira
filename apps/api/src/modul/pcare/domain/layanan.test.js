@@ -3,7 +3,7 @@ import { konfigurasiPcareMasukan } from '@klira/shared';
 
 const { buatLayananPcare, URL_RESMI_PCARE } = await import("./layanan.js");
 
-const P = { fasyankes_id: 1, id: 9 };
+const P = { id: 9 };
 
 function buat(opsi = {}) {
     const baris = new Map();
@@ -14,7 +14,7 @@ function buat(opsi = {}) {
         daftar: async () => [...baris.values()],
         ambil: async (_f, e) => baris.get(e) ?? null,
         ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (f, d) => { urut += 1; baris.set(d.environment, { id: urut, fasyankes_id: f, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
+        tambah: async (f, d) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
         ubah: async (id, d) => {
             const k = [...baris.values()].find((x) => x.id === id);
             for (const [kunci, nilai] of Object.entries(d)) if (nilai !== null || ['base_url'].includes(kunci)) k[kunci] = nilai;

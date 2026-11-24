@@ -31,7 +31,7 @@ beforeAll(async () => {
 
 afterAll(() => server.close());
 
-beforeEach(() => { jest.clearAllMocks(); user = { id: 7, fasyankes_id: 2, izin: [{ fitur: 'pasien', aksi: 'perbaikan', cakupan: 'unit' }] }; });
+beforeEach(() => { jest.clearAllMocks(); user = { id: 7, izin: [{ fitur: 'pasien', aksi: 'perbaikan', cakupan: 'unit' }] }; });
 
 const dasar = { nama: 'Ayu', nik: '3201010101900001', tanggal_lahir: '1990-05-01', jenis_kelamin: 'perempuan', wali: [] };
 
@@ -40,7 +40,7 @@ const kirim = (body = dasar) => fetch(url, { method: 'PATCH', headers: { 'conten
 it('menolak tanpa sesi atau hanya memiliki izin lihat', async () => {
     user = null;
     expect((await kirim()).status).toBe(401);
-    user = { id: 7, fasyankes_id: 2, izin: [{ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' }] };
+    user = { id: 7, izin: [{ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' }] };
     expect((await kirim()).status).toBe(403);
     expect(perbaiki).not.toHaveBeenCalled();
 });

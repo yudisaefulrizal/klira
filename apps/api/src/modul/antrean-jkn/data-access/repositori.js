@@ -5,34 +5,34 @@ const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);
 export class NikDipakaiError extends Error {
 }
 export class RepositoriAntreanJknMysql {
-    pengaturan(fasyankesId) {
-        return db.ambilPengaturanAntreanJkn(fasyankesId);
+    pengaturan() {
+        return db.ambilPengaturanAntreanJkn();
     }
     fasyankesAktif() {
         return db.daftarFasyankesAntreanJknAktif();
     }
-    pemetaan(fasyankesId) {
-        return db.daftarPemetaanBpjs(fasyankesId);
+    pemetaan() {
+        return db.daftarPemetaanBpjs();
     }
     /** Pengaturan dan seluruh pemetaan disimpan dalam satu transaksi (pemetaan lama diganti). */
-    async simpan(fasyankesId, d, pemetaan, oleh) {
+    async simpan(d, pemetaan, oleh) {
         await db.transaksi(async (tx) => {
-            await db.simpanPengaturanAntreanJkn(fasyankesId, d, oleh, tx);
-            await db.hapusPemetaanBpjs(fasyankesId, tx);
+            await db.simpanPengaturanAntreanJkn(d, oleh, tx);
+            await db.hapusPemetaanBpjs(tx);
             for (const m of pemetaan)
-                await db.tambahPemetaanBpjs(fasyankesId, m.jenis, m.kunci, m.kode, m.nama ?? null, tx);
+                await db.tambahPemetaanBpjs(m.jenis, m.kunci, m.kode, m.nama ?? null, tx);
         });
     }
-    cariPasien(fasyankesId, nomorKartu, nik) {
-        return db.cariPasienUntukAntreanJkn(fasyankesId, nomorKartu, nik);
+    cariPasien(nomorKartu, nik) {
+        return db.cariPasienUntukAntreanJkn(nomorKartu, nik);
     }
-    async isiNomorKartu(fasyankesId, pasienId, nomorKartu) {
-        await db.isiNomorKartuJknPasien(pasienId, fasyankesId, nomorKartu);
+    async isiNomorKartu(pasienId, nomorKartu) {
+        await db.isiNomorKartuJknPasien(pasienId, nomorKartu);
     }
     /** Pasien baru dari data peserta BPJS; nomor RM berurutan per fasyankes seperti registrasi di loket. */
-    async buatPasien(fasyankesId, d) {
+    async buatPasien(d) {
         try {
-            await db.tambahUrutanNomorRmUntukDaftarkan(fasyankesId, 0);
+            await db.tambahUrutanNomorRmUntukDaftarkan(0);
         }
         catch (e) {
             if (!db.bentrokUnik(e))
@@ -40,9 +40,9 @@ export class RepositoriAntreanJknMysql {
         }
         try {
             return await db.transaksi(async (tx) => {
-                await db.ubahUrutanNomorRmUntukDaftarkan(1, fasyankesId, tx);
-                const urutan = await db.ubahUrutanNomorRmUntukDaftarkanHasil(fasyankesId, tx);
-                const hasil = await db.tambahPasienUntukDaftarkan(fasyankesId, formatNomorRm(urutan.terakhir), d.nik, d.nama, d.nomor_hp, null, null, tglDb(d.tanggal_lahir), d.jenis_kelamin, null, null, null, null, null, null, d.alamat, null, null, null, d.jkn_nomor_kartu, null, null, d.nik ? 'lengkap' : 'sementara', d.nik ? 'nik' : 'tanpa_identitas', false, null, tx);
+                await db.ubahUrutanNomorRmUntukDaftarkan(1, tx);
+                const urutan = await db.ubahUrutanNomorRmUntukDaftarkanHasil(tx);
+                const hasil = await db.tambahPasienUntukDaftarkan(formatNomorRm(urutan.terakhir), d.nik, d.nama, d.nomor_hp, null, null, tglDb(d.tanggal_lahir), d.jenis_kelamin, null, null, null, null, null, null, d.alamat, null, null, null, d.jkn_nomor_kartu, null, null, d.nik ? 'lengkap' : 'sementara', d.nik ? 'nik' : 'tanpa_identitas', false, null, tx);
                 const pasien = await db.tambahPasienUntukDaftarkanHasil(hasil.id, tx);
                 return { id: pasien.id, nomor_rm: pasien.nomor_rm };
             });
@@ -54,38 +54,38 @@ export class RepositoriAntreanJknMysql {
         }
     }
     /** Antrean terbaru seorang pasien pada jenis poli dan tanggal itu. */
-    antreanPasien(fasyankesId, pasienId, jenisPoli, tanggal) {
-        return db.cariAntreanPasienUntukJkn(fasyankesId, pasienId, jenisPoli, tglDb(tanggal));
+    antreanPasien(pasienId, jenisPoli, tanggal) {
+        return db.cariAntreanPasienUntukJkn(pasienId, jenisPoli, tglDb(tanggal));
     }
     /** Antrean pada tanggal itu yang sudah berasal dari (atau dikaitkan dengan) pendaftaran PCare. */
-    antreanPcare(fasyankesId, tanggal) {
-        return db.daftarAntreanPcareUntukTanggal(fasyankesId, tglDb(tanggal));
+    antreanPcare(tanggal) {
+        return db.daftarAntreanPcareUntukTanggal(tglDb(tanggal));
     }
-    async kaitkanPcare(fasyankesId, antreanId, noUrut) {
-        await db.isiNomorUrutPcareAntrean(antreanId, fasyankesId, noUrut);
+    async kaitkanPcare(antreanId, noUrut) {
+        await db.isiNomorUrutPcareAntrean(antreanId, noUrut);
     }
-    antreanUntukBpjs(fasyankesId, antreanId) {
-        return db.ambilAntreanUntukBpjs(fasyankesId, antreanId);
+    antreanUntukBpjs(antreanId) {
+        return db.ambilAntreanUntukBpjs(antreanId);
     }
-    antreanIdKunjungan(fasyankesId, kunjunganId) {
-        return db.ambilAntreanIdUntukKunjungan(fasyankesId, kunjunganId);
+    antreanIdKunjungan(kunjunganId) {
+        return db.ambilAntreanIdUntukKunjungan(kunjunganId);
     }
-    async catatSinkron(fasyankesId, antreanId, status, pesan) {
-        await db.catatSinkronAntreanBpjs(antreanId, fasyankesId, status, pesan);
+    async catatSinkron(antreanId, status, pesan) {
+        await db.catatSinkronAntreanBpjs(antreanId, status, pesan);
     }
-    sesiAntreanAktif(fasyankesId) {
-        return db.ambilSesiAntreanAktif(fasyankesId);
+    sesiAntreanAktif() {
+        return db.ambilSesiAntreanAktif();
     }
-    daftarSementaraJkn(fasyankesId) {
-        return db.daftarAntreanSementaraJkn(fasyankesId, 'menunggu');
+    daftarSementaraJkn() {
+        return db.daftarAntreanSementaraJkn('menunggu');
     }
-    cariSementaraJkn(fasyankesId, jenisPoli, noUrut, nomorKartu) {
-        return db.cariAntreanSementaraJkn(fasyankesId, jenisPoli, noUrut, nomorKartu);
+    cariSementaraJkn(jenisPoli, noUrut, nomorKartu) {
+        return db.cariAntreanSementaraJkn(jenisPoli, noUrut, nomorKartu);
     }
     tambahSementaraJkn(d) {
         return db.tambahAntreanSementaraJkn({ ...d, tanggal_daftar: tglDb(d.tanggal_daftar) });
     }
-    batalkanSementaraJkn(id, fasyankesId, waktu) {
-        return db.batalkanAntreanSementaraJkn(id, fasyankesId, waktu);
+    batalkanSementaraJkn(id, waktu) {
+        return db.batalkanAntreanSementaraJkn(id, waktu);
     }
 }

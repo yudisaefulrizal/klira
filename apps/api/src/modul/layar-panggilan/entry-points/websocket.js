@@ -22,11 +22,10 @@ export function pasangWebsocketLayarPanggilan(server, baseUrl, heartbeatMs = 200
             if (info.fasilitas === fasilitas && info.pemantau)
                 kirim(ws, { tipe: 'layar', jumlah });
     };
-    const lepas = dengarkanLayarPanggilan(fasilitas => {
+    const lepas = dengarkanLayarPanggilan(() => {
         for (const [ws, info] of klien)
-            if (info.fasilitas === fasilitas)
-                // Layar publik memuat ulang panggilannya; petugas (pemantau) hanya diberi tahu bahwa antrean berubah dan membaca ulang lewat API berizin.
-                kirim(ws, { tipe: info.pemantau ? 'antrean' : 'perubahan' });
+            // Layar publik memuat ulang panggilannya; petugas (pemantau) hanya diberi tahu bahwa antrean berubah dan membaca ulang lewat API berizin.
+            kirim(ws, { tipe: info.pemantau ? 'antrean' : 'perubahan' });
     });
     const upgrade = (req, socket, head) => {
         const path = req.url?.split('?')[0] ?? '';
@@ -49,7 +48,7 @@ export function pasangWebsocketLayarPanggilan(server, baseUrl, heartbeatMs = 200
             const sesi = pemantau ? bacaCookie(req.headers.cookie, NAMA_COOKIE_SESI) : undefined;
             if (pemantau) {
                 const pengguna = sesi && akses ? await akses.saya(sesi) : null;
-                if (!pengguna || pengguna.wajib_ganti_kredensial || pengguna.fasyankes_id !== id) {
+                if (!pengguna || pengguna.wajib_ganti_kredensial) {
                     socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
                     return;
                 }
@@ -88,7 +87,7 @@ export function pasangWebsocketLayarPanggilan(server, baseUrl, heartbeatMs = 200
             }
             if (info.pemantau && akses)
                 void akses.saya(info.sesi).then(p => {
-                    if (!p || p.wajib_ganti_kredensial || p.fasyankes_id !== info.fasilitas)
+                    if (!p || p.wajib_ganti_kredensial)
                         ws.close(1008, 'Akses berakhir');
                 }).catch(() => ws.close(1011));
         }

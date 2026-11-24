@@ -14,12 +14,12 @@ export function buatLayananPembuatanAkun(dep) {
     const hash = dep.hash ?? hashKataSandi;
     return {
         async buat(p, m, alamat) {
-            const dup = await dep.repo.cekDuplikat(m.username, m.nik, p.fasyankes_id);
+            const dup = await dep.repo.cekDuplikat(m.username, m.nik);
             if (dup.username)
                 return { ok: false, kode: 'konflik', pesan: AKUN_BARU.duplikatUsername };
             if (dup.nik)
                 return { ok: false, kode: 'konflik', pesan: AKUN_BARU.duplikatNik };
-            const jenisAda = new Map((await dep.repoIzin.daftarJenisAkun(p.fasyankes_id)).map((j) => [j.id, j]));
+            const jenisAda = new Map((await dep.repoIzin.daftarJenisAkun()).map((j) => [j.id, j]));
             for (const x of m.penugasan)
                 if (!jenisAda.get(x.jenis_akun_id)?.aktif)
                     return { ok: false, kode: 'tidak_valid', pesan: AKUN_BARU.jenisTidakAktif };
@@ -69,7 +69,7 @@ export function buatLayananPembuatanAkun(dep) {
             let hasil;
             try {
                 hasil = await dep.repo.buatAkun({
-                    fasyankes_id: p.fasyankes_id, oleh: p.id, nama: m.nama, nik: m.nik, username: m.username,
+                    oleh: p.id, nama: m.nama, nik: m.nik, username: m.username,
                     kata_sandi_hash: await hash(kataSandi), profil,
                     penugasan: m.penugasan.map((x) => ({ jenis_akun_id: x.jenis_akun_id, mulai: x.mulai, selesai: x.selesai ?? null })),
                     izin_akun: m.izin_akun.map((x) => ({ izin_id: x.izin_id, tipe: x.tipe, alasan: x.alasan, mulai: x.mulai, selesai: x.selesai ?? null })),
@@ -82,7 +82,7 @@ export function buatLayananPembuatanAkun(dep) {
                 throw galat;
             }
             // Audit tanpa kata sandi dan tanpa isi NIK; hanya identitas dan ringkasan.
-            const catat = (aksi, entitas, id, keterangan) => dep.audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
+            const catat = (aksi, entitas, id, keterangan) => dep.audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
             await catat('input', 'pengguna', hasil.id, `Akun dibuat: ${m.username}`);
             if (hasil.profil_id)
                 await catat('input', 'profil_profesi', hasil.profil_id, `Profil profesi akun ${hasil.id}: ${m.profil?.profesi}`);

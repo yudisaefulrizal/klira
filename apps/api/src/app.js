@@ -143,7 +143,7 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
             repo: new RepositoriAksesMysql(),
             audit: new PenampungAuditMysql(),
             pembatas: new PembatasPercobaan(),
-            bacaPengaturan: (fasyankesId) => bacaPengaturanKeamanan(repoKeamanan, fasyankesId),
+            bacaPengaturan: () => bacaPengaturanKeamanan(repoKeamanan),
         });
     app.locals.layananAkses = layananAkses;
     app.use(buatRuteInstagramPublik(layananAkses));

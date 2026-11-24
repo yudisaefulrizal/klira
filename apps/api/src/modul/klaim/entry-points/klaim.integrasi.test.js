@@ -49,7 +49,7 @@ d('klaim JKN/BPJS terhadap database pengujian', () => {
         const tahap = o.tahap ?? 'ditutup';
         const p = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPasienUntukBuatKunjungan(fasId, `${kode}-${nomor}`, `Pasien ${nomor}`, new Date('1980-01-01'), 'perempuan', koneksiBaru); return uji.tambahPasienUntukBuatKunjunganHasil(_hasil.id, koneksiBaru); });
         const k = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahKunjunganUntukKunjunganBaru(fasId, p.id, o.jenis ?? 'AMB', tahap, o.cara ?? 'jkn', (tahap === 'ditutup') ? (o.waktuTutup ?? new Date()) : (undefined), koneksiBaru); return uji.tambahKunjunganUntukBuatKunjunganHasil(_hasil.id, koneksiBaru); });
-        await uji.tambahBanyakDiagnosisUntukKunjunganBaru((o.kode ?? [['I10', 'Hipertensi esensial']]).map(([kd, nama], i) => ({ fasyankes_id: fasId, kunjungan_id: k.id, versi: 1, kode_icd10: kd, nama, peran: (i === 0 ? 'utama' : 'penyerta'), urutan: i + 1 })));
+        await uji.tambahBanyakDiagnosisUntukKunjunganBaru((o.kode ?? [['I10', 'Hipertensi esensial']]).map(([kd, nama], i) => ({ kunjungan_id: k.id, versi: 1, kode_icd10: kd, nama, peran: (i === 0 ? 'utama' : 'penyerta'), urutan: i + 1 })));
         await uji.tambahPengesahanCatatanUntukKunjunganBaru(fasId, 'diagnosis', k.id, 1, id.petugas, 'a'.repeat(64));
         return k.id;
     }

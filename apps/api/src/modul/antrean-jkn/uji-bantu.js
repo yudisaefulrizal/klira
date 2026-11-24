@@ -28,7 +28,7 @@ export function buatMemori() {
         fasyankesAktif: async () => (s.atur?.aktif ? [s.atur.fasyankes_id] : []),
         pemetaan: async () => s.peta,
         simpan: async (f, d, pemetaan) => {
-            s.atur = { fasyankes_id: f, ...(s.atur ?? {}), aktif: d.aktif, service_name: d.service_name, ...(d.user_key_terenkripsi ? { user_key_terenkripsi: d.user_key_terenkripsi } : {}) };
+            s.atur = { ...(s.atur ?? {}), aktif: d.aktif, service_name: d.service_name, ...(d.user_key_terenkripsi ? { user_key_terenkripsi: d.user_key_terenkripsi } : {}) };
             s.peta = pemetaan;
         },
         cariPasien: async (_f, noka, nik) => s.pasien.find((p) => p.jkn_nomor_kartu === noka) ?? s.pasien.find((p) => nik && p.nik === nik) ?? null,

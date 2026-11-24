@@ -8,7 +8,7 @@ const tglDb = (t) => new Date(`${t}T00:00:00.000+07:00`);
  * (ajukan, dikembalikan, ajukan ulang, ditolak, dibayar) dengan pagar batas 6 bulan dan batas ajukan ulang bulan berikutnya. Semua tercatat di audit dan riwayat status.
  */
 export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekarang = () => new Date() }) {
-    const catat = (p, aksi, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas: 'klaim', entitas_id: id, keterangan, alamat });
+    const catat = (p, aksi, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas: 'klaim', entitas_id: id, keterangan, alamat });
     /** Kode rekam medis sekarang: catatan dokter (versi terakhir). */
     async function kodeRm(fas, kunjunganId) {
         const [d, t] = await Promise.all([baca.bacaBagian(fas, kunjunganId, 'diagnosis'), baca.bacaBagian(fas, kunjunganId, 'tindakan')]);
@@ -29,12 +29,12 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
     }
     async function muatDto(p, baris) {
         const ids = baris.map((b) => b.kunjungan_id);
-        const [kunj, resume, riwayat] = await Promise.all([repo.kunjunganBanyak(p.fasyankes_id, ids), rm.resumeAda(p.fasyankes_id, ids), repo.riwayat(p.fasyankes_id, baris.map((b) => b.id))]);
+        const [kunj, resume, riwayat] = await Promise.all([repo.kunjunganBanyak(ids), rm.resumeAda(ids), repo.riwayat(baris.map((b) => b.id))]);
         const nama = await repo.namaPengguna(riwayat.map((r) => r.oleh));
-        return Promise.all(baris.map((b) => keDto(p.fasyankes_id, b, kunj.get(b.kunjungan_id), resume, riwayat, nama)));
+        return Promise.all(baris.map((b) => keDto(b, kunj.get(b.kunjungan_id), resume, riwayat, nama)));
     }
     async function ambil(p, id) {
-        const k = await repo.klaim(p.fasyankes_id, id);
+        const k = await repo.klaim(id);
         if (!k)
             return gagal('tidak_ditemukan', G.klaimTidakAda);
         return { ok: true, data: (await muatDto(p, [k]))[0] };
@@ -42,8 +42,8 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
     const bentrok = (e) => (e instanceof GalatKlaim ? gagal('konflik', e.kode === 'sudah_ada' ? G.sudahAda : G.bentrok) : null);
     return {
         async kandidat(p) {
-            const k = await repo.kandidat(p.fasyankes_id);
-            const resume = await rm.resumeAda(p.fasyankes_id, k.map((x) => x.id));
+            const k = await repo.kandidat();
+            const resume = await rm.resumeAda(k.map((x) => x.id));
             const out = [];
             for (const x of k) {
                 out.push({ kunjungan_id: x.id, pasien_nama: x.pasien_nama, pasien_nomor_rm: x.pasien_nomor_rm, jenis: x.jenis, waktu_tutup: (x.waktu_tutup ?? new Date(0)).toISOString(), nomor_sep: x.nomor_sep, resume_ada: resume.has(x.id) });
@@ -52,13 +52,13 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
         },
         /** Kode klaim yang akan disalin untuk satu kunjungan (pratinjau di modal Penyiapan klaim). */
         async kodeKunjungan(p, kunjunganId) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            return { ok: true, data: await kodeRm(p.fasyankes_id, kunjunganId) };
+            return { ok: true, data: await (kunjunganId) };
         },
         async daftar(p, f) {
             const now = sekarang();
-            const [{ total, baris }, ringkasan] = await Promise.all([repo.daftar(p.fasyankes_id, f, now), repo.ringkasan(p.fasyankes_id, now)]);
+            const [{ total, baris }, ringkasan] = await Promise.all([repo.daftar(f, now), repo.ringkasan(now)]);
             return { data: await muatDto(p, baris), halaman: f.halaman, ukuran: f.ukuran, total, ringkasan };
         },
         detail: async (p, id, alamat) => {
@@ -68,19 +68,19 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
             return h;
         },
         async siapkan(p, m, alamat) {
-            const k = await repo.kunjungan(p.fasyankes_id, m.kunjungan_id);
+            const k = await repo.kunjungan(m.kunjungan_id);
             if (!k)
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
             if (k.cara_pembayaran !== 'jkn')
                 return gagal('konflik', G.bukanJkn);
             if (k.tahap_layanan !== 'ditutup' || !k.waktu_tutup)
                 return gagal('konflik', G.belumDitutup);
-            const [kode, resume] = await Promise.all([kodeRm(p.fasyankes_id, k.id), rm.resumeAda(p.fasyankes_id, [k.id])]);
+            const [kode, resume] = await Promise.all([(k.id), rm.resumeAda([k.id])]);
             const sep = m.nomor_sep ?? k.nomor_sep;
             let id;
             try {
                 id = await repo.buat({
-                    fasyankesId: p.fasyankes_id, kunjunganId: k.id, nomorSep: sep, status: statusAwalKlaim({ nomor_sep: sep, berkas: m.berkas, jenis: k.jenis, resume_ada: resume.has(k.id) }), tanggalSelesai: k.waktu_tutup, batas: batasPengajuan(k.waktu_tutup),
+                    kunjunganId: k.id, nomorSep: sep, status: statusAwalKlaim({ nomor_sep: sep, berkas: m.berkas, jenis: k.jenis, resume_ada: resume.has(k.id) }), tanggalSelesai: k.waktu_tutup, batas: batasPengajuan(k.waktu_tutup),
                     diagnosis: kode.diagnosis, tindakan: kode.tindakan, berkas: m.berkas, catatan: m.catatan, oleh: p.id,
                 });
             }
@@ -95,7 +95,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
         },
         /** Ubah SEP, berkas, dan catatan selama klaim belum diajukan (atau dikembalikan); status awal dihitung ulang untuk klaim yang belum diajukan. */
         async ubahBerkas(p, id, m, alamat) {
-            const k = await repo.klaim(p.fasyankes_id, id);
+            const k = await repo.klaim(id);
             if (!k)
                 return gagal('tidak_ditemukan', G.klaimTidakAda);
             const efektif = statusKlaimEfektif(k, sekarang());
@@ -103,11 +103,11 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
                 return gagal('konflik', G.lewatBatas);
             if (efektif !== 'menunggu_sep' && efektif !== 'siap_diajukan' && efektif !== 'dikembalikan')
                 return gagal('konflik', G.tidakBisaUbah);
-            const kunj = await repo.kunjungan(p.fasyankes_id, k.kunjungan_id);
-            const resume = await rm.resumeAda(p.fasyankes_id, [k.kunjungan_id]);
+            const kunj = await repo.kunjungan(k.kunjungan_id);
+            const resume = await rm.resumeAda([k.kunjungan_id]);
             const status = efektif === 'dikembalikan' ? efektif : statusAwalKlaim({ nomor_sep: m.nomor_sep, berkas: m.berkas, jenis: kunj?.jenis ?? 'AMB', resume_ada: resume.has(k.kunjungan_id) });
             try {
-                await repo.ubahBerkas(p.fasyankes_id, id, k.status, { nomorSep: m.nomor_sep, berkas: m.berkas, catatan: m.catatan, status, oleh: p.id });
+                await repo.ubahBerkas(id, k.status, { nomorSep: m.nomor_sep, berkas: m.berkas, catatan: m.catatan, status, oleh: p.id });
             }
             catch (e) {
                 const g = bentrok(e);
@@ -119,7 +119,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
             return ambil(p, id);
         },
         async ubahStatus(p, id, m, alamat) {
-            const k = await repo.klaim(p.fasyankes_id, id);
+            const k = await repo.klaim(id);
             if (!k)
                 return gagal('tidak_ditemukan', G.klaimTidakAda);
             const now = sekarang();
@@ -139,10 +139,10 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
             if (m.aksi === 'dibayar')
                 Object.assign(d, { jumlah_dibayar: m.jumlah_dibayar, dibayar_pada: tglDb(m.dibayar_pada) });
             try {
-                await repo.ubahStatus(p.fasyankes_id, id, k.status, t.ke, d, p.id, m.alasan ?? m.berita_acara ?? null);
+                await repo.ubahStatus(id, k.status, t.ke, d, p.id, m.alasan ?? m.berita_acara ?? null);
                 if (m.aksi === 'dibayar' && keuangan?.catatJurnal && Number(m.jumlah_dibayar) > 0) {
                     try {
-                        await keuangan.catatJurnal(p.fasyankes_id, {
+                        await keuangan.catatJurnal({
                             tanggal: m.dibayar_pada,
                             sumber: 'klaim_jkn',
                             referensi_id: id,

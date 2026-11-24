@@ -9,24 +9,24 @@ const rentangWib = (tanggal) => {
 const keHasilLab = (r) => ({ status: statusHasilLabDari(r), total: Number(r.total), divalidasi: Number(r.divalidasi), diserahkan_pada: r.diserahkan_pada?.toISOString?.() ?? null, penerima_nama: r.penerima_nama ?? null });
 export class RepositoriKasirMysql {
     /** Ringkasan hasil lab kunjungan penunjang saja; null untuk jenis kunjungan lain. */
-    async hasilLab(fasyankesId, kunjunganId) {
-        if ((await db.cariJenisKunjunganUntukSerahHasil(fasyankesId, kunjunganId)) !== 'LAB')
+    async hasilLab(kunjunganId) {
+        if ((await db.cariJenisKunjunganUntukSerahHasil(kunjunganId)) !== 'LAB')
             return null;
-        const [r] = await db.ringkasanHasilLabUntukKunjungan(fasyankesId, [kunjunganId]);
+        const [r] = await db.ringkasanHasilLabUntukKunjungan([kunjunganId]);
         return r ? keHasilLab(r) : null;
     }
     /** Catat penyerahan hasil: hanya penunjang saja, semua order divalidasi, dan belum pernah diserahkan (dicek ulang dalam transaksi). */
-    async serahHasil(fasyankesId, petugasId, kunjunganId, m) {
+    async serahHasil(petugasId, kunjunganId, m) {
         return db.transaksi(async (tx) => {
-            if ((await db.cariJenisKunjunganUntukSerahHasil(fasyankesId, kunjunganId, tx)) !== 'LAB')
+            if ((await db.cariJenisKunjunganUntukSerahHasil(kunjunganId, tx)) !== 'LAB')
                 return { ok: false, sebab: 'bukan_penunjang' };
-            const [r] = await db.ringkasanHasilLabUntukKunjungan(fasyankesId, [kunjunganId], tx);
+            const [r] = await db.ringkasanHasilLabUntukKunjungan([kunjunganId], tx);
             if (r?.diserahkan_pada)
                 return { ok: false, sebab: 'sudah' };
             if (!r || !Number(r.total) || Number(r.divalidasi) < Number(r.total))
                 return { ok: false, sebab: 'belum_siap' };
             try {
-                await db.tambahPenyerahanHasil(fasyankesId, kunjunganId, m.penerima_nama, m.hubungan ?? null, petugasId, tx);
+                await db.tambahPenyerahanHasil(kunjunganId, m.penerima_nama, m.hubungan ?? null, petugasId, tx);
             }
             catch (e) {
                 if (db.bentrokUnik(e))
@@ -37,23 +37,23 @@ export class RepositoriKasirMysql {
         });
     }
     /** Kunjungan penunjang saja yang hasilnya belum diserahkan, lintas tanggal. */
-    async daftarHasilBelumDiserahkan(fasyankesId) {
-        return (await db.daftarHasilLabBelumDiserahkan(fasyankesId)).map((r) => ({
+    async daftarHasilBelumDiserahkan() {
+        return (await db.daftarHasilLabBelumDiserahkan()).map((r) => ({
             kunjungan_id: r.kunjungan_id, pasien_id: r.pasien_id, pasien_nama: r.pasien_nama, pasien_nomor_rm: r.nomor_rm, mulai: r.mulai.toISOString(), perujuk: r.perujuk ?? null,
             total: Number(r.total), divalidasi: Number(r.divalidasi), status: statusHasilLabDari({ total: r.total, divalidasi: r.divalidasi, diserahkan_pada: null }) ?? 'menunggu',
         }));
     }
-    async kunjungan(fasyankesId, id) {
-        const k = await db.cariKunjunganUntukKunjungan2(id, fasyankesId);
+    async kunjungan(id) {
+        const k = await db.cariKunjunganUntukKunjungan2(id);
         if (!k)
             return k;
         // Nama klinik untuk kop bukti pembayaran yang dicetak.
-        const f = await db.ambilFasyankesUntukAmbil(fasyankesId);
+        const f = await db.ambilFasyankesUntukAmbil();
         return { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, fasyankes_nama: f?.nama ?? null };
     }
     /** Tagihan lengkap dengan pembayaran; kunjungan tanpa tagihan menghasilkan tagihan kosong (lunas, total 0). */
-    async tagihan(fasyankesId, kunjunganId) {
-        const t = await db.cariTagihanUntukTagihan(kunjunganId, fasyankesId);
+    async tagihan(kunjunganId) {
+        const t = await db.cariTagihanUntukTagihan(kunjunganId);
         if (!t)
             return { id: null, kunjungan_id: kunjunganId, status_tagihan: 'lengkap', status_pembayaran: 'lunas', total: 0, item: [], pembayaran: [], dibayar: 0, sisa: 0, alasan_tutup_belum_lunas: null };
         const nama = new Map((await db.daftarPenggunaUntukNamaPengguna([...new Set(t.pembayaran.map((p) => p.kasir_id))])).map((u) => [u.id, u.nama]));
@@ -66,10 +66,10 @@ export class RepositoriKasirMysql {
         };
     }
     // ---- Shift ----
-    async keShiftDto(fasyankesId, shifts) {
+    async keShiftDto(shifts) {
         if (!shifts.length)
             return [];
-        const bayar = await db.kelompokPembayaranUntukKeShiftDto(fasyankesId, shifts.map((s) => s.id));
+        const bayar = await db.kelompokPembayaranUntukKeShiftDto(shifts.map((s) => s.id));
         const nama = new Map((await db.daftarPenggunaUntukNamaPengguna([...new Set(shifts.map((s) => s.kasir_id))])).map((u) => [u.id, u.nama]));
         return shifts.map((s) => {
             const per = Object.fromEntries(NILAI_METODE_BAYAR.map((m) => [m, 0]));
@@ -84,38 +84,38 @@ export class RepositoriKasirMysql {
             };
         });
     }
-    async shiftTerbuka(fasyankesId, kasirId) {
-        const s = await db.cariShiftKasirUntukShiftTerbuka(fasyankesId, kasirId, null);
-        return s ? (await this.keShiftDto(fasyankesId, [s]))[0] : null;
+    async shiftTerbuka(kasirId) {
+        const s = await db.cariShiftKasirUntukShiftTerbuka(kasirId, null);
+        return s ? (await this.keShiftDto([s]))[0] : null;
     }
     /** 'sudah_ada' bila kasir ini masih punya shift terbuka (pengecekan dalam transaksi dengan kunci baris pengguna). */
-    async bukaShift(fasyankesId, kasirId, kasAwal) {
+    async bukaShift(kasirId, kasAwal) {
         const id = await db.transaksi(async (tx) => {
             await db.kunciPengguna(kasirId, tx);
-            if (await db.hitungShiftKasirUntukBukaShift(fasyankesId, kasirId, null, tx))
+            if (await db.hitungShiftKasirUntukBukaShift(kasirId, null, tx))
                 return null;
-            return (await (async () => { const _hasil = await db.tambahShiftKasirUntukBukaShift(fasyankesId, kasirId, kasAwal, tx); return db.tambahShiftKasirUntukBukaShiftHasil(_hasil.id, tx); })()).id;
+            return (await (async () => { const _hasil = await db.tambahShiftKasirUntukBukaShift(kasirId, kasAwal, tx); return db.tambahShiftKasirUntukBukaShiftHasil(_hasil.id, tx); })()).id;
         });
         if (id === null)
             return 'sudah_ada';
-        return (await this.keShiftDto(fasyankesId, [await db.tambahShiftKasirUntukBukaShiftHasil(id)]))[0];
+        return (await this.keShiftDto([await db.tambahShiftKasirUntukBukaShiftHasil(id)]))[0];
     }
-    async tutupShift(fasyankesId, kasirId, d) {
-        const s = await db.cariShiftKasirUntukShiftTerbuka(fasyankesId, kasirId, null);
+    async tutupShift(kasirId, d) {
+        const s = await db.cariShiftKasirUntukShiftTerbuka(kasirId, null);
         if (!s)
             return 'tidak_ada';
-        const [dto] = await this.keShiftDto(fasyankesId, [s]);
+        const [dto] = await this.keShiftDto([s]);
         const baru = await db.ubahShiftKasirUntukTutupShift(new Date(), d.kas_akhir, d.kas_akhir - dto.kas_seharusnya, d.alasan_selisih, s.id, null);
         if (!baru.count)
             return 'tidak_ada';
-        return (await this.keShiftDto(fasyankesId, [await db.tambahShiftKasirUntukBukaShiftHasil(s.id)]))[0];
+        return (await this.keShiftDto([await db.tambahShiftKasirUntukBukaShiftHasil(s.id)]))[0];
     }
     /** Rekap per hari (zona Asia/Jakarta): pembayaran per metode dan shift yang dibuka pada hari itu. */
-    async rekap(fasyankesId, tanggal) {
+    async rekap(tanggal) {
         const { dari, sampai } = rentangWib(tanggal);
         const [bayar, shifts] = await Promise.all([
-            db.kelompokPembayaranUntukRekap(fasyankesId, dari, sampai),
-            db.daftarShiftKasirUntukRekap(fasyankesId, dari, sampai),
+            db.kelompokPembayaranUntukRekap(dari, sampai),
+            db.daftarShiftKasirUntukRekap(dari, sampai),
         ]);
         const per = Object.fromEntries(NILAI_METODE_BAYAR.map((m) => [m, 0]));
         let jumlah = 0;
@@ -123,7 +123,7 @@ export class RepositoriKasirMysql {
             per[b.metode] = b._sum.jumlah ?? 0;
             jumlah += b._count._all;
         }
-        return { tanggal, per_metode: per, total: Object.values(per).reduce((a, b) => a + b, 0), jumlah_pembayaran: jumlah, shift: await this.keShiftDto(fasyankesId, shifts) };
+        return { tanggal, per_metode: per, total: Object.values(per).reduce((a, b) => a + b, 0), jumlah_pembayaran: jumlah, shift: await this.keShiftDto(shifts) };
     }
     // ---- Pembayaran ----
     /**
@@ -131,11 +131,11 @@ export class RepositoriKasirMysql {
      * tunai diterapkan sebatas sisa setelah non-tunai (selebihnya kembalian, tidak dicatat). Satu baris Pembayaran per metode yang diterapkan > 0;
      * status pembayaran dihitung ulang (belum, sebagian, lunas). Hanya ditambah, tidak pernah diubah atau dihapus.
      */
-    async bayar(fasyankesId, kasirId, kunjunganId, baris) {
+    async bayar(kasirId, kunjunganId, baris) {
         const hasil = await db.transaksi(async (tx) => {
             // Kunci baris tagihan HARUS pernyataan pertama: pembacaan biasa sebelum kunci mengambil potret (REPEATABLE READ) yang sudah usang setelah menunggu.
-            const kunci = await db.kunciTagihanKunjungan(kunjunganId, fasyankesId, tx);
-            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, fasyankesId, tx);
+            const kunci = await db.kunciTagihanKunjungan(kunjunganId, tx);
+            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, tx);
             if (!k || k.tahap_layanan !== 'kasir')
                 return { ok: false, sebab: 'tahap_salah' };
             if (!kunci.length)
@@ -148,7 +148,7 @@ export class RepositoriKasirMysql {
             const sisa = total - dibayar;
             if (sisa <= 0)
                 return { ok: false, sebab: 'sudah_lunas' };
-            const shift = await db.cariShiftKasirUntukShiftTerbuka(fasyankesId, kasirId, null, tx);
+            const shift = await db.cariShiftKasirUntukShiftTerbuka(kasirId, null, tx);
             if (!shift)
                 return { ok: false, sebab: 'tanpa_shift' };
             const r = rincianBayar(baris, sisa);
@@ -158,7 +158,7 @@ export class RepositoriKasirMysql {
             for (const b of r.per_baris) {
                 if (b.diterapkan <= 0)
                     continue; // tunai seluruhnya kembalian (non-tunai sudah menutup sisa)
-                const p = await (async () => { const _hasil = await db.tambahPembayaranUntukBayar(fasyankesId, t.id, shift.id, b.metode, b.diterapkan, kasirId, tx); return db.tambahPembayaranUntukBayarHasil(_hasil.id, tx); })();
+                const p = await (async () => { const _hasil = await db.tambahPembayaranUntukBayar(t.id, shift.id, b.metode, b.diterapkan, kasirId, tx); return db.tambahPembayaranUntukBayarHasil(_hasil.id, tx); })();
                 ids.push(p.id);
             }
             await db.ubahTagihanUntukBayar(dibayar + r.diterapkan >= total ? 'lunas' : 'sebagian', t.id, tx);
@@ -166,18 +166,18 @@ export class RepositoriKasirMysql {
         });
         if (!hasil.ok)
             return hasil;
-        const tagihan = await this.tagihan(fasyankesId, kunjunganId);
+        const tagihan = await this.tagihan(kunjunganId);
         const pembayaran = hasil.ids.map((id) => tagihan.pembayaran.find((x) => x.id === id));
         return { ok: true, pembayaran, tagihan, diterima: hasil.diterima, diterapkan: hasil.diterapkan, kembalian: hasil.kembalian };
     }
     // ---- Melengkapi harga item ----
     /** Mengisi harga item yang masih kosong (tidak menimpa harga yang ada) lalu menghitung ulang status tagihan; tidak untuk kunjungan yang sudah ditutup. */
-    async lengkapiHarga(fasyankesId, kunjunganId, itemId, harga) {
+    async lengkapiHarga(kunjunganId, itemId, harga) {
         return db.transaksi(async (tx) => {
-            const item = await db.cariItemTagihanUntukLengkapiHarga(itemId, fasyankesId, kunjunganId, tx);
+            const item = await db.cariItemTagihanUntukLengkapiHarga(itemId, kunjunganId, tx);
             if (!item)
                 return { ok: false, sebab: 'tidak_ada' };
-            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, fasyankesId, tx);
+            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, tx);
             if (!k || k.tahap_layanan === 'ditutup')
                 return { ok: false, sebab: 'terkunci' };
             const diubah = await db.ubahItemTagihanUntukLengkapiHarga(harga, itemId, null, tx);
@@ -193,15 +193,15 @@ export class RepositoriKasirMysql {
      * Kasir mengubah harga item yang sudah berharga (bukan obat) sebelum ada pembayaran dan sebelum kunjungan ditutup; harga acuan
      * (harga awal) dipertahankan untuk ditampilkan dicoret, alasan disimpan. Kunci baris tagihan agar tidak bersaing dengan pembayaran.
      */
-    async ubahHarga(fasyankesId, kunjunganId, itemId, harga, alasan) {
+    async ubahHarga(kunjunganId, itemId, harga, alasan) {
         return db.transaksi(async (tx) => {
-            const kunci = await db.kunciTagihanKunjungan(kunjunganId, fasyankesId, tx);
+            const kunci = await db.kunciTagihanKunjungan(kunjunganId, tx);
             if (!kunci.length)
                 return { ok: false, sebab: 'tidak_ada' };
             const item = await db.cariItemTagihanUntukUbahHarga(itemId, kunci[0].id, tx);
             if (!item)
                 return { ok: false, sebab: 'tidak_ada' };
-            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, fasyankesId, tx);
+            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, tx);
             if (!k || k.tahap_layanan === 'ditutup')
                 return { ok: false, sebab: 'terkunci' };
             if (await db.hitungPembayaranUntukSinkronItemTindakanDalam(kunci[0].id, tx))
@@ -219,8 +219,8 @@ export class RepositoriKasirMysql {
     }
     // ---- Item tambahan dari tarif ----
     /** Tarif aktif yang boleh ditambahkan kasir (obat dikecualikan: obat lewat resep agar stok tercatat), harga sesuai cara pembayaran. */
-    async tarifAktif(fasyankesId, caraPembayaran) {
-        const t = await db.daftarTarifLayananUntukTarifAktif(fasyankesId, true, 'obat');
+    async tarifAktif(caraPembayaran) {
+        const t = await db.daftarTarifLayananUntukTarifAktif(true, 'obat');
         return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, jenis: x.jenis, harga: hargaTarif(x, caraPembayaran) }));
     }
     /** Status pembayaran dihitung ulang setelah item berubah (lunas bisa kembali menjadi sebagian). */
@@ -231,25 +231,25 @@ export class RepositoriKasirMysql {
         await db.ubahTagihanUntukHitungUlang(statusTagihanDari(t.item.map((i) => i.harga)), dibayar <= 0 ? 'belum' : dibayar >= total ? 'lunas' : 'sebagian', tagihanId, tx);
     }
     /** Tambah item dari tarif ke tagihan kunjungan (tagihan dibuat bila belum ada); tidak untuk kunjungan yang sudah ditutup. */
-    async tambahItem(fasyankesId, oleh, kunjunganId, tarifId, jumlah) {
+    async tambahItem(oleh, kunjunganId, tarifId, jumlah) {
         return db.transaksi(async (tx) => {
-            const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, fasyankesId, tx);
+            const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, tx);
             if (!k || k.tahap_layanan === 'ditutup')
                 return { ok: false, sebab: 'terkunci' };
-            const tarif = await db.cariTarifLayananUntukTambahItem(tarifId, fasyankesId, true, 'obat', tx);
+            const tarif = await db.cariTarifLayananUntukTambahItem(tarifId, true, 'obat', tx);
             if (!tarif)
                 return { ok: false, sebab: 'tarif_tidak_ada' };
             const harga = hargaTarif(tarif, k.cara_pembayaran); // tindakan tanpa harga acuan: null, dilengkapi kasir
-            const tagihan = await (async () => { (await db.simpanTagihanUntukTambahItemTagihanDalam(fasyankesId, kunjunganId, oleh, tx)); return db.simpanTagihanUntukTambahItemTagihanDalamHasil(kunjunganId, tx); })();
-            await db.tambahItemTagihanUntukTambahItem(fasyankesId, tagihan.id, tarif.jenis, tarif.id, tarif.kode, tarif.nama, jumlah, harga, true, oleh, tx);
+            const tagihan = await (async () => { (await db.simpanTagihanUntukTambahItemTagihanDalam(kunjunganId, oleh, tx)); return db.simpanTagihanUntukTambahItemTagihanDalamHasil(kunjunganId, tx); })();
+            await db.tambahItemTagihanUntukTambahItem(tagihan.id, tarif.jenis, tarif.id, tarif.kode, tarif.nama, jumlah, harga, true, oleh, tx);
             await this.hitungUlang(tx, tagihan.id);
             return { ok: true, nama: tarif.nama, harga, jumlah };
         });
     }
     /** Hapus item tambahan kasir selama kunjungan belum ditutup dan total tidak menjadi lebih kecil dari yang sudah dibayar. */
-    async hapusItem(fasyankesId, kunjunganId, itemId) {
+    async hapusItem(kunjunganId, itemId) {
         return db.transaksi(async (tx) => {
-            const kunci = await db.kunciTagihanKunjungan(kunjunganId, fasyankesId, tx);
+            const kunci = await db.kunciTagihanKunjungan(kunjunganId, tx);
             if (!kunci.length)
                 return { ok: false, sebab: 'tidak_ada' };
             const item = await db.cariItemTagihanUntukUbahHarga(itemId, kunci[0].id, tx);
@@ -257,7 +257,7 @@ export class RepositoriKasirMysql {
                 return { ok: false, sebab: 'tidak_ada' };
             if (!item.manual)
                 return { ok: false, sebab: 'bukan_manual' };
-            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, fasyankesId, tx);
+            const k = await db.cariKunjunganUntukTahapSekarang(kunjunganId, tx);
             if (!k || k.tahap_layanan === 'ditutup')
                 return { ok: false, sebab: 'terkunci' };
             const t = await db.wajibTagihanUntukBayar(kunci[0].id, tx);
@@ -274,25 +274,25 @@ export class RepositoriKasirMysql {
      * Tutup bila di tahap kasir, tagihan lengkap, semua resep diserahkan; belum lunas hanya dengan alasan, kecuali kunjungan JKN
      * (alasan otomatis `alasanJkn`: biaya diklaim ke BPJS). Pembaruan bersyarat tahap (gagal diam bila sudah berubah).
      */
-    async tutup(fasyankesId, kunjunganId, alasan) {
+    async tutup(kunjunganId, alasan) {
         return db.transaksi(async (tx) => {
-            const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, fasyankesId, tx);
+            const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, tx);
             if (!k || k.tahap_layanan !== 'kasir')
                 return { ok: false, sebab: 'tahap_salah' };
             const t = await db.ambilTagihanUntukTutup(kunjunganId, tx);
             if (t && t.status_tagihan !== 'lengkap')
                 return { ok: false, sebab: 'tagihan_belum_lengkap' };
-            if (await db.hitungResepUntukTutup(kunjunganId, fasyankesId, 'diserahkan', tx))
+            if (await db.hitungResepUntukTutup(kunjunganId, 'diserahkan', tx))
                 return { ok: false, sebab: 'resep_belum' };
             const total = t ? totalTagihan(t.item) : 0;
             const lunas = (t?.pembayaran.reduce((s, p) => s + p.jumlah, 0) ?? 0) >= total;
             if (!lunas && !(alasan && alasan.trim()))
                 return { ok: false, sebab: 'belum_lunas_alasan' };
             const tutup = new Date();
-            const ubah = await db.ubahKunjunganUntukTutup('finished', 'ditutup', tutup, tanggalRetensi(tutup), kunjunganId, fasyankesId, 'kasir', tx);
+            const ubah = await db.ubahKunjunganUntukTutup('finished', 'ditutup', tutup, tanggalRetensi(tutup), kunjunganId, 'kasir', tx);
             if (!ubah.count)
                 return { ok: false, sebab: 'bentrok' };
-            await selesaiAntreanDalam(tx, fasyankesId, kunjunganId, new Date());
+            await selesaiAntreanDalam(tx, kunjunganId, new Date());
             if (t && !lunas)
                 await db.ubahTagihanUntukTutup(alasan.trim(), t.id, tx);
             return { ok: true };

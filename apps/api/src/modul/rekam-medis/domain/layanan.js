@@ -12,14 +12,14 @@ export const keDto = (p) => ({
 export function buatLayananPengesahan({ repo, audit, sekarang = () => new Date() }) {
     const penyedia = new Map();
     /** Keadaan pengesahan: belum disahkan, sah (hash cocok), atau berubah setelah disahkan (hash tidak cocok). */
-    async function keadaan(fasyankesId, entitas, entitasId) {
+    async function keadaan(entitas, entitasId) {
         const fn = penyedia.get(entitas);
-        const terakhir = await repo.terakhir(fasyankesId, entitas, entitasId);
+        const terakhir = await repo.terakhir(entitas, entitasId);
         if (!terakhir)
             return { status: 'belum_disahkan', pengesahan: null };
         if (!fn)
             return { status: 'berubah', pengesahan: terakhir };
-        return { status: hashIsi(await fn(fasyankesId, entitasId)) === terakhir.hash ? 'sah' : 'berubah', pengesahan: terakhir };
+        return { status: hashIsi(await (entitasId)) === terakhir.hash ? 'sah' : 'berubah', pengesahan: terakhir };
     }
     return {
         daftarkanPenyedia(entitas, fn) {
@@ -28,7 +28,7 @@ export function buatLayananPengesahan({ repo, audit, sekarang = () => new Date()
         entitasDikenal: (entitas) => penyedia.has(entitas),
         async siapkan(m) {
             const waktu = sekarang();
-            const terakhir = await repo.terakhir(m.fasyankesId, m.entitas, m.entitasId);
+            const terakhir = await repo.terakhir(m.entitas, m.entitasId);
             const hash = hashIsi(m.isiBaru);
             let versiLama = null;
             if (terakhir) {
@@ -42,7 +42,7 @@ export function buatLayananPengesahan({ repo, audit, sekarang = () => new Date()
                     return gagal('konflik', KLINIS.galat.perbaikanButuhPersetujuan);
                 versiLama = { versi: terakhir.versi, isi_lama: isiSekarang ?? null, alasan, disetujui_oleh: m.disetujuiOleh ?? null };
             }
-            const jenisAkun = pilihJenisAkun(await repo.jenisAkunPemberiHak(m.fasyankesId, m.pelakuId, m.fitur, terakhir ? 'perbaikan' : 'input', waktu));
+            const jenisAkun = pilihJenisAkun(await repo.jenisAkunPemberiHak(m.pelakuId, m.fitur, terakhir ? 'perbaikan' : 'input', waktu));
             return { ok: true, data: { jenis: 'baru', rencana: { versi: (terakhir?.versi ?? 0) + 1, penggunaId: m.pelakuId, jenisAkun, hash, waktu, versiLama } } };
         },
         keadaan,
@@ -50,10 +50,10 @@ export function buatLayananPengesahan({ repo, audit, sekarang = () => new Date()
         async verifikasi(pelaku, entitas, entitasId, alamat) {
             if (!penyedia.has(entitas))
                 return gagal('tidak_ditemukan', KLINIS.galat.entitasTidakDikenal);
-            const k = await keadaan(pelaku.fasyankes_id, entitas, entitasId);
-            await audit.catat({ fasyankes_id: pelaku.fasyankes_id, pengguna_id: pelaku.id, aksi: 'lihat', entitas: 'pengesahan_catatan', entitas_id: entitasId, keterangan: `Verifikasi pengesahan ${entitas}`, alamat });
+            const k = await keadaan(entitas, entitasId);
+            await audit.catat({ pengguna_id: pelaku.id, aksi: 'lihat', entitas: 'pengesahan_catatan', entitas_id: entitasId, keterangan: `Verifikasi pengesahan ${entitas}`, alamat });
             return { ok: true, data: { entitas, entitas_id: entitasId, status: k.status, versi: k.pengesahan?.versi ?? null, pengesahan: k.pengesahan ? keDto(k.pengesahan) : null } };
         },
-        riwayatVersi: (fasyankesId, entitas, entitasId) => repo.riwayatVersi(fasyankesId, entitas, entitasId),
+        riwayatVersi: (entitas, entitasId) => repo.riwayatVersi(entitas, entitasId),
     };
 }

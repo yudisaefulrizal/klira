@@ -4,7 +4,7 @@ import { mulaiDummy, tutupDummy, PORT_SATUSEHAT, URL_SATUSEHAT } from '../../../
 
 const { buatSinkronIhs, BATAS_WAKTU_PENDAFTARAN_MS } = await import("./pasien.js");
 
-const P = { id: 3, fasyankes_id: 1 };
+const P = { id: 3 };
 
 /** Repositori memori satu pasien. */
 function buat({ pasien = { id: 9, nik: '9999000000000001', ihs_number: null }, klien, aktif = true } = {}) {

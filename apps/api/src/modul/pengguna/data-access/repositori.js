@@ -1,9 +1,9 @@
 import * as db from '@klira/db';
 export class RepositoriPenggunaMysql {
-    async daftar(fasyankesId, f, sekarang) {
+    async daftar(f, sekarang) {
         const [total, data] = await Promise.all([
-            db.hitungPenggunaUntukDaftar(fasyankesId, f.cari, (f.cari) && (true), f.status === 'aktif', (f.status !== 'semua') && (true), f.jenis_akun_id, true, sekarang, null, sekarang, (f.jenis_akun_id) && (true)),
-            db.daftarPenggunaUntukDaftar(fasyankesId, f.cari, (f.cari) && (true), f.status === 'aktif', (f.status !== 'semua') && (true), f.jenis_akun_id, true, sekarang, null, sekarang, (f.jenis_akun_id) && (true), f.ukuran, (f.halaman - 1) * f.ukuran, 'tambah', false, 'terima'),
+            db.hitungPenggunaUntukDaftar(f.cari, (f.cari) && (true), f.status === 'aktif', (f.status !== 'semua') && (true), f.jenis_akun_id, true, sekarang, null, sekarang, (f.jenis_akun_id) && (true)),
+            db.daftarPenggunaUntukDaftar(f.cari, (f.cari) && (true), f.status === 'aktif', (f.status !== 'semua') && (true), f.jenis_akun_id, true, sekarang, null, sekarang, (f.jenis_akun_id) && (true), f.ukuran, (f.halaman - 1) * f.ukuran, 'tambah', false, 'terima'),
         ]);
         return {
             total,
@@ -15,8 +15,8 @@ export class RepositoriPenggunaMysql {
             })),
         };
     }
-    async ubahAktif(fasyankesId, id, aktif) {
-        const p = await db.cariPenggunaUntukUbahAktif(id, fasyankesId);
+    async ubahAktif(id, aktif) {
+        const p = await db.cariPenggunaUntukUbahAktif(id);
         if (!p)
             return null;
         if (p.aktif !== aktif)

@@ -26,7 +26,7 @@ const dasar = { nama: ' Ayu ', jalur_identitas: 'nik', nik: '3201010101900001', 
 
 const masukan = () => perbaikanPasienMasukan.parse(dasar);
 
-const saya = { id: 3, fasyankes_id: 1 };
+const saya = { id: 3 };
 
 function layanan(lebih = {}) {
     const perbaiki = jest.fn(async () => true);
@@ -39,7 +39,7 @@ beforeEach(() => jest.clearAllMocks());
 
 it('memvalidasi identitas dan wali tanpa memerlukan consent baru atau menerima nomor RM dari klien', () => {
     expect(masukan()).toMatchObject({ nama: 'Ayu', wali: [{ id: 4, nama: 'Budi' }] });
-    const hasil = perbaikanPasienMasukan.parse({ ...dasar, nomor_rm: 'ubah', fasyankes_id: 99 });
+    const hasil = perbaikanPasienMasukan.parse({ ...dasar, nomor_rm: 'ubah' });
     expect(hasil).not.toHaveProperty('nomor_rm');
     expect(hasil).not.toHaveProperty('fasyankes_id');
     for (const perubahan of [{ nik: '' }, { tanggal_lahir: '2025-02-30' }, { jalur_identitas: 'paspor' }, { wali: [dasar.wali[0], dasar.wali[0]] }])
@@ -49,7 +49,7 @@ it('memvalidasi identitas dan wali tanpa memerlukan consent baru atau menerima n
 it('menyimpan pada fasyankes pelaku, menormalkan kontak, dan mencatat audit tanpa isi data', async () => {
     const uji = layanan();
     expect(await uji.layanan.perbaiki(saya, 9, masukan())).toMatchObject({ ok: true });
-    expect(uji.perbaiki).toHaveBeenCalledWith(1, 9, 3, expect.objectContaining({ nama: 'Ayu', alamat: null, wali: [{ id: 4, nama: 'Budi', hubungan: 'Ayah', kontak: '081234567890' }] }));
+    expect(uji.perbaiki).toHaveBeenCalledWith(9, 3, expect.objectContaining({ nama: 'Ayu', alamat: null, wali: [{ id: 4, nama: 'Budi', hubungan: 'Ayah', kontak: '081234567890' }] }));
     expect(uji.audit.catat).toHaveBeenCalledWith(expect.objectContaining({ aksi: 'perbaikan', entitas: 'pasien', entitas_id: 9 }));
     expect(JSON.stringify(uji.audit.catat.mock.calls)).not.toContain(dasar.nik);
 });
@@ -58,11 +58,11 @@ it('menyimpan, mengosongkan, dan mempertahankan nomor HP dari klien lama', async
     for (const [input, expected] of [['081234567890', '6281234567890'], ['', null]]) {
         const uji = layanan();
         await uji.layanan.perbaiki(saya, 9, perbaikanPasienMasukan.parse({ ...dasar, nomor_hp: input }));
-        expect(uji.perbaiki).toHaveBeenCalledWith(1, 9, 3, expect.objectContaining({ nomor_hp: expected }));
+        expect(uji.perbaiki).toHaveBeenCalledWith(9, 3, expect.objectContaining({ nomor_hp: expected }));
     }
     const uji = layanan();
     await uji.layanan.perbaiki(saya, 9, masukan());
-    expect(uji.perbaiki.mock.calls[0][3]).not.toHaveProperty('nomor_hp');
+    expect(uji.perbaiki.mock.calls[0][2]).not.toHaveProperty('nomor_hp');
 });
 
 it('pasien tidak ditemukan atau lintas fasyankes tidak dicatat sebagai perbaikan', async () => {
@@ -82,21 +82,21 @@ describe('transaksi perbaikan', () => {
     beforeEach(async () => {
         const uji = layanan();
         await uji.layanan.perbaiki(saya, 9, masukan());
-        data = uji.perbaiki.mock.calls[0][3];
+        data = uji.perbaiki.mock.calls[0][2];
         jest.mocked(db.transaksi).mockImplementation(async (fn) => fn(db.pool));
         jest.mocked(db.kunciPasien).mockResolvedValue([{ id: 9 }]);
         jest.mocked(db.daftarWaliKeluargaUntukPerbaiki).mockResolvedValue([{ id: 4 }]);
     });
     it('memperbarui wali dengan ID tetap dan menambahkan wali baru', async () => {
         data.wali.push({ nama: 'Ibu', hubungan: 'Ibu', kontak: null });
-        expect(await new RepositoriPasienMysql().perbaiki(1, 9, 3, data)).toBe(true);
-        expect(jest.mocked(db.ubahPasienUntukPerbaiki).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 23: 9, 24: 1 })]));
-        expect(jest.mocked(db.ubahWaliKeluargaUntukPerbaiki).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'Ayah', 1: 'Budi', 2: '081234567890', 3: 4, 4: 9, 5: 1 })]));
+        expect(await new RepositoriPasienMysql().perbaiki(9, 3, data)).toBe(true);
+        expect(jest.mocked(db.ubahPasienUntukPerbaiki).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 23: 9 })]));
+        expect(jest.mocked(db.ubahWaliKeluargaUntukPerbaiki).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'Ayah', 1: 'Budi', 2: '081234567890', 3: 4, 4: 9 })]));
         expect(db.tambahWaliKeluargaUntukPerbaiki).toHaveBeenCalledTimes(1);
     });
     it.each([{ wali: [] }, { wali: [{ id: 55, nama: 'Wali lain', hubungan: 'Ayah', kontak: null }] }])('menolak penghapusan atau wali milik pasien lain', async ({ wali }) => {
         data.wali = wali;
-        await expect(new RepositoriPasienMysql().perbaiki(1, 9, 3, data)).rejects.toBeInstanceOf(WaliTidakSahError);
+        await expect(new RepositoriPasienMysql().perbaiki(9, 3, data)).rejects.toBeInstanceOf(WaliTidakSahError);
         expect(db.ubahPasienUntukPerbaiki).not.toHaveBeenCalled();
     });
     it('pasien lintas fasyankes tidak ditulis', async () => {

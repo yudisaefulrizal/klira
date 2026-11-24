@@ -20,7 +20,7 @@ const { ambilNamaInstagram, ambilProfilInstagram, fotoProfilInstagram, namaProfi
 
 const fetchAsli = global.fetch;
 
-const row = { aktif: true, penyedia: 'meta', fasyankes_id: 10, akun_id: '987654321', generasi: 1, access_token: 'token-uji', token_berakhir: new Date(Date.now() + 86400000) };
+const row = { aktif: true, penyedia: 'meta', akun_id: '987654321', generasi: 1, access_token: 'token-uji', token_berakhir: new Date(Date.now() + 86400000) };
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -48,12 +48,12 @@ it('mengambil profil melalui token header dan mengabaikan kegagalan API', async 
 });
 
 it('melengkapi kontak lama secara bersyarat dan menggabungkan lookup bersamaan', async () => {
-    jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ id: 1001, fasyankes_id: 10, jid: '123456789', nama: '123456789' });
+    jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ id: 1001, jid: '123456789', nama: '123456789' });
     global.fetch = jest.fn().mockResolvedValue(Response.json({ name: 'Ayu', username: 'ayu' }));
     const hasil = await Promise.all([perbaruiNamaKontakInstagram(1001), perbaruiNamaKontakInstagram(1001)]);
     expect(hasil).toEqual([true, true]);
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(jest.mocked(db.ubahIgPercakapanUntukPerbarui).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'Ayu (@ayu)', 1: null, 2: expect.any(Date), 3: 1001, 4: 10, 5: '123456789', 6: '123456789' })]));
+    expect(jest.mocked(db.ubahIgPercakapanUntukPerbarui).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'Ayu (@ayu)', 1: null, 2: expect.any(Date), 3: 1001, 4: '123456789', 5: '123456789' })]));
 });
 
 it('tidak menimpa nama yang sudah tersedia', async () => {
@@ -65,7 +65,7 @@ it('tidak menimpa nama yang sudah tersedia', async () => {
 });
 
 it('hasil API yang lambat tidak memperbarui kontak setelah koneksi diputuskan', async () => {
-    jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ id: 1003, fasyankes_id: 10, jid: '123456789', nama: '123456789' });
+    jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ id: 1003, jid: '123456789', nama: '123456789' });
     jest.mocked(db.ambilIgKoneksi).mockResolvedValueOnce(row).mockResolvedValueOnce({ ...row, aktif: false, generasi: 2 });
     global.fetch = jest.fn().mockResolvedValue(Response.json({ name: 'Ayu' }));
     expect(await perbaruiNamaKontakInstagram(1003)).toBe(false);
@@ -81,7 +81,7 @@ it('membaca foto profil dan menolak alamat di luar CDN Meta', async () => {
 });
 
 it('melengkapi foto kontak yang sudah memiliki nama tanpa menimpa nama', async () => {
-    jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ id: 1004, fasyankes_id: 10, jid: '123456789', nama: 'Ayu' });
+    jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ id: 1004, jid: '123456789', nama: 'Ayu' });
     const foto = 'https://scontent.fbcdn.net/avatar.jpg';
     global.fetch = jest.fn().mockResolvedValue(Response.json({ name: 'Nama lain', profile_pic: foto }));
     expect(await perbaruiNamaKontakInstagram(1004)).toBe(true);
@@ -89,7 +89,7 @@ it('melengkapi foto kontak yang sudah memiliki nama tanpa menimpa nama', async (
 });
 
 it('memperbarui URL foto yang kedaluwarsa dan mengabaikan kegagalan API', async () => {
-    const kontak = { fasyankes_id: 10, jid: '123456789', nama: 'Ayu', foto_profil: 'https://scontent.fbcdn.net/lama.jpg', profil_diperbarui_pada: new Date(Date.now() - 2 * 86400000) };
+    const kontak = { jid: '123456789', nama: 'Ayu', foto_profil: 'https://scontent.fbcdn.net/lama.jpg', profil_diperbarui_pada: new Date(Date.now() - 2 * 86400000) };
     jest.mocked(db.ambilIgPercakapanUntukPerbarui).mockResolvedValue({ ...kontak, id: 1005 });
     global.fetch = jest.fn().mockResolvedValue(Response.json({ profile_pic: 'https://scontent.fbcdn.net/baru.jpg' }));
     expect(await perbaruiNamaKontakInstagram(1005)).toBe(true);

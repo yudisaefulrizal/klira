@@ -29,7 +29,7 @@ export function buatRuteAntreanJkn(layananAkses, layananIzin, layanan) {
     }));
     // `paksa: true` (tombol di layar) menarik sekarang juga; tanpa itu server membatasi jaraknya.
     rute.post('/antrean-jkn/tarik', masuk, wajibIzin('kunjungan', 'input'), bungkus(async (req, res) => {
-        res.json({ data: await layanan.tarik(pengguna(res).fasyankes_id, { paksa: req.body?.paksa === true, alamat: alamatDari(req) }) });
+        res.json({ data: await layanan.tarik({ paksa: req.body?.paksa === true, alamat: alamatDari(req) }) });
     }));
     return rute;
 }

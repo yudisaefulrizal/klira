@@ -13,7 +13,7 @@ const bayar = jest.fn().mockResolvedValue({ ok: true, data: {} });
 const resepKunjungan = jest.fn().mockResolvedValue({ ok: true, data: [] });
 
 const akses = {
-    saya: async (sesi) => sesi ? { id: 8, fasyankes_id: 4, izin: [{ fitur: sesi, aksi: 'input', cakupan: 'unit' }] } : null,
+    saya: async (sesi) => sesi ? { id: 8, izin: [{ fitur: sesi, aksi: 'input', cakupan: 'unit' }] } : null,
 };
 
 const izin = { catatPenolakan: jest.fn().mockResolvedValue(undefined), catatTindakan: jest.fn().mockResolvedValue(undefined) };
@@ -44,7 +44,7 @@ test('penyerahan memerlukan sesi dan izin farmasi; izin kasir saja tidak cukup',
     expect((await panggil('/kunjungan/12/serah-terima-obat', 'kasir')).status).toBe(403);
     expect(serahTerima).not.toHaveBeenCalled();
     expect((await panggil('/kunjungan/12/serah-terima-obat', 'farmasi')).status).toBe(200);
-    expect(serahTerima).toHaveBeenCalledWith(expect.objectContaining({ id: 8, fasyankes_id: 4 }), 12, { izinkan_stok_kurang: false }, expect.any(String));
+    expect(serahTerima).toHaveBeenCalledWith(expect.objectContaining({ id: 8 }), 12, { izinkan_stok_kurang: false }, expect.any(String));
     expect(bayar).not.toHaveBeenCalled();
 });
 

@@ -5,16 +5,16 @@ const hariIni = () => new Date(new Date(Date.now() + 7 * 3_600_000).toISOString(
  * Kesiapan pengaturan awal klinik (hanya hitungan, tanpa data pribadi): poli, praktisi, jadwal, tarif konsultasi, obat, pemeriksaan lab;
  * ditambah dua peringatan (pemeriksaan tanpa harga, SIP lewat masa berlaku).
  */
-export async function hitungKesiapan(fasyankesId) {
+export async function hitungKesiapan() {
     const [poli, praktisi, jadwal, tarif, obat, pemeriksaan, tanpaTarif, sipLewat] = await Promise.all([
-        db.hitungLokasiUntukHitungKesiapan(fasyankesId, 'poli', 'O'),
-        db.hitungProfilProfesiUntukHitungKesiapan(fasyankesId, true),
-        db.hitungJadwalPraktikUntukHitungKesiapan(fasyankesId),
-        db.hitungTarifLayananUntukHitungKesiapan(fasyankesId, 'konsultasi', true),
-        db.hitungMasterObatUntukHitungKesiapan(fasyankesId, true),
-        db.hitungMasterPemeriksaanUntukHitungKesiapan(fasyankesId, true),
-        db.hitungMasterPemeriksaanUntukHitungKesiapan2(fasyankesId, true, null),
-        db.hitungProfilProfesiUntukHitungKesiapan2(fasyankesId, true, hariIni()),
+        db.hitungLokasiUntukHitungKesiapan('poli', 'O'),
+        db.hitungProfilProfesiUntukHitungKesiapan(true),
+        db.hitungJadwalPraktikUntukHitungKesiapan(),
+        db.hitungTarifLayananUntukHitungKesiapan('konsultasi', true),
+        db.hitungMasterObatUntukHitungKesiapan(true),
+        db.hitungMasterPemeriksaanUntukHitungKesiapan(true),
+        db.hitungMasterPemeriksaanUntukHitungKesiapan2(true, null),
+        db.hitungProfilProfesiUntukHitungKesiapan2(true, hariIni()),
     ]);
     const wajib = (kunci, jumlah) => ({ kunci, jumlah, ok: jumlah > 0, peringatan: false });
     const peringatan = (kunci, jumlah) => ({ kunci, jumlah, ok: jumlah === 0, peringatan: true });

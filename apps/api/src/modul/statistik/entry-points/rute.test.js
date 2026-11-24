@@ -16,7 +16,7 @@ jest.unstable_mockModule('@klira/db', () => {
 jest.unstable_mockModule('../../../middleware/auth.js', () => ({ wajibMasuk: () => (req, res, next) => {
         if (!req.headers.authorization)
             return void res.status(401).end();
-        res.locals.pengguna = { fasyankes_id: 7, izin: req.headers.authorization === 'boleh' ? [{ fitur: 'kunjungan', aksi: 'lihat', cakupan: 'unit' }] : [] };
+        res.locals.pengguna = { izin: req.headers.authorization === 'boleh' ? [{ fitur: 'kunjungan', aksi: 'lihat', cakupan: 'unit' }] : [] };
         next();
     } }));
 const db = await import("@klira/db");
@@ -50,7 +50,7 @@ test('scope fasyankes dan poli diterapkan untuk histori maupun antrean; kosong t
     expect(json.data.total).toBe(0);
     expect(json.data.tahap).toHaveLength(4);
     for (const args of jest.mocked(db.daftarKunjunganUntukBuatRuteStatistik).mock.calls)
-        expect(args.slice(0, 3)).toEqual([7, 'AMB', 9]);
+        expect(args.slice(0, 2)).toEqual(['AMB', 9]);
     expect(db.riwayatStatistik).toHaveBeenCalled();
     expect(res.headers.get('cache-control')).toBe('no-store');
 });

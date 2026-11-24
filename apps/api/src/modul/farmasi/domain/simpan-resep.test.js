@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 
 const { buatLayananFarmasi } = await import('./layanan.js');
 
-const dokter = { id: 7, fasyankes_id: 1 };
+const dokter = { id: 7 };
 const masukan = { item: [{ master_obat_id: 3, aturan_pakai: ' 3 x 1 ', jumlah: 10 }], catatan: ' Dibuat puyer ' };
 
 function buat(sisa = {}) {

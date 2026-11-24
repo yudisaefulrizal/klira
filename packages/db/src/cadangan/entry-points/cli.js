@@ -19,10 +19,8 @@ export async function jalankanCadangan(args, tulis = console.log) {
         if (sisa.length)
             throw new Error(PEMAKAIAN);
         const ukuranByte = await buatCadanganKeBerkas(berkas);
-        const [fasyankesId = null] = await daftarIdFasyankes(1);
-        await tambahLogAuditUntukTambah(fasyankesId, null, 'ekspor', 'cadangan', null, 'Cadangan seluruh data dibuat lewat perintah operator', new Date(), 'cli');
-        if (fasyankesId !== null)
-            await tambahRiwayatBackup(fasyankesId, 'berhasil', `Berkas di server: ${berkas}`.slice(0, 500), null, ukuranByte);
+        await tambahLogAuditUntukTambah(null, 'ekspor', 'cadangan', null, 'Cadangan seluruh data dibuat lewat perintah operator', new Date(), 'cli');
+        await tambahRiwayatBackup('berhasil', `Berkas di server: ${berkas}`.slice(0, 500), null, ukuranByte);
         tulis(`Cadangan tersimpan: ${berkas} (${ukuranByte} byte). Berkas berisi data pasien; simpan terenkripsi dan di luar server ini.`);
         return;
     }

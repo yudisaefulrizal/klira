@@ -96,7 +96,7 @@ export const webhookInstagram = async (req, res) => {
                     return false;
                 if (await db.ambilIgEventUntukWebhookInstagram(mid, tx))
                     return false;
-                const kontak = await (async () => { (await db.simpanIgPercakapanUntukWebhookInstagram(row.fasyankes_id, pesan.jid, pesan.nama, tx)); return db.simpanIgPercakapanUntukWebhookInstagramHasil(row.fasyankes_id, pesan.jid, tx); })();
+                const kontak = await (async () => { (await db.simpanIgPercakapanUntukWebhookInstagram(pesan.jid, pesan.nama, tx)); return db.simpanIgPercakapanUntukWebhookInstagramHasil(pesan.jid, tx); })();
                 await kunciPercakapanInstagram(tx, kontak.id);
                 await db.tambahIgEventUntukWebhookInstagram(mid, tx);
                 // Echoes may arrive before or after the send response. Never insert an already acknowledged send.
@@ -104,7 +104,7 @@ export const webhookInstagram = async (req, res) => {
                     return false;
                 const mediaId = gambar ? randomUUID() : null;
                 if (gambar && mediaId)
-                    await db.tambahIgMediaUntukBuatRuteInstagram(mediaId, row.fasyankes_id, enkripsiRahasia(gambar.base64), gambar.mime, gambar.mime === 'image/png' ? 'instagram.png' : 'instagram.jpg', tx);
+                    await db.tambahIgMediaUntukBuatRuteInstagram(mediaId, enkripsiRahasia(gambar.base64), gambar.mime, gambar.mime === 'image/png' ? 'instagram.png' : 'instagram.jpg', tx);
                 const label = pesan.lampiran && !gambar ? '\n[Lampiran Instagram tidak tersedia di Klira; buka aplikasi Instagram]' : '';
                 await db.tambahIgPesanUntukWebhookInstagram(kontak.id, mid, pesan.arah, enkripsiRahasia(pesan.teks + label), gambar ? 'image' : 'text', mediaId, 'terkirim', pesan.tanggal, tx);
                 await db.ubahIgPercakapanUntukBuatRuteInstagram3(new Date(), kontak.id, tx);
@@ -112,7 +112,7 @@ export const webhookInstagram = async (req, res) => {
                 return kontak.id;
             });
             if (baru) {
-                kabarkanInstagram({ tipe: 'pesan', fasyankes_id: row.fasyankes_id, baru: pesan.arah === 'masuk' });
+                kabarkanInstagram({ tipe: 'pesan', baru: pesan.arah === 'masuk' });
                 void perbaruiNamaKontakInstagram(baru);
             }
         }

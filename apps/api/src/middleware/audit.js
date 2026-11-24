@@ -19,7 +19,6 @@ export class PenampungAuditMysql {
     async catat(entri) {
         try {
             await this.repo.tambah({
-                fasyankes_id: entri.fasyankes_id ?? null,
                 pengguna_id: entri.pengguna_id ?? null,
                 aksi: entri.aksi,
                 entitas: entri.entitas.slice(0, 100),
@@ -51,7 +50,6 @@ function entriDari(req, res, aksi, opsi, idLain) {
     const p = res.locals.pengguna;
     const pola = `${req.baseUrl}${req.route?.path ?? ''}`;
     return {
-        fasyankes_id: p?.fasyankes_id ?? null,
         pengguna_id: p?.id ?? null,
         aksi,
         entitas: opsi.entitas,

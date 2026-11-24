@@ -6,7 +6,7 @@ const { buatRutePasien } = await import("../../pasien/entry-points/rute.js");
 let server;
 
 const pengguna = (aksi) => ({
-    id: 1, nama: 'Uji', username: 'uji', fasyankes_id: 7, wajib_ganti_kredensial: false,
+    id: 1, nama: 'Uji', username: 'uji', wajib_ganti_kredensial: false,
     jenis_akun: [], fitur: ['pasien'], halaman_awal: '/pasien', izin: aksi ? [{ fitur: 'pasien', aksi, cakupan: 'layanan' }] : [],
 });
 

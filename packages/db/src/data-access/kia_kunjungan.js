@@ -3,10 +3,10 @@ import { baca, tulis, pool } from '../koneksi.js';
 const parseJson = (v, bawaan) => (typeof v === 'string' ? JSON.parse(v) : (v ?? bawaan));
 
 /** Baca data KIA untuk kunjungan tertentu; jika belum ada, ambil riwayat KIA terakhir pasien sebagai acuan awal. */
-export async function bacaKiaKunjungan(fasyankes_id, kunjungan_id, pasien_id, koneksi = pool) {
+export async function bacaKiaKunjungan(kunjungan_id, pasien_id, koneksi = pool) {
     const baris = await baca(
-        'SELECT `id`, `fasyankes_id`, `pasien_id`, `kunjungan_id`, `layanan`, `data`, `diperbarui_oleh`, `diperbarui_pada` FROM `kia_kunjungan` WHERE `fasyankes_id` = ? AND `kunjungan_id` = ? LIMIT 1',
-        [fasyankes_id, kunjungan_id],
+        'SELECT `id`, `pasien_id`, `kunjungan_id`, `layanan`, `data`, `diperbarui_oleh`, `diperbarui_pada` FROM `kia_kunjungan` WHERE `kunjungan_id` = ? LIMIT 1',
+        [kunjungan_id],
         koneksi,
     );
     if (baris[0]) {
@@ -15,8 +15,8 @@ export async function bacaKiaKunjungan(fasyankes_id, kunjungan_id, pasien_id, ko
     }
     if (!pasien_id) return null;
     const terakhir = await baca(
-        'SELECT `layanan`, `data` FROM `kia_kunjungan` WHERE `fasyankes_id` = ? AND `pasien_id` = ? ORDER BY `diperbarui_pada` DESC, `id` DESC LIMIT 1',
-        [fasyankes_id, pasien_id],
+        'SELECT `layanan`, `data` FROM `kia_kunjungan` WHERE `pasien_id` = ? ORDER BY `diperbarui_pada` DESC, `id` DESC LIMIT 1',
+        [pasien_id],
         koneksi,
     );
     if (!terakhir[0]) return null;
@@ -36,11 +36,11 @@ export async function bacaKiaKunjungan(fasyankes_id, kunjungan_id, pasien_id, ko
 }
 
 /** Simpan atau perbarui data KIA terstruktur pada suatu kunjungan. */
-export async function simpanKiaKunjungan(fasyankes_id, pasien_id, kunjungan_id, layanan, data, diperbarui_oleh, koneksi = pool) {
+export async function simpanKiaKunjungan(pasien_id, kunjungan_id, layanan, data, diperbarui_oleh, koneksi = pool) {
     await tulis(
-        'INSERT INTO `kia_kunjungan` (`fasyankes_id`, `pasien_id`, `kunjungan_id`, `layanan`, `data`, `diperbarui_oleh`, `diperbarui_pada`) VALUES (?, ?, ?, ?, ?, ?, NOW(3)) ON DUPLICATE KEY UPDATE `layanan` = VALUES(`layanan`), `data` = VALUES(`data`), `diperbarui_oleh` = VALUES(`diperbarui_oleh`), `diperbarui_pada` = NOW(3)',
-        [fasyankes_id, pasien_id, kunjungan_id, layanan, JSON.stringify(data ?? {}), diperbarui_oleh ?? null],
+        'INSERT INTO `kia_kunjungan` (`pasien_id`, `kunjungan_id`, `layanan`, `data`, `diperbarui_oleh`, `diperbarui_pada`) VALUES (?, ?, ?, ?, ?, NOW(3)) ON DUPLICATE KEY UPDATE `layanan` = VALUES(`layanan`), `data` = VALUES(`data`), `diperbarui_oleh` = VALUES(`diperbarui_oleh`), `diperbarui_pada` = NOW(3)',
+        [pasien_id, kunjungan_id, layanan, JSON.stringify(data ?? {}), diperbarui_oleh ?? null],
         koneksi,
     );
-    return bacaKiaKunjungan(fasyankes_id, kunjungan_id, pasien_id, koneksi);
+    return bacaKiaKunjungan(kunjungan_id, pasien_id, koneksi);
 }

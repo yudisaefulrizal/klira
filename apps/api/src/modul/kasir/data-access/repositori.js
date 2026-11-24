@@ -6,10 +6,10 @@ export const statusTagihanDari = (harga) => (harga.every((h) => h !== null) ? 'l
  * Tambah item ke tagihan kunjungan di dalam transaksi pemanggil (order lab, nanti tindakan dan obat); tagihan dibuat bila belum ada
  * dan status tagihan dihitung ulang. Mengembalikan id tagihan.
  */
-export async function tambahItemTagihanDalam(tx, fasyankesId, kunjunganId, oleh, item) {
-    const tagihan = await (async () => { (await db.simpanTagihanUntukTambahItemTagihanDalam(fasyankesId, kunjunganId, oleh, tx)); return db.simpanTagihanUntukTambahItemTagihanDalamHasil(kunjunganId, tx); })();
+export async function tambahItemTagihanDalam(tx, kunjunganId, oleh, item) {
+    const tagihan = await (async () => { (await db.simpanTagihanUntukTambahItemTagihanDalam(kunjunganId, oleh, tx)); return db.simpanTagihanUntukTambahItemTagihanDalamHasil(kunjunganId, tx); })();
     for (const i of item) {
-        await db.tambahItemTagihanUntukTambahItemTagihanDalam(fasyankesId, tagihan.id, i.jenis, i.tarifId, i.kode, i.nama, i.jumlah ?? 1, i.harga, i.orderPenunjangId, i.itemResepId ?? null, oleh, tx);
+        await db.tambahItemTagihanUntukTambahItemTagihanDalam(tagihan.id, i.jenis, i.tarifId, i.kode, i.nama, i.jumlah ?? 1, i.harga, i.orderPenunjangId, i.itemResepId ?? null, oleh, tx);
     }
     const semua = await db.daftarItemTagihanUntukTambahItemTagihanDalam(tagihan.id, tx);
     await db.ubahTagihanUntukTambahItemTagihanDalam(statusTagihanDari(semua.map((x) => x.harga)), tagihan.id, tx);
@@ -46,15 +46,15 @@ const samaRencana = (a, b) => a.length === b.length && a.every((x, i) => kunciIt
  * Sinkronkan item tagihan tindakan dari pencatatan dengan daftar tindakan terbaru (dalam transaksi pemanggil, kunci baris tagihan).
  * Item manual kasir dan item lain tidak tersentuh. `terkunci` bila perlu berubah tetapi tagihan sudah ada pembayaran atau kunjungan ditutup.
  */
-export async function sinkronItemTindakanDalam(tx, fasyankesId, kunjunganId, oleh, item) {
-    const kunci = await db.kunciTagihanKunjungan(kunjunganId, fasyankesId, tx);
-    const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, fasyankesId, tx);
+export async function sinkronItemTindakanDalam(tx, kunjunganId, oleh, item) {
+    const kunci = await db.kunciTagihanKunjungan(kunjunganId, tx);
+    const k = await db.cariKunjunganUntukSinkronItemTindakanDalam(kunjunganId, tx);
     if (!k)
         return 'tidak_perlu';
     const tagihanId = kunci[0]?.id ?? null;
     const lama = tagihanId === null ? [] : await db.daftarItemTagihanUntukSinkronItemTindakanDalam(tagihanId, true, tx);
     const ids = [...new Set(item.flatMap((t) => (t.tarif_layanan_id ? [t.tarif_layanan_id] : [])))];
-    const tarif = ids.length ? await db.daftarTarifLayananUntukSinkronItemTindakanDalam(ids, fasyankesId, 'tindakan', tx) : [];
+    const tarif = ids.length ? await db.daftarTarifLayananUntukSinkronItemTindakanDalam(ids, 'tindakan', tx) : [];
     const rencana = rencanaItemTindakan(item, new Map(tarif.map((t) => [t.id, t])), k.cara_pembayaran, lama);
     if (samaRencana(rencana, lama))
         return 'tidak_perlu';
@@ -62,11 +62,11 @@ export async function sinkronItemTindakanDalam(tx, fasyankesId, kunjunganId, ole
         return 'terkunci';
     if (tagihanId !== null && (await db.hitungPembayaranUntukSinkronItemTindakanDalam(tagihanId, tx)))
         return 'terkunci';
-    const id = tagihanId ?? (await (async () => { const _hasil = await db.tambahTagihanUntukSinkronItemTindakanDalam(fasyankesId, kunjunganId, oleh, tx); return db.tambahTagihanUntukSinkronItemTindakanDalamHasil(_hasil.id, tx); })()).id;
+    const id = tagihanId ?? (await (async () => { const _hasil = await db.tambahTagihanUntukSinkronItemTindakanDalam(kunjunganId, oleh, tx); return db.tambahTagihanUntukSinkronItemTindakanDalamHasil(_hasil.id, tx); })()).id;
     await db.hapusItemTagihanUntukSinkronItemTindakanDalam(id, true, tx);
     if (rencana.length) {
         await db.tambahBanyakItemTagihanUntukSinkronItemTindakanDalam(rencana.map((r) => ({
-            fasyankes_id: fasyankesId, tagihan_id: id, jenis: 'tindakan', tarif_layanan_id: r.tarif_layanan_id, kode: r.kode.slice(0, 50), nama: r.nama.slice(0, 200), jumlah: r.jumlah,
+            tagihan_id: id, jenis: 'tindakan', tarif_layanan_id: r.tarif_layanan_id, kode: r.kode.slice(0, 50), nama: r.nama.slice(0, 200), jumlah: r.jumlah,
             harga: r.harga, harga_acuan: r.harga_acuan, alasan_ubah_harga: r.alasan_ubah_harga, tindakan_sumber: true, dibuat_oleh: oleh,
         })), tx);
     }
@@ -78,16 +78,16 @@ export async function sinkronItemTindakanDalam(tx, fasyankesId, kunjunganId, ole
  * Ganti item tagihan obat milik satu resep (dalam transaksi pemanggil): item tagihan yang tertaut item resep lama dihapus lalu dibuat ulang
  * dari item baru (jenis obat, harga master obat, tertaut `item_resep_id`). Status tagihan dihitung ulang. Item lain tidak tersentuh.
  */
-export async function gantiItemObatResepDalam(tx, fasyankesId, kunjunganId, oleh, itemResepLama, baru) {
+export async function gantiItemObatResepDalam(tx, kunjunganId, oleh, itemResepLama, baru) {
     if (itemResepLama.length)
-        await db.hapusItemTagihanUntukGantiItemObatResepDalam(fasyankesId, [...itemResepLama], tx);
+        await db.hapusItemTagihanUntukGantiItemObatResepDalam([...itemResepLama], tx);
     if (baru.length) {
-        await tambahItemTagihanDalam(tx, fasyankesId, kunjunganId, oleh, baru.map((i) => ({
+        await tambahItemTagihanDalam(tx, kunjunganId, oleh, baru.map((i) => ({
             jenis: 'obat', tarifId: null, kode: `OBAT-${i.master_obat_id}`, nama: i.nama.slice(0, 200), harga: i.harga, orderPenunjangId: null, jumlah: i.jumlah, itemResepId: i.itemResepId,
         })));
         return;
     }
-    const t = await db.cariTagihanUntukGantiItemObatResepDalam(kunjunganId, fasyankesId, tx);
+    const t = await db.cariTagihanUntukGantiItemObatResepDalam(kunjunganId, tx);
     if (!t)
         return;
     const semua = await db.daftarItemTagihanUntukTambahItemTagihanDalam(t.id, tx);
@@ -95,11 +95,11 @@ export async function gantiItemObatResepDalam(tx, fasyankesId, kunjunganId, oleh
 }
 export const totalTagihan = (item) => item.reduce((s, i) => s + (i.harga ?? 0) * i.jumlah, 0);
 export class RepositoriTagihanMysql {
-    async kunjunganAda(fasyankesId, kunjunganId) {
-        return (await db.hitungKunjunganUntukKunjunganAda(kunjunganId, fasyankesId)) > 0;
+    async kunjunganAda(kunjunganId) {
+        return (await db.hitungKunjunganUntukKunjunganAda(kunjunganId)) > 0;
     }
-    async ambil(fasyankesId, kunjunganId) {
-        const t = await db.cariTagihanUntukAmbil(kunjunganId, fasyankesId);
+    async ambil(kunjunganId) {
+        const t = await db.cariTagihanUntukAmbil(kunjunganId);
         if (!t)
             return null;
         return {

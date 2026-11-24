@@ -114,9 +114,9 @@ d('keamanan, peringatan, dan jenis akun terhadap database pengujian', () => {
     it('riwayat backup hanya baca, terurut terbaru, dan berpaginasi', async () => {
         const dasar = Date.now();
         await uji.tambahBanyakRiwayatBackupUntukKeamananKeamananIntegrasiTest([
-            { fasyankes_id: fas, waktu: new Date(dasar - 3000), status: 'berhasil', ukuran_byte: BigInt(5_000_000_000), lokasi: '/backup/a.sql.gz' },
-            { fasyankes_id: fas, waktu: new Date(dasar - 2000), status: 'gagal', ukuran_byte: null, lokasi: null },
-            { fasyankes_id: fas, waktu: new Date(dasar - 1000), status: 'berhasil', ukuran_byte: BigInt(1024), lokasi: '/backup/c.sql.gz' },
+            { waktu: new Date(dasar - 3000), status: 'berhasil', ukuran_byte: BigInt(5_000_000_000), lokasi: '/backup/a.sql.gz' },
+            { waktu: new Date(dasar - 2000), status: 'gagal', ukuran_byte: null, lokasi: null },
+            { waktu: new Date(dasar - 1000), status: 'berhasil', ukuran_byte: BigInt(1024), lokasi: '/backup/c.sql.gz' },
         ]);
         const h1 = await panggil('GET', '/riwayat-backup?halaman=1&ukuran=2', 'pimpinan');
         expect(h1.status).toBe(200);

@@ -25,29 +25,29 @@ export function riwayatPerubahan(lama, baru) {
 }
 export function buatLayananFasyankes({ repo, audit }) {
     return {
-        async ambil(p) {
-            return repo.ambil(p.fasyankes_id);
+        async ambil() {
+            return repo.ambil();
         },
         async simpan(p, masukan, alamat) {
-            const lama = await repo.ambil(p.fasyankes_id);
+            const lama = await repo.ambil();
             if (!lama)
                 return { ok: false, kode: 'tidak_ditemukan', pesan: PROFIL_KLINIK.gagalMuat };
             const baru = normalkanProfil(lama.id, masukan);
-            if (baru.kode_registrasi && baru.kode_registrasi !== lama.kode_registrasi && (await repo.kodeDipakaiLain(p.fasyankes_id, baru.kode_registrasi))) {
+            if (baru.kode_registrasi && baru.kode_registrasi !== lama.kode_registrasi && (await repo.kodeDipakaiLain(lama.id, baru.kode_registrasi))) {
                 return { ok: false, kode: 'konflik', pesan: PROFIL_KLINIK.kodeKembar };
             }
             const riwayat = riwayatPerubahan(lama, baru);
-            const hasil = riwayat.length ? await repo.simpan(p.fasyankes_id, baru, p.id, riwayat) : lama;
+            const hasil = riwayat.length ? await repo.simpan(lama.id, baru, p.id, riwayat) : lama;
             if (riwayat.length) {
                 await audit.catat({
-                    fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'fasyankes', entitas_id: lama.id,
+                    pengguna_id: p.id, aksi: 'perbaikan', entitas: 'fasyankes', entitas_id: lama.id,
                     keterangan: `Profil klinik diubah (${riwayat.map((r) => r.jenis).join(', ')})`, alamat,
                 });
             }
             return { ok: true, data: hasil };
         },
-        async riwayat(p, halaman, ukuran) {
-            const { total, baris } = await repo.riwayat(p.fasyankes_id, (halaman - 1) * ukuran, ukuran);
+        async riwayat(_p, halaman, ukuran) {
+            const { total, baris } = await repo.riwayat((halaman - 1) * ukuran, ukuran);
             return { data: baris.map((b) => ({ ...b, dibuat_pada: b.dibuat_pada.toISOString() })), halaman, ukuran, total };
         },
     };

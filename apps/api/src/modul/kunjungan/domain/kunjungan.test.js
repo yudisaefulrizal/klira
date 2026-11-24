@@ -6,7 +6,7 @@ const { AntreanDitutupError, bisaDiulang } = await import("../data-access/reposi
 
 describe('layanan kunjungan dengan repositori tiruan', () => {
     const catatan = [];
-    const saya = { id: 3, fasyankes_id: 1 };
+    const saya = { id: 3 };
     const kunjungan = { id: 5, antrean: { id: 8, nomor: 1, kode: 'A-001', status: 'menunggu' } };
     const dasarRepo = {
         pasienAda: async (f, id) => f === 1 && id === 10,
@@ -57,7 +57,7 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
     });
     it('menolak pasien, poli, atau DPJP di luar fasyankes dan kunjungan berjalan tanpa menyimpan', async () => {
         const l = buat();
-        expect(await l.daftarkan({ id: 3, fasyankes_id: 2 }, masukan)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.daftarkan({ id: 3 }, masukan)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         expect(await l.daftarkan(saya, { ...masukan, jenis_poli: 'Bedah' })).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(await l.daftarkan(saya, { ...masukan, dpjp_id: 31 })).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(await buat({ kunjunganBerjalan: async () => true }).daftarkan(saya, masukan)).toMatchObject({ ok: false, kode: 'konflik' });
@@ -80,7 +80,7 @@ describe('layanan kunjungan dengan repositori tiruan', () => {
         expect(await l.aksiAntrean(saya, 8, 'panggil')).toMatchObject({ ok: true });
         expect(dasarRepo.ubahAntrean).toHaveBeenCalledWith(1, 8, 'panggil', ['menunggu', 'dipanggil', 'dilewati'], 'dipanggil', expect.any(Date), undefined);
         expect(await l.aksiAntrean(saya, 8, 'mulai')).toMatchObject({ ok: false, kode: 'konflik' });
-        expect(await l.aksiAntrean({ id: 3, fasyankes_id: 2 }, 8, 'panggil')).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.aksiAntrean({ id: 3 }, 8, 'panggil')).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });
     it('lewati hanya dari dipanggil; pasien yang dilewati dapat dipanggil lagi', async () => {
         expect(await buat().aksiAntrean(saya, 8, 'lewati')).toMatchObject({ ok: false, kode: 'konflik' });

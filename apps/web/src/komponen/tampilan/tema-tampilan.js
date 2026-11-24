@@ -22,7 +22,7 @@ function penanda(nada) {
 }
 export function pasangTemaTampilan(wadah, pengguna, keluar) {
   let tema = temaTersimpan(), server = 'memeriksa', layar = { status: 'memeriksa', jumlah: null };
-  const fasilitas = pengguna && !pengguna.wajib_ganti_kredensial ? pengguna.fasyankes_id : undefined;
+  const fasilitas = pengguna && !pengguna.wajib_ganti_kredensial ? 1 : undefined;
   wadah.innerHTML = `<div style="position:sticky;top:0;z-index:40;display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:8px 16px;background:var(--warna-permukaan);border-bottom:1px solid var(--warna-garis);box-shadow:0 2px 10px rgba(0,0,0,0.08)"><button type="button" data-tema-toggle style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;border:1px solid var(--warna-garis);background:transparent;cursor:pointer;flex-shrink:0"></button><div class="status-koneksi" role="group" aria-label="Status koneksi"><span data-server class="status-koneksi-ikon" role="img" tabindex="0"></span><${fasilitas ? 'a' : 'span'} data-layar class="status-koneksi-ikon${fasilitas ? ' status-koneksi-tautan' : ''}"></${fasilitas ? 'a' : 'span'}></div></div>`;
   const slotHeader = document.createElement('div'); slotHeader.dataset.slotHeader = '';
   Object.assign(slotHeader.style, { flex: '1 1 auto', minWidth: '0', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', overflowX: 'auto' });

@@ -21,7 +21,6 @@ beforeEach(async () => {
     process.env.KUNCI_ENKRIPSI = 'kunci-unit-test-bukan-kredensial';
     const akun = (id, fas) => ({
         id,
-        fasyankes_id: fas,
         wajib_ganti_kredensial: false,
         izin: [{ fitur: 'instagram', aksi: 'lihat', cakupan: 'unit' }],
     });
@@ -72,16 +71,11 @@ it('menolak tanpa sesi, tanpa izin, dan origin asing', async () => {
     expect(await ditolak('/api/instagram/ws', 'http://asing.test', 'satu')).toBe(403);
 });
 
-it('hanya mengirim metadata perubahan ke fasyankes yang sesuai', async () => {
+it('mengirim metadata perubahan ke klien yang terhubung', async () => {
     const satu = await browser();
-    const dua = await browser('dua');
-    const lain = [];
-    dua.on('message', (d) => lain.push(d.toString()));
     const event = new Promise((resolve) => satu.once('message', (d) => resolve(d.toString())));
-    kabarkanInstagram({ tipe: 'pesan', fasyankes_id: 10, baru: true });
+    kabarkanInstagram({ tipe: 'pesan', baru: true });
     expect(JSON.parse(await event)).toEqual({ tipe: 'pesan', baru: true });
-    await new Promise((resolve) => setTimeout(resolve, 30));
-    expect(lain).toEqual([]);
 });
 
 it('menutup koneksi saat hak akun dicabut', async () => {

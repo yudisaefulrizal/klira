@@ -9,12 +9,12 @@ const tgl = (d) => d.toISOString().slice(0, 10);
  * ROPA, DPIA, insiden (notifikasi 3x24 jam), pemusnahan berlangkah (perintah ke prosesor lebih dulu, berita acara), dan prosesor. Semua tercatat di audit; tidak ada hapus.
  */
 export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
-    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
+    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
     const bentrok = (e) => (e instanceof GalatPdp ? gagal('konflik', e.kode === 'sudah_ditarik' ? G.sudahDitarik : G.bentrok) : null);
     // ---- Permintaan hak ----
     async function dtoHak(p, baris) {
         const now = sekarang();
-        const [pasien, nama] = await Promise.all([repo.pasienBanyak(p.fasyankes_id, baris.map((b) => b.pasien_id)), repo.namaPengguna(baris.flatMap((b) => (b.keputusan_oleh ? [b.keputusan_oleh] : [])))]);
+        const [pasien, nama] = await Promise.all([repo.pasienBanyak(baris.map((b) => b.pasien_id)), repo.namaPengguna(baris.flatMap((b) => (b.keputusan_oleh ? [b.keputusan_oleh] : [])))]);
         return baris.map((b) => ({
             id: b.id, pasien_id: b.pasien_id, pasien_nama: pasien.get(b.pasien_id)?.nama ?? '-', pasien_nomor_rm: pasien.get(b.pasien_id)?.nomor_rm ?? '-', jenis: b.jenis, saluran: b.saluran, pemohon_nama: b.pemohon_nama, pemohon_hubungan: b.pemohon_hubungan,
             verifikasi: b.verifikasi, rincian: b.rincian, diterima_pada: b.diterima_pada.toISOString(), batas_waktu: b.batas_waktu.toISOString(), status: b.status, terlambat: hakTerlambat(b, now), sisa_jam: b.status === 'selesai' ? null : sisaJamPdp(b.batas_waktu, now),
@@ -23,13 +23,13 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         }));
     }
     async function ambilHak(p, id) {
-        const b = await repo.hak(p.fasyankes_id, id);
+        const b = await repo.hak(id);
         return b ? { ok: true, data: (await dtoHak(p, [b]))[0] } : gagal('tidak_ditemukan', G.hakTidakAda);
     }
     // ---- Insiden ----
     async function dtoInsiden(p, hasil) {
         const now = sekarang();
-        const pasien = await repo.pasienBanyak(p.fasyankes_id, hasil.pasien.map((x) => x.pasien_id));
+        const pasien = await repo.pasienBanyak(hasil.pasien.map((x) => x.pasien_id));
         return hasil.baris.map((b) => {
             const ids = hasil.pasien.filter((x) => x.insiden_id === b.id).map((x) => x.pasien_id);
             const selesai = !!b.notifikasi_pasien_pada && !!b.notifikasi_lembaga_pada;
@@ -41,16 +41,16 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         });
     }
     async function ambilInsiden(p, id) {
-        const b = await repo.insiden(p.fasyankes_id, id);
+        const b = await repo.insiden(id);
         if (!b)
             return gagal('tidak_ditemukan', G.insidenTidakAda);
-        const pasien = (await repo.pasienInsiden(p.fasyankes_id, id)).map((pasien_id) => ({ insiden_id: id, pasien_id, id: 0, fasyankes_id: p.fasyankes_id }));
+        const pasien = (await repo.pasienInsiden(id)).map((pasien_id) => ({ insiden_id: id, pasien_id, id: 0 }));
         return { ok: true, data: (await dtoInsiden(p, { total: 1, baris: [b], pasien }))[0] };
     }
     // ---- Pemusnahan ----
     async function dtoMusnah(p, baris) {
         const awalHari = awalHariWib(sekarang());
-        const [pasien, prosesor] = await Promise.all([repo.pasienBanyak(p.fasyankes_id, baris.flatMap((b) => (b.pasien_id ? [b.pasien_id] : []))), repo.namaProsesor(p.fasyankes_id, baris.flatMap((b) => (b.prosesor_id ? [b.prosesor_id] : [])))]);
+        const [pasien, prosesor] = await Promise.all([repo.pasienBanyak(baris.flatMap((b) => (b.pasien_id ? [b.pasien_id] : []))), repo.namaProsesor(baris.flatMap((b) => (b.prosesor_id ? [b.prosesor_id] : [])))]);
         return baris.map((b) => ({
             id: b.id, cakupan: b.cakupan, dasar: b.dasar, permintaan_hak_id: b.permintaan_hak_id, pasien_id: b.pasien_id, pasien_nama: b.pasien_id ? pasien.get(b.pasien_id)?.nama ?? null : null, jadwal: tgl(b.jadwal), status: b.status,
             tahap_berikut: tahapMusnahBerikut(b.status), prosesor_id: b.prosesor_id, prosesor_nama: b.prosesor_id ? prosesor.get(b.prosesor_id) ?? null : null, nomor_perintah: b.nomor_perintah, perintah_pada: iso(b.perintah_pada), pelaksana: b.pelaksana,
@@ -58,7 +58,7 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         }));
     }
     async function ambilMusnah(p, id) {
-        const b = await repo.musnah(p.fasyankes_id, id);
+        const b = await repo.musnah(id);
         return b ? { ok: true, data: (await dtoMusnah(p, [b]))[0] } : gagal('tidak_ditemukan', G.musnahTidakAda);
     }
     const dtoRopa = (b) => ({
@@ -74,21 +74,21 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
     };
     const halaman = (data, h, u, total) => ({ data, halaman: h, ukuran: u, total });
     return {
-        ringkasan: (p) => repo.ringkasan(p.fasyankes_id, sekarang()),
+        ringkasan: (p) => repo.ringkasan(sekarang()),
         // Permintaan hak
         async catatHak(p, m, alamat) {
-            if (!(await repo.pasien(p.fasyankes_id, m.pasien_id)))
+            if (!(await repo.pasien(m.pasien_id)))
                 return gagal('tidak_ditemukan', G.pasienTidakAda);
-            const id = await repo.buatHak(p.fasyankes_id, m, p.id, sekarang());
+            const id = await repo.buatHak(m, p.id, sekarang());
             await catat(p, 'input', 'permintaan_hak', id, `Permintaan hak ${m.jenis} pasien ${m.pasien_id}`, alamat);
             return ambilHak(p, id);
         },
         async daftarHak(p, f) {
-            const h = await repo.daftarHak(p.fasyankes_id, f, sekarang());
+            const h = await repo.daftarHak(f, sekarang());
             return { data: await dtoHak(p, h.baris), halaman: f.halaman, ukuran: f.ukuran, total: h.total, aktif: h.aktif, terlambat: h.terlambat };
         },
         async prosesHak(p, id, m, alamat) {
-            const b = await repo.hak(p.fasyankes_id, id);
+            const b = await repo.hak(id);
             if (!b)
                 return gagal('tidak_ditemukan', G.hakTidakAda);
             if (tahapHakBerikut(b.status) !== m.tahap)
@@ -97,11 +97,11 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
             const dari = m.tahap === 'notifikasi' ? ['ditolak', 'dilaksanakan'] : [b.status];
             try {
                 if (m.tahap === 'keputusan')
-                    await repo.majuHak(p.fasyankes_id, id, dari, m.keputusan === 'setujui' ? 'disetujui' : 'ditolak', { keputusan_oleh: p.id, waktu_keputusan: now, alasan_keputusan: m.alasan });
+                    await repo.majuHak(id, dari, m.keputusan === 'setujui' ? 'disetujui' : 'ditolak', { keputusan_oleh: p.id, waktu_keputusan: now, alasan_keputusan: m.alasan });
                 else if (m.tahap === 'pelaksanaan')
-                    await repo.majuHak(p.fasyankes_id, id, dari, 'dilaksanakan', { pelaksanaan: m.pelaksanaan, pelaksana_id: p.id, waktu_pelaksanaan: now });
+                    await repo.majuHak(id, dari, 'dilaksanakan', { pelaksanaan: m.pelaksanaan, pelaksana_id: p.id, waktu_pelaksanaan: now });
                 else
-                    await repo.majuHak(p.fasyankes_id, id, dari, 'selesai', { notifikasi_pada: now, notifikasi_oleh: p.id, catatan_notifikasi: m.catatan });
+                    await repo.majuHak(id, dari, 'selesai', { notifikasi_pada: now, notifikasi_oleh: p.id, catatan_notifikasi: m.catatan });
             }
             catch (e) {
                 const g = bentrok(e);
@@ -114,16 +114,16 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         },
         // Teks pemberitahuan dan persetujuan
         async daftarPemberitahuan(p) {
-            return (await repo.daftarTeksPdp(p.fasyankes_id)).map((t) => ({ id: t.id, versi: t.versi, judul: t.judul, tujuan: t.tujuan, isi: t.isi, aktif: t.aktif, dibuat_pada: t.dibuat_pada.toISOString() }));
+            return (await repo.daftarTeksPdp()).map((t) => ({ id: t.id, versi: t.versi, judul: t.judul, tujuan: t.tujuan, isi: t.isi, aktif: t.aktif, dibuat_pada: t.dibuat_pada.toISOString() }));
         },
         async buatPemberitahuan(p, m, alamat) {
-            const id = await repo.buatTeksPdp(p.fasyankes_id, m, p.id);
+            const id = await repo.buatTeksPdp(m, p.id);
             await catat(p, 'input', 'teks_pemberitahuan', id, 'Versi baru teks pemberitahuan PDP', alamat);
             return { ok: true, data: { id } };
         },
         async daftarPersetujuan(p, f) {
-            const h = await repo.daftarPersetujuan(p.fasyankes_id, f);
-            const pasien = await repo.pasienBanyak(p.fasyankes_id, h.baris.map((b) => b.pasien_id));
+            const h = await repo.daftarPersetujuan(f);
+            const pasien = await repo.pasienBanyak(h.baris.map((b) => b.pasien_id));
             return {
                 data: h.baris.map((b) => {
                     const t = h.tarik.find((x) => x.persetujuan_id === b.id);
@@ -136,7 +136,7 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
             };
         },
         async tarikPersetujuan(p, persetujuanId, alasan, alamat) {
-            const s = await repo.persetujuan(p.fasyankes_id, persetujuanId);
+            const s = await repo.persetujuan(persetujuanId);
             if (!s)
                 return gagal('tidak_ditemukan', G.persetujuanTidakAda);
             if (s.jenis !== 'general' && s.jenis !== 'PDP')
@@ -145,7 +145,7 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
                 return gagal('konflik', G.sudahDitarik);
             const now = sekarang();
             try {
-                await repo.tarik(p.fasyankes_id, persetujuanId, alasan, p.id, now);
+                await repo.tarik(persetujuanId, alasan, p.id, now);
             }
             catch (e) {
                 const g = bentrok(e);
@@ -158,12 +158,12 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         },
         // ROPA
         async daftarRopa(p, h, u) {
-            const r = await repo.daftarRopa(p.fasyankes_id, h, u);
+            const r = await repo.daftarRopa(h, u);
             return halaman(r.baris.map(dtoRopa), h, u, r.total);
         },
         /** ROPA lengkap sebagai CSV (13 butir, PP 33/2026 P74); sel berawalan rumus dinetralkan. */
         async ropaCsv(p, alamat) {
-            const baris = await repo.semuaRopa(p.fasyankes_id);
+            const baris = await repo.semuaRopa();
             await catat(p, 'lihat', 'ropa', null, 'Ekspor ROPA', alamat);
             const R = PDP.ropa;
             return laporanKeCsv({
@@ -172,19 +172,19 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
             });
         },
         async buatRopa(p, m, alamat) {
-            const id = await repo.buatRopa(p.fasyankes_id, m, p.id);
+            const id = await repo.buatRopa(m, p.id);
             await catat(p, 'input', 'ropa', id, `ROPA: ${m.nama_kegiatan}`, alamat);
             return { ok: true, data: { id } };
         },
         async ubahRopa(p, id, m, alamat) {
-            if (!(await repo.ubahRopa(p.fasyankes_id, id, m)))
+            if (!(await repo.ubahRopa(id, m)))
                 return gagal('tidak_ditemukan', G.ropaTidakAda);
             await catat(p, 'perbaikan', 'ropa', id, `Ubah ROPA: ${m.nama_kegiatan}`, alamat);
             return { ok: true, data: { id } };
         },
         // DPIA
         async daftarDpia(p, h, u) {
-            const r = await repo.daftarDpia(p.fasyankes_id, h, u);
+            const r = await repo.daftarDpia(h, u);
             const hariIni = awalHariWib(sekarang());
             return halaman(r.baris.map((b) => ({
                 id: b.id, pemrosesan: b.pemrosesan, ropa_id: b.ropa_id, ropa_nama: b.ropa_id ? r.ropa.get(b.ropa_id) ?? null : null, risiko: b.risiko, mitigasi: b.mitigasi, saran_ppdp: b.saran_ppdp, tinjau_ulang_pada: tgl(b.tinjau_ulang_pada),
@@ -192,56 +192,56 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
             })), h, u, r.total);
         },
         async simpanDpia(p, id, m, alamat) {
-            if (m.ropa_id && !(await repo.ropaAda(p.fasyankes_id, m.ropa_id)))
+            if (m.ropa_id && !(await repo.ropaAda(m.ropa_id)))
                 return gagal('tidak_valid', G.ropaTidakAda, 'ropa_id');
             if (id === null) {
-                const baru = await repo.buatDpia(p.fasyankes_id, m, p.id, sekarang());
+                const baru = await repo.buatDpia(m, p.id, sekarang());
                 await catat(p, 'input', 'dpia', baru, `DPIA: ${m.pemrosesan}`, alamat);
                 return { ok: true, data: { id: baru } };
             }
-            if (!(await repo.ubahDpia(p.fasyankes_id, id, m, sekarang())))
+            if (!(await repo.ubahDpia(id, m, sekarang())))
                 return gagal('tidak_ditemukan', G.dpiaTidakAda);
             await catat(p, 'perbaikan', 'dpia', id, `Ubah DPIA: ${m.pemrosesan}`, alamat);
             return { ok: true, data: { id } };
         },
         // Insiden
         async daftarInsiden(p, h, u) {
-            const r = await repo.daftarInsiden(p.fasyankes_id, h, u);
+            const r = await repo.daftarInsiden(h, u);
             return halaman(await dtoInsiden(p, r), h, u, r.total);
         },
         async simpanInsiden(p, id, m, alamat) {
-            const ada = await repo.pasienBanyak(p.fasyankes_id, m.pasien_ids);
+            const ada = await repo.pasienBanyak(m.pasien_ids);
             if (ada.size !== new Set(m.pasien_ids).size)
                 return gagal('tidak_valid', G.pasienTidakAda, 'pasien_ids');
             if (id === null) {
-                const baru = await repo.buatInsiden(p.fasyankes_id, m, p.id, waktuDariIsian);
+                const baru = await repo.buatInsiden(m, p.id, waktuDariIsian);
                 await catat(p, 'input', 'insiden', baru, `Insiden ${m.siber ? 'siber' : 'data'}: ${m.pasien_ids.length} pasien terdampak`, alamat);
                 return ambilInsiden(p, baru);
             }
-            if (!(await repo.ubahInsiden(p.fasyankes_id, id, m, waktuDariIsian, sekarang())))
+            if (!(await repo.ubahInsiden(id, m, waktuDariIsian, sekarang())))
                 return gagal('tidak_ditemukan', G.insidenTidakAda);
             await catat(p, 'perbaikan', 'insiden', id, `Ubah insiden ${id}`, alamat);
             return ambilInsiden(p, id);
         },
         // Retensi dan pemusnahan
         async kebijakan(p) {
-            return (await repo.kebijakan(p.fasyankes_id)).map((k) => ({ id: k.id, jenis_data: k.jenis_data, periode_tahun: k.periode_tahun, dasar_hukum: k.dasar_hukum, metode_musnah: k.metode_musnah, penanggung_jawab: k.penanggung_jawab }));
+            return (await repo.kebijakan()).map((k) => ({ id: k.id, jenis_data: k.jenis_data, periode_tahun: k.periode_tahun, dasar_hukum: k.dasar_hukum, metode_musnah: k.metode_musnah, penanggung_jawab: k.penanggung_jawab }));
         },
         async daftarMusnah(p, h, u) {
-            const r = await repo.daftarMusnah(p.fasyankes_id, h, u);
+            const r = await repo.daftarMusnah(h, u);
             return halaman(await dtoMusnah(p, r.baris), h, u, r.total);
         },
         async rencanaMusnah(p, m, alamat) {
-            if (m.pasien_id && !(await repo.pasien(p.fasyankes_id, m.pasien_id)))
+            if (m.pasien_id && !(await repo.pasien(m.pasien_id)))
                 return gagal('tidak_ditemukan', G.pasienTidakAda);
-            if (m.permintaan_hak_id && !(await repo.hakAda(p.fasyankes_id, m.permintaan_hak_id)))
+            if (m.permintaan_hak_id && !(await repo.hakAda(m.permintaan_hak_id)))
                 return gagal('tidak_ditemukan', G.hakTerkaitTidakAda);
-            const id = await repo.buatMusnah(p.fasyankes_id, m, p.id);
+            const id = await repo.buatMusnah(m, p.id);
             await catat(p, 'input', 'pemusnahan', id, `Rencana pemusnahan: ${m.cakupan}`, alamat);
             return ambilMusnah(p, id);
         },
         async prosesMusnah(p, id, m, alamat) {
-            const b = await repo.musnah(p.fasyankes_id, id);
+            const b = await repo.musnah(id);
             if (!b)
                 return gagal('tidak_ditemukan', G.musnahTidakAda);
             if (tahapMusnahBerikut(b.status) !== m.tahap)
@@ -249,17 +249,17 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
             const now = sekarang();
             try {
                 if (m.tahap === 'perintah') {
-                    if (!(await repo.prosesorAktif(p.fasyankes_id)).some((x) => x.id === m.prosesor_id))
+                    if (!(await repo.prosesorAktif()).some((x) => x.id === m.prosesor_id))
                         return gagal('tidak_valid', G.prosesorTidakSah, 'prosesor_id');
-                    await repo.majuMusnah(p.fasyankes_id, id, 'direncanakan', 'diperintahkan', { prosesor_id: m.prosesor_id, nomor_perintah: m.nomor_perintah, perintah_pada: now });
+                    await repo.majuMusnah(id, 'direncanakan', 'diperintahkan', { prosesor_id: m.prosesor_id, nomor_perintah: m.nomor_perintah, perintah_pada: now });
                 }
                 else if (m.tahap === 'pelaksanaan') {
                     if (!m.mencakup_cadangan)
                         return gagal('tidak_valid', G.cadanganWajib, 'mencakup_cadangan');
-                    await repo.majuMusnah(p.fasyankes_id, id, 'diperintahkan', 'dilaksanakan', { pelaksana: m.pelaksana, metode: m.metode, mencakup_cadangan: true, pelaksanaan_pada: m.pelaksanaan_pada ? waktuDariIsian(m.pelaksanaan_pada) : now });
+                    await repo.majuMusnah(id, 'diperintahkan', 'dilaksanakan', { pelaksana: m.pelaksana, metode: m.metode, mencakup_cadangan: true, pelaksanaan_pada: m.pelaksanaan_pada ? waktuDariIsian(m.pelaksanaan_pada) : now });
                 }
                 else {
-                    await repo.majuMusnah(p.fasyankes_id, id, 'dilaksanakan', 'selesai', { berita_acara: m.berita_acara, berita_acara_pada: now });
+                    await repo.majuMusnah(id, 'dilaksanakan', 'selesai', { berita_acara: m.berita_acara, berita_acara_pada: now });
                 }
             }
             catch (e) {
@@ -273,17 +273,17 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         },
         // Prosesor
         async daftarProsesor(p, h, u) {
-            const r = await repo.daftarProsesor(p.fasyankes_id, h, u);
+            const r = await repo.daftarProsesor(h, u);
             return halaman(r.baris.map(dtoProsesor), h, u, r.total);
         },
-        opsiProsesor: (p) => repo.prosesorAktif(p.fasyankes_id),
+        opsiProsesor: (p) => repo.prosesorAktif(),
         async simpanProsesor(p, id, m, alamat) {
             if (id === null) {
-                const baru = await repo.buatProsesor(p.fasyankes_id, m, p.id);
+                const baru = await repo.buatProsesor(m, p.id);
                 await catat(p, 'input', 'prosesor', baru, `Prosesor: ${m.nama}`, alamat);
                 return { ok: true, data: { id: baru } };
             }
-            if (!(await repo.ubahProsesor(p.fasyankes_id, id, m)))
+            if (!(await repo.ubahProsesor(id, m)))
                 return gagal('tidak_ditemukan', G.prosesorTidakAda);
             await catat(p, 'perbaikan', 'prosesor', id, `Ubah prosesor: ${m.nama}`, alamat);
             return { ok: true, data: { id } };

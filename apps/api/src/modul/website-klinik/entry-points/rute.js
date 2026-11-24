@@ -31,7 +31,7 @@ export function buatRuteWebsitePengaturan(akses, izin) {
     const { wajibIzin } = buatWajibIzin(izin);
     r.get('/fasyankes/website', masuk, wajibIzin('profil-klinik', 'lihat'), async (_req, res, next) => {
         try {
-            const data = await pengaturanWebsite(res.locals.pengguna.fasyankes_id);
+            const data = await pengaturanWebsite();
             if (!data)
                 return void res.status(404).json({ galat: { pesan: 'Profil klinik tidak ditemukan.' } });
             res.setHeader('Cache-Control', 'no-store');
@@ -48,11 +48,11 @@ export function buatRuteWebsitePengaturan(akses, izin) {
         const p = res.locals.pengguna;
         try {
             await db.transaksi(async (tx) => {
-                await db.simpanWebsiteKlinikUntukBuatRuteWebsitePengaturan(p.fasyankes_id, (nilai.data)?.aktif, (nilai.data)?.slug, nilai.data.domain || null, (nilai.data)?.judul, (nilai.data)?.ringkasan, (nilai.data)?.tentang, (nilai.data)?.alamat, (nilai.data)?.whatsapp, (nilai.data)?.telepon, (nilai.data)?.email, (nilai.data)?.jam_operasional, (nilai.data)?.warna_utama, (nilai.data)?.logo_url, (nilai.data)?.hero_url, (nilai.data)?.tampilkan_jadwal, (nilai.data)?.tampilkan_nama_praktisi, new Date(), tx);
-                await db.tambahRiwayatProfilUntukBuatRuteWebsitePengaturan(p.fasyankes_id, 'profil', 'Pengaturan website publik diperbarui.', p.id, tx);
+                await db.simpanWebsiteKlinikUntukBuatRuteWebsitePengaturan((nilai.data)?.aktif, (nilai.data)?.slug, nilai.data.domain || null, (nilai.data)?.judul, (nilai.data)?.ringkasan, (nilai.data)?.tentang, (nilai.data)?.alamat, (nilai.data)?.whatsapp, (nilai.data)?.telepon, (nilai.data)?.email, (nilai.data)?.jam_operasional, (nilai.data)?.warna_utama, (nilai.data)?.logo_url, (nilai.data)?.hero_url, (nilai.data)?.tampilkan_jadwal, (nilai.data)?.tampilkan_nama_praktisi, new Date(), tx);
+                await db.tambahRiwayatProfilUntukBuatRuteWebsitePengaturan('profil', 'Pengaturan website publik diperbarui.', p.id, tx);
             });
-            await new PenampungAuditMysql().catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'website_klinik', keterangan: 'Pengaturan website publik diperbarui.', alamat: alamatDari(req) });
-            res.json({ data: await pengaturanWebsite(p.fasyankes_id) });
+            await new PenampungAuditMysql().catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: 'website_klinik', keterangan: 'Pengaturan website publik diperbarui.', alamat: alamatDari(req) });
+            res.json({ data: await pengaturanWebsite() });
         }
         catch (e) {
             if (db.bentrokUnik(e))

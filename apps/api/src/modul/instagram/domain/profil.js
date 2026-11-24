@@ -62,7 +62,7 @@ async function perbarui(id) {
     if (!kontak || (kontak.profil_diperbarui_pada && kontak.profil_diperbarui_pada.getTime() > Date.now() - 24 * 60 * 60000))
         return false;
     const koneksi = await db.ambilIgKoneksi(1);
-    if (!koneksi?.aktif || koneksi.penyedia !== 'meta' || koneksi.fasyankes_id !== kontak.fasyankes_id || !koneksi.access_token || !koneksi.token_berakhir || koneksi.token_berakhir.getTime() <= Date.now())
+    if (!koneksi?.aktif || koneksi.penyedia !== 'meta' || !koneksi.access_token || !koneksi.token_berakhir || koneksi.token_berakhir.getTime() <= Date.now())
         return false;
     const profil = await ambilProfilInstagram(dekripsiRahasia(koneksi.access_token), kontak.jid);
     if (!profil)
@@ -73,10 +73,10 @@ async function perbarui(id) {
         // A slow profile lookup cannot restore deleted contacts or update a disconnected account.
         if (!current?.aktif || current.akun_id !== koneksi.akun_id || current.generasi !== koneksi.generasi)
             return false;
-        const result = await db.ubahIgPercakapanUntukPerbarui((profil.nama && kontak.nama === kontak.jid) ? (profil.nama) : (undefined), profil.foto, new Date(), id, kontak.fasyankes_id, kontak.jid, kontak.nama, tx);
+        const result = await db.ubahIgPercakapanUntukPerbarui((profil.nama && kontak.nama === kontak.jid) ? (profil.nama) : (undefined), profil.foto, new Date(), id, kontak.jid, kontak.nama, tx);
         return result.count > 0;
     });
     if (changed)
-        kabarkanInstagram({ tipe: 'percakapan', fasyankes_id: kontak.fasyankes_id });
+        kabarkanInstagram({ tipe: 'percakapan' });
     return changed;
 }

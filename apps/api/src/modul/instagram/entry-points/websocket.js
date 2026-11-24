@@ -17,9 +17,8 @@ export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 3
         ws.send(JSON.stringify({ tipe: event.tipe, baru: event.baru ?? false }));
     };
     const lepas = dengarkanInstagram((event) => {
-        for (const [ws, info] of klien)
-            if (info.fasyankes === event.fasyankes_id)
-                kirim(ws, event);
+        for (const [ws] of klien)
+            kirim(ws, event);
     });
     const sah = async (id) => {
         const p = await akses.saya(id);
@@ -47,7 +46,7 @@ export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 3
                 return;
             }
             wss.handleUpgrade(req, socket, head, (ws) => {
-                klien.set(ws, { idSesi, fasyankes: user.fasyankes_id, hidup: true });
+                klien.set(ws, { idSesi, hidup: true });
                 ws.on('error', () => { });
                 ws.on('close', () => klien.delete(ws));
                 ws.on('pong', () => {
@@ -57,7 +56,7 @@ export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 3
                 });
                 // Browser hanya menerima notifikasi. Semua pembacaan/penulisan tetap melalui API berizin.
                 ws.on('message', () => ws.close(1008, 'Kanal hanya menerima pembaruan'));
-                kirim(ws, { tipe: 'siap', fasyankes_id: user.fasyankes_id });
+                kirim(ws, { tipe: 'siap' });
             });
         })().catch(() => {
             socket.destroy();
@@ -74,7 +73,7 @@ export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 3
             ws.ping();
             void sah(info.idSesi)
                 .then((p) => {
-                if (!p || p.fasyankes_id !== info.fasyankes)
+                if (!p)
                     ws.close(1008, 'Akses berakhir');
             })
                 .catch(() => ws.close(1011));

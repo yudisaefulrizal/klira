@@ -5,7 +5,7 @@ const { hashIsi } = await import("../../rekam-medis/domain/pengesahan.js");
 const { buatLayananPenunjang } = await import("./layanan.js");
 const { susunIsiHasil } = await import("./isi.js");
 
-const pelaku = { id: 7, fasyankes_id: 1 };
+const pelaku = { id: 7 };
 
 const T = new Date('2026-10-25T03:00:00Z');
 

@@ -62,7 +62,7 @@ describe('modul akses', () => {
     const url = (p) => `http://127.0.0.1:${server.address().port}${p}`;
     const post = (p, badan, cookie) => fetch(url(p), { method: 'POST', headers: { 'content-type': 'application/json', ...(cookie ? { cookie } : {}) }, body: JSON.stringify(badan) });
     beforeAll(async () => {
-        repo.akun.push({ id: 1, fasyankes_id: 1, nama: 'Pimpinan', username: 'pimpinan', kata_sandi_hash: await hashKataSandi('sandi-uji-1'), aktif: true, wajib_ganti_kredensial: true }, { id: 2, fasyankes_id: 1, nama: 'Admin IT', username: 'adminit', kata_sandi_hash: await hashKataSandi('sandi-uji-2'), aktif: true, wajib_ganti_kredensial: false }, { id: 3, fasyankes_id: 1, nama: 'Awal Tiga', username: 'awal3', kata_sandi_hash: await hashKataSandi('sandi-lama-3'), aktif: true, wajib_ganti_kredensial: true }, { id: 4, fasyankes_id: 1, nama: 'Awal Empat', username: 'awal4', kata_sandi_hash: await hashKataSandi('sandi-lama-4'), aktif: true, wajib_ganti_kredensial: true });
+        repo.akun.push({ id: 1, nama: 'Pimpinan', username: 'pimpinan', kata_sandi_hash: await hashKataSandi('sandi-uji-1'), aktif: true, wajib_ganti_kredensial: true }, { id: 2, nama: 'Admin IT', username: 'adminit', kata_sandi_hash: await hashKataSandi('sandi-uji-2'), aktif: true, wajib_ganti_kredensial: false }, { id: 3, nama: 'Awal Tiga', username: 'awal3', kata_sandi_hash: await hashKataSandi('sandi-lama-3'), aktif: true, wajib_ganti_kredensial: true }, { id: 4, nama: 'Awal Empat', username: 'awal4', kata_sandi_hash: await hashKataSandi('sandi-lama-4'), aktif: true, wajib_ganti_kredensial: true });
         repo.fitur = { 1: ['akses', 'rekam-medis'], 2: ['satusehat'], 3: ['akses', 'rekam-medis'], 4: ['akses', 'rekam-medis'] };
     });
     afterAll(() => void server.close());
@@ -222,7 +222,7 @@ describe('kebijakan keamanan dipakai auth', () => {
     const audit = { catat: async (e) => void entri.push(e) };
     const t0 = Date.parse('2026-10-25T00:00:00Z');
     const akun = async (id, wajib) => ({
-        id, fasyankes_id: 1, nama: `Akun ${id}`, username: `akun${id}`, kata_sandi_hash: await hashKataSandi('sandi-uji-1'), aktif: true, wajib_ganti_kredensial: wajib,
+        id, nama: `Akun ${id}`, username: `akun${id}`, kata_sandi_hash: await hashKataSandi('sandi-uji-1'), aktif: true, wajib_ganti_kredensial: wajib,
     });
     const siapkan = async (opsi = {}) => {
         const repo = new RepoMemori();

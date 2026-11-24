@@ -72,7 +72,7 @@ function buatDunia(tahapAwal = 'pemeriksaan') {
     return { l, repo, dunia, catatan, isi, versiCatatan, pengesahanTersimpan };
 }
 
-const saya = { id: 7, fasyankes_id: 1 };
+const saya = { id: 7 };
 
 const anamnesis = { keluhan_utama: 'Batuk' };
 
@@ -148,7 +148,7 @@ describe('layanan klinis: simpan bagian = pengesahan', () => {
     });
     it('kunjungan fasyankes lain tidak ditemukan; pelaksana tindakan harus pengguna fasyankes', async () => {
         const { l } = buatDunia();
-        expect(await l.simpanBagian({ id: 7, fasyankes_id: 2 }, 10, 'anamnesis', anamnesis, undefined)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.simpanBagian({ id: 7 }, 10, 'anamnesis', anamnesis, undefined)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         const item = { kode: '89.52', nama: 'EKG', mulai: '2026-10-25T01:00:00Z' };
         expect(await l.simpanBagian(saya, 10, 'tindakan', { item: [{ ...item, performer_id: 55 }] }, undefined)).toMatchObject({ ok: false, kode: 'tidak_valid' });
         const ok = await l.simpanBagian(saya, 10, 'tindakan', { item: [item] }, undefined);
@@ -219,14 +219,14 @@ describe('layanan klinis: draf server', () => {
         await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 1, isi: { a: 1 } });
         await l.simpanDraf(saya, 10, 'pemeriksaan-klinis', { langkah: 2, isi: { a: 2 } });
         expect(await l.bacaDraf(saya, 10, 'pemeriksaan-klinis')).toMatchObject({ ok: true, data: { langkah: 2, isi: { a: 2 } } });
-        expect(await l.bacaDraf({ id: 8, fasyankes_id: 1 }, 10, 'pemeriksaan-klinis')).toEqual({ ok: true, data: null });
+        expect(await l.bacaDraf({ id: 8 }, 10, 'pemeriksaan-klinis')).toEqual({ ok: true, data: null });
         expect(await l.bacaDraf(saya, 10, 'skrining')).toEqual({ ok: true, data: null });
         expect(catatan).toEqual([]);
         expect(repo.simpanDraf).toHaveBeenCalledTimes(2);
     });
     it('kunjungan fasyankes lain 404, draf catatan diterima di semua tahap, draf non-catatan ditolak setelah ditutup, draf kedaluwarsa dibuang', async () => {
         const { l, dunia, repo } = buatDunia();
-        expect(await l.simpanDraf({ id: 7, fasyankes_id: 2 }, 10, 'skrining', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.simpanDraf({ id: 7 }, 10, 'skrining', { langkah: 0, isi: {} })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         await l.simpanDraf(saya, 10, 'skrining', { langkah: 0, isi: { a: 1 } });
         dunia.waktu = new Date(dunia.waktu.getTime() + 13 * 3_600_000);
         expect(await l.bacaDraf(saya, 10, 'skrining')).toEqual({ ok: true, data: null });
@@ -255,7 +255,7 @@ describe('narasi formulir (diagnosa banding, KIE, obat di poli)', () => {
         expect(await l.simpanBagian(saya, 10, bagian, { isi: '' }, 'Koreksi catatan')).toMatchObject({ ok: true, data: { bagian: { isi: { isi: null }, pengesahan: { versi: 2 } } } });
         expect(versiCatatan).toEqual([expect.objectContaining({ isi_lama: { isi: 'Catatan nakes' }, alasan: 'Koreksi catatan' })]);
         expect(catatan).toEqual(expect.arrayContaining([expect.objectContaining({ aksi: 'input', entitas: bagian }), expect.objectContaining({ aksi: 'perbaikan', entitas: bagian })]));
-        expect(await l.ambil({ ...saya, fasyankes_id: 2 }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.ambil({ ...saya }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });
     it('narasi kosong pertama tidak menghasilkan versi atau pengesahan', async () => {
         const { l, repo } = buatDunia();
@@ -294,7 +294,7 @@ describe('cetak rekam medis rawat jalan (P8)', () => {
     });
     it('kunjungan fasyankes lain tidak ditemukan dan tidak diaudit', async () => {
         const { l, catatan } = buatDunia();
-        expect(await l.cetak({ id: 7, fasyankes_id: 2 }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.cetak({ id: 7 }, 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         expect(catatan).toEqual([]);
     });
 });

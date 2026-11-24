@@ -45,7 +45,7 @@ describe('resep teks bebas dan item oleh farmasi (P3)', () => {
             catatTelaah: jest.fn().mockResolvedValue('ok'),
         };
         const l = buatLayananFarmasi({ repo, audit: { catat: jest.fn().mockResolvedValue(undefined) } });
-        const p = { id: 7, fasyankes_id: 1 };
+        const p = { id: 7 };
         const dasar = { administratif: true, farmasetik: true, klinis: true };
         expect(await l.telaah(p, 5, telaahMasukan.parse(dasar))).toMatchObject({ ok: true });
         expect(repo.catatTelaah).toHaveBeenLastCalledWith(1, 5, 7, expect.anything(), null, []);

@@ -46,14 +46,14 @@ export function buatLayananPasien({ repo, audit, sinkronIhs }) {
     return {
         /** Daftar minimal (tanpa NIK atau isi rekam medis); tidak dicatat per baris, pembukaan isi dicatat di `detail`. */
         async cari(p, f) {
-            return repo.cari(p.fasyankes_id, { untuk_kunjungan: f.untuk_kunjungan, semua: f.semua, dpjpId: f.pasien_saya === 'true' ? p.id : undefined, semua_tanggal: f.semua_tanggal, tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
+            return repo.cari({ untuk_kunjungan: f.untuk_kunjungan, semua: f.semua, dpjpId: f.pasien_saya === 'true' ? p.id : undefined, semua_tanggal: f.semua_tanggal, tanggal: f.tanggal, cari: f.cari || undefined, tahap: f.tahap, lewati: (f.halaman - 1) * f.ukuran, ambil: f.ukuran });
         },
         /** Isi data pasien: pembukaan dicatat `lihat` sebelum data dilepas (gagal catat berarti tidak dilepas). */
         async detail(p, id, alamat) {
-            const d = await repo.detail(p.fasyankes_id, id);
+            const d = await repo.detail(id);
             if (!d)
                 return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
-            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'lihat', entitas: 'pasien', entitas_id: id, keterangan: 'Membuka data pasien', alamat });
+            await audit.catat({ pengguna_id: p.id, aksi: 'lihat', entitas: 'pasien', entitas_id: id, keterangan: 'Membuka data pasien', alamat });
             return { ok: true, data: d };
         },
         async perbaiki(p, id, m, alamat) {
@@ -79,9 +79,9 @@ export function buatLayananPasien({ repo, audit, sinkronIhs }) {
                 asuransi_nomor_polis: kosongJadiNull(m.asuransi_nomor_polis),
                 wali: m.wali.map((w) => ({ ...w, hubungan: w.hubungan.trim(), nama: w.nama.trim(), kontak: kosongJadiNull(w.kontak) })),
             };
-            const nikLama = sinkronIhs ? (await repo.detail(p.fasyankes_id, id))?.nik ?? null : null;
+            const nikLama = sinkronIhs ? (await repo.detail(id))?.nik ?? null : null;
             try {
-                if (!await repo.perbaiki(p.fasyankes_id, id, p.id, data))
+                if (!await repo.perbaiki(id, p.id, data))
                     return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
             }
             catch (e) {
@@ -91,8 +91,8 @@ export function buatLayananPasien({ repo, audit, sinkronIhs }) {
                     return gagal('konflik', 'Data wali berubah. Tutup dan buka kembali data pasien.', 'wali');
                 throw e;
             }
-            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'pasien', entitas_id: id, keterangan: 'Memperbaiki data pasien dan kontak wali/keluarga', alamat });
-            const hasil = await repo.detail(p.fasyankes_id, id);
+            await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: 'pasien', entitas_id: id, keterangan: 'Memperbaiki data pasien dan kontak wali/keluarga', alamat });
+            const hasil = await repo.detail(id);
             if (!hasil)
                 return gagal('tidak_ditemukan', REGISTRASI.galat.pasienTidakAda);
             if (!sinkronIhs)
@@ -102,34 +102,34 @@ export function buatLayananPasien({ repo, audit, sinkronIhs }) {
         },
         async cekDuplikat(p, k, alamat) {
             const bisaCari = !!k.nik || (!!k.nama && !!k.tanggal_lahir && !!k.ibu_kandung);
-            const hasil = bisaCari ? await repo.duplikat(p.fasyankes_id, k) : [];
-            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'lihat', entitas: 'pasien', keterangan: 'Cek duplikat pasien', alamat });
+            const hasil = bisaCari ? await repo.duplikat(k) : [];
+            await audit.catat({ pengguna_id: p.id, aksi: 'lihat', entitas: 'pasien', keterangan: 'Cek duplikat pasien', alamat });
             return hasil;
         },
         async teksGeneral(p) {
-            return repo.teksAktif(p.fasyankes_id, 'general');
+            return repo.teksAktif('general');
         },
         /** Registrasi satu transaksi: pasien, wali, dan general consent; nomor RM berurutan per fasyankes. */
         async daftarkan(p, m, alamat) {
-            const teks = await repo.teksUntukPakai(p.fasyankes_id, m.persetujuan.teks_persetujuan_id, 'general');
+            const teks = await repo.teksUntukPakai(m.persetujuan.teks_persetujuan_id, 'general');
             if (!teks)
                 return gagal('tidak_valid', REGISTRASI.galat.teksTidakSah, 'persetujuan.teks_persetujuan_id');
             const data = normalkanRegistrasi(m, teks);
-            const kembar = data.nik || data.ibu_kandung ? await repo.duplikat(p.fasyankes_id, { nik: data.nik, nama: data.nama, tanggal_lahir: data.tanggal_lahir, ibu_kandung: data.ibu_kandung ?? undefined }) : [];
+            const kembar = data.nik || data.ibu_kandung ? await repo.duplikat({ nik: data.nik, nama: data.nama, tanggal_lahir: data.tanggal_lahir, ibu_kandung: data.ibu_kandung ?? undefined }) : [];
             if (kembar.some((k) => k.alasan === 'nik'))
                 return gagal('konflik', REGISTRASI.galat.nikKembar, 'nik');
             if (kembar.length && !m.konfirmasi_duplikat)
                 return gagal('konflik', REGISTRASI.galat.dataGanda, 'konfirmasi_duplikat');
             let simpan;
             try {
-                simpan = await repo.daftarkan(p.fasyankes_id, p.id, data);
+                simpan = await repo.daftarkan(p.id, data);
             }
             catch (e) {
                 if (e instanceof NikKembarError)
                     return gagal('konflik', REGISTRASI.galat.nikKembar, 'nik');
                 throw e;
             }
-            const dasar = { fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', alamat };
+            const dasar = { pengguna_id: p.id, aksi: 'input', alamat };
             await audit.catat({ ...dasar, entitas: 'pasien', entitas_id: simpan.id, keterangan: `Registrasi pasien baru (${data.status_identitas})` });
             await audit.catat({ ...dasar, entitas: 'persetujuan', entitas_id: simpan.persetujuan_id, keterangan: `General consent versi ${teks.versi} diberikan` });
             const satusehat = sinkronIhs ? { satusehat: await sinkronIhs(p, simpan.id, { alamat }) } : {};

@@ -61,11 +61,11 @@ afterAll(async () => { await new Promise((r) => server.close(() => r())); });
 
 beforeEach(() => {
     jest.clearAllMocks();
-    user = { id: 7, fasyankes_id: 10, izin: [{ fitur: 'whatsapp', aksi: 'lihat', cakupan: 'unit' }, { fitur: 'instagram', aksi: 'lihat', cakupan: 'unit' }] };
+    user = { id: 7, izin: [{ fitur: 'whatsapp', aksi: 'lihat', cakupan: 'unit' }, { fitur: 'instagram', aksi: 'lihat', cakupan: 'unit' }] };
     for (const hapus of [db.hapusWaBacaUntukBersihkanDalam, db.hapusWaPesanUntukBersihkanDalam, db.hapusWaPercakapanUntukBersihkanDalam, db.hapusWaMediaUntukBersihkanDalam, db.hapusIgBacaUntukBersihkanDalam, db.hapusIgPesanUntukBersihkanDalam, db.hapusIgPercakapanUntukBersihkanDalam, db.hapusIgMediaUntukBersihkanDalam, db.hapusIgMediaPublikUntukBersihkanDalam])
         jest.mocked(hapus).mockResolvedValue({ count: 2 });
     for (const ambil of [db.ambilWaKoneksi, db.ambilIgKoneksi, db.ambilWaKoneksi, db.ambilIgKoneksi])
-        jest.mocked(ambil).mockResolvedValue({ id: 1, fasyankes_id: 10, aktif: true });
+        jest.mocked(ambil).mockResolvedValue({ id: 1, aktif: true });
     jest.mocked(db.hitungWaPesanUntukBersihkanDalam).mockResolvedValue(0);
     jest.mocked(db.hitungIgPesanUntukBersihkanDalam).mockResolvedValue(0);
     jest.mocked(db.daftarIgMediaUntukBersihkanDalam).mockResolvedValue([{ id: 'media-fas-10' }]);
@@ -77,7 +77,7 @@ const clean = (kanal, body = { konfirmasi: kanal }) => fetch(`${url}/${kanal}/pe
 it.each(['whatsapp', 'instagram'])('%s: perlu sesi, izin kanal, dan konfirmasi tepat', async (kanal) => {
     user = null;
     expect((await clean(kanal)).status).toBe(401);
-    user = { id: 7, fasyankes_id: 10, izin: [] };
+    user = { id: 7, izin: [] };
     expect((await clean(kanal)).status).toBe(403);
     user.izin = [{ fitur: kanal, aksi: 'lihat', cakupan: 'unit' }];
     expect((await clean(kanal, {})).status).toBe(400);
@@ -94,11 +94,11 @@ it.each(['whatsapp', 'instagram'])('%s: hapus lokal hanya fasyankes peminta dan 
         expect((await res.json()).data).toEqual({ percakapan: 2, pesan: 2 });
         const hapusPesan = kanal === 'whatsapp' ? db.hapusWaPesanUntukBersihkanDalam : db.hapusIgPesanUntukBersihkanDalam;
         const hapusPercakapan = kanal === 'whatsapp' ? db.hapusWaPercakapanUntukBersihkanDalam : db.hapusIgPercakapanUntukBersihkanDalam;
-        expect(hapusPesan).toHaveBeenCalledWith(10, expect.any(Object));
-        expect(hapusPercakapan).toHaveBeenCalledWith(10, expect.any(Object));
+        expect(hapusPesan).toHaveBeenCalledWith(expect.any(Object));
+        expect(hapusPercakapan).toHaveBeenCalledWith(expect.any(Object));
         expect((kanal === 'whatsapp' ? db.hapusIgPesanUntukBersihkanDalam : db.hapusWaPesanUntukBersihkanDalam)).not.toHaveBeenCalled();
-        expect(jest.mocked(db.tambahLogAuditUntukTambah).mock.calls[0].slice(0, 3)).toEqual([10, 7, 'perbaikan']);
-        expect(events).toEqual([{ tipe: 'dibersihkan', fasyankes_id: 10 }]);
+        expect(jest.mocked(db.tambahLogAuditUntukTambah).mock.calls[0].slice(0, 2)).toEqual([7, 'perbaikan']);
+        expect(events).toEqual([{ tipe: 'dibersihkan' }]);
         if (kanal === 'instagram')
             expect(db.hapusIgMediaPublikUntukBersihkanDalam).toHaveBeenCalledWith(['media-fas-10'], expect.any(Object));
     }
@@ -138,14 +138,14 @@ it.each(['whatsapp', 'instagram'])('%s: Keluar menghapus seluruh pesan termasuk 
     expect(res.status).toBe(200);
     const koneksi = kanal === 'whatsapp' ? db.ubahWaKoneksiUntukPutuskanDanBersihkan : db.ubahIgKoneksiUntukPutuskanDanBersihkan;
     const hapusPercakapan = kanal === 'whatsapp' ? db.hapusWaPercakapanUntukBersihkanDalam : db.hapusIgPercakapanUntukBersihkanDalam;
-    expect(jest.mocked(koneksi).mock.calls[0]).toEqual(kanal === 'whatsapp' ? [false, 1, 'terputus', null, 10, expect.any(Object)] : [false, 'terputus', '', null, null, 1, 10, expect.any(Object)]);
-    expect(hapusPercakapan).toHaveBeenCalledWith(10, expect.any(Object));
+    expect(jest.mocked(koneksi).mock.calls[0]).toEqual(kanal === 'whatsapp' ? [false, 1, 'terputus', null, expect.any(Object)] : [false, 'terputus', '', null, null, 1, expect.any(Object)]);
+    expect(hapusPercakapan).toHaveBeenCalledWith(expect.any(Object));
     expect((kanal === 'whatsapp' ? db.hapusIgPercakapanUntukBersihkanDalam : db.hapusWaPercakapanUntukBersihkanDalam)).not.toHaveBeenCalled();
 });
 
 it.each(['whatsapp', 'instagram'])('%s: koneksi tidak aktif menyembunyikan identitas lama', async (kanal) => {
     const koneksi = kanal === 'whatsapp' ? db.ambilWaKoneksi : db.ambilIgKoneksi;
-    jest.mocked(koneksi).mockResolvedValue({ id: 1, fasyankes_id: 10, aktif: false, nomor: '628111111111', username: 'akun-lama', detak: new Date(), status: 'terhubung', token_berakhir: new Date(Date.now() + 60000) });
+    jest.mocked(koneksi).mockResolvedValue({ id: 1, aktif: false, nomor: '628111111111', username: 'akun-lama', detak: new Date(), status: 'terhubung', token_berakhir: new Date(Date.now() + 60000) });
     const res = await fetch(`${url}/${kanal}/koneksi`);
     expect((await res.json()).data).toMatchObject({ nomor: null, status: 'terputus', tersedia: false });
 });

@@ -24,8 +24,7 @@ export function buatRuteWhatsapp(akses, izin) {
     rute.get('/whatsapp/koneksi', wajibIzin('whatsapp', 'lihat'), async (_req, res) => {
         res.setHeader('Cache-Control', 'no-store');
         const row = await db.ambilWaKoneksi(1);
-        const milik = row?.fasyankes_id === pengguna(res).fasyankes_id;
-        const hidup = milik && row.aktif && tersedia(row.detak);
+        const hidup = Boolean(row?.aktif && tersedia(row.detak));
         res.json({
             data: {
                 status: hidup ? row.status : 'terputus',
@@ -39,24 +38,21 @@ export function buatRuteWhatsapp(akses, izin) {
         if (!['hubungkan', 'putuskan'].includes(req.body?.aksi))
             return tolak(res, 'Aksi koneksi tidak valid');
         const user = pengguna(res);
-        const row = await db.ambilWaKoneksi(1);
-        if (row && row.fasyankes_id !== user.fasyankes_id)
-            return tolak(res, 'Nomor WhatsApp sudah dikelola fasyankes lain', 409);
         const aktif = req.body.aksi === 'hubungkan';
         if (!aktif) {
             await putuskanDanBersihkan('whatsapp', user, alamatDari(req));
-            kabarkanWhatsapp({ tipe: 'dibersihkan', fasyankes_id: user.fasyankes_id });
-            kabarkanWhatsapp({ tipe: 'koneksi', fasyankes_id: user.fasyankes_id });
+            kabarkanWhatsapp({ tipe: 'dibersihkan' });
+            kabarkanWhatsapp({ tipe: 'koneksi' });
             return void res.json({ data: { ok: true } });
         }
-        await db.simpanWaKoneksiUntukBuatRuteWhatsapp(1, user.fasyankes_id, aktif, aktif ? 'menghubungkan' : 'terputus', null);
-        kabarkanWhatsapp({ tipe: 'koneksi', fasyankes_id: user.fasyankes_id });
+        await db.simpanWaKoneksiUntukBuatRuteWhatsapp(1, aktif, aktif ? 'menghubungkan' : 'terputus', null);
+        kabarkanWhatsapp({ tipe: 'koneksi' });
         res.json({ data: { ok: true } });
     });
     rute.get('/whatsapp/percakapan', wajibIzin('whatsapp', 'lihat'), async (req, res) => {
         const user = pengguna(res);
         const halaman = Math.min(1000, Math.max(1, Number(req.query.halaman) || 1));
-        const rows = await db.daftarWaPercakapanUntukBuatRuteWhatsapp(user.fasyankes_id, '@s.whatsapp.net', '@lid', 200, (Math.floor(halaman) - 1) * 200, 1, user.id);
+        const rows = await db.daftarWaPercakapanUntukBuatRuteWhatsapp('@s.whatsapp.net', '@lid', 200, (Math.floor(halaman) - 1) * 200, 1, user.id);
         res.json({
             data: await Promise.all(rows.map(async ({ pesan, baca, ...row }) => ({
                 ...row,
@@ -67,11 +63,11 @@ export function buatRuteWhatsapp(akses, izin) {
     });
     rute.get('/whatsapp/ringkasan', wajibIzin('whatsapp', 'lihat'), async (_req, res) => {
         const user = pengguna(res);
-        const rows = await db.hitungWaPercakapanBelumDibaca(user.id, user.fasyankes_id);
+        const rows = await db.hitungWaPercakapanBelumDibaca(user.id);
         res.json({ data: { belum_dibaca: Number(rows[0]?.belum ?? 0), terbaru: rows[0]?.terbaru ?? 0 } });
     });
     rute.get('/whatsapp/pasien/:id', wajibIzin('whatsapp', 'lihat'), wajibIzin('pasien', 'lihat'), async (req, res) => {
-        const pasien = await db.cariPasienUntukBuatRuteWhatsapp(idValid(req.params.id), pengguna(res).fasyankes_id);
+        const pasien = await db.cariPasienUntukBuatRuteWhatsapp(idValid(req.params.id));
         if (!pasien)
             return tolak(res, 'Pasien tidak ditemukan', 404);
         res.json({ data: pasien });
@@ -85,21 +81,21 @@ export function buatRuteWhatsapp(akses, izin) {
         if (pasien_id && !punyaIzin(user, 'pasien', 'lihat'))
             return tolak(res, 'Tidak memiliki izin mengakses pasien', 403);
         const pasien = pasien_id
-            ? await db.cariPasienUntukBuatRuteWhatsapp2(pasien_id, user.fasyankes_id)
+            ? await db.cariPasienUntukBuatRuteWhatsapp2(pasien_id)
             : null;
         if (pasien_id && !pasien)
             return tolak(res, 'Pasien tidak ditemukan', 404);
         const jid = `${nomor}@s.whatsapp.net`;
-        const lama = await db.ambilWaPercakapanUntukBuatRuteWhatsapp(user.fasyankes_id, jid);
+        const lama = await db.ambilWaPercakapanUntukBuatRuteWhatsapp(jid);
         if (pasien && lama?.pasien_id && lama.pasien_id !== pasien.id)
             return tolak(res, 'Nomor ini sudah ditautkan ke pasien lain. Buka percakapan tanpa menautkan pasien.', 409);
-        const row = await db.transaksi(async (koneksiBaru) => { (await db.simpanWaPercakapanUntukBuatRuteWhatsapp(user.fasyankes_id, jid, pasien?.nama ?? nomor, pasien_id, (pasien) ? (pasien.nama) : (undefined), (pasien) ? (pasien_id) : (undefined), koneksiBaru)); return db.simpanWaPercakapanUntukBuatRuteWhatsappHasil(user.fasyankes_id, jid, koneksiBaru); });
-        kabarkanWhatsapp({ tipe: 'percakapan', fasyankes_id: user.fasyankes_id });
+        const row = await db.transaksi(async (koneksiBaru) => { (await db.simpanWaPercakapanUntukBuatRuteWhatsapp(jid, pasien?.nama ?? nomor, pasien_id, (pasien) ? (pasien.nama) : (undefined), (pasien) ? (pasien_id) : (undefined), koneksiBaru)); return db.simpanWaPercakapanUntukBuatRuteWhatsappHasil(jid, koneksiBaru); });
+        kabarkanWhatsapp({ tipe: 'percakapan' });
         res.json({ data: { id: row.id } });
     });
     // Seluruh rute percakapan di bawah dibatasi ke fasyankes pengguna, termasuk media.
     rute.use('/whatsapp/percakapan/:id', wajibIzin('whatsapp', 'lihat'), async (req, res, next) => {
-        const row = await db.cariWaPercakapanUntukBuatRuteWhatsapp(idValid(req.params.id), pengguna(res).fasyankes_id);
+        const row = await db.cariWaPercakapanUntukBuatRuteWhatsapp(idValid(req.params.id));
         if (!row || !jidWhatsappPribadi(row.jid))
             return tolak(res, 'Percakapan pribadi tidak ditemukan', 404);
         res.locals.percakapan = row;
@@ -119,7 +115,7 @@ export function buatRuteWhatsapp(akses, izin) {
             return tolak(res, 'Pesan tidak valid');
         await db.simpanWaBacaUntukBuatRuteWhatsapp(id, pengguna(res).id, terakhir);
         await db.ubahWaBacaUntukBuatRuteWhatsapp(terakhir, id, pengguna(res).id);
-        kabarkanWhatsapp({ tipe: 'baca', fasyankes_id: pengguna(res).fasyankes_id });
+        kabarkanWhatsapp({ tipe: 'baca' });
         res.json({ data: { ok: true } });
     });
     rute.get('/whatsapp/percakapan/:id/info', audit.lihat({ entitas: 'wa_percakapan', id: (req) => Number(req.params.id) }), async (_req, res) => {
@@ -127,10 +123,10 @@ export function buatRuteWhatsapp(akses, izin) {
         const user = pengguna(res);
         const [pasien, penanggung] = await Promise.all([
             row.pasien_id && punyaIzin(user, 'pasien', 'lihat')
-                ? db.cariPasienUntukBuatRuteInstagram(row.pasien_id, user.fasyankes_id)
+                ? db.cariPasienUntukBuatRuteInstagram(row.pasien_id)
                 : null,
             row.penanggung_jawab
-                ? db.cariPenggunaUntukBuatRuteInstagram(row.penanggung_jawab, user.fasyankes_id)
+                ? db.cariPenggunaUntukBuatRuteInstagram(row.penanggung_jawab)
                 : null,
         ]);
         res.setHeader('Cache-Control', 'no-store');
@@ -141,13 +137,13 @@ export function buatRuteWhatsapp(akses, izin) {
         if (!hasil.success)
             return tolak(res, 'Tautan pasien atau penanggung jawab tidak valid');
         if (hasil.data.penanggung_jawab &&
-            !(await db.cariPenggunaUntukBuatRuteInstagram2(hasil.data.penanggung_jawab, pengguna(res).fasyankes_id, true)))
+            !(await db.cariPenggunaUntukBuatRuteInstagram2(hasil.data.penanggung_jawab, true)))
             return tolak(res, 'Akun penanggung jawab tidak ditemukan');
         if (hasil.data.pasien_id) {
             const user = pengguna(res);
             if (!punyaIzin(user, 'pasien', 'lihat'))
                 return tolak(res, 'Tidak memiliki izin mengakses pasien', 403);
-            const pasien = await db.cariPasienUntukBuatRuteInstagram2(hasil.data.pasien_id, user.fasyankes_id);
+            const pasien = await db.cariPasienUntukBuatRuteInstagram2(hasil.data.pasien_id);
             if (!pasien)
                 return tolak(res, 'Pasien tidak ditemukan', 404);
             const diperbarui = await db.ubahWaPercakapanUntukBuatRuteWhatsapp((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id, null, pasien.id);
@@ -156,7 +152,7 @@ export function buatRuteWhatsapp(akses, izin) {
         }
         else
             await db.ubahWaPercakapanUntukBuatRuteWhatsapp2((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id);
-        kabarkanWhatsapp({ tipe: 'percakapan', fasyankes_id: pengguna(res).fasyankes_id });
+        kabarkanWhatsapp({ tipe: 'percakapan' });
         res.json({ data: { ok: true } });
     });
     // Badan berlampiran (hingga 8 MB, base64) baru diurai di sini: sesi, izin, dan kepemilikan percakapan sudah diperiksa.
@@ -167,7 +163,6 @@ export function buatRuteWhatsapp(akses, izin) {
         const user = pengguna(res);
         const koneksi = await db.ambilWaKoneksi(1);
         if (!koneksi ||
-            koneksi.fasyankes_id !== user.fasyankes_id ||
             !koneksi.aktif ||
             koneksi.status !== 'terhubung' ||
             !tersedia(koneksi.detak))
@@ -183,7 +178,7 @@ export function buatRuteWhatsapp(akses, izin) {
             let mediaId = null;
             if (media) {
                 mediaId = randomUUID();
-                await db.tambahWaMediaUntukBuatRuteWhatsapp(mediaId, user.fasyankes_id, enkripsiRahasia(media.base64), media.mime, media.nama, tx);
+                await db.tambahWaMediaUntukBuatRuteWhatsapp(mediaId, enkripsiRahasia(media.base64), media.mime, media.nama, tx);
             }
             const pesan = await (async () => {
                 const _hasil = await db.tambahWaPesanUntukBuatRuteWhatsapp(res.locals.percakapan.id, 'keluar', enkripsiRahasia(teks), media
@@ -201,11 +196,11 @@ export function buatRuteWhatsapp(akses, izin) {
             await pangkasPesanWhatsapp(tx, res.locals.percakapan.id);
             return pesan;
         });
-        kabarkanWhatsapp({ tipe: 'pesan', fasyankes_id: user.fasyankes_id });
+        kabarkanWhatsapp({ tipe: 'pesan' });
         res.status(201).json({ data: { id: row.id } });
     });
     rute.get('/whatsapp/media/:id', wajibIzin('whatsapp', 'lihat'), audit.lihat({ entitas: 'wa_media' }), async (req, res) => {
-        const row = await db.cariWaMediaUntukBuatRuteWhatsapp(String(req.params.id), pengguna(res).fasyankes_id);
+        const row = await db.cariWaMediaUntukBuatRuteWhatsapp(String(req.params.id));
         if (!row)
             return tolak(res, 'Lampiran tidak ditemukan', 404);
         res.setHeader('Cache-Control', 'no-store');

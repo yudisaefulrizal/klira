@@ -22,21 +22,21 @@ export function buatRuteLayarPanggilan() {
                 if (!fasilitas)
                     return null;
                 const tanggal = tanggalWib(new Date());
-                const sesi = await db.ambilSesiAntreanAktif(id, tx);
-                const poliAktif = (await db.daftarPoli(id, tx)).filter(p => p.status_operasional === 'O');
-                const ruangAktif = await db.daftarRuangPeriksaOperasional(id, tx);
+                const sesi = await db.ambilSesiAntreanAktif(tx);
+                const poliAktif = (await db.daftarPoli(tx)).filter(p => p.status_operasional === 'O');
+                const ruangAktif = await db.daftarRuangPeriksaOperasional(tx);
                 // Tempat panggilan = ruang periksa aktif; poli tanpa ruang periksa tampil sebagai satu tempat.
                 const poliOperasional = poliAktif.flatMap(p => {
                     const ruang = ruangAktif.filter(r => r.induk_id === p.id);
                     return ruang.length ? ruang.map(r => ({ id: r.id, nama: namaPanggil(p, r), jenis_poli: p.nama })) : [{ id: p.id, nama: namaPanggil(p, null), jenis_poli: p.nama }];
                 });
-                const antrean = sesi ? await db.daftarAntreanUntukBuatRuteLayarPanggilan(id, sesi.id, poliAktif.map(p => p.id), ['menunggu', 'dipanggil', 'dilayani'], tx) : [];
+                const antrean = sesi ? await db.daftarAntreanUntukBuatRuteLayarPanggilan(sesi.id, poliAktif.map(p => p.id), ['menunggu', 'dipanggil', 'dilayani'], tx) : [];
                 const tempatDari = a => a.ruang_id ?? a.lokasi_id;
                 // Penunjang saja (tes lab tanpa poli) tampil sebagai pelayanan "Laboratorium" bila ada antreannya di sesi ini.
                 const adaLab = antrean.some(a => a.jenis_poli === ANTREAN_LAB.jenis_poli);
                 const poli = adaLab ? [...poliOperasional, { id: 0, nama: ANTREAN_LAB.jenis_poli, jenis_poli: ANTREAN_LAB.jenis_poli }] : poliOperasional;
-                const event = !sesi || setelah === undefined ? [] : await db.daftarEventPanggilanUntukBuatRuteLayarPanggilan(id, sesi.id, setelah, 101, tx);
-                const terbaru = !sesi || setelah !== undefined ? null : await db.cariEventPanggilanUntukBuatRuteLayarPanggilan(id, sesi.id, tx);
+                const event = !sesi || setelah === undefined ? [] : await db.daftarEventPanggilanUntukBuatRuteLayarPanggilan(sesi.id, setelah, 101, tx);
+                const terbaru = !sesi || setelah !== undefined ? null : await db.cariEventPanggilanUntukBuatRuteLayarPanggilan(sesi.id, tx);
                 const halamanEvent = event.slice(0, 100);
                 const terakhir = antrean.find(a => a.status === 'dipanggil' && a.waktu_panggil);
                 const data = {

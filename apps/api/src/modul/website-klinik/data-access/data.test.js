@@ -24,7 +24,7 @@ const db = await import("@klira/db");
 const { WEBSITE_KLINIK_BAWAAN, tanggalWib } = await import("@klira/shared");
 const { bacaKlinikPublik, pengaturanWebsite } = await import("./data.js");
 
-const web = { ...WEBSITE_KLINIK_BAWAAN, aktif: true, slug: 'klinik-a', domain: 'klinik.example', fasyankes_id: 7, fasyankes: { nama: 'Klinik A' } };
+const web = { ...WEBSITE_KLINIK_BAWAAN, aktif: true, slug: 'klinik-a', domain: 'klinik.example', fasyankes: { nama: 'Klinik A' } };
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -41,8 +41,8 @@ test('domain memilih website aktif, query layanan dan jadwal terisolasi, identit
     expect(data?.nama).toBe('Klinik A');
     expect(data?.jadwal[0].praktisi).toBeNull();
     expect(jest.mocked(db.cariWebsiteKlinikUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: true, 2: 'klinik.example' })]));
-    expect(jest.mocked(db.daftarLokasiUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 'poli', 2: 'O' })]));
-    expect(jest.mocked(db.daftarJadwalPraktikUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: true, 2: [3] })]));
+    expect(jest.mocked(db.daftarLokasiUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'poli', 1: 'O' })]));
+    expect(jest.mocked(db.daftarJadwalPraktikUntukBacaKlinikPublik).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: true, 1: [3] })]));
     expect(JSON.stringify(data)).not.toMatch(/fasyankes_id|pengguna_id|nomor_sip|Nama internal|nomor_rm|tampilkan_nama/);
 });
 

@@ -46,7 +46,7 @@ export function buatRuteMaster(layananAkses, layananIzin, layanan) {
     }));
     // Harus sebelum '/master/:jenis'. Hanya hitungan; tidak memuat data pribadi.
     rute.get('/master/kesiapan', masuk, wajibIzin('master', 'lihat'), bungkus(async (_req, res) => {
-        res.json({ data: await hitungKesiapan(pengguna(res).fasyankes_id) });
+        res.json({ data: await hitungKesiapan() });
     }));
     // Shift tetap tiga (Pagi, Siang, Malam): hanya dibaca dan jamnya diubah. Harus sebelum '/master/:jenis'.
     rute.get('/master/shift', masuk, wajibIzin('master', 'lihat'), bungkus(async (_req, res) => {
@@ -106,7 +106,7 @@ export function buatRuteMaster(layananAkses, layananIzin, layanan) {
             return void res.status(400).json({ galat: { kode: 'tidak_valid', pesan: MASTER.galat.jenisTakDikenal } });
         if (!id)
             return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
-        kirimHasil(res, await layanan.hapusLokasi(pengguna(res), j, id, alamatDari(req)));
+        kirimHasil(res, await layanan.hapusLokasi(pengguna(res), id, alamatDari(req)));
     }));
     rute.patch('/master/:jenis/:id/aktif', masuk, wajibIzin('master', 'perbaikan'), bungkus(async (req, res) => {
         const j = jenisUbah(req, res);

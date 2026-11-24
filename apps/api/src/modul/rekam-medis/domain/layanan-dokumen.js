@@ -8,17 +8,17 @@ const G = REKAM_MEDIS.galat;
  */
 export function buatLayananDokumen({ repo, repoRm, pengesahan, baca, audit }) {
     pengesahan.daftarkanPenyedia('resume_medis', async (fas, id) => (await repo.resume(fas, id))?.isi ?? null);
-    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
+    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
     async function dokumen(p, kunjunganId) {
-        const k = await repoRm.kunjungan(p.fasyankes_id, kunjunganId);
+        const k = await repoRm.kunjungan(kunjunganId);
         if (!k)
             return gagal('tidak_ditemukan', G.kunjunganTidakAda);
         const [r, kead, diag, tind, surat] = await Promise.all([
-            repo.resume(p.fasyankes_id, kunjunganId),
-            pengesahan.keadaan(p.fasyankes_id, 'resume_medis', kunjunganId),
-            baca.bacaBagian(p.fasyankes_id, kunjunganId, 'diagnosis'),
-            baca.bacaBagian(p.fasyankes_id, kunjunganId, 'tindakan'),
-            repo.daftarSurat(p.fasyankes_id, kunjunganId),
+            repo.resume(kunjunganId),
+            pengesahan.keadaan('resume_medis', kunjunganId),
+            baca.bacaBagian(kunjunganId, 'diagnosis'),
+            baca.bacaBagian(kunjunganId, 'tindakan'),
+            repo.daftarSurat(kunjunganId),
         ]);
         const utama = diag?.item?.find((d) => d.peran === 'utama');
         return {
@@ -40,43 +40,43 @@ export function buatLayananDokumen({ repo, repoRm, pengesahan, baca, audit }) {
         },
         /** Simpan resume setelah pelayanan selesai (tahap kasir atau ditutup). Mengubah resume yang sudah ada butuh alasan dan membentuk versi baru (versi lama tersimpan). */
         async simpanResume(p, kunjunganId, m, alamat) {
-            const k = await repoRm.kunjungan(p.fasyankes_id, kunjunganId);
+            const k = await repoRm.kunjungan(kunjunganId);
             if (!k)
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
             if (k.tahap_layanan !== 'ditutup' && k.tahap_layanan !== 'kasir')
                 return gagal('konflik', G.belumDitutup2);
             const { alasan, ...isi } = m;
             const siap = await pengesahan.siapkan({
-                fasyankesId: p.fasyankes_id, pelakuId: p.id, fitur: 'klinis', entitas: 'resume_medis', entitasId: kunjunganId, isiBaru: isi, alasan: alasan ?? null, lewatiBatas: true,
-                bacaIsiSekarang: async () => (await repo.resume(p.fasyankes_id, kunjunganId))?.isi ?? null,
+                pelakuId: p.id, fitur: 'klinis', entitas: 'resume_medis', entitasId: kunjunganId, isiBaru: isi, alasan: alasan ?? null, lewatiBatas: true,
+                bacaIsiSekarang: async () => (await repo.resume(kunjunganId))?.isi ?? null,
             });
             if (!siap.ok)
                 return siap;
             if (siap.data.jenis === 'baru') {
-                await repo.simpanResume({ fasyankesId: p.fasyankes_id, kunjunganId, isi, oleh: p.id, pengesahan: siap.data.rencana });
+                await repo.simpanResume({ kunjunganId, isi, oleh: p.id, pengesahan: siap.data.rencana });
                 await catat(p, siap.data.rencana.versi > 1 ? 'perbaikan' : 'input', 'resume_medis', kunjunganId, `Resume medis kunjungan ${kunjunganId} versi ${siap.data.rencana.versi}`, alamat);
             }
             return dokumen(p, kunjunganId);
         },
         async buatSurat(p, kunjunganId, m, alamat) {
-            if (!(await repoRm.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repoRm.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const s = await repo.buatSurat({ fasyankesId: p.fasyankes_id, kunjunganId, jenis: m.jenis, tujuan: m.tujuan ?? null, isi: m.isi, dokterId: p.id });
+            const s = await repo.buatSurat({ kunjunganId, jenis: m.jenis, tujuan: m.tujuan ?? null, isi: m.isi, dokterId: p.id });
             await catat(p, 'input', 'surat', s.id, `Surat ${m.jenis} ${s.nomor} kunjungan ${kunjunganId}`, alamat);
-            const dibuat = (await repo.daftarSurat(p.fasyankes_id, kunjunganId)).find((x) => x.id === s.id);
+            const dibuat = (await repo.daftarSurat(kunjunganId)).find((x) => x.id === s.id);
             return dibuat ? { ok: true, data: dibuat } : gagal('tidak_ditemukan', G.suratTidakAda);
         },
         async ajukanPembukaan(p, m, alamat) {
-            if (!(await repo.pasien(p.fasyankes_id, m.pasien_id)))
+            if (!(await repo.pasien(m.pasien_id)))
                 return gagal('tidak_ditemukan', G.pasienTidakAda);
-            const id = await repo.buatPembukaan(p.fasyankes_id, m, p.id);
+            const id = await repo.buatPembukaan(m, p.id);
             await catat(p, 'input', 'pembukaan_rm', id, `Permintaan pembukaan rekam medis pasien ${m.pasien_id} (${m.dasar})`, alamat);
             return { ok: true, data: { id } };
         },
-        daftarPembukaan: (p, f) => repo.daftarPembukaan(p.fasyankes_id, f),
+        daftarPembukaan: (p, f) => repo.daftarPembukaan(f),
         /** Keputusan atas permintaan pembukaan: penyetuju harus orang lain dari pemohon; menolak butuh catatan. */
         async putuskanPembukaan(p, id, m, alamat) {
-            const q = await repo.pembukaan(p.fasyankes_id, id);
+            const q = await repo.pembukaan(id);
             if (!q)
                 return gagal('tidak_ditemukan', G.pembukaanTidakAda);
             if (q.status !== 'diajukan')
@@ -84,24 +84,24 @@ export function buatLayananDokumen({ repo, repoRm, pengesahan, baca, audit }) {
             if (q.diminta_oleh === p.id)
                 return gagal('konflik', G.penyetujuSama);
             const status = m.keputusan === 'setujui' ? 'disetujui' : 'ditolak';
-            if (!(await repo.putuskanPembukaan(p.fasyankes_id, id, status, p.id, m.catatan?.trim() || null)))
+            if (!(await repo.putuskanPembukaan(id, status, p.id, m.catatan?.trim() || null)))
                 return gagal('konflik', G.sudahDiputuskan);
             await catat(p, 'perbaikan', 'pembukaan_rm', id, `Permintaan pembukaan rekam medis ${status}`, alamat);
-            const h = (await repo.daftarPembukaan(p.fasyankes_id, { halaman: 1, ukuran: 100 })).data.find((x) => x.id === id);
+            const h = (await repo.daftarPembukaan({ halaman: 1, ukuran: 100 })).data.find((x) => x.id === id);
             return h ? { ok: true, data: h } : gagal('tidak_ditemukan', G.pembukaanTidakAda);
         },
         async catatPenyampaian(p, m, alamat) {
-            if (!(await repo.pasien(p.fasyankes_id, m.pasien_id)))
+            if (!(await repo.pasien(m.pasien_id)))
                 return gagal('tidak_ditemukan', G.pasienTidakAda);
-            if (m.kunjungan_id && !(await repo.kunjunganAda(p.fasyankes_id, m.kunjungan_id, m.pasien_id)))
+            if (m.kunjungan_id && !(await repo.kunjunganAda(m.kunjungan_id, m.pasien_id)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const id = await repo.buatPenyampaian(p.fasyankes_id, m, p.id);
+            const id = await repo.buatPenyampaian(m, p.id);
             await catat(p, 'input', 'penyampaian_rm', id, `Penyampaian rekam medis pasien ${m.pasien_id} kepada ${m.hubungan} (${m.bentuk})`, alamat);
             return { ok: true, data: { id } };
         },
-        daftarPenyampaian: (p, f) => repo.daftarPenyampaian(p.fasyankes_id, f),
+        daftarPenyampaian: (p, f) => repo.daftarPenyampaian(f),
         async laporan(p, f, alamat) {
-            const l = await repo.laporan(p.fasyankes_id, f);
+            const l = await repo.laporan(f);
             await catat(p, 'lihat', 'laporan_rm', null, `Laporan ${f.jenis} ${l.dari} s.d. ${l.sampai}`, alamat);
             return l;
         },

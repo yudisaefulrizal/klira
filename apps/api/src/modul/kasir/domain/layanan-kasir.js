@@ -6,14 +6,14 @@ const G = KASIR.galat;
 const rp = (n) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 /** Kasir (4.5, 7): shift, pembayaran, dan tutup kunjungan. Semua tindakan tercatat di audit; tidak ada rute ubah atau hapus. */
 export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
-    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
+    const catat = (p, aksi, entitas, id, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas, entitas_id: id, keterangan, alamat });
     async function gambaran(p, kunjunganId) {
-        const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+        const k = await repo.kunjungan(kunjunganId);
         if (!k)
             return null;
         const [tagihan, resep, shift, tarif, hasilLab] = await Promise.all([
-            repo.tagihan(p.fasyankes_id, kunjunganId), farmasi.resepKunjungan(p.fasyankes_id, kunjunganId), repo.shiftTerbuka(p.fasyankes_id, p.id), repo.tarifAktif(p.fasyankes_id, k.cara_pembayaran),
-            repo.hasilLab(p.fasyankes_id, kunjunganId),
+            repo.tagihan(kunjunganId), farmasi.resepKunjungan(kunjunganId), repo.shiftTerbuka(p.id), repo.tarifAktif(k.cara_pembayaran),
+            repo.hasilLab(kunjunganId),
         ]);
         return {
             kunjungan: k, tagihan, resep, shift_terbuka: !!shift, tarif, hasil_lab: hasilLab,
@@ -31,35 +31,35 @@ export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
             return { ok: true, data: g };
         },
         async shiftSaya(p) {
-            return repo.shiftTerbuka(p.fasyankes_id, p.id);
+            return repo.shiftTerbuka(p.id);
         },
         async bukaShift(p, m, alamat) {
-            const s = await repo.bukaShift(p.fasyankes_id, p.id, m.kas_awal);
+            const s = await repo.bukaShift(p.id, m.kas_awal);
             if (s === 'sudah_ada')
                 return gagal('konflik', G.shiftSudahAda);
             await catat(p, 'input', 'shift_kasir', s.id, `Shift dibuka, kas awal ${rp(s.kas_awal)}`, alamat);
             return { ok: true, data: s };
         },
         async tutupShift(p, m, alamat) {
-            const sebelum = await repo.shiftTerbuka(p.fasyankes_id, p.id);
+            const sebelum = await repo.shiftTerbuka(p.id);
             if (!sebelum)
                 return gagal('konflik', G.shiftTidakAda);
             if (m.kas_akhir !== sebelum.kas_seharusnya && !(m.alasan_selisih && m.alasan_selisih.trim()))
                 return gagal('tidak_valid', G.alasanWajib, 'alasan_selisih');
-            const s = await repo.tutupShift(p.fasyankes_id, p.id, { kas_akhir: m.kas_akhir, alasan_selisih: m.alasan_selisih?.trim() || null });
+            const s = await repo.tutupShift(p.id, { kas_akhir: m.kas_akhir, alasan_selisih: m.alasan_selisih?.trim() || null });
             if (s === 'tidak_ada')
                 return gagal('konflik', G.shiftTidakAda);
             await catat(p, 'perbaikan', 'shift_kasir', s.id, `Shift ditutup, kas seharusnya ${rp(s.kas_seharusnya)}, kas akhir ${rp(s.kas_akhir ?? 0)}, selisih ${s.selisih ?? 0}${s.alasan_selisih ? ` (${s.alasan_selisih})` : ''}`, alamat);
             return { ok: true, data: s };
         },
         async rekap(p, tanggal) {
-            return repo.rekap(p.fasyankes_id, tanggal ?? hariWib());
+            return repo.rekap(tanggal ?? hariWib());
         },
         /** Satu tagihan dibayar 1-3 metode: dicatat dalam satu transaksi dengan satu entri audit. */
         async bayar(p, kunjunganId, m, alamat) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const h = await repo.bayar(p.fasyankes_id, p.id, kunjunganId, m.pembayaran);
+            const h = await repo.bayar(p.id, kunjunganId, m.pembayaran);
             if (!h.ok) {
                 if (h.sebab === 'non_tunai_lebih')
                     return gagal('tidak_valid', G.nonTunaiLebih, 'pembayaran');
@@ -71,7 +71,7 @@ export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
             if (keuangan?.catatJurnal && h.diterapkan > 0) {
                 try {
                     const akunUtama = h.pembayaran[0]?.metode === 'tunai' ? '1101' : '1102';
-                    await keuangan.catatJurnal(p.fasyankes_id, {
+                    await keuangan.catatJurnal({
                         tanggal: hariWib(),
                         sumber: 'kasir',
                         referensi_id: h.pembayaran[0]?.id ?? kunjunganId,
@@ -89,28 +89,28 @@ export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
         },
         /** Penyerahan hasil lab (penunjang saja): terpisah dari pembayaran; hasil ditahan sampai lunas (atau JKN), dan semua order harus divalidasi. */
         async serahHasil(p, kunjunganId, m, alamat) {
-            const k = await repo.kunjungan(p.fasyankes_id, kunjunganId);
+            const k = await repo.kunjungan(kunjunganId);
             if (!k)
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const lab = await repo.hasilLab(p.fasyankes_id, kunjunganId);
+            const lab = await repo.hasilLab(kunjunganId);
             if (!lab)
                 return gagal('konflik', G.bukanPenunjang);
-            const tagihan = await repo.tagihan(p.fasyankes_id, kunjunganId);
+            const tagihan = await repo.tagihan(kunjunganId);
             if (tagihan.sisa !== 0)
                 return gagal('konflik', G.belumLunasSerah);
-            const h = await repo.serahHasil(p.fasyankes_id, p.id, kunjunganId, m);
+            const h = await repo.serahHasil(p.id, kunjunganId, m);
             if (!h.ok)
                 return gagal('konflik', { bukan_penunjang: G.bukanPenunjang, belum_siap: G.hasilBelumSiap, sudah: G.sudahDiserahkan }[h.sebab]);
             await catat(p, 'input', 'penyerahan_hasil', kunjunganId, `Hasil lab kunjungan ${kunjunganId} diserahkan kepada ${m.penerima_nama}${m.hubungan ? ` (${m.hubungan})` : ''}`, alamat);
             return { ok: true, data: await gambaran(p, kunjunganId) };
         },
         async hasilBelumDiserahkan(p) {
-            return { ok: true, data: await repo.daftarHasilBelumDiserahkan(p.fasyankes_id) };
+            return { ok: true, data: await repo.daftarHasilBelumDiserahkan() };
         },
         async lengkapiHarga(p, kunjunganId, itemId, m, alamat) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const h = await repo.lengkapiHarga(p.fasyankes_id, kunjunganId, itemId, m.harga);
+            const h = await repo.lengkapiHarga(kunjunganId, itemId, m.harga);
             if (!h.ok) {
                 if (h.sebab === 'tidak_ada')
                     return gagal('tidak_ditemukan', G.itemTidakAda);
@@ -121,12 +121,12 @@ export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
         },
         /** Ubah harga item per kunjungan (izin kasir.input): bukan obat, sudah berharga, sebelum ada pembayaran; alasan wajib dan diaudit. */
         async ubahHarga(p, kunjunganId, itemId, m, alamat) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
             const alasan = m.alasan.trim();
             if (!alasan)
                 return gagal('tidak_valid', G.alasanWajib, 'alasan');
-            const h = await repo.ubahHarga(p.fasyankes_id, kunjunganId, itemId, m.harga, alasan);
+            const h = await repo.ubahHarga(kunjunganId, itemId, m.harga, alasan);
             if (!h.ok) {
                 if (h.sebab === 'tidak_ada')
                     return gagal('tidak_ditemukan', G.itemTidakAda);
@@ -138,18 +138,18 @@ export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
             return { ok: true, data: (await gambaran(p, kunjunganId)) };
         },
         async tambahItem(p, kunjunganId, m, alamat) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const h = await repo.tambahItem(p.fasyankes_id, p.id, kunjunganId, m.tarif_id, m.jumlah);
+            const h = await repo.tambahItem(p.id, kunjunganId, m.tarif_id, m.jumlah);
             if (!h.ok)
                 return h.sebab === 'terkunci' ? gagal('konflik', G.tagihanTerkunci) : gagal('tidak_valid', G.tarifTidakAda, 'tarif_id');
             await catat(p, 'input', 'item_tagihan', kunjunganId, `Item tagihan ditambah kasir: ${h.nama} x${h.jumlah} @ ${h.harga === null ? 'tanpa harga' : rp(h.harga)}`, alamat);
             return { ok: true, data: (await gambaran(p, kunjunganId)) };
         },
         async hapusItem(p, kunjunganId, itemId, alamat) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const h = await repo.hapusItem(p.fasyankes_id, kunjunganId, itemId);
+            const h = await repo.hapusItem(kunjunganId, itemId);
             if (!h.ok) {
                 if (h.sebab === 'tidak_ada')
                     return gagal('tidak_ditemukan', G.itemTidakAda);
@@ -159,14 +159,14 @@ export function buatLayananKasir({ repo, farmasi, audit, keuangan = null }) {
             return { ok: true, data: (await gambaran(p, kunjunganId)) };
         },
         async tutup(p, kunjunganId, m, alamat) {
-            if (!(await repo.kunjungan(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjungan(kunjunganId)))
                 return gagal('tidak_ditemukan', G.kunjunganTidakAda);
-            const h = await repo.tutup(p.fasyankes_id, kunjunganId, m.alasan?.trim() || null);
+            const h = await repo.tutup(kunjunganId, m.alasan?.trim() || null);
             if (!h.ok) {
                 const pesan = { tahap_salah: G.tahapSalah, tagihan_belum_lengkap: G.tagihanBelumLengkap, resep_belum: G.resepBelumDiserahkan, belum_lunas_alasan: G.belumLunasAlasan, bentrok: G.bentrok }[h.sebab];
                 return gagal('konflik', pesan, h.sebab === 'belum_lunas_alasan' ? 'alasan' : undefined);
             }
-            kabarkanLayarPanggilan(p.fasyankes_id);
+            kabarkanLayarPanggilan();
             const g = (await gambaran(p, kunjunganId));
             const alasanTutup = g.tagihan.alasan_tutup_belum_lunas;
             await catat(p, 'perbaikan', 'kunjungan', kunjunganId, `Kunjungan ditutup${alasanTutup ? ` belum lunas (${alasanTutup})` : ''}`, alamat);

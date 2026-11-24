@@ -28,7 +28,7 @@ export async function ambilFasyankesUntukPengaturanWebsite(id, koneksi = pool) {
         }
         return [...grup.values()].map(baris => ({ nama: baris[0].t0__nama, website_klinik: petakt1(baris)[0] ?? null }));
     }
-    const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`aktif` AS `t1__aktif`, t1.`slug` AS `t1__slug`, t1.`domain` AS `t1__domain`, t1.`judul` AS `t1__judul`, t1.`ringkasan` AS `t1__ringkasan`, t1.`tentang` AS `t1__tentang`, t1.`alamat` AS `t1__alamat`, t1.`whatsapp` AS `t1__whatsapp`, t1.`telepon` AS `t1__telepon`, t1.`email` AS `t1__email`, t1.`jam_operasional` AS `t1__jam_operasional`, t1.`warna_utama` AS `t1__warna_utama`, t1.`logo_url` AS `t1__logo_url`, t1.`hero_url` AS `t1__hero_url`, t1.`tampilkan_jadwal` AS `t1__tampilkan_jadwal`, t1.`tampilkan_nama_praktisi` AS `t1__tampilkan_nama_praktisi`\nFROM (SELECT t0.* FROM `fasyankes` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `website_klinik` b1 WHERE TRUE) t1 ON t0.`id` = t1.`fasyankes_id`\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
+    const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`aktif` AS `t1__aktif`, t1.`slug` AS `t1__slug`, t1.`domain` AS `t1__domain`, t1.`judul` AS `t1__judul`, t1.`ringkasan` AS `t1__ringkasan`, t1.`tentang` AS `t1__tentang`, t1.`alamat` AS `t1__alamat`, t1.`whatsapp` AS `t1__whatsapp`, t1.`telepon` AS `t1__telepon`, t1.`email` AS `t1__email`, t1.`jam_operasional` AS `t1__jam_operasional`, t1.`warna_utama` AS `t1__warna_utama`, t1.`logo_url` AS `t1__logo_url`, t1.`hero_url` AS `t1__hero_url`, t1.`tampilkan_jadwal` AS `t1__tampilkan_jadwal`, t1.`tampilkan_nama_praktisi` AS `t1__tampilkan_nama_praktisi`\nFROM (SELECT t0.* FROM `fasyankes` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `website_klinik` b1 LIMIT 1) t1 ON TRUE\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
     return (hasil[0] ?? null);
 }
@@ -61,7 +61,7 @@ export async function ambilFasyankesUntukBuatRuteLayarPanggilan(id, koneksi = po
         }
         return [...grup.values()].map(baris => ({ nama: baris[0].t0__nama, website_klinik: petakt1(baris)[0] ?? null }));
     }
-    const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`logo_url` AS `t1__logo_url`\nFROM (SELECT t0.* FROM `fasyankes` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `website_klinik` b1 WHERE TRUE) t1 ON t0.`id` = t1.`fasyankes_id`\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
+    const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`logo_url` AS `t1__logo_url`\nFROM (SELECT t0.* FROM `fasyankes` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `website_klinik` b1 LIMIT 1) t1 ON TRUE\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
     return (hasil[0] ?? null);
 }
@@ -87,19 +87,15 @@ export async function ambilFasyankesUntukUpgrade(id, koneksi = pool) {
     const baris = await baca("SELECT t.`id` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     return (baris[0] ?? null);
 }
-export async function tambahFasyankesUntukJalankanSeed(fasyankes_id, nama, jenis, kode_registrasi, koneksi = pool) {
-    const hasil = await tulis("INSERT INTO `fasyankes` (`fasyankes_id`, `nama`, `jenis`, `kode_registrasi`) VALUES (?, ?, ?, ?)", [(fasyankes_id === undefined ? null : fasyankes_id) ?? null, (nama === undefined ? null : nama) ?? null, ((jenis === undefined ? null : jenis) ?? null), (kode_registrasi === undefined ? null : kode_registrasi) ?? null], koneksi);
+export async function tambahFasyankesUntukJalankanSeed(nama, jenis, kode_registrasi, koneksi = pool) {
+    const hasil = await tulis("INSERT INTO `fasyankes` (`nama`, `jenis`, `kode_registrasi`) VALUES (?, ?, ?)", [(nama === undefined ? null : nama) ?? null, ((jenis === undefined ? null : jenis) ?? null), (kode_registrasi === undefined ? null : kode_registrasi) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function tambahFasyankesUntukJalankanSeedHasil(id, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`fasyankes_id`, t.`nama`, t.`jenis`, t.`bentuk_usaha`, t.`kode_registrasi`, t.`organization_id`, t.`status_akreditasi`, t.`tanggal_akreditasi`, t.`puskesmas_wilayah`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
+    const baris = await baca("SELECT t.`id`, t.`nama`, t.`jenis`, t.`bentuk_usaha`, t.`kode_registrasi`, t.`organization_id`, t.`status_akreditasi`, t.`tanggal_akreditasi`, t.`puskesmas_wilayah`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `fasyankes` t WHERE ((? OR t.`id` <=> ?)) LIMIT 1", [id === undefined, id ?? null], koneksi);
     if (!baris[0])
         throw new Error('Baris fasyankes tidak ditemukan.');
     return baris[0];
-}
-export async function ubahFasyankesUntukJalankanSeed(fasyankes_id, koneksi = pool) {
-    const hasil = await tulis("UPDATE `fasyankes` t SET `fasyankes_id` = IF(?, t.`fasyankes_id`, ?) WHERE ((? OR t.`id` <=> ?))", [fasyankes_id === undefined, fasyankes_id ?? null, fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
-    return { count: hasil.affectedRows };
 }
 export async function kunciFasyankes(fasyankesId, koneksi = pool) {
     return baca("SELECT id FROM fasyankes WHERE id = ? FOR UPDATE", [fasyankesId], koneksi);

@@ -23,13 +23,12 @@ export function buatRuteStatistik(akses, izin) {
                 res.status(400).json({ galat: { pesan: 'Pilih rentang maksimal 31 hari sampai hari ini.' } });
                 return;
             }
-            const fas = res.locals.pengguna.fasyankes_id;
             const [kunjungan, aktif, poli] = await Promise.all([
-                db.daftarKunjunganUntukBuatRuteStatistik(fas, 'AMB', (lokasi) ? (Number(lokasi)) : undefined, awal, akhir),
-                db.daftarKunjunganUntukBuatRuteStatistik2(fas, 'AMB', (lokasi) ? (Number(lokasi)) : undefined, 'ditutup'),
-                db.daftarLokasiUntukBuatRuteStatistik(fas, 'poli')
+                db.daftarKunjunganUntukBuatRuteStatistik('AMB', (lokasi) ? (Number(lokasi)) : undefined, awal, akhir),
+                db.daftarKunjunganUntukBuatRuteStatistik2('AMB', (lokasi) ? (Number(lokasi)) : undefined, 'ditutup'),
+                db.daftarLokasiUntukBuatRuteStatistik('poli')
             ]);
-            const riwayat = await db.riwayatStatistik(fas, lokasi ? Number(lokasi) : null, awal, akhir, new Date(sekarang.getTime() - 8 * 3600000));
+            const riwayat = await db.riwayatStatistik(lokasi ? Number(lokasi) : null, awal, akhir, new Date(sekarang.getTime() - 8 * 3600000));
             res.set('Cache-Control', 'no-store').json({ data: hitungStatistik(kunjungan, aktif, riwayat, poli, awal, akhir, sekarang) });
         }
         catch (e) {

@@ -14,9 +14,9 @@ const LOKASI = { unduh: 'Unduhan lewat web', pulihkan: 'Pemulihan lewat web', re
  * operasi ditolak) dan di riwayat backup. `alat` (fungsi cadangan dari @klira/db) dapat diganti untuk uji.
  */
 export function buatLayananCadangan({ repo, audit, lewatWeb = pulihkanLewatWebAktif(), alat = { mulaiUnduhBackup, pulihkanBackup, resetSistem, catatSetelahGantiData } }) {
-    const catat = (p, aksi, keterangan, alamat) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi, entitas: 'cadangan', entitas_id: null, keterangan, alamat });
+    const catat = (p, aksi, keterangan, alamat) => audit.catat({ pengguna_id: p.id, aksi, entitas: 'cadangan', entitas_id: null, keterangan, alamat });
     // Riwayat dan jejak sesudahnya adalah catatan tambahan: kegagalannya tidak boleh menutupi hasil operasi utama.
-    const riwayatGagal = (p, lokasi) => repo.catatBackup(p.fasyankes_id, 'gagal', lokasi, p.id).catch(() => undefined);
+    const riwayatGagal = (p, lokasi) => repo.catatBackup('gagal', lokasi, p.id).catch(() => undefined);
     const setelahGanti = (d) => alat.catatSetelahGantiData(d).catch((e) => console.error('Gagal mencatat jejak setelah penggantian data', e));
     /** Pulihkan dan reset mengganti seluruh isi database: jejak awal ditulis ke data lama, jejak akhir ke data baru. */
     async function gantiData(p, alamat, lokasi, awal, akhir, jalankan) {
@@ -38,9 +38,9 @@ export function buatLayananCadangan({ repo, audit, lewatWeb = pulihkanLewatWebAk
         /** Aliran dump seluruh database. Riwayat berstatus berjalan sampai aliran tuntas (berhasil) atau putus (gagal). */
         async mulaiUnduh(p, alamat) {
             await catat(p, 'ekspor', 'Unduh cadangan seluruh data', alamat);
-            const id = await repo.catatBackup(p.fasyankes_id, 'berjalan', LOKASI.unduh, p.id);
+            const id = await repo.catatBackup('berjalan', LOKASI.unduh, p.id);
             let ukuran = 0;
-            const tandai = (status) => repo.selesaiBackup(id, p.fasyankes_id, status, ukuran).catch((e) => console.error('Gagal memperbarui riwayat backup', e));
+            const tandai = (status) => repo.selesaiBackup(id, status, ukuran).catch((e) => console.error('Gagal memperbarui riwayat backup', e));
             let sumber;
             try {
                 sumber = await alat.mulaiUnduhBackup();

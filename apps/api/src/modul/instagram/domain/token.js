@@ -15,7 +15,7 @@ export async function perbaruiTokenInstagram() {
             return;
         if (row.token_berakhir.getTime() <= Date.now()) {
             await db.ubahIgKoneksiUntukPerbaruiTokenInstagram('kedaluwarsa', null, 1, row.generasi, row.access_token);
-            kabarkanInstagram({ tipe: 'koneksi', fasyankes_id: row.fasyankes_id });
+            kabarkanInstagram({ tipe: 'koneksi' });
             return;
         }
         if (row.token_berakhir.getTime() - Date.now() > 7 * 86400000 || !row.token_diperbarui || Date.now() - row.token_diperbarui.getTime() < 86400000)
@@ -29,7 +29,7 @@ export async function perbaruiTokenInstagram() {
                 await db.ubahIgKoneksiUntukPerbaruiTokenInstagram3(false, 'dicabut', null, 1, row.generasi, row.access_token);
             console.error('Perpanjangan token Instagram gagal; periksa koneksi atau hubungkan ulang akun.');
         }
-        kabarkanInstagram({ tipe: 'koneksi', fasyankes_id: row.fasyankes_id });
+        kabarkanInstagram({ tipe: 'koneksi' });
     }
     finally {
         berjalan = false;

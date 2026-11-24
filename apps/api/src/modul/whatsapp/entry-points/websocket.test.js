@@ -22,7 +22,6 @@ beforeEach(async () => {
     process.env.KUNCI_ENKRIPSI = 'kunci-unit-test-bukan-kredensial';
     const akun = (id, fas) => ({
         id,
-        fasyankes_id: fas,
         wajib_ganti_kredensial: false,
         izin: [{ fitur: 'whatsapp', aksi: 'lihat', cakupan: 'unit' }],
     });
@@ -73,16 +72,11 @@ it('menolak tanpa sesi, tanpa izin, dan origin asing', async () => {
     expect(await ditolak('/api/whatsapp/ws', 'http://asing.test', 'satu')).toBe(403);
 });
 
-it('hanya mengirim metadata perubahan ke fasyankes yang sesuai', async () => {
+it('mengirim metadata perubahan ke klien yang terhubung', async () => {
     const satu = await browser();
-    const dua = await browser('dua');
-    const lain = [];
-    dua.on('message', (d) => lain.push(d.toString()));
     const event = new Promise((resolve) => satu.once('message', (d) => resolve(d.toString())));
-    kabarkanWhatsapp({ tipe: 'pesan', fasyankes_id: 10, baru: true });
+    kabarkanWhatsapp({ tipe: 'pesan', baru: true });
     expect(JSON.parse(await event)).toEqual({ tipe: 'pesan', baru: true });
-    await new Promise((resolve) => setTimeout(resolve, 30));
-    expect(lain).toEqual([]);
 });
 
 it('menerima notifikasi engine hanya dengan token yang benar', async () => {
@@ -96,7 +90,7 @@ it('menerima notifikasi engine hanya dengan token yang benar', async () => {
         engine.once('error', reject);
     });
     const event = new Promise((resolve) => satu.once('message', (d) => resolve(d.toString())));
-    engine.send(JSON.stringify({ tipe: 'pesan', fasyankes_id: 10, baru: true }));
+    engine.send(JSON.stringify({ tipe: 'pesan', baru: true }));
     expect(JSON.parse(await event).tipe).toBe('pesan');
 });
 

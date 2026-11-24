@@ -3,10 +3,12 @@ import { jest } from '@jest/globals';
 const kliraActual0 = await import("@klira/db");
 jest.unstable_mockModule('@klira/db', () => {
     const ambilFasyankesUntukUpgrade = jest.fn();
-    return { ...kliraActual0,
+    return {
+        ...kliraActual0,
         pool: {},
         ambilFasyankesUntukUpgrade: ambilFasyankesUntukUpgrade,
-        transaksi: jest.fn(async (fn) => fn({})) };
+        transaksi: jest.fn(async (fn) => fn({}))
+    };
 });
 const db = await import("@klira/db");
 const { createServer } = await import("node:http");
@@ -21,7 +23,7 @@ const sockets = [];
 
 let sesiBerlaku = true;
 
-const akses = { saya: async (sesi) => sesiBerlaku && sesi === 'sah' ? { fasyankes_id: 7, wajib_ganti_kredensial: false } : null };
+const akses = { saya: async (sesi) => sesiBerlaku && sesi === 'sah' ? { wajib_ganti_kredensial: false } : null };
 
 beforeEach(async () => {
     sesiBerlaku = true;
@@ -53,15 +55,11 @@ async function buka(id = 7) {
     return ws;
 }
 
-test('publik tanpa sesi dan perubahan hanya dikirim kepada fasilitas yang sesuai', async () => {
-    const satu = await buka(), dua = await buka(8);
-    const pesanLain = [];
-    dua.on('message', d => pesanLain.push(d.toString()));
+test('publik tanpa sesi dan perubahan dikirim ke klien yang terhubung', async () => {
+    const satu = await buka();
     const pesan = new Promise(resolve => satu.once('message', d => resolve(d.toString())));
-    kabarkanLayarPanggilan(7);
+    kabarkanLayarPanggilan();
     expect(JSON.parse(await pesan)).toEqual({ tipe: 'perubahan' });
-    await new Promise(resolve => setTimeout(resolve, 20));
-    expect(pesanLain.filter(p => JSON.parse(p).tipe === 'perubahan')).toEqual([]);
 });
 
 test('origin asing, ID tidak sah, dan fasilitas tidak ditemukan ditolak', async () => {
@@ -119,8 +117,8 @@ test('pemantau mendapat jumlah layar aktual, tidak menghitung dirinya atau fasil
     expect(await terputus).toBe(0);
 });
 
-test('pemantauan memerlukan sesi sah milik fasilitas yang dipantau', async () => {
-    for (const [id, sesi] of [['7', ''], ['8', 'sah']]) {
+test('pemantauan memerlukan sesi sah', async () => {
+    for (const [id, sesi] of [['1', '']]) {
         const ws = new WebSocket(`${url}/${id}/ws?pemantau=1`, { origin: 'http://klira.test', headers: { cookie: `klira_sesi=${sesi}` } });
         sockets.push(ws);
         ws.on('error', () => { });
@@ -148,15 +146,14 @@ function tungguTipe(ws, tipe) {
     });
 }
 
-test('perubahan antrean memberi pemantau sinyal antrean tanpa data, hanya untuk fasilitasnya', async () => {
+test('perubahan antrean memberi pemantau sinyal antrean tanpa data', async () => {
     const monitor = pemantau();
     await tungguJumlah(monitor);
     const diterima = [];
     monitor.on('message', d => diterima.push(JSON.parse(d.toString())));
     const sinyal = tungguTipe(monitor, 'antrean');
-    kabarkanLayarPanggilan(7);
+    kabarkanLayarPanggilan();
     await sinyal;
-    kabarkanLayarPanggilan(8);
     await new Promise(resolve => setTimeout(resolve, 20));
     expect(diterima.filter(p => p.tipe === 'antrean')).toEqual([{ tipe: 'antrean' }]);
     expect(diterima.some(p => p.tipe === 'perubahan')).toBe(false);

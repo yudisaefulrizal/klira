@@ -12,8 +12,6 @@ export const cocokSocketNotifikasi = (path) => path === '/api/notifikasi/ws';
  * @param {object} event - Event domain yang dipancarkan dari layanan.
  */
 function cocokPenerima(info, event) {
-    if (info.fasyankesId !== event.fasyankesId)
-        return false;
     if (event.pelakuId && info.pengguna.id === event.pelakuId)
         return false;
     if (event.tipe === 'skrining_selesai' || event.tipe === 'hasil_lab_selesai') {
@@ -99,7 +97,7 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
                 return;
             }
             wss.handleUpgrade(req, socket, head, (ws) => {
-                klien.set(ws, { pengguna, fasyankesId: pengguna.fasyankes_id, hidup: true, sesi });
+                klien.set(ws, { pengguna, hidup: true, sesi });
                 ws.on('error', () => { });
                 ws.on('pong', () => {
                     const info = klien.get(ws);
@@ -130,7 +128,7 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
             }
             if (akses) {
                 void akses.saya(info.sesi).then((p) => {
-                    if (!p || p.wajib_ganti_kredensial || p.fasyankes_id !== info.fasyankesId) {
+                    if (!p || p.wajib_ganti_kredensial) {
                         ws.close(1008, 'Sesi berakhir');
                     } else {
                         info.pengguna = p;

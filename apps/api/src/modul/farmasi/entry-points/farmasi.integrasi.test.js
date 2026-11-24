@@ -77,9 +77,9 @@ d('farmasi (master obat, stok, resep, telaah) terhadap database pengujian', () =
         kunjTutup = await buatKunjungan(fas, `${kode}-T`, 'ditutup');
         kunjLain = await buatKunjungan(fasLain, `${kode}-L`);
         await uji.tambahBanyakKfaLokalUntukFarmasiFarmasiIntegrasiTest([
-            { fasyankes_id: fas, kode: kfa1, nama: `Uji parasetamol ${kode} tablet`, satuan: 'tablet' },
-            { fasyankes_id: fas, kode: kfa2, nama: `Uji amoksisilin ${kode} kapsul`, satuan: 'kapsul' },
-            { fasyankes_id: fas, kode: kfaMati, nama: `Uji tidak aktif ${kode}`, status: 'nonaktif' },
+            { kode: kfa1, nama: `Uji parasetamol ${kode} tablet`, satuan: 'tablet' },
+            { kode: kfa2, nama: `Uji amoksisilin ${kode} kapsul`, satuan: 'kapsul' },
+            { kode: kfaMati, nama: `Uji tidak aktif ${kode}`, status: 'nonaktif' },
         ]);
         for (const k of ['apoteker', 'dokter', 'perawat', 'lainApoteker', 'lainDokter'])
             await login(k);

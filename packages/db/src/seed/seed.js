@@ -13,23 +13,22 @@ export async function jalankanSeed(koneksi, env = process.env) {
     const idAda = await pastikanFasyankesTunggal(koneksi);
     let fas = idAda ? await db.tambahFasyankesUntukJalankanSeedHasil(idAda, koneksi) : null;
     if (!fas) {
-        const baru = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahFasyankesUntukJalankanSeed(0, 'Klinik Contoh', 'klinik_pratama_rawat_jalan', 'KLINIK-CONTOH', koneksiBaru); return db.tambahFasyankesUntukJalankanSeedHasil(_hasil.id, koneksiBaru); });
-        fas = await db.transaksi(async (koneksiBaru) => { (await db.ubahFasyankesUntukJalankanSeed(baru.id, koneksiBaru)); return db.tambahFasyankesUntukJalankanSeedHasil(baru.id, koneksiBaru); });
+        fas = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahFasyankesUntukJalankanSeed('Klinik Contoh', 'klinik_pratama_rawat_jalan', 'KLINIK-CONTOH', koneksiBaru); return db.tambahFasyankesUntukJalankanSeedHasil(_hasil.id, koneksiBaru); });
     }
     // Tiga shift tetap (jam saja); migrasi mengisinya untuk klinik yang sudah ada, seed untuk klinik baru.
-    if ((await db.hitungShiftUntukSeed(fas.id, koneksi)) === 0)
+    if ((await db.hitungShiftUntukSeed(koneksi)) === 0)
         for (const sh of SHIFT_BAWAAN)
-            await db.tambahShiftUntukSeed(fas.id, sh.urutan, sh.nama, sh.jam_mulai, sh.jam_selesai, koneksi);
+            await db.tambahShiftUntukSeed(sh.urutan, sh.nama, sh.jam_mulai, sh.jam_selesai, koneksi);
     for (const j of JENIS_AKUN_AWAL) {
-        const jenis = await db.transaksi(async (koneksiBaru) => { (await db.simpanJenisAkunUntukJalankanSeed(fas.id, j.nama, j.syarat_profesi, koneksiBaru)); return db.simpanJenisAkunUntukJalankanSeedHasil(fas.id, j.nama, koneksiBaru); });
+        const jenis = await db.transaksi(async (koneksiBaru) => { (await db.simpanJenisAkunUntukJalankanSeed(j.nama, j.syarat_profesi, koneksiBaru)); return db.simpanJenisAkunUntukJalankanSeedHasil(j.nama, koneksiBaru); });
         const daftar = [
             ...(await db.daftarIzinUntukJalankanSeed(j.fitur, koneksi)),
             ...(j.lihat_saja?.length ? await db.daftarIzinUntukJalankanSeed2(j.lihat_saja, 'lihat', koneksi) : []),
         ];
-        await db.tambahBanyakIzinJenisAkunUntukUbahJenisAkun(daftar.map((i) => ({ fasyankes_id: fas.id, jenis_akun_id: jenis.id, izin_id: i.id })), koneksi);
+        await db.tambahBanyakIzinJenisAkunUntukUbahJenisAkun(daftar.map((i) => ({ jenis_akun_id: jenis.id, izin_id: i.id })), koneksi);
     }
     await seedTeksPersetujuan(koneksi);
-    await seedPimpinanPertama(koneksi, fas.id, env);
+    await seedPimpinanPertama(koneksi, env);
     // Wilayah contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
     // Terminologi contoh hanya bila tabel kosong (jangan menimpa hasil impor resmi).
     if ((await db.hitungKodeTerminologiUntukJalankanSeed(koneksi)) === 0)
@@ -63,26 +62,26 @@ export const TEKS_PERSETUJUAN_TINDAKAN_V1 = {
 };
 export async function seedTeksPersetujuan(koneksi) {
     for (const t of [TEKS_GENERAL_CONSENT_V1, TEKS_PERSETUJUAN_TINDAKAN_V1]) {
-        const ada = await db.cariTeksPersetujuanUntukSeedTeksPersetujuan(null, t.jenis, t.versi, koneksi);
+        const ada = await db.cariTeksPersetujuanUntukSeedTeksPersetujuan(t.jenis, t.versi, koneksi);
         if (!ada)
             await db.tambahTeksPersetujuanUntukSeedTeksPersetujuan((t)?.jenis, (t)?.versi, (t)?.judul, (t)?.tujuan, (t)?.isi, true, koneksi);
     }
 }
 /** Akun Pimpinan pertama dengan kredensial awal statis; idempoten (tidak menimpa akun yang sudah ada). */
-async function seedPimpinanPertama(koneksi, fasyankesId, env) {
+async function seedPimpinanPertama(koneksi, env) {
     // Kredensial awal statis yang sama untuk semua klinik (2.4); wajib diganti saat masuk pertama.
     const { username, kataSandi } = kredensialAwal(env);
     // Bila klinik sudah punya akun (termasuk setelah kredensial awal diganti), tidak membuat ulang kredensial awal.
-    if ((await db.hitungPenggunaUntukSeedPimpinanPertama(fasyankesId, koneksi)) > 0)
+    if ((await db.hitungPenggunaUntukSeedPimpinanPertama(koneksi)) > 0)
         return;
-    const pengguna = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahPenggunaUntukSeedPimpinanPertama(fasyankesId, 'Pimpinan Pertama', '0000000000000000', username, await hashKataSandi(kataSandi), true, koneksiBaru); return db.tambahPenggunaUntukBuatAkunHasil(_hasil.id, koneksiBaru); });
+    const pengguna = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahPenggunaUntukSeedPimpinanPertama('Pimpinan Pertama', '0000000000000000', username, await hashKataSandi(kataSandi), true, koneksiBaru); return db.tambahPenggunaUntukBuatAkunHasil(_hasil.id, koneksiBaru); });
     const waktu = new Date();
     for (const j of JENIS_AKUN_AWAL) {
-        const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(fasyankesId, j.nama, koneksi);
+        const jenis = await db.simpanJenisAkunUntukJalankanSeedHasil(j.nama, koneksi);
         if (jenis)
-            await db.tambahPenugasanJenisUntukSeedPimpinanPertama(fasyankesId, pengguna.id, jenis.id, waktu, koneksi);
+            await db.tambahPenugasanJenisUntukSeedPimpinanPertama(pengguna.id, jenis.id, waktu, koneksi);
     }
-    await db.tambahLogAuditUntukSeedPimpinanPertama(fasyankesId, pengguna.id, 'input', 'pengguna', 'Akun Pimpinan pertama dibuat (seed)', koneksi);
+    await db.tambahLogAuditUntukSeedPimpinanPertama(pengguna.id, 'input', 'pengguna', 'Akun Pimpinan pertama dibuat (seed)', koneksi);
 }
 if (process.argv[1] && import.meta.url === kliraFileUrl(process.argv[1]).href) {
     const koneksi = db.pool;

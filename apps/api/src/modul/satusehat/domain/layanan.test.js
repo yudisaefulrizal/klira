@@ -2,7 +2,7 @@ import { GalatIntegrasi } from '@klira/integrasi';
 
 const { buatLayananSatusehat, periksaAlamat, URL_RESMI } = await import("./layanan.js");
 
-const P = { fasyankes_id: 1, id: 9 };
+const P = { id: 9 };
 
 /** Repositori memori: satu baris per lingkungan, organization_id dapat dikosongkan. */
 function buat(opsi = {}) {
@@ -14,7 +14,7 @@ function buat(opsi = {}) {
         daftar: async () => [...baris.values()],
         ambil: async (_f, e) => baris.get(e) ?? null,
         ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (f, d, oleh) => { urut += 1; baris.set(d.environment, { id: urut, fasyankes_id: f, aktif: false, diuji_pada: null, hasil_uji: null, dibuat_oleh: oleh, ...d }); },
+        tambah: async (f, d, oleh) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, dibuat_oleh: oleh, ...d }); },
         ubah: async (id, d) => {
             const k = [...baris.values()].find((x) => x.id === id);
             Object.assign(k, { client_id: d.client_id, base_url: d.base_url, diuji_pada: null, hasil_uji: null });

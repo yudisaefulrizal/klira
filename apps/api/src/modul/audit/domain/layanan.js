@@ -2,7 +2,6 @@ import { keCsv } from './csv.js';
 export const BATAS_EKSPOR = 10_000;
 const KOLOM_CSV = ['id', 'waktu_utc', 'pengguna_id', 'pengguna_nama', 'aksi', 'entitas', 'entitas_id', 'alamat', 'keterangan'];
 const saringan = (p, f) => ({
-    fasyankes_id: p.fasyankes_id,
     pengguna_id: f.pengguna_id,
     aksi: f.aksi,
     entitas: f.entitas,
@@ -14,7 +13,6 @@ export function buatLayananAudit({ repo, audit }) {
         const nama = await repo.namaPengguna(baris.flatMap((b) => (b.pengguna_id ? [b.pengguna_id] : [])));
         return baris.map((b) => ({
             id: b.id,
-            fasyankes_id: b.fasyankes_id,
             pengguna_id: b.pengguna_id,
             pengguna_nama: b.pengguna_id ? (nama.get(b.pengguna_id) ?? null) : null,
             aksi: b.aksi,
@@ -38,7 +36,7 @@ export function buatLayananAudit({ repo, audit }) {
             return { data: await keDto(baris), halaman: f.halaman, ukuran: f.ukuran, total };
         },
         async detail(p, id) {
-            const c = await repo.ambil(id, p.fasyankes_id);
+            const c = await repo.ambil(id);
             return c ? (await keDto([c]))[0] : null;
         },
         /** Ekspor CSV; tercatat sebagai aksi `ekspor` SEBELUM berkas dilepas (gagal catat = gagal ekspor). */
@@ -46,7 +44,6 @@ export function buatLayananAudit({ repo, audit }) {
             const { baris } = await repo.cari(saringan(p, f), 0, BATAS_EKSPOR);
             const dto = await keDto(baris);
             await audit.catat({
-                fasyankes_id: p.fasyankes_id,
                 pengguna_id: p.id,
                 aksi: 'ekspor',
                 entitas: 'log_audit',

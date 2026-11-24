@@ -197,8 +197,6 @@ export async function resetSistem() {
  * jadi dicatat tanpa id pengguna; identitasnya ditulis pemanggil di `keterangan`.
  */
 export async function catatSetelahGantiData({ lokasi, keterangan, alamat, ukuranByte }) {
-    const [fasyankesId = null] = await daftarIdFasyankes(1);
-    await tambahLogAuditUntukTambah(fasyankesId, null, 'perbaikan', 'cadangan', null, keterangan.slice(0, 255), new Date(), alamat?.slice(0, 64) ?? null);
-    if (fasyankesId !== null)
-        await tambahRiwayatBackup(fasyankesId, 'berhasil', lokasi, null, ukuranByte ?? null);
+    await tambahLogAuditUntukTambah(null, 'perbaikan', 'cadangan', null, keterangan.slice(0, 255), new Date(), alamat?.slice(0, 64) ?? null);
+    await tambahRiwayatBackup('berhasil', lokasi, null, ukuranByte ?? null);
 }

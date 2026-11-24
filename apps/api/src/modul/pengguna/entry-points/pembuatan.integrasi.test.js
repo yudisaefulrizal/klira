@@ -101,7 +101,7 @@ d('POST /api/pengguna terhadap database pengujian', () => {
         const sandi = r.badan.data.kata_sandi_awal;
         expect(sandi).toMatch(/^(?=.*[A-Za-z])(?=.*\d).{12}$/);
         const baru = await uji.wajibPenggunaUntukPenggunaPembuatanIntegrasiTest(r.badan.data.id);
-        expect(baru).toMatchObject({ fasyankes_id: fas, aktif: true, wajib_ganti_kredensial: true, dibuat_oleh: id.pimpinan });
+        expect(baru).toMatchObject({ aktif: true, wajib_ganti_kredensial: true, dibuat_oleh: id.pimpinan });
         expect(baru.kata_sandi_hash).toMatch(/^scrypt\$/);
         expect(baru.kata_sandi_hash).not.toContain(sandi);
         expect(baru.profil_profesi).toHaveLength(1);
@@ -144,7 +144,7 @@ d('POST /api/pengguna terhadap database pengujian', () => {
     it('kegagalan di tengah transaksi membatalkan semuanya', async () => {
         const { RepositoriAkunBaruMysql } = kliraRequired2;
         await expect(new RepositoriAkunBaruMysql().buatAkun({
-            fasyankes_id: fas, oleh: id.pimpinan, nama: 'Gagal', nik: '9950000000000001', username: `${kode}-gagal`, kata_sandi_hash: 'x',
+            oleh: id.pimpinan, nama: 'Gagal', nik: '9950000000000001', username: `${kode}-gagal`, kata_sandi_hash: 'x',
             profil: { profesi: 'Perawat', nomor_sip: null, masa_berlaku_sip: null, ihs_practitioner_id: null },
             penugasan: [{ jenis_akun_id: jenisDaftar, mulai: new Date(), selesai: null }],
             izin_akun: [{ izin_id: 999999999, tipe: 'tambah', alasan: 'x', mulai: new Date(), selesai: null }],
@@ -156,7 +156,7 @@ d('POST /api/pengguna terhadap database pengujian', () => {
     it('galat unik dari basis data: NIK ganda dikenali sebagai NIK, username ganda sebagai username', async () => {
         const { RepositoriAkunBaruMysql, KonflikAkun } = kliraRequired2;
         const dasar = {
-            fasyankes_id: fas, oleh: id.pimpinan, kata_sandi_hash: 'x', profil: null,
+            oleh: id.pimpinan, kata_sandi_hash: 'x', profil: null,
             penugasan: [{ jenis_akun_id: jenisDaftar, mulai: new Date(), selesai: null }], izin_akun: [], peringatan: [],
         };
         const repo = new RepositoriAkunBaruMysql();

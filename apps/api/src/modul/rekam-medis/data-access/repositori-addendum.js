@@ -9,36 +9,36 @@ import { tulisPengesahanDalam } from './repositori.js';
 export async function tulisAddendumDalam(tx, d) {
     const terakhir = await db.ringkasanAddendumUntukTulisAddendumDalam(d.entitas, d.entitasId, tx);
     const versi = (terakhir._max.versi ?? 0) + 1;
-    const a = await (async () => { const _hasil = await db.tambahAddendumUntukTulisAddendumDalam(d.fasyankesId, d.kunjunganId, d.entitas, d.entitasId, versi, d.isi, d.alasan, d.waktu, d.oleh, tx); return db.tambahAddendumUntukTulisAddendumDalamHasil(_hasil.id, tx); })();
+    const a = await (async () => { const _hasil = await db.tambahAddendumUntukTulisAddendumDalam(d.kunjunganId, d.entitas, d.entitasId, versi, d.isi, d.alasan, d.waktu, d.oleh, tx); return db.tambahAddendumUntukTulisAddendumDalamHasil(_hasil.id, tx); })();
     const versiKunjungan = await db.ringkasanVersiCatatanUntukTulisAddendumDalam('kunjungan', d.kunjunganId, tx);
-    await db.tambahVersiCatatanUntukTulisPengesahanDalam(d.fasyankesId, 'kunjungan', d.kunjunganId, (versiKunjungan._max.versi ?? 0) + 1, { jenis: 'addendum', addendum_id: a.id, entitas: d.entitas, entitas_id: d.entitasId }, d.alasan, null, d.oleh, tx);
+    await db.tambahVersiCatatanUntukTulisPengesahanDalam('kunjungan', d.kunjunganId, (versiKunjungan._max.versi ?? 0) + 1, { jenis: 'addendum', addendum_id: a.id, entitas: d.entitas, entitas_id: d.entitasId }, d.alasan, null, d.oleh, tx);
     await tulisPengesahanDalam(tx, {
-        fasyankesId: d.fasyankesId, entitas: 'addendum', entitasId: a.id, versi: 1, penggunaId: d.oleh, jenisAkun: d.jenisAkun, hash: hashIsi(d.isi), waktu: d.waktu, versiLama: null,
+        entitas: 'addendum', entitasId: a.id, versi: 1, penggunaId: d.oleh, jenisAkun: d.jenisAkun, hash: hashIsi(d.isi), waktu: d.waktu, versiLama: null,
     });
     return { id: a.id, versi };
 }
 export class RepositoriAddendumMysql {
-    async petakan(fasyankesId, baris) {
+    async petakan(baris) {
         const ids = [...new Set(baris.flatMap((b) => (b.dibuat_oleh ? [b.dibuat_oleh] : [])))];
-        const pengguna = ids.length ? await db.daftarPenggunaUntukRiwayat(ids, fasyankesId) : [];
+        const pengguna = ids.length ? await db.daftarPenggunaUntukRiwayat(ids) : [];
         const nama = new Map(pengguna.map((p) => [p.id, p.nama]));
         return baris.map((b) => ({
             id: b.id, kunjungan_id: b.kunjungan_id, entitas: b.entitas, entitas_id: b.entitas_id, versi: b.versi, isi: (b.isi ?? {}), alasan: b.alasan, waktu: b.waktu,
             dibuat_oleh_nama: b.dibuat_oleh ? nama.get(b.dibuat_oleh) ?? null : null, perlu_kirim_ulang: b.perlu_kirim_ulang, dikirim_pada: b.dikirim_pada,
         }));
     }
-    async kunjunganAda(fasyankesId, kunjunganId) {
-        return (await db.hitungKunjunganUntukKunjunganAda(kunjunganId, fasyankesId)) > 0;
+    async kunjunganAda(kunjunganId) {
+        return (await db.hitungKunjunganUntukKunjunganAda(kunjunganId)) > 0;
     }
-    async daftar(fasyankesId, kunjunganId) {
-        return this.petakan(fasyankesId, await db.daftarAddendumUntukDaftar(fasyankesId, kunjunganId, 200));
+    async daftar(kunjunganId) {
+        return this.petakan(await db.daftarAddendumUntukDaftar(kunjunganId, 200));
     }
-    async untukEntitas(fasyankesId, entitas, entitasIds) {
+    async untukEntitas(entitas, entitasIds) {
         if (!entitasIds.length)
             return [];
-        return this.petakan(fasyankesId, await db.daftarAddendumUntukUntukEntitas(fasyankesId, entitas, [...entitasIds]));
+        return this.petakan(await db.daftarAddendumUntukUntukEntitas(entitas, [...entitasIds]));
     }
-    async isi(fasyankesId, id) {
-        return (await db.cariAddendumUntukIsi(id, fasyankesId))?.isi ?? null;
+    async isi(id) {
+        return (await db.cariAddendumUntukIsi(id))?.isi ?? null;
     }
 }

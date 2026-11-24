@@ -9,7 +9,8 @@ jest.unstable_mockModule('@klira/db', () => {
     const daftarAntreanUntukBuatRuteLayarPanggilan = jest.fn();
     const daftarEventPanggilanUntukBuatRuteLayarPanggilan = jest.fn();
     const cariEventPanggilanUntukBuatRuteLayarPanggilan = jest.fn();
-    return { ...kliraActual0,
+    return {
+        ...kliraActual0,
         pool: {},
         ambilFasyankesUntukBuatRuteLayarPanggilan: ambilFasyankesUntukBuatRuteLayarPanggilan,
         ambilSesiAntreanAktif: ambilSesiAntreanAktif,
@@ -18,7 +19,8 @@ jest.unstable_mockModule('@klira/db', () => {
         daftarAntreanUntukBuatRuteLayarPanggilan: daftarAntreanUntukBuatRuteLayarPanggilan,
         daftarEventPanggilanUntukBuatRuteLayarPanggilan: daftarEventPanggilanUntukBuatRuteLayarPanggilan,
         cariEventPanggilanUntukBuatRuteLayarPanggilan: cariEventPanggilanUntukBuatRuteLayarPanggilan,
-        transaksi: jest.fn(async (fn) => fn({})) };
+        transaksi: jest.fn(async (fn) => fn({}))
+    };
 });
 const db = await import("@klira/db");
 const { default: express } = await import("express");
@@ -93,7 +95,7 @@ test('publik tanpa sesi, terisolasi per fasilitas dan tanggal Jakarta, tanpa ide
     expect(data.poli[1].sekarang).toEqual({ kode: 'U-023', status: 'dipanggil' });
     expect(data.poli[2].sekarang).toBeNull();
     expect(data.jenis).toEqual([{ nama: 'Gigi', berikutnya: null, menunggu: 0 }, { nama: 'Umum', berikutnya: 'U-024', menunggu: 2 }]);
-    expect(jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 99, 2: [2, 1] })]));
+    expect(jest.mocked(db.daftarAntreanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 99, 1: [2, 1] })]));
     expect(JSON.stringify(data)).not.toMatch(/pasien|nomor_rm|kunjungan_id/);
 });
 
@@ -131,7 +133,7 @@ test('event dipulihkan per fasilitas dan hari, termasuk panggil ulang dengan wak
     expect(data.kursor).toBe(44);
     expect(data.event_panggilan.map((e) => e.event_id)).toEqual([43, 44]);
     expect(data.ada_lanjutan).toBe(false);
-    expect(jest.mocked(db.daftarEventPanggilanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 99, 2: 42 })]));
+    expect(jest.mocked(db.daftarEventPanggilanUntukBuatRuteLayarPanggilan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 99, 1: 42 })]));
     expect(JSON.stringify(data.event_panggilan)).not.toMatch(/pasien|nomor_rm|kunjungan/);
 });
 

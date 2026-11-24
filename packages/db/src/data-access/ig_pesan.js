@@ -1,10 +1,10 @@
 import { baca, tulis, pool } from '../koneksi.js';
-export async function hitungIgPesanUntukBersihkanDalam(fasyankes_id, status, koneksi = pool) {
-    const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `ig_pesan` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id` AND (((? OR r1.`fasyankes_id` <=> ?))))) AND ((? OR t.`status` IN (?)))", [fasyankes_id === undefined, fasyankes_id ?? null, status === undefined, (status)?.length ? (status) : [null]], koneksi);
+export async function hitungIgPesanUntukBersihkanDalam(status, koneksi = pool) {
+    const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `ig_pesan` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id`)) AND ((? OR t.`status` IN (?)))", [status === undefined, (status)?.length ? (status) : [null]], koneksi);
     return Number(baris.jumlah);
 }
-export async function hapusIgPesanUntukBersihkanDalam(fasyankes_id, koneksi = pool) {
-    const hasil = await tulis("DELETE t FROM `ig_pesan` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id` AND (((? OR r1.`fasyankes_id` <=> ?)))))", [fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+export async function hapusIgPesanUntukBersihkanDalam(koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `ig_pesan` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id`))", [], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function hitungIgPesanUntukBuatRuteInstagram(percakapan_id, arah, id, koneksi = pool) {

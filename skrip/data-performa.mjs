@@ -57,8 +57,8 @@ async function jalankan() {
     return;
   }
 
-  const pengguna = await baca('SELECT id FROM pengguna WHERE fasyankes_id = ? ORDER BY id ASC LIMIT 1', [FASYANKES_ID]);
-  const poli = await baca("SELECT id FROM lokasi WHERE fasyankes_id = ? AND jenis = 'poli' ORDER BY id ASC LIMIT 1", [FASYANKES_ID]);
+  const pengguna = await baca('SELECT id FROM pengguna ORDER BY id ASC LIMIT 1');
+  const poli = await baca("SELECT id FROM lokasi WHERE jenis = 'poli' ORDER BY id ASC LIMIT 1");
   const dokterId = pengguna[0]?.id ?? 1;
   const poliId = poli[0]?.id ?? null;
 
@@ -72,14 +72,14 @@ async function jalankan() {
     const bulan = String(1 + (i % 12)).padStart(2, '0');
     const hari = String(1 + (i % 28)).padStart(2, '0');
     pasienBaris.push([
-      FASYANKES_ID, rm, nik, nama, `62819${String(10000000 + i).slice(-8)}`,
+      rm, nik, nama, `62819${String(10000000 + i).slice(-8)}`,
       `${tahun}-${bulan}-${hari}`, i % 2 === 0 ? 'laki_laki' : 'perempuan',
       'lengkap', 'loket', 0, dokterId,
     ]);
   }
   await sisipBatch(
     'pasien',
-    ['fasyankes_id', 'nomor_rm', 'nik', 'nama', 'nomor_hp', 'tanggal_lahir', 'jenis_kelamin', 'status_identitas', 'jalur_identitas', 'tidak_cakap', 'dibuat_oleh'],
+    ['nomor_rm', 'nik', 'nama', 'nomor_hp', 'tanggal_lahir', 'jenis_kelamin', 'status_identitas', 'jalur_identitas', 'tidak_cakap', 'dibuat_oleh'],
     pasienBaris,
   );
   const pasienIds = (await baca("SELECT id FROM pasien WHERE nomor_rm LIKE 'PF-%' ORDER BY id ASC")).map((r) => r.id);
@@ -93,7 +93,7 @@ async function jalankan() {
     const tgl = new Date(sekarang - (1 + (i % 180)) * 86_400_000);
     const selesai = new Date(tgl.getTime() + 1_800_000);
     kunjunganBaris.push([
-      FASYANKES_ID, `PERF-${String(i).padStart(6, '0')}`, pId,
+      `PERF-${String(i).padStart(6, '0')}`, pId,
       imp ? 'IMP' : 'AMB', 'finished', 'ditutup',
       poliId, i % 3 === 0 ? 'jkn' : 'umum', KELUHAN[i % KELUHAN.length],
       tgl, selesai, selesai, dokterId,
@@ -101,7 +101,7 @@ async function jalankan() {
   }
   await sisipBatch(
     'kunjungan',
-    ['fasyankes_id', 'id_layanan', 'pasien_id', 'jenis', 'status', 'tahap_layanan', 'lokasi_id', 'cara_pembayaran', 'keluhan_singkat', 'mulai', 'selesai', 'waktu_tutup', 'dibuat_oleh'],
+    ['id_layanan', 'pasien_id', 'jenis', 'status', 'tahap_layanan', 'lokasi_id', 'cara_pembayaran', 'keluhan_singkat', 'mulai', 'selesai', 'waktu_tutup', 'dibuat_oleh'],
     kunjunganBaris,
   );
   const kunjRows = await baca("SELECT id, jenis, mulai FROM kunjungan WHERE id_layanan LIKE 'PERF-%' ORDER BY id ASC");
@@ -119,7 +119,7 @@ async function jalankan() {
 
     // anamnesis
     periksaBaris.push([
-      FASYANKES_ID, k.id, 'ralan', 'anamnesis', 1,
+      k.id, 'ralan', 'anamnesis', 1,
       null, null, null, null, null, null, null, null, null, null, null,
       null, null, null, null, null, null, null,
       keluhan, null, `${keluhan} sejak 2 hari`, 'Tidak ada', 'Tidak ada', 'Aktif bekerja',
@@ -128,7 +128,7 @@ async function jalankan() {
     ]);
     // tanda_vital
     periksaBaris.push([
-      FASYANKES_ID, k.id, 'ralan', 'tanda_vital', 1,
+      k.id, 'ralan', 'tanda_vital', 1,
       36.5 + (idx % 15) * 0.1, 110 + (idx % 40), 70 + (idx % 25), 76 + (idx % 20), 18 + (idx % 6),
       155 + (idx % 25), 50 + (idx % 35), 72 + (idx % 25), 97 + (idx % 3), 15, 'compos_mentis',
       null, null, null, null, null, null, null,
@@ -138,7 +138,7 @@ async function jalankan() {
     ]);
     // keperawatan
     periksaBaris.push([
-      FASYANKES_ID, k.id, 'ralan', 'keperawatan', 1,
+      k.id, 'ralan', 'keperawatan', 1,
       null, null, null, null, null, null, null, null, null, null, null,
       idx % 5 === 0 ? 'Debu' : 'Tidak Ada', null, null, null, null, null, null,
       null, null, null, null, null, null,
@@ -147,7 +147,7 @@ async function jalankan() {
     ]);
     // subjek SOAPIE
     periksaBaris.push([
-      FASYANKES_ID, k.id, 'ralan', 'subjek', 1,
+      k.id, 'ralan', 'subjek', 1,
       null, null, null, null, null, null, null, null, null, null, null,
       null, keluhan, null, null, null, null, null,
       null, null, null, null, null, null,
@@ -157,7 +157,7 @@ async function jalankan() {
 
     if (k.jenis === 'IMP') {
       periksaBaris.push([
-        FASYANKES_ID, k.id, 'cppt', 'cppt', 1,
+        k.id, 'cppt', 'cppt', 1,
         37.2, 120, 80, 84, 20, 165, 65, 80, 98, 15, 'compos_mentis',
         null, 'Keluhan membaik', 'Keadaan umum sedang', namaDx, 'Lanjut terapi rawat inap', 'Monitor TTV tiap shift', null,
         null, null, null, null, null, null,
@@ -166,16 +166,16 @@ async function jalankan() {
       ]);
     }
 
-    dxBaris.push([FASYANKES_ID, k.id, 1, kodeDx, namaDx, null, 'utama', 0, dokterId, k.mulai]);
+    dxBaris.push([k.id, 1, kodeDx, namaDx, null, 'utama', 0, dokterId, k.mulai]);
     for (const bag of ['anamnesis', 'tanda_vital', 'keperawatan', 'subjek', 'diagnosis']) {
-      sahBaris.push([FASYANKES_ID, bag, k.id, 1, dokterId, null, 'Dokter/DPJP', k.mulai, dummyHash, dokterId, k.mulai]);
+      sahBaris.push([bag, k.id, 1, dokterId, null, 'Dokter/DPJP', k.mulai, dummyHash, dokterId, k.mulai]);
     }
   }
 
   await sisipBatch(
     'pemeriksaan',
     [
-      'fasyankes_id', 'kunjungan_id', 'jenis', 'bagian', 'versi',
+      'kunjungan_id', 'jenis', 'bagian', 'versi',
       'suhu', 'tensi_sistol', 'tensi_diastol', 'nadi', 'respirasi',
       'tinggi', 'berat', 'lingkar_perut', 'spo2', 'gcs', 'kesadaran',
       'alergi', 'subjek', 'objek', 'asesmen', 'plan', 'instruksi', 'evaluasi',
@@ -188,12 +188,12 @@ async function jalankan() {
   );
   await sisipBatch(
     'diagnosis',
-    ['fasyankes_id', 'kunjungan_id', 'versi', 'kode_icd10', 'nama', 'kode_snomed', 'peran', 'urutan', 'dibuat_oleh', 'dibuat_pada'],
+    ['kunjungan_id', 'versi', 'kode_icd10', 'nama', 'kode_snomed', 'peran', 'urutan', 'dibuat_oleh', 'dibuat_pada'],
     dxBaris,
   );
   await sisipBatch(
     'pengesahan_catatan',
-    ['fasyankes_id', 'entitas', 'entitas_id', 'versi', 'pengguna_id', 'jenis_akun_id', 'jenis_akun_nama', 'waktu', 'hash', 'dibuat_oleh', 'dibuat_pada'],
+    ['entitas', 'entitas_id', 'versi', 'pengguna_id', 'jenis_akun_id', 'jenis_akun_nama', 'waktu', 'hash', 'dibuat_oleh', 'dibuat_pada'],
     sahBaris,
   );
 

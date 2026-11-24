@@ -20,13 +20,12 @@ export function buatLayananAkses(dep) {
     async function bentukPengguna(akun, t) {
         const [akses, praktisi] = await Promise.all([
             dep.repo.ambilAkses(akun.id, t),
-            dep.repo.adalahPraktisi ? dep.repo.adalahPraktisi(akun.id, akun.fasyankes_id) : Promise.resolve(false),
+            dep.repo.adalahPraktisi ? dep.repo.adalahPraktisi(akun.id) : Promise.resolve(false),
         ]);
         return {
             id: akun.id,
             nama: akun.nama,
             username: akun.username,
-            fasyankes_id: akun.fasyankes_id,
             wajib_ganti_kredensial: akun.wajib_ganti_kredensial,
             praktisi,
             jenis_akun: akses.jenis_akun,
@@ -44,12 +43,12 @@ export function buatLayananAkses(dep) {
             }
             const akun = await dep.repo.cariAkunByUsername(username);
             const cocok = await cocokKataSandi(kataSandi, akun?.kata_sandi_hash ?? (await hashTiruan));
-            const setelan = akun ? await bacaPengaturan(akun.fasyankes_id) : pengaturanKeamananEfektif(null);
+            const setelan = akun && dep.bacaPengaturan ? await dep.bacaPengaturan() : pengaturanKeamananEfektif(null);
             if (!akun || !cocok) {
                 // Tanpa pembaca pengaturan, batas dari opsi pembatas tetap berlaku.
                 dep.pembatas.catatGagal(username, alamat, dep.bacaPengaturan ? setelan.batas_percobaan_masuk : undefined);
                 await dep.audit.catat({
-                    fasyankes_id: akun?.fasyankes_id, pengguna_id: akun?.id, aksi: 'masuk_gagal', entitas: 'sesi',
+                    pengguna_id: akun?.id, aksi: 'masuk_gagal', entitas: 'sesi',
                     keterangan: akun
                         ? 'Percobaan masuk gagal: kata sandi salah'
                         : `Percobaan masuk gagal: username tidak dikenal (penanda ${penandaUsername(username)})`,
@@ -63,7 +62,7 @@ export function buatLayananAkses(dep) {
             const kedaluwarsa = new Date(t.getTime() + sesiMsDari(setelan));
             await dep.repo.buatSesi({ idHash: hashIdSesi(idSesi), akun, alamat, kedaluwarsa });
             await dep.audit.catat({
-                fasyankes_id: akun.fasyankes_id, pengguna_id: akun.id, aksi: 'masuk', entitas: 'sesi',
+                pengguna_id: akun.id, aksi: 'masuk', entitas: 'sesi',
                 keterangan: akun.wajib_ganti_kredensial ? 'Masuk dengan kredensial awal' : 'Masuk berhasil', alamat,
             });
             return { ok: true, idSesi, kedaluwarsa, pengguna: await bentukPengguna(akun, t) };
@@ -76,7 +75,7 @@ export function buatLayananAkses(dep) {
             await dep.repo.hapusSesi(hash);
             if (sesi) {
                 await dep.audit.catat({
-                    fasyankes_id: sesi.akun.fasyankes_id, pengguna_id: sesi.akun.id, aksi: 'keluar', entitas: 'sesi', alamat,
+                    pengguna_id: sesi.akun.id, aksi: 'keluar', entitas: 'sesi', alamat,
                 });
             }
         },
@@ -92,14 +91,14 @@ export function buatLayananAkses(dep) {
             const akun = sesi.akun;
             const gagal = async (alasan) => {
                 await dep.audit.catat({
-                    fasyankes_id: akun.fasyankes_id, pengguna_id: akun.id, aksi: 'ganti_kredensial_gagal', entitas: 'pengguna',
+                    pengguna_id: akun.id, aksi: 'ganti_kredensial_gagal', entitas: 'pengguna',
                     entitas_id: akun.id, keterangan: `Ganti kredensial ditolak: ${alasan}`, alamat,
                 });
                 return { ok: false, alasan };
             };
             if (!(await cocokKataSandi(masukan.kata_sandi_lama, akun.kata_sandi_hash)))
                 return gagal('kata_sandi_lama_salah');
-            const setelan = await bacaPengaturan(akun.fasyankes_id);
+            const setelan = dep.bacaPengaturan ? await dep.bacaPengaturan() : pengaturanKeamananEfektif(null);
             if (masukan.kata_sandi.length < setelan.panjang_minimum_kata_sandi) {
                 await gagal('kata_sandi_kurang');
                 return { ok: false, alasan: 'kata_sandi_kurang', minimum: setelan.panjang_minimum_kata_sandi };
@@ -129,7 +128,7 @@ export function buatLayananAkses(dep) {
                 throw galat;
             }
             await dep.audit.catat({
-                fasyankes_id: akun.fasyankes_id, pengguna_id: akun.id, aksi: 'ganti_kredensial', entitas: 'pengguna',
+                pengguna_id: akun.id, aksi: 'ganti_kredensial', entitas: 'pengguna',
                 entitas_id: akun.id, keterangan: 'Kredensial diganti; sesi lain dicabut', alamat,
             });
             return { ok: true, idSesi: idBaru, kedaluwarsa, pengguna: await bentukPengguna(akunBaru, t) };

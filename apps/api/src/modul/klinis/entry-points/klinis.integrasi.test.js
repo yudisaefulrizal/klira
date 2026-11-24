@@ -253,7 +253,7 @@ d('klinis, pengesahan, dan pendamping terhadap database pengujian', () => {
         const b = await panggil('PUT', adr, 'dokter', { langkah: 3, isi: { anamnesis: { keluhan_utama: `${rahasia} 2` } } });
         expect(b.badan.data).toMatchObject({ alur: 'pemeriksaan-klinis', kunjungan_id: kunjA1, langkah: 3 });
         expect(await uji.hitungDrafUntukKlinisKlinisIntegrasiTest(id.dokter, kunjA1)).toBe(1);
-        expect(await uji.wajibDrafUntukKlinisKlinisIntegrasiTest(id.dokter)).toMatchObject({ fasyankes_id: fas, pasien_id: pasienA, alur: 'pemeriksaan-klinis' });
+        expect(await uji.wajibDrafUntukKlinisKlinisIntegrasiTest(id.dokter)).toMatchObject({ pasien_id: pasienA, alur: 'pemeriksaan-klinis' });
         // draf milik pengguna lain tidak terlihat
         expect((await panggil('GET', adr, 'dokter2')).badan.data).toBeNull();
         const milikDokter = await panggil('GET', adr, 'dokter');

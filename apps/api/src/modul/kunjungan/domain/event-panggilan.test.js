@@ -17,7 +17,8 @@ jest.unstable_mockModule('@klira/db', () => {
     const cariRuangTerakhirDokter = jest.fn();
     const tetapkanRuangAntrean = jest.fn();
     const wajibKunjunganUntukAmbilKunjungan = jest.fn();
-    return { ...kliraActual0,
+    return {
+        ...kliraActual0,
         cariAntreanSibukUntukPanggil: cariAntreanSibukUntukPanggil,
         daftarRuangPeriksaUntukPoli: daftarRuangPeriksaUntukPoli,
         daftarAntreanSibukUntukPetakan: daftarAntreanSibukUntukPetakan,
@@ -40,7 +41,8 @@ jest.unstable_mockModule('@klira/db', () => {
         tambahEventPanggilanUntukUbahAntrean: tambahEventPanggilanUntukUbahAntrean,
         transaksi: jest.fn(async (fn) => fn({})),
         kunciPasien: kunci,
-        kunciFasyankes: kunci };
+        kunciFasyankes: kunci
+    };
 });
 const db = await import("@klira/db");
 const { RepositoriKunjunganMysql } = await import("../data-access/repositori.js");
@@ -63,10 +65,10 @@ beforeEach(() => jest.clearAllMocks());
 
 test('panggil dan panggil ulang mencatat event masing-masing dalam transaksi status yang sama', async () => {
     const { repo } = siapkan();
-    await repo.ubahAntrean(7, 11, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', waktu);
-    await repo.ubahAntrean(7, 11, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', waktu);
+    await repo.ubahAntrean(11, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', waktu);
+    await repo.ubahAntrean(11, 'panggil', ['menunggu', 'dipanggil'], 'dipanggil', waktu);
     expect(db.tambahEventPanggilanUntukUbahAntrean).toHaveBeenCalledTimes(2);
-    expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: sesiId, 2: 9, 3: 'Poli Umum 1', 4: 'A-023', 5: tanggal, 6: waktu })]));
+    expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: sesiId, 1: 9, 2: 'Poli Umum 1', 3: 'A-023', 4: tanggal, 5: waktu })]));
     expect(db.kunciPasien).toHaveBeenCalledTimes(2);
     expect(jest.mocked(db.kunciPasien).mock.invocationCallOrder[0]).toBeLessThan(jest.mocked(db.ubahAntreanUntukUbahAntrean).mock.invocationCallOrder[0]);
 });
@@ -74,35 +76,35 @@ test('panggil dan panggil ulang mencatat event masing-masing dalam transaksi sta
 test('konflik perubahan status tidak menghasilkan event', async () => {
     const { repo } = siapkan();
     jest.mocked(db.ubahAntreanUntukUbahAntrean).mockResolvedValue({ count: 0 });
-    expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toBeNull();
+    expect(await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toBeNull();
     expect(db.tambahEventPanggilanUntukUbahAntrean).not.toHaveBeenCalled();
 });
 
 test('panggil ulang ditolak tanpa event bila ruangnya masih memegang pasien lain, atau ruang/poli tidak operasional', async () => {
     const { repo } = siapkan();
     jest.mocked(db.cariAntreanSibukUntukPanggil).mockResolvedValue({ id: 3, nomor: 6, status: 'dilayani' });
-    expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_sibuk', poli: 'Poli Umum 1', kode: 'A-006' });
-    expect(jest.mocked(db.cariAntreanSibukUntukPanggil).mock.calls[0].slice(0, 4)).toEqual([7, 9, sesiId, 11]);
+    expect(await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_sibuk', poli: 'Poli Umum 1', kode: 'A-006' });
+    expect(jest.mocked(db.cariAntreanSibukUntukPanggil).mock.calls[0].slice(0, 3)).toEqual([9, sesiId, 11]);
     expect(db.ubahAntreanUntukUbahAntrean).not.toHaveBeenCalled();
     expect(db.tambahEventPanggilanUntukUbahAntrean).not.toHaveBeenCalled();
     jest.mocked(db.cariAntreanSibukUntukPanggil).mockResolvedValue(null);
     jest.mocked(db.wajibLokasiUntukUbahAntrean).mockImplementation(async (id) => ({ id, nama: id === 1 ? 'Umum' : 'Poli Umum 1', status_operasional: id === 1 ? 'O' : 'U' }));
-    expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_tidak_operasional', poli: 'Poli Umum 1' });
+    expect(await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_tidak_operasional', poli: 'Poli Umum 1' });
     jest.mocked(db.wajibLokasiUntukUbahAntrean).mockImplementation(async (id) => ({ id, nama: 'Umum', status_operasional: 'U' }));
-    expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_tidak_operasional', poli: 'Poli Umum' });
+    expect(await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'poli_tidak_operasional', poli: 'Poli Umum' });
     expect(db.ubahAntreanUntukUbahAntrean).not.toHaveBeenCalled();
 });
 
 test('gagal menulis event menggagalkan transaksi dan tidak membaca DTO sukses', async () => {
     const { repo } = siapkan();
     jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mockRejectedValue(new Error('gagal simpan'));
-    await expect(repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).rejects.toThrow('gagal simpan');
+    await expect(repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).rejects.toThrow('gagal simpan');
     expect(db.daftarAntreanUntukPetakanAntrean).not.toHaveBeenCalled();
 });
 
 test('aksi batal tidak membuat event suara', async () => {
     const { repo } = siapkan();
-    await repo.ubahAntrean(7, 11, 'batal', ['menunggu'], 'batal', waktu);
+    await repo.ubahAntrean(11, 'batal', ['menunggu'], 'batal', waktu);
     expect(db.tambahEventPanggilanUntukUbahAntrean).not.toHaveBeenCalled();
 });
 
@@ -123,37 +125,37 @@ describe('ruang periksa ditetapkan saat pertama dipanggil (antrean per poli)', (
     }
     test('memilih ruang periksa bebas pertama, menetapkannya, dan menyuarakan nama ruang beserta poli', async () => {
         const repo = siapkanBelumDipanggil({ sibuk: [9] });
-        await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu);
+        await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu);
         expect(db.tetapkanRuangAntrean).toHaveBeenCalledWith(11, 10, expect.anything());
-        expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 5)).toEqual([7, sesiId, 10, 'Ruang Periksa 2 · Poli Umum', 'U-005']);
+        expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 4)).toEqual([sesiId, 10, 'Ruang Periksa 2 · Poli Umum', 'U-005']);
     });
     test('dokter pilihan yang sedang menangani pasien lain menahan panggilan tanpa mengubah antrean', async () => {
         const repo = siapkanBelumDipanggil({ dpjp: 2, dokterSibuk: { id: 3, nomor: 4, awalan: 'U' } });
-        expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'dokter_sibuk', jenis: 'Umum', kode: 'U-004' });
-        expect(jest.mocked(db.cariAntreanDokterSibuk).mock.calls[0].slice(0, 4)).toEqual([7, 2, sesiId, 11]);
+        expect(await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'dokter_sibuk', jenis: 'Umum', kode: 'U-004' });
+        expect(jest.mocked(db.cariAntreanDokterSibuk).mock.calls[0].slice(0, 3)).toEqual([2, sesiId, 11]);
         expect(db.tetapkanRuangAntrean).not.toHaveBeenCalled();
         expect(db.ubahAntreanUntukUbahAntrean).not.toHaveBeenCalled();
     });
     test('dokter pilihan yang bebas diarahkan ke ruang terakhirnya bila ruang itu bebas', async () => {
         const repo = siapkanBelumDipanggil({ dpjp: 2, terakhir: 10 });
-        await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu);
+        await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu);
         expect(db.tetapkanRuangAntrean).toHaveBeenCalledWith(11, 10, expect.anything());
     });
     test('semua ruang sibuk atau tidak operasional ditolak dengan galat berbeda', async () => {
-        expect(await siapkanBelumDipanggil({ sibuk: [9, 10] }).ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'ruang_sibuk', jenis: 'Umum' });
+        expect(await siapkanBelumDipanggil({ sibuk: [9, 10] }).ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'ruang_sibuk', jenis: 'Umum' });
         const tutup = siapkanBelumDipanggil({ semua: [{ ...ruang[0], status_operasional: 'U' }] });
-        expect(await tutup.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'ruang_tidak_operasional', jenis: 'Umum' });
+        expect(await tutup.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu)).toEqual({ galat: 'ruang_tidak_operasional', jenis: 'Umum' });
     });
     test('poli tanpa ruang periksa dipanggil tanpa ruang atas nama poli', async () => {
         const repo = siapkanBelumDipanggil({ semua: [] });
-        await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu);
+        await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu);
         expect(db.tetapkanRuangAntrean).not.toHaveBeenCalled();
-        expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 5)).toEqual([7, sesiId, 1, 'Poli Umum', 'U-005']);
+        expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 4)).toEqual([sesiId, 1, 'Poli Umum', 'U-005']);
     });
     test('ruang pilihan harus ruang bebas poli itu; ruang yang tidak bebas ditolak', async () => {
         const repo = siapkanBelumDipanggil({ sibuk: [9] });
-        expect(await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu, 9)).toEqual({ galat: 'ruang_pilihan_tidak_tersedia', jenis: 'Umum' });
-        await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu, 10);
+        expect(await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu, 9)).toEqual({ galat: 'ruang_pilihan_tidak_tersedia', jenis: 'Umum' });
+        await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu, 10);
         expect(db.tetapkanRuangAntrean).toHaveBeenCalledWith(11, 10, expect.anything());
     });
 });
@@ -162,9 +164,9 @@ describe('ruang periksa ditetapkan saat pertama dipanggil (antrean per poli)', (
 test('antrean penunjang saja dipanggil tanpa memilih poli dan tanpa aturan satu pasien per poli', async () => {
     const { repo } = siapkan();
     jest.mocked(db.wajibAntreanUntukUbahAntrean).mockImplementation(jest.fn().mockResolvedValue({ sesi_id: sesiId, lokasi_id: null, nomor: 3, awalan: 'L', jenis_poli: 'Laboratorium', kunjungan_id: 40, tanggal }));
-    await repo.ubahAntrean(7, 11, 'panggil', ['menunggu'], 'dipanggil', waktu);
+    await repo.ubahAntrean(11, 'panggil', ['menunggu'], 'dipanggil', waktu);
     expect(db.daftarRuangPeriksaUntukPoli).not.toHaveBeenCalled();
     expect(db.cariAntreanSibukUntukPanggil).not.toHaveBeenCalled();
     expect(db.tetapkanRuangAntrean).not.toHaveBeenCalled();
-    expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 5)).toEqual([7, sesiId, null, 'Laboratorium', 'L-003']);
+    expect(jest.mocked(db.tambahEventPanggilanUntukUbahAntrean).mock.calls[0].slice(0, 4)).toEqual([sesiId, null, 'Laboratorium', 'L-003']);
 });

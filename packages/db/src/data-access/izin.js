@@ -16,10 +16,10 @@ export async function simpanIzinUntukJalankanSeed(fitur, aksi, cakupan, koneksi 
     return { id: hasil.insertId, count: hasil.affectedRows };
 }
 export async function daftarIzinUntukJalankanSeed(fitur, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`fasyankes_id`, t.`fitur`, t.`aksi`, t.`cakupan`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `izin` t WHERE ((? OR t.`fitur` IN (?)))", [fitur === undefined, (fitur)?.length ? (fitur) : [null]], koneksi);
+    const baris = await baca("SELECT t.`id`, t.`fitur`, t.`aksi`, t.`cakupan`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `izin` t WHERE ((? OR t.`fitur` IN (?)))", [fitur === undefined, (fitur)?.length ? (fitur) : [null]], koneksi);
     return baris;
 }
 export async function daftarIzinUntukJalankanSeed2(fitur, aksi, koneksi = pool) {
-    const baris = await baca("SELECT t.`id`, t.`fasyankes_id`, t.`fitur`, t.`aksi`, t.`cakupan`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `izin` t WHERE ((? OR t.`fitur` IN (?))) AND ((? OR t.`aksi` <=> ?))", [fitur === undefined, (fitur)?.length ? (fitur) : [null], aksi === undefined, aksi ?? null], koneksi);
+    const baris = await baca("SELECT t.`id`, t.`fitur`, t.`aksi`, t.`cakupan`, t.`dibuat_oleh`, t.`dibuat_pada` FROM `izin` t WHERE ((? OR t.`fitur` IN (?))) AND ((? OR t.`aksi` <=> ?))", [fitur === undefined, (fitur)?.length ? (fitur) : [null], aksi === undefined, aksi ?? null], koneksi);
     return baris;
 }

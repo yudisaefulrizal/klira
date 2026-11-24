@@ -21,7 +21,7 @@ function buat(opsi = {}) {
     return { l, catatan, diminta };
 }
 
-const dasar = { fasyankesId: 1, pelakuId: 7, fitur: 'klinis', entitas: 'anamnesis', entitasId: 10 };
+const dasar = { pelakuId: 7, fitur: 'klinis', entitas: 'anamnesis', entitasId: 10 };
 
 describe('pengesahan generik: siapkan', () => {
     it('pengesahan pertama: versi 1, hash isi, satu jenis akun (walau merangkap), tanpa versi catatan', async () => {
@@ -75,9 +75,9 @@ describe('pengesahan generik: deteksi perubahan dan verifikasi', () => {
     it('API verifikasi: entitas tak dikenal 404, hasil dicatat lihat dan memuat pengesahan', async () => {
         const { l, catatan } = buat({ terakhir: {} });
         l.daftarkanPenyedia('anamnesis', async () => ({ v: 'diubah' }));
-        expect(await l.verifikasi({ id: 3, fasyankes_id: 1 }, 'tak-dikenal', 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
-        const h = await l.verifikasi({ id: 3, fasyankes_id: 1 }, 'anamnesis', 10);
+        expect(await l.verifikasi({ id: 3 }, 'tak-dikenal', 10)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        const h = await l.verifikasi({ id: 3 }, 'anamnesis', 10);
         expect(h).toMatchObject({ ok: true, data: { status: 'berubah', versi: 1, pengesahan: { pengguna_nama: 'Dr. A', jenis_akun: 'Dokter' } } });
-        expect(catatan).toEqual([{ aksi: 'lihat', entitas: 'pengesahan_catatan', entitas_id: 10, keterangan: 'Verifikasi pengesahan anamnesis', fasyankes_id: 1, pengguna_id: 3, alamat: undefined }]);
+        expect(catatan).toEqual([{ aksi: 'lihat', entitas: 'pengesahan_catatan', entitas_id: 10, keterangan: 'Verifikasi pengesahan anamnesis', pengguna_id: 3, alamat: undefined }]);
     });
 });

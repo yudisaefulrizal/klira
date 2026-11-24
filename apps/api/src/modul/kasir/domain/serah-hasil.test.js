@@ -3,7 +3,7 @@ import { jest } from '@jest/globals';
 const { buatLayananKasir } = await import("./layanan-kasir.js");
 
 describe('penyerahan hasil lab (penunjang saja) di kasir', () => {
-    const p = { id: 4, fasyankes_id: 1 };
+    const p = { id: 4 };
     const catatan = [];
     const buat = (sisa = {}) => {
         const repo = {

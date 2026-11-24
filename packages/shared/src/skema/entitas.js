@@ -102,7 +102,6 @@ export const jenisAkun = id
 })
     .extend(jejak.shape);
 export const izin = id.extend({
-    fasyankes_id: idPositif.nullable(),
     fitur: teksWajib(100),
     aksi: aksiIzin,
     cakupan: cakupanIzin,

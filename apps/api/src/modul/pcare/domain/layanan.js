@@ -39,7 +39,7 @@ export function buatLayananPcare({ repo, audit, buatKlien = buatKlienPcare, enkr
     });
     return {
         async ambil(p) {
-            const daftar = await repo.daftar(p.fasyankes_id);
+            const daftar = await repo.daftar();
             const urut = new Map(daftar.map((k) => [k.environment, keDto(k)]));
             return { aktif: daftar.find((k) => k.aktif)?.environment ?? null, lingkungan: ['sandbox', 'produksi'].map((e) => urut.get(e) ?? kosong(e)) };
         },
@@ -47,7 +47,7 @@ export function buatLayananPcare({ repo, audit, buatKlien = buatKlienPcare, enkr
             const cek = periksaAlamat(m.base_url, m.environment, pilihan);
             if (!cek.ok)
                 return { ok: false, kode: 'tidak_valid', pesan: cek.pesan, bidang: 'base_url' };
-            const ada = await repo.ambil(p.fasyankes_id, m.environment);
+            const ada = await repo.ambil(m.environment);
             if (!ada) {
                 const kurang = RAHASIA.find((r) => !m[r]);
                 if (kurang)
@@ -62,26 +62,26 @@ export function buatLayananPcare({ repo, audit, buatKlien = buatKlienPcare, enkr
             if (ada)
                 await repo.ubah(ada.id, data);
             else
-                await repo.tambah(p.fasyankes_id, data, p.id);
-            const baru = await repo.ambil(p.fasyankes_id, m.environment);
+                await repo.tambah(data, p.id);
+            const baru = await repo.ambil(m.environment);
             const diganti = RAHASIA.filter((r) => m[r]);
             await audit.catat({
-                fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kredensial_pcare', entitas_id: baru.id,
+                pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kredensial_pcare', entitas_id: baru.id,
                 keterangan: `Kredensial PCare ${m.environment} ${ada ? 'diubah' : 'disimpan'}${diganti.length ? ` (rahasia diganti: ${diganti.join(', ')})` : ''}`, alamat,
             });
             return { ok: true, data: keDto(baru) };
         },
         async aktifkan(p, environment, alamat) {
-            const k = await repo.ambil(p.fasyankes_id, environment);
+            const k = await repo.ambil(environment);
             if (!k)
                 return { ok: false, kode: 'belum_lengkap', pesan: P.galat.belumAda };
-            await repo.aktifkan(p.fasyankes_id, k.id);
-            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kredensial_pcare', entitas_id: k.id, keterangan: `Lingkungan PCare aktif: ${environment}`, alamat });
+            await repo.aktifkan(k.id);
+            await audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kredensial_pcare', entitas_id: k.id, keterangan: `Lingkungan PCare aktif: ${environment}`, alamat });
             return { ok: true, data: keDto({ ...k, aktif: true }) };
         },
         /** Uji koneksi satu lingkungan; hasilnya disimpan agar terlihat di layar. */
         async uji(p, environment) {
-            const k = await repo.ambil(p.fasyankes_id, environment);
+            const k = await repo.ambil(environment);
             if (!k)
                 return { ok: false, kode: 'belum_lengkap', pesan: P.galat.belumAda };
             let hasil;
@@ -93,12 +93,12 @@ export function buatLayananPcare({ repo, audit, buatKlien = buatKlienPcare, enkr
                 hasil = { ok: false, ringkas: P.ujiGagal(galat?.name === 'GalatIntegrasi' ? galat.message : 'kesalahan tak terduga') };
             }
             await repo.catatUji(k.id, hasil.ringkas, sekarang());
-            const baru = await repo.ambil(p.fasyankes_id, environment);
+            const baru = await repo.ambil(environment);
             return { ok: true, data: { berhasil: hasil.ok, pesan: hasil.ringkas, konfigurasi: keDto(baru) } };
         },
         /** Untuk modul lain: klien lingkungan aktif, atau null bila belum dikonfigurasi. */
-        async klienAktif(fasyankesId, tambahan = {}) {
-            const k = await repo.ambilAktif(fasyankesId);
+        async klienAktif(tambahan = {}) {
+            const k = await repo.ambilAktif();
             return k ? { environment: k.environment, klien: klienDari(k, tambahan) } : null;
         },
     };

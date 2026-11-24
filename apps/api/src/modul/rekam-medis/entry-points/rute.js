@@ -25,7 +25,7 @@ export function buatRutePengesahan(layananAkses, layananIzin, layanan) {
         const pengguna = res.locals.pengguna;
         if (!layanan.entitasDikenal(p.data.entitas))
             return void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: KLINIS.galat.entitasTidakDikenal } });
-        res.json({ data: await layanan.riwayatVersi(pengguna.fasyankes_id, p.data.entitas, p.data.id) });
+        res.json({ data: await layanan.riwayatVersi(p.data.entitas, p.data.id) });
     }));
     return rute;
 }

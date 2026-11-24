@@ -1,24 +1,24 @@
 import * as db from '@klira/db';
 export class RepositoriKeamananMysql {
-    ambilPengaturan(fasyankesId) {
-        return db.ambilPengaturanKeamananUntukAmbilPengaturan(fasyankesId);
+    ambilPengaturan() {
+        return db.ambilPengaturanKeamananUntukAmbilPengaturan();
     }
-    simpanPengaturan(fasyankesId, nilai, oleh) {
+    simpanPengaturan(nilai, oleh) {
         const sekarang = new Date();
-        return db.transaksi(async (koneksiBaru) => { (await db.simpanPengaturanKeamananUntukSimpanPengaturan(fasyankesId, (nilai)?.masa_sesi_jam, (nilai)?.batas_percobaan_masuk, (nilai)?.panjang_minimum_kata_sandi, oleh, sekarang, koneksiBaru)); return db.simpanPengaturanKeamananUntukSimpanPengaturanHasil(fasyankesId, koneksiBaru); });
+        return db.transaksi(async (koneksiBaru) => { (await db.simpanPengaturanKeamananUntukSimpanPengaturan((nilai)?.masa_sesi_jam, (nilai)?.batas_percobaan_masuk, (nilai)?.panjang_minimum_kata_sandi, oleh, sekarang, koneksiBaru)); return db.simpanPengaturanKeamananUntukSimpanPengaturanHasil(koneksiBaru); });
     }
-    async daftarBackup(fasyankesId, lewati, ambil) {
+    async daftarBackup(lewati, ambil) {
         const [total, baris] = await Promise.all([
-            db.hitungRiwayatBackupUntukDaftarBackup(fasyankesId),
-            db.daftarRiwayatBackupUntukDaftarBackup(fasyankesId, ambil, lewati),
+            db.hitungRiwayatBackupUntukDaftarBackup(),
+            db.daftarRiwayatBackupUntukDaftarBackup(ambil, lewati),
         ]);
         return { total, baris: baris.map((b) => ({ ...b, ukuran_byte: b.ukuran_byte === null ? null : Number(b.ukuran_byte) })) };
     }
     /** Catat operasi cadangan; mengembalikan id baris riwayat. */
-    catatBackup(fasyankesId, status, lokasi, oleh) {
-        return db.tambahRiwayatBackup(fasyankesId, status, lokasi, oleh);
+    catatBackup(status, lokasi, oleh) {
+        return db.tambahRiwayatBackup(status, lokasi, oleh);
     }
-    selesaiBackup(id, fasyankesId, status, ukuranByte) {
-        return db.ubahStatusRiwayatBackup(id, fasyankesId, status, ukuranByte);
+    selesaiBackup(id, status, ukuranByte) {
+        return db.ubahStatusRiwayatBackup(id, status, ukuranByte);
     }
 }

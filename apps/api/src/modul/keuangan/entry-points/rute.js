@@ -36,7 +36,7 @@ export function buatRuteKeuangan(layananAkses, layananIzin, layanan) {
     }));
 
     rute.get('/keuangan/coa', masuk, bolehLihat, bungkus(async (_req, res) => {
-        kirimHasil(res, await layanan.daftarCoa(res.locals.pengguna));
+        kirimHasil(res, await layanan.daftarCoa());
     }));
 
     rute.post('/keuangan/coa', masuk, bolehInput, bungkus(async (req, res) => {
@@ -48,7 +48,7 @@ export function buatRuteKeuangan(layananAkses, layananIzin, layanan) {
     rute.get('/keuangan/jurnal', masuk, bolehLihat, bungkus(async (req, res) => {
         const f = filterPeriodeKeuangan.safeParse(req.query);
         if (!f.success) return void gagalValidasi(res, f);
-        kirimHasil(res, await layanan.daftarJurnal(res.locals.pengguna, f.data));
+        kirimHasil(res, await layanan.daftarJurnal(f.data));
     }));
 
     rute.post('/keuangan/jurnal', masuk, bolehInput, bungkus(async (req, res) => {
@@ -60,7 +60,7 @@ export function buatRuteKeuangan(layananAkses, layananIzin, layanan) {
     rute.get('/keuangan/pengeluaran', masuk, bolehLihat, bungkus(async (req, res) => {
         const f = filterPeriodeKeuangan.safeParse(req.query);
         if (!f.success) return void gagalValidasi(res, f);
-        kirimHasil(res, await layanan.daftarPengeluaran(res.locals.pengguna, f.data));
+        kirimHasil(res, await layanan.daftarPengeluaran(f.data));
     }));
 
     rute.post('/keuangan/pengeluaran', masuk, bolehInput, bungkus(async (req, res) => {
@@ -88,7 +88,7 @@ export function buatRuteKeuangan(layananAkses, layananIzin, layanan) {
     }));
 
     rute.get('/keuangan/piutang', masuk, bolehLihat, bungkus(async (_req, res) => {
-        kirimHasil(res, await layanan.daftarPiutang(res.locals.pengguna));
+        kirimHasil(res, await layanan.daftarPiutang());
     }));
 
     rute.post('/keuangan/piutang', masuk, bolehInput, bungkus(async (req, res) => {
@@ -112,7 +112,7 @@ export function buatRuteKeuangan(layananAkses, layananIzin, layanan) {
     }));
 
     rute.get('/keuangan/tarif-jasa', masuk, bolehLihat, bungkus(async (_req, res) => {
-        kirimHasil(res, await layanan.daftarTarifJasa(res.locals.pengguna));
+        kirimHasil(res, await layanan.daftarTarifJasa());
     }));
 
     rute.patch('/keuangan/tarif-jasa/:id', masuk, bolehInput, bungkus(async (req, res) => {

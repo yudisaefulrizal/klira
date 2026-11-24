@@ -5,7 +5,7 @@ jest.unstable_mockModule('../../../middleware/auth.js', () => ({ wajibMasuk: () 
         if (!a)
             return void res.status(401).end();
         const izin = a === 'penuh' ? ['lihat', 'perbaikan'] : a === 'lihat' ? ['lihat'] : [];
-        res.locals.pengguna = { id: 3, fasyankes_id: 7, izin: izin.map((aksi) => ({ fitur: 'satusehat', aksi, cakupan: 'unit' })) };
+        res.locals.pengguna = { id: 3, izin: izin.map((aksi) => ({ fitur: 'satusehat', aksi, cakupan: 'unit' })) };
         next();
     } }));
 const { default: express } = await import("express");
@@ -52,7 +52,7 @@ describe('kirim', () => {
         const r = await panggil('POST', '/test-endpoint/kirim', { auth: 'penuh', body: { ...sah, parameter: { start: '0', limit: '5' }, badan: undefined } });
         expect(r.status).toBe(200);
         expect(layanan.kirim.mock.calls[0][1]).toEqual({ layanan: 'pcare', endpoint_id: 'pc-ref-dokter', parameter: { start: '0', limit: '5' } });
-        expect(layanan.kirim.mock.calls[0][0]).toMatchObject({ id: 3, fasyankes_id: 7 });
+        expect(layanan.kirim.mock.calls[0][0]).toMatchObject({ id: 3 });
     });
     it('menolak masukan tidak sah (layanan, id kosong, parameter bukan teks, badan terlalu besar) dengan 400', async () => {
         for (const ubah of [{ layanan: 'lain' }, { endpoint_id: '' }, { parameter: { a: 1 } }, { parameter: 'x' }, { badan: 'x'.repeat(90001) }]) {

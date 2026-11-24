@@ -9,8 +9,8 @@ export const ENTITAS_PENGESAHAN_ADDENDUM = 'addendum';
  */
 export function buatLayananAddendum({ repo, audit, pengesahan }) {
     pengesahan.daftarkanPenyedia(ENTITAS_PENGESAHAN_ADDENDUM, (fas, id) => repo.isi(fas, id));
-    async function keDto(fasyankesId, b) {
-        const k = await pengesahan.keadaan(fasyankesId, ENTITAS_PENGESAHAN_ADDENDUM, b.id);
+    async function keDto(b) {
+        const k = await pengesahan.keadaan(ENTITAS_PENGESAHAN_ADDENDUM, b.id);
         return {
             id: b.id, kunjungan_id: b.kunjungan_id, entitas: b.entitas, entitas_id: b.entitas_id, versi: b.versi, isi: b.isi, alasan: b.alasan, waktu: b.waktu.toISOString(),
             dibuat_oleh_nama: b.dibuat_oleh_nama, perlu_kirim_ulang: b.perlu_kirim_ulang, dikirim_pada: b.dikirim_pada?.toISOString() ?? null,
@@ -21,15 +21,15 @@ export function buatLayananAddendum({ repo, audit, pengesahan }) {
     return {
         /** Semua addendum satu kunjungan; dicatat `lihat` sebelum dilepas. */
         async daftar(p, kunjunganId, alamat) {
-            if (!(await repo.kunjunganAda(p.fasyankes_id, kunjunganId)))
+            if (!(await repo.kunjunganAda(kunjunganId)))
                 return gagal('tidak_ditemukan', GALAT.tidakDitemukan);
-            const baris = await repo.daftar(p.fasyankes_id, kunjunganId);
-            await audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'lihat', entitas: 'addendum', entitas_id: kunjunganId, keterangan: 'Membuka addendum kunjungan', alamat });
-            return { ok: true, data: await Promise.all(baris.map((b) => keDto(p.fasyankes_id, b))) };
+            const baris = await repo.daftar(kunjunganId);
+            await audit.catat({ pengguna_id: p.id, aksi: 'lihat', entitas: 'addendum', entitas_id: kunjunganId, keterangan: 'Membuka addendum kunjungan', alamat });
+            return { ok: true, data: await Promise.all(baris.map((b) => keDto(b))) };
         },
         /** Addendum untuk beberapa entitas sumber (tanpa audit; pemanggil sudah mencatat pembukaan datanya). */
-        async untukEntitas(fasyankesId, entitas, entitasIds) {
-            return Promise.all((await repo.untukEntitas(fasyankesId, entitas, entitasIds)).map((b) => keDto(fasyankesId, b)));
+        async untukEntitas(entitas, entitasIds) {
+            return Promise.all((await repo.untukEntitas(entitas, entitasIds)).map((b) => keDto(b)));
         },
     };
 }

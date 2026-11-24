@@ -5,7 +5,7 @@ jest.unstable_mockModule('../../../middleware/auth.js', () => ({ wajibMasuk: () 
         if (!a)
             return void res.status(401).end();
         const izin = a === 'penuh' ? ['lihat', 'perbaikan'] : a === 'lihat' ? ['lihat'] : [];
-        res.locals.pengguna = { id: 3, fasyankes_id: 7, izin: izin.map((aksi) => ({ fitur: 'satusehat', aksi, cakupan: 'unit' })) };
+        res.locals.pengguna = { id: 3, izin: izin.map((aksi) => ({ fitur: 'satusehat', aksi, cakupan: 'unit' })) };
         next();
     } }));
 const { default: express } = await import("express");

@@ -26,10 +26,10 @@ d('skema basis data (database pengujian)', () => {
         await jalankanSeed(uji.pool);
         await jalankanSeed(uji.pool);
         const fas = await uji.wajibFasyankesUntukSrcSkemaTest();
-        expect(fas.fasyankes_id).toBe(fas.id);
-        expect(await uji.hitungJenisAkunUntukSrcSkemaTest(fas.id)).toBe(12);
+        expect(fas.id).toBeGreaterThan(0);
+        expect(await uji.hitungJenisAkunUntukSrcSkemaTest()).toBe(12);
         // Teks general consent bawaan berversi, tidak ganda setelah seed berulang.
-        const teks = await uji.daftarTeksPersetujuanUntukSrcSkemaTest(null, 'general');
+        const teks = await uji.daftarTeksPersetujuanUntukSrcSkemaTest('general');
         expect(teks).toHaveLength(1);
         expect(teks[0]).toMatchObject({ versi: 1, aktif: true });
     });
@@ -40,22 +40,20 @@ d('skema basis data (database pengujian)', () => {
         expect(p.kata_sandi_hash).not.toContain('klira-awal-2026');
         expect(await uji.hitungPenugasanJenisUntukSrcSkemaTest(p.id)).toBe(1);
     });
-    it('username unik per fasyankes dan NIK unik', async () => {
-        const fas = await uji.wajibFasyankesUntukSrcSkemaTest();
-        await uji.tambahPenggunaUntukBuatPengguna2(fas.id, 'A', '3201010101010001', 'a', 'x');
-        await expect(uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPenggunaUntukBuatPengguna2(fas.id, 'A', '3201010101010002', 'a', 'x', koneksiBaru); return uji.tambahPenggunaUntukBuatPenggunaHasil(_hasil.id, koneksiBaru); })).rejects.toThrow();
-        await expect(uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPenggunaUntukBuatPengguna2(fas.id, 'A', '3201010101010001', 'b', 'x', koneksiBaru); return uji.tambahPenggunaUntukBuatPenggunaHasil(_hasil.id, koneksiBaru); })).rejects.toThrow();
+    it('username unik dan NIK unik', async () => {
+        await uji.tambahPenggunaUntukBuatPengguna2('A', '3201010101010001', 'a', 'x');
+        await expect(uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPenggunaUntukBuatPengguna2('A', '3201010101010002', 'a', 'x', koneksiBaru); return uji.tambahPenggunaUntukBuatPenggunaHasil(_hasil.id, koneksiBaru); })).rejects.toThrow();
+        await expect(uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPenggunaUntukBuatPengguna2('A', '3201010101010001', 'b', 'x', koneksiBaru); return uji.tambahPenggunaUntukBuatPenggunaHasil(_hasil.id, koneksiBaru); })).rejects.toThrow();
     });
     it('penugasan memakai tanggal selesai, dan klien menyimpan waktu', async () => {
         const p = await uji.wajibPenggunaUntukSrcSkemaTest2();
         const j = await uji.wajibJenisAkunUntukSrcSkemaTest();
-        const r = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPenugasanJenisUntukAksesIzinIntegrasiTest(p.fasyankes_id, p.id, j.id, new Date('2026-01-01T00:00:00Z'), koneksiBaru); return uji.tambahPenugasanJenisUntukSrcSkemaTestHasil(_hasil.id, koneksiBaru); });
+        const r = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahPenugasanJenisUntukAksesIzinIntegrasiTest(p.id, j.id, new Date('2026-01-01T00:00:00Z'), koneksiBaru); return uji.tambahPenugasanJenisUntukSrcSkemaTestHasil(_hasil.id, koneksiBaru); });
         expect(r.selesai).toBeNull();
         expect(r.dibuat_pada).toBeInstanceOf(Date);
     });
     it('kredensial satusehat menyimpan secret terenkripsi', async () => {
-        const fas = await uji.wajibFasyankesUntukSrcSkemaTest();
-        const k = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahKredensialSatusehatUntukSrcSkemaTest(fas.id, 'sandbox', 'c', 'v1:a:b:c', koneksiBaru); return uji.tambahKredensialSatusehatUntukSrcSkemaTestHasil(_hasil.id, koneksiBaru); });
+        const k = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahKredensialSatusehatUntukSrcSkemaTest('sandbox', 'c', 'v1:a:b:c', koneksiBaru); return uji.tambahKredensialSatusehatUntukSrcSkemaTestHasil(_hasil.id, koneksiBaru); });
         expect(k.client_secret_terenkripsi).toBe('v1:a:b:c');
     });
 });

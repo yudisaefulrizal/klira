@@ -48,23 +48,23 @@ describe('layanan master dengan repositori tiruan', () => {
     };
     const layanan = buatLayananMaster({ repo, audit: { catat: async (e) => void catatan.push(e) } });
     it('rujukan di luar fasyankes ditolak tanpa menyimpan atau mencatat audit', async () => {
-        const h = await layanan.buat({ id: 1, fasyankes_id: 2 }, 'ruang_periksa', { nama: 'R', induk_id: 10, status_operasional: 'O' });
+        const h = await layanan.buat({ id: 1 }, 'ruang_periksa', { nama: 'R', induk_id: 10, status_operasional: 'O' });
         expect(h).toMatchObject({ ok: false, kode: 'tidak_valid' });
         expect(catatan).toHaveLength(0);
     });
     it('rujukan sah dibuat dan dicatat audit input', async () => {
-        const h = await layanan.buat({ id: 1, fasyankes_id: 1 }, 'ruang', { nama: 'R', induk_id: 10, status_operasional: 'O' });
+        const h = await layanan.buat({ id: 1 }, 'ruang', { nama: 'R', induk_id: 10, status_operasional: 'O' });
         expect(h.ok).toBe(true);
         expect(catatan[0]).toMatchObject({ aksi: 'input', entitas: 'lokasi', entitas_id: 5 });
     });
     it('nama poli kembar ditolak (tambah dan ubah), nama berbeda atau milik poli itu sendiri sah', async () => {
-        const p = { id: 1, fasyankes_id: 1 };
+        const p = { id: 1 };
         expect(await layanan.buat(p, 'poli', { nama: 'Poli Umum', status_operasional: 'O' })).toMatchObject({ ok: false, kode: 'konflik' });
         expect((await layanan.buat(p, 'poli', { nama: 'Poli Umum 2', status_operasional: 'O' })).ok).toBe(true);
         expect(catatan.at(-1)).toMatchObject({ aksi: 'input' });
     });
     it('jadwal: dokter yang sudah bertugas di hari dan shift yang sama ditolak, shift atau hari lain sah', async () => {
-        const p = { id: 1, fasyankes_id: 1 }, dasar = { pengguna_id: 7, lokasi_id: 10, hari: 1, shift_id: 1 };
+        const p = { id: 1 }, dasar = { pengguna_id: 7, lokasi_id: 10, hari: 1, shift_id: 1 };
         const h = await layanan.buat(p, 'jadwal', dasar);
         expect(h).toMatchObject({ ok: false, kode: 'konflik' });
         expect(h.pesan).toContain('Poli Gigi');
@@ -72,6 +72,6 @@ describe('layanan master dengan repositori tiruan', () => {
         expect((await layanan.buat(p, 'jadwal', { ...dasar, hari: 2 })).ok).toBe(true);
     });
     it('ubah baris yang tidak ada: tidak ditemukan', async () => {
-        expect(await layanan.ubah({ id: 1, fasyankes_id: 1 }, 'poli', 99, { nama: 'x' })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await layanan.ubah({ id: 1 }, 'poli', 99, { nama: 'x' })).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
     });
 });

@@ -13,7 +13,7 @@ const { buatAplikasiPcare, KONFIG_PCARE_BAWAAN: K } = await import('../../../../
 const { buatMemori, jembatan, TANGGAL } = await import('./uji-bantu.js');
 const { panggilTanpaPort } = await import('../../umum/panggil-tanpa-port.js');
 
-const PETUGAS = { fasyankes_id: 1, id: 9 };
+const PETUGAS = { id: 9 };
 const BUDI = '0000039043765';
 const SITI = '0000039043766';
 
@@ -146,7 +146,7 @@ describe('menarik pendaftaran Mobile JKN dari PCare', () => {
         const r = await rakit();
         const app = express();
         app.use(express.json());
-        const akses = { saya: async (id) => (id ? { id: 9, fasyankes_id: 1 } : null) };
+        const akses = { saya: async (id) => (id ? { id: 9 } : null) };
         const izin = { boleh: async () => false };
         app.use(buatRuteAntreanJkn(akses, izin, r.layanan));
         expect((await panggilTanpaPort(app, { metode: 'POST', url: '/antrean-jkn/tarik', badan: {} })).status).toBe(401);

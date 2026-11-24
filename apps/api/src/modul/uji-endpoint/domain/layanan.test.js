@@ -3,7 +3,7 @@ import { GalatIntegrasi } from '@klira/integrasi';
 
 const { buatLayananUjiEndpoint } = await import("./layanan.js");
 
-const P = { fasyankes_id: 1, id: 9 };
+const P = { id: 9 };
 
 function buat({ ss = { environment: 'sandbox', klien: null }, pc = { environment: 'sandbox', klien: null }, auditGagal = false, organisasi = 'org-1' } = {}) {
     const catatan = [];

@@ -38,7 +38,7 @@ export function buatRuteInstagramPublik(akses) {
         const koneksi = row ? await db.ambilIgKoneksi(1) : null;
         if (!row || row.berakhir.getTime() <= Date.now() || !koneksi?.aktif || koneksi.penyedia !== 'meta' || koneksi.generasi !== row.generasi)
             return void res.sendStatus(404);
-        const media = await db.cariIgMediaUntukBuatRuteInstagram(row.media_id, koneksi.fasyankes_id);
+        const media = await db.cariIgMediaUntukBuatRuteInstagram(row.media_id);
         if (!media || !['image/jpeg', 'image/png'].includes(media.mime))
             return void res.sendStatus(404);
         res.type(media.mime).send(Buffer.from(dekripsiRahasia(media.isi), 'base64'));
@@ -53,11 +53,11 @@ export function buatRuteInstagramPublik(akses) {
             await db.transaksi(async (tx) => {
                 await db.kunciIgKoneksi(tx);
                 await db.ubahIgKoneksiUntukBuatRuteInstagramPublik(false, 'dicabut', null, null, 1, row.akun_id, tx);
-                await db.hapusIgOauthStateUntukPutuskanDanBersihkan(row.fasyankes_id, tx);
+                await db.hapusIgOauthStateUntukPutuskanDanBersihkan(tx);
                 await db.hapusIgMediaPublikUntukBuatRuteInstagramPublik(tx);
             });
         if (row)
-            kabarkanInstagram({ tipe: 'koneksi', fasyankes_id: row.fasyankes_id });
+            kabarkanInstagram({ tipe: 'koneksi' });
         res.sendStatus(200);
     });
     r.post('/instagram/data-deletion', parser, async (req, res) => {
@@ -70,11 +70,11 @@ export function buatRuteInstagramPublik(akses) {
             const row = await db.cariIgKoneksiUntukBuatRuteInstagramPublik('meta', id, id, tx);
             if (row) {
                 await db.hapusIgMediaPublikUntukBuatRuteInstagramPublik(tx);
-                await db.hapusIgBacaUntukBersihkanDalam(row.fasyankes_id, tx);
-                await db.hapusIgPesanUntukBersihkanDalam(row.fasyankes_id, tx);
-                await db.hapusIgPercakapanUntukBersihkanDalam(row.fasyankes_id, tx);
-                await db.hapusIgMediaUntukBersihkanDalam(row.fasyankes_id, tx);
-                await db.hapusIgOauthStateUntukPutuskanDanBersihkan(row.fasyankes_id, tx);
+                await db.hapusIgBacaUntukBersihkanDalam(tx);
+                await db.hapusIgPesanUntukBersihkanDalam(tx);
+                await db.hapusIgPercakapanUntukBersihkanDalam(tx);
+                await db.hapusIgMediaUntukBersihkanDalam(tx);
+                await db.hapusIgOauthStateUntukPutuskanDanBersihkan(tx);
                 await db.hapusIgEventUntukBuatRuteInstagramPublik(tx);
                 // Keep a blank singleton to invalidate in-flight callbacks while removing account identifiers and credentials.
                 await db.ubahIgKoneksiUntukBuatRuteInstagramPublik2(false, 'terputus', '', null, null, 1, tx);
@@ -83,7 +83,7 @@ export function buatRuteInstagramPublik(akses) {
             return row?.fasyankes_id;
         });
         if (fas)
-            kabarkanInstagram({ tipe: 'koneksi', fasyankes_id: fas });
+            kabarkanInstagram({ tipe: 'koneksi' });
         res.setHeader('Cache-Control', 'no-store');
         res.json({ url: `${new URL(process.env.BASE_URL ?? 'http://localhost').origin}/instagram/data-deletion-status/${code}`, confirmation_code: code });
     });

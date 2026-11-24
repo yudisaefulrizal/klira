@@ -8,7 +8,7 @@ const { buatLayananUjiEndpoint } = await import("./layanan.js");
 const { buatLayananSatusehat } = await import("../../satusehat/domain/layanan.js");
 const { buatLayananPcare } = await import("../../pcare/domain/layanan.js");
 
-const P = { fasyankes_id: 1, id: 9 };
+const P = { id: 9 };
 const SS = KONFIG_SATUSEHAT_BAWAAN;
 const PC = KONFIG_PCARE_BAWAAN;
 
@@ -21,7 +21,7 @@ function repoMemori(organizationId) {
         daftar: async () => [...baris.values()],
         ambil: async (_f, e) => baris.get(e) ?? null,
         ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (f, d) => { urut += 1; baris.set(d.environment, { id: urut, fasyankes_id: f, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
+        tambah: async (f, d) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, ...d }); },
         ubah: async () => {},
         aktifkan: async (_f, id) => { for (const k of baris.values()) k.aktif = k.id === id; },
         catatUji: async () => {},

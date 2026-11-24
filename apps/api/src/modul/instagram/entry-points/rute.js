@@ -27,7 +27,7 @@ export function buatRuteInstagram(akses, izin) {
     rute.get('/instagram/percakapan', wajibIzin('instagram', 'lihat'), async (req, res) => {
         const user = pengguna(res);
         const halaman = Math.min(1000, Math.max(1, Number(req.query.halaman) || 1));
-        const rows = await db.daftarIgPercakapanUntukBuatRuteInstagram(user.fasyankes_id, 200, (Math.floor(halaman) - 1) * 200, 1, user.id);
+        const rows = await db.daftarIgPercakapanUntukBuatRuteInstagram(200, (Math.floor(halaman) - 1) * 200, 1, user.id);
         for (const row of rows)
             void perbaruiNamaKontakInstagram(row.id);
         res.json({
@@ -40,12 +40,12 @@ export function buatRuteInstagram(akses, izin) {
     });
     rute.get('/instagram/ringkasan', wajibIzin('instagram', 'lihat'), async (_req, res) => {
         const user = pengguna(res);
-        const rows = await db.hitungIgPercakapanBelumDibaca(user.id, user.fasyankes_id);
+        const rows = await db.hitungIgPercakapanBelumDibaca(user.id);
         res.json({ data: { belum_dibaca: Number(rows[0]?.belum ?? 0), terbaru: rows[0]?.terbaru ?? 0 } });
     });
     // Seluruh rute percakapan di bawah dibatasi ke fasyankes pengguna, termasuk media.
     rute.use('/instagram/percakapan/:id', wajibIzin('instagram', 'lihat'), async (req, res, next) => {
-        const row = await db.cariIgPercakapanUntukBuatRuteInstagram(idValid(req.params.id), pengguna(res).fasyankes_id);
+        const row = await db.cariIgPercakapanUntukBuatRuteInstagram(idValid(req.params.id));
         if (!row)
             return tolak(res, 'Percakapan pribadi tidak ditemukan', 404);
         res.locals.percakapan = row;
@@ -65,7 +65,7 @@ export function buatRuteInstagram(akses, izin) {
             return tolak(res, 'Pesan tidak valid');
         await db.simpanIgBacaUntukBuatRuteInstagram(id, pengguna(res).id, terakhir);
         await db.ubahIgBacaUntukBuatRuteInstagram(terakhir, id, pengguna(res).id);
-        kabarkanInstagram({ tipe: 'baca', fasyankes_id: pengguna(res).fasyankes_id });
+        kabarkanInstagram({ tipe: 'baca' });
         res.json({ data: { ok: true } });
     });
     rute.get('/instagram/percakapan/:id/info', audit.lihat({ entitas: 'ig_percakapan', id: (req) => Number(req.params.id) }), async (_req, res) => {
@@ -73,10 +73,10 @@ export function buatRuteInstagram(akses, izin) {
         const user = pengguna(res);
         const [pasien, penanggung] = await Promise.all([
             row.pasien_id && punyaIzin(user, 'pasien', 'lihat')
-                ? db.cariPasienUntukBuatRuteInstagram(row.pasien_id, user.fasyankes_id)
+                ? db.cariPasienUntukBuatRuteInstagram(row.pasien_id)
                 : null,
             row.penanggung_jawab
-                ? db.cariPenggunaUntukBuatRuteInstagram(row.penanggung_jawab, user.fasyankes_id)
+                ? db.cariPenggunaUntukBuatRuteInstagram(row.penanggung_jawab)
                 : null,
         ]);
         res.setHeader('Cache-Control', 'no-store');
@@ -87,13 +87,13 @@ export function buatRuteInstagram(akses, izin) {
         if (!hasil.success)
             return tolak(res, 'Tautan pasien atau penanggung jawab tidak valid');
         if (hasil.data.penanggung_jawab &&
-            !(await db.cariPenggunaUntukBuatRuteInstagram2(hasil.data.penanggung_jawab, pengguna(res).fasyankes_id, true)))
+            !(await db.cariPenggunaUntukBuatRuteInstagram2(hasil.data.penanggung_jawab, true)))
             return tolak(res, 'Akun penanggung jawab tidak ditemukan');
         if (hasil.data.pasien_id) {
             const user = pengguna(res);
             if (!punyaIzin(user, 'pasien', 'lihat'))
                 return tolak(res, 'Tidak memiliki izin mengakses pasien', 403);
-            const pasien = await db.cariPasienUntukBuatRuteInstagram2(hasil.data.pasien_id, user.fasyankes_id);
+            const pasien = await db.cariPasienUntukBuatRuteInstagram2(hasil.data.pasien_id);
             if (!pasien)
                 return tolak(res, 'Pasien tidak ditemukan', 404);
             const diperbarui = await db.ubahIgPercakapanUntukBuatRuteInstagram((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id, null, pasien.id);
@@ -102,7 +102,7 @@ export function buatRuteInstagram(akses, izin) {
         }
         else
             await db.ubahIgPercakapanUntukBuatRuteInstagram2((hasil.data)?.pasien_id, (hasil.data)?.penanggung_jawab, res.locals.percakapan.id);
-        kabarkanInstagram({ tipe: 'percakapan', fasyankes_id: pengguna(res).fasyankes_id });
+        kabarkanInstagram({ tipe: 'percakapan' });
         res.json({ data: { ok: true } });
     });
     // Badan berlampiran (hingga 8 MB, base64) baru diurai di sini: sesi, izin, dan kepemilikan percakapan sudah diperiksa.
@@ -112,7 +112,7 @@ export function buatRuteInstagram(akses, izin) {
             return tolak(res, hasil.error.issues[0].message);
         const user = pengguna(res);
         const koneksi = await db.ambilIgKoneksi(1);
-        if (!koneksi || koneksi.fasyankes_id !== user.fasyankes_id || !koneksi.aktif || koneksi.penyedia !== 'meta' || koneksi.status !== 'terhubung' || !koneksi.access_token || !koneksi.token_berakhir || koneksi.token_berakhir.getTime() <= Date.now() || !koneksi.webhook_aktif)
+        if (!koneksi || !koneksi.aktif || koneksi.penyedia !== 'meta' || koneksi.status !== 'terhubung' || !koneksi.access_token || !koneksi.token_berakhir || koneksi.token_berakhir.getTime() <= Date.now() || !koneksi.webhook_aktif)
             return tolak(res, 'Instagram belum terhubung. Buka menu Pesan → Instagram.', 409);
         const { teks, media } = hasil.data;
         if (media && teks)
@@ -129,7 +129,7 @@ export function buatRuteInstagram(akses, izin) {
             let mediaId = null;
             if (media) {
                 mediaId = randomUUID();
-                await db.tambahIgMediaUntukBuatRuteInstagram(mediaId, user.fasyankes_id, enkripsiRahasia(media.base64), media.mime, media.nama, tx);
+                await db.tambahIgMediaUntukBuatRuteInstagram(mediaId, enkripsiRahasia(media.base64), media.mime, media.nama, tx);
             }
             const pesan = await (async () => {
                 const _hasil = await db.tambahIgPesanUntukBuatRuteInstagram(res.locals.percakapan.id, 'keluar', enkripsiRahasia(teks), media
@@ -147,7 +147,7 @@ export function buatRuteInstagram(akses, izin) {
             await pangkasPesanInstagram(tx, res.locals.percakapan.id);
             return pesan;
         });
-        kabarkanInstagram({ tipe: 'pesan', fasyankes_id: user.fasyankes_id });
+        kabarkanInstagram({ tipe: 'pesan' });
         try {
             let gambarUrl;
             if (media && row.media_id) {
@@ -178,18 +178,18 @@ export function buatRuteInstagram(akses, izin) {
             await db.ubahIgPesanUntukBuatRuteInstagram2(ditolak ? 'gagal' : 'belum pasti', row.id);
             if (e instanceof GalatMeta && e.dicabut)
                 await db.ubahIgKoneksiUntukBuatRuteInstagram(false, 'dicabut', null, 1, koneksi.generasi);
-            kabarkanInstagram({ tipe: 'pesan', fasyankes_id: user.fasyankes_id });
+            kabarkanInstagram({ tipe: 'pesan' });
             return tolak(res, ditolak ? e.message : 'Pengiriman belum terkonfirmasi. Periksa Instagram sebelum mengirim ulang.', 502);
         }
         await db.transaksi(async (tx) => {
             await kunciPercakapanInstagram(tx, res.locals.percakapan.id);
             await pangkasPesanInstagram(tx, res.locals.percakapan.id);
         });
-        kabarkanInstagram({ tipe: 'pesan', fasyankes_id: user.fasyankes_id });
+        kabarkanInstagram({ tipe: 'pesan' });
         res.status(201).json({ data: { id: row.id } });
     });
     rute.get('/instagram/media/:id', wajibIzin('instagram', 'lihat'), audit.lihat({ entitas: 'ig_media' }), async (req, res) => {
-        const row = await db.cariIgMediaUntukBuatRuteInstagram(String(req.params.id), pengguna(res).fasyankes_id);
+        const row = await db.cariIgMediaUntukBuatRuteInstagram(String(req.params.id));
         if (!row)
             return tolak(res, 'Lampiran tidak ditemukan', 404);
         res.setHeader('Cache-Control', 'no-store');

@@ -17,7 +17,6 @@ function tebakDomain(namaTabel) {
 }
 
 const PETA_KOLOM_IMPLICIT = {
-    fasyankes_id: 'fasyankes',
     pasien_id: 'pasien',
     kunjungan_id: 'kunjungan',
     kunjungan_asal_id: 'kunjungan',

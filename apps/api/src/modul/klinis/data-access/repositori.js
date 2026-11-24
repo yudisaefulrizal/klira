@@ -25,22 +25,22 @@ const tulisVitalKeKolom = (tv = {}) => Object.fromEntries(
     Object.entries(PETA_VITAL_KE_KOLOM).map(([kunciApi, kolomDb]) => [kolomDb, tv[kunciApi] ?? null]),
 );
 /** Versi aktif suatu bagian = versi pengesahan terakhir (versi kosong, mis. daftar tindakan dikosongkan, tetap terwakili). */
-async function versiTerbaru(c, bagian, fasyankesId, kunjunganId) {
-    const p = await db.cariPengesahanCatatanUntukVersiTerbaru(fasyankesId, bagian, kunjunganId, c);
+async function versiTerbaru(c, bagian, kunjunganId) {
+    const p = await db.cariPengesahanCatatanUntukVersiTerbaru(bagian, kunjunganId, c);
     return p?.versi ?? null;
 }
 const kosongPemeriksaan = () => Object.fromEntries(PEMERIKSAAN_BIDANG.map((b) => [b, null]));
 /** Isi bagian pada versi tertentu. */
-async function bacaVersi(c, bagian, fasyankesId, kunjunganId, versi) {
-    const hasil = await bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi);
+async function bacaVersi(c, bagian, kunjunganId, versi) {
+    const hasil = await bacaVersiLepas(c, bagian, kunjunganId, versi);
     return hasil;
 }
-async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
+async function bacaVersiLepas(c, bagian, kunjunganId, versi) {
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
         case 'obat_poli': {
-            const n = await db.cariNarasiKlinisUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, bagian, c);
+            const n = await db.cariNarasiKlinisUntukBacaVersiLepas(kunjunganId, versi ?? -1, bagian, c);
             return n ? { isi: n.isi } : null;
         }
         case 'evaluasi':
@@ -49,17 +49,17 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
         case 'asesmen':
         case 'plan':
         case 'instruksi': {
-            const p = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, bagian, c);
+            const p = await db.cariPemeriksaanBagian(kunjunganId, versi ?? -1, bagian, c);
             return p ? { isi: p[bagian] } : null;
         }
         case 'anamnesis': {
-            const a = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, 'anamnesis', c);
+            const a = await db.cariPemeriksaanBagian(kunjunganId, versi ?? -1, 'anamnesis', c);
             return a ? {
                 keluhan_utama: a.keluhan_utama, penyerta: a.penyerta, riwayat_sekarang: a.riwayat_sekarang, riwayat_pribadi: a.riwayat_pribadi, riwayat_keluarga: a.riwayat_keluarga, kajian_sosial: a.kajian_sosial,
             } : null;
         }
         case 'keperawatan': {
-            const p = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, 'keperawatan', c);
+            const p = await db.cariPemeriksaanBagian(kunjunganId, versi ?? -1, 'keperawatan', c);
             return p ? {
                 kajian_keperawatan: p.kajian_keperawatan, telah_diobati: p.telah_diobati, alergi: p.alergi, obat_dikonsumsi: p.obat_dikonsumsi,
                 diagnosa_keperawatan: p.diagnosa_keperawatan, rencana_asuhan: p.rencana_asuhan,
@@ -68,11 +68,11 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
             } : null;
         }
         case 'tanda_vital': {
-            const p = await db.cariPemeriksaanBagian(fasyankesId, kunjunganId, versi ?? -1, 'tanda_vital', c);
+            const p = await db.cariPemeriksaanBagian(kunjunganId, versi ?? -1, 'tanda_vital', c);
             return p ? bacaVitalDariBaris(p) : null;
         }
         case 'pemeriksaan': {
-            const baris = await db.daftarObservasiUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, 'pemeriksaan', c);
+            const baris = await db.daftarObservasiUntukBacaVersiLepas(kunjunganId, versi ?? -1, 'pemeriksaan', c);
             if (!baris.length)
                 return null;
             const isi = kosongPemeriksaan();
@@ -82,11 +82,11 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
             return isi;
         }
         case 'diagnosis': {
-            const baris = await db.daftarDiagnosisUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, c);
+            const baris = await db.daftarDiagnosisUntukBacaVersiLepas(kunjunganId, versi ?? -1, c);
             return { item: baris.map((d) => ({ kode: d.kode_icd10, nama: d.nama, peran: d.peran, snomed: d.kode_snomed })) };
         }
         case 'tindakan': {
-            const baris = await db.daftarTindakanUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, c);
+            const baris = await db.daftarTindakanUntukBacaVersiLepas(kunjunganId, versi ?? -1, c);
             return {
                 // Tanpa tarif dan jumlah 1 dibiarkan undefined (tidak masuk hash) agar pengesahan catatan sebelum P5 tetap sah.
                 item: baris.map((t) => ({
@@ -96,26 +96,26 @@ async function bacaVersiLepas(c, bagian, fasyankesId, kunjunganId, versi) {
             };
         }
         case 'tindak_lanjut': {
-            const t = await db.cariTindakLanjutUntukBacaVersiLepas(fasyankesId, kunjunganId, versi ?? -1, c);
+            const t = await db.cariTindakLanjutUntukBacaVersiLepas(kunjunganId, versi ?? -1, c);
             return t ? { jenis: t.jenis, tujuan: t.tujuan, spri: t.spri, catatan: t.catatan } : null;
         }
     }
 }
 const KOSONG_DAFTAR = { item: [] };
-async function bacaTerbaru(c, bagian, fasyankesId, kunjunganId) {
-    const v = await versiTerbaru(c, bagian, fasyankesId, kunjunganId);
-    const isi = await bacaVersi(c, bagian, fasyankesId, kunjunganId, v);
+async function bacaTerbaru(c, bagian, kunjunganId) {
+    const v = await versiTerbaru(c, bagian, kunjunganId);
+    const isi = await bacaVersi(c, bagian, kunjunganId, v);
     if (isi === null && (bagian === 'diagnosis' || bagian === 'tindakan'))
         return KOSONG_DAFTAR;
     return isi;
 }
-async function tulisIsi(tx, bagian, isi, fasyankesId, kunjunganId, versi, oleh, waktu) {
-    const dasar = { fasyankes_id: fasyankesId, kunjungan_id: kunjunganId, versi, dibuat_oleh: oleh };
+async function tulisIsi(tx, bagian, isi, kunjunganId, versi, oleh, waktu) {
+    const dasar = { kunjungan_id: kunjunganId, versi, dibuat_oleh: oleh };
     switch (bagian) {
         case 'diagnosis_banding':
         case 'kie':
         case 'obat_poli': {
-            await db.tambahNarasiKlinisUntukTulisIsi(fasyankesId, kunjunganId, bagian, isi.isi, versi, oleh, tx);
+            await db.tambahNarasiKlinisUntukTulisIsi(kunjunganId, bagian, isi.isi, versi, oleh, tx);
             return;
         }
         case 'evaluasi':
@@ -175,7 +175,7 @@ async function tulisIsi(tx, bagian, isi, fasyankesId, kunjunganId, versi, oleh, 
         }
         case 'tindak_lanjut': {
             const t = isi;
-            await db.tambahTindakLanjutUntukTulisIsi(fasyankesId, kunjunganId, versi, t.jenis, t.tujuan, t.spri, t.catatan, oleh, tx);
+            await db.tambahTindakLanjutUntukTulisIsi(kunjunganId, versi, t.jenis, t.tujuan, t.spri, t.catatan, oleh, tx);
             return;
         }
     }
@@ -186,28 +186,28 @@ const folderKeDto = (k) => ({
 const favoritKeDto = (f) => ({ id: f.id, jenis: f.jenis, kode: f.kode, nama: f.nama, urutan: f.urutan });
 const templatKeDto = (t) => ({ id: t.id, bagian: t.bagian, nama: t.nama, isi: t.isi });
 export class RepositoriKlinisMysql {
-    async kunjungan(fasyankesId, id) {
-        return db.cariKunjunganUntukKunjungan(id, fasyankesId);
+    async kunjungan(id) {
+        return db.cariKunjunganUntukKunjungan(id);
     }
-    async kunjunganDto(fasyankesId, id) {
-        if (!(await db.hitungKunjunganUntukKunjunganAda(id, fasyankesId)))
+    async kunjunganDto(id) {
+        if (!(await db.hitungKunjunganUntukKunjunganAda(id)))
             return null;
-        return { ...keDto(await ambilKunjungan(db.pool, id)), nomor_dokumen: nomorDokumen(await db.nomorUrutKunjungan(fasyankesId, id)) };
+        return { ...keDto(await ambilKunjungan(db.pool, id)), nomor_dokumen: nomorDokumen(await db.nomorUrutKunjungan(id)) };
     }
-    async dataCetak(fasyankesId, kunjunganId) {
+    async dataCetak(kunjunganId) {
         const [k, konteks] = await Promise.all([
-            db.cariKunjunganUntukDataCetak(kunjunganId, fasyankesId),
-            this.konteks(fasyankesId, kunjunganId),
+            db.cariKunjunganUntukDataCetak(kunjunganId),
+            this.konteks(kunjunganId),
         ]);
         if (!k || !konteks)
             return null;
         const dto = keDto(await ambilKunjungan(db.pool, kunjunganId));
         const [folder, resep, order, surat, setuju] = await Promise.all([
-            db.cariKeluargaPasienUntukDataCetak(fasyankesId, k.pasien_id),
-            db.daftarResepUntukDataCetak(fasyankesId, kunjunganId),
-            db.daftarOrderPenunjangUntukDataCetak(fasyankesId, kunjunganId),
-            db.cariSuratUntukDataCetak(fasyankesId, kunjunganId, 'rujukan'),
-            db.cariPersetujuanUntukDataCetak(fasyankesId, k.pasien_id, 'general', 'diberikan'),
+            db.cariKeluargaPasienUntukDataCetak(k.pasien_id),
+            db.daftarResepUntukDataCetak(kunjunganId),
+            db.daftarOrderPenunjangUntukDataCetak(kunjunganId),
+            db.cariSuratUntukDataCetak(kunjunganId, 'rujukan'),
+            db.cariPersetujuanUntukDataCetak(k.pasien_id, 'general', 'diberikan'),
         ]);
         const idValidator = [...new Set(order.flatMap((o) => (o.hasil?.validator_id ? [o.hasil.validator_id] : [])))];
         const validator = new Map((await db.daftarPenggunaUntukNamaPengguna(idValidator)).map((x) => [x.id, x.nama]));
@@ -231,24 +231,24 @@ export class RepositoriKlinisMysql {
     async namaPengguna(id) {
         return (await db.ambilPenggunaUntukTerakhir(id))?.nama ?? '-';
     }
-    async penggunaAda(fasyankesId, id) {
-        return (await db.hitungPenggunaUntukPenggunaAda3(id, fasyankesId, true)) > 0;
+    async penggunaAda(id) {
+        return (await db.hitungPenggunaUntukPenggunaAda3(id, true)) > 0;
     }
-    bacaBagian(fasyankesId, kunjunganId, bagian) {
-        return bacaTerbaru(db.pool, bagian, fasyankesId, kunjunganId);
+    bacaBagian(kunjunganId, bagian) {
+        return bacaTerbaru(db.pool, bagian, kunjunganId);
     }
     /** Apakah pengguna sedang bertugas sebagai dokter (salah satu jenis akun aktifnya bernama dokter). */
-    async penggunaDokter(fasyankesId, penggunaId, sekarang) {
-        const baris = await db.daftarPenugasanJenisUntukJenisAkunPemberiHak(fasyankesId, penggunaId, sekarang, null, sekarang, true, 'klinis', 'input');
+    async penggunaDokter(penggunaId, sekarang) {
+        const baris = await db.daftarPenugasanJenisUntukJenisAkunPemberiHak(penggunaId, sekarang, null, sekarang, true, 'klinis', 'input');
         return baris.some((b) => [b.jenis_akun].flat().some((j) => /dokter/i.test(j?.nama ?? '')));
     }
     async simpanBagian(d) {
         try {
             await db.transaksi(async (tx) => {
                 // Versi isi mengikuti versi pengesahan; baris yang sama tidak boleh ditulis dua kali (unique) sehingga penulisan serempak gagal bersih.
-                await tulisIsi(tx, d.bagian, d.isi, d.fasyankesId, d.kunjunganId, d.pengesahan.versi, d.oleh, d.pengesahan.waktu);
+                await tulisIsi(tx, d.bagian, d.isi, d.kunjunganId, d.pengesahan.versi, d.oleh, d.pengesahan.waktu);
                 await tulisPengesahanDalam(tx, d.pengesahan);
-                await mulaiAntreanDalam(tx, d.fasyankesId, d.kunjunganId, d.pengesahan.waktu);
+                await mulaiAntreanDalam(tx, d.kunjunganId, d.pengesahan.waktu);
             });
         }
         catch (e) {
@@ -257,21 +257,21 @@ export class RepositoriKlinisMysql {
             throw e;
         }
     }
-    async konteks(fasyankesId, kunjunganId) {
-        const k = await db.cariKunjunganUntukKonteks(kunjunganId, fasyankesId, 'ATND', 1);
+    async konteks(kunjunganId) {
+        const k = await db.cariKunjunganUntukKonteks(kunjunganId, 'ATND', 1);
         if (!k)
             return null;
         const [poli, dpjp, keperawatanTerbaru, diagnosisTerbaru, observasiTerbaru, kunjunganSebelumnya] = await Promise.all([
-            k.lokasi_id ? db.cariLokasiUntukKonteks(k.lokasi_id, fasyankesId) : null,
-            k.peserta[0] ? db.cariPenggunaUntukKonteks(k.peserta[0].pengguna_id, fasyankesId) : null,
+            k.lokasi_id ? db.cariLokasiUntukKonteks(k.lokasi_id) : null,
+            k.peserta[0] ? db.cariPenggunaUntukKonteks(k.peserta[0].pengguna_id) : null,
             // Alergi adalah data pasien (dikaji perawat, P6): ambil skrining keperawatan terbaru yang terisi, jangan tertimpa kunjungan baru yang tidak mengisinya.
-            db.cariKeperawatanUntukKonteks(fasyankesId, k.pasien_id, null, ''),
-            db.cariDiagnosisUntukKonteks(fasyankesId, k.pasien_id),
-            db.cariTandaVitalUntukKonteks(fasyankesId, k.pasien_id),
-            db.hitungKunjunganUntukKonteks(fasyankesId, k.pasien_id, k.id),
+            db.cariKeperawatanUntukKonteks(k.pasien_id, null, ''),
+            db.cariDiagnosisUntukKonteks(k.pasien_id),
+            db.cariTandaVitalUntukKonteks(k.pasien_id),
+            db.hitungKunjunganUntukKonteks(k.pasien_id, k.id),
         ]);
-        const diagnosis = diagnosisTerbaru ? await bacaVersi(db.pool, 'diagnosis', fasyankesId, diagnosisTerbaru.kunjungan_id, diagnosisTerbaru.versi) : null;
-        const tandaVital = observasiTerbaru ? await bacaVersi(db.pool, 'tanda_vital', fasyankesId, observasiTerbaru.kunjungan_id, observasiTerbaru.versi) : null;
+        const diagnosis = diagnosisTerbaru ? await bacaVersi(db.pool, 'diagnosis', diagnosisTerbaru.kunjungan_id, diagnosisTerbaru.versi) : null;
+        const tandaVital = observasiTerbaru ? await bacaVersi(db.pool, 'tanda_vital', observasiTerbaru.kunjungan_id, observasiTerbaru.versi) : null;
         return {
             pasien: { id: k.pasien.id, nama: k.pasien.nama, nomor_rm: k.pasien.nomor_rm, jenis_kelamin: k.pasien.jenis_kelamin, umur_tahun: umurTahun(k.pasien.tanggal_lahir.toISOString().slice(0, 10)) },
             kunjungan: {
@@ -284,24 +284,24 @@ export class RepositoriKlinisMysql {
             tanda_vital_terakhir: tandaVital,
         };
     }
-    async riwayatPasien(fasyankesId, pasienId, kecualiKunjunganId, batas) {
-        if (!(await db.hitungPasienUntukPasienAda(pasienId, fasyankesId)))
+    async riwayatPasien(pasienId, kecualiKunjunganId, batas) {
+        if (!(await db.hitungPasienUntukPasienAda(pasienId)))
             return null;
-        const daftar = await db.daftarKunjunganUntukRiwayatPasien(fasyankesId, pasienId, (kecualiKunjunganId) ? (kecualiKunjunganId) : undefined, batas);
+        const daftar = await db.daftarKunjunganUntukRiwayatPasien(pasienId, (kecualiKunjunganId) ? (kecualiKunjunganId) : undefined, batas);
         if (!daftar.length)
             return [];
         const ids = daftar.map((k) => k.id);
-        const peserta = await db.daftarPesertaKunjunganUntukRiwayatPasien(fasyankesId, ids);
+        const peserta = await db.daftarPesertaKunjunganUntukRiwayatPasien(ids);
         const dpjp = new Map();
         for (const x of peserta)
             if (!dpjp.has(x.kunjungan_id))
                 dpjp.set(x.kunjungan_id, x.pengguna_id);
-        const namaDokter = new Map((dpjp.size ? await db.daftarPenggunaUntukRiwayat([...new Set(dpjp.values())], fasyankesId) : []).map((x) => [x.id, x.nama]));
+        const namaDokter = new Map((dpjp.size ? await db.daftarPenggunaUntukRiwayat([...new Set(dpjp.values())]) : []).map((x) => [x.id, x.nama]));
         const [anamnesis, diagnosis, lanjut, poli] = await Promise.all([
-            db.daftarAnamnesisUntukRiwayatPasien(fasyankesId, ids),
-            db.daftarDiagnosisUntukRiwayatPasien(fasyankesId, ids),
-            db.daftarTindakLanjutUntukRiwayatPasien(fasyankesId, ids),
-            db.daftarLokasiUntukPetakanAntrean(fasyankesId, daftar.flatMap((k) => (k.lokasi_id ? [k.lokasi_id] : []))),
+            db.daftarAnamnesisUntukRiwayatPasien(ids),
+            db.daftarDiagnosisUntukRiwayatPasien(ids),
+            db.daftarTindakLanjutUntukRiwayatPasien(ids),
+            db.daftarLokasiUntukPetakanAntrean(daftar.flatMap((k) => (k.lokasi_id ? [k.lokasi_id] : []))),
         ]);
         return daftar.map((k) => {
             const dx = diagnosis.filter((d) => d.kunjungan_id === k.id);
@@ -319,46 +319,46 @@ export class RepositoriKlinisMysql {
      * Histori pemeriksaan rawat jalan pasien: kunjungan AMB yang pemeriksaannya sudah selesai (tahap resep, kasir, atau ditutup), terbaru dahulu,
      * beserta SOAP, tanda vital, diagnosis, dan tindak lanjut versi terbaru. `kecualiKunjunganId` membuang kunjungan yang sedang dibuka.
      */
-    async historiRawatJalan(fasyankesId, pasienId, kecualiKunjunganId, batas) {
-        const riwayat = await this.riwayatPasien(fasyankesId, pasienId, kecualiKunjunganId, 100);
+    async historiRawatJalan(pasienId, kecualiKunjunganId, batas) {
+        const riwayat = await this.riwayatPasien(pasienId, kecualiKunjunganId, 100);
         if (!riwayat)
             return null;
         const selesai = ['resep', 'kasir', 'ditutup'];
         const dipilih = riwayat.filter((k) => k.jenis === 'AMB' && selesai.includes(k.tahap_layanan)).slice(0, batas);
         return Promise.all(dipilih.map(async (k) => {
-            const [tandaVital, subjek, objek, asesmen, plan] = await Promise.all(['tanda_vital', 'subjek', 'objek', 'asesmen', 'plan'].map((b) => bacaTerbaru(db.pool, b, fasyankesId, k.id)));
+            const [tandaVital, subjek, objek, asesmen, plan] = await Promise.all(['tanda_vital', 'subjek', 'objek', 'asesmen', 'plan'].map((b) => bacaTerbaru(db.pool, b, k.id)));
             return {
                 id: k.id, mulai: k.mulai, poli_nama: k.poli_nama, dpjp_nama: k.dpjp_nama, keluhan_utama: k.keluhan_utama, diagnosis: k.diagnosis, tindak_lanjut: k.tindak_lanjut,
                 tanda_vital: tandaVital, subjek: subjek?.isi ?? null, objek: objek?.isi ?? null, asesmen: asesmen?.isi ?? null, plan: plan?.isi ?? null,
             };
         }));
     }
-    async salinan(fasyankesId, sumberId) {
-        const k = await db.cariKunjunganUntukSalinan(sumberId, fasyankesId);
+    async salinan(sumberId) {
+        const k = await db.cariKunjunganUntukSalinan(sumberId);
         if (!k)
             return null;
         const [anamnesis, diagnosis, tindakan] = await Promise.all([
-            bacaTerbaru(db.pool, 'anamnesis', fasyankesId, k.id),
-            bacaTerbaru(db.pool, 'diagnosis', fasyankesId, k.id),
-            bacaTerbaru(db.pool, 'tindakan', fasyankesId, k.id),
+            bacaTerbaru(db.pool, 'anamnesis', k.id),
+            bacaTerbaru(db.pool, 'diagnosis', k.id),
+            bacaTerbaru(db.pool, 'tindakan', k.id),
         ]);
         return {
             sumber: { id: k.id, mulai: k.mulai.toISOString() },
             anamnesis, diagnosis: diagnosis?.item.length ? diagnosis : null, tindakan: tindakan?.item.length ? tindakan : null,
         };
     }
-    async tarifTindakanSah(fasyankesId, ids) {
+    async tarifTindakanSah(ids) {
         if (!ids.length)
             return [];
-        return db.daftarTarifLayananUntukTarifTindakanSah([...ids], fasyankesId, 'tindakan');
+        return db.daftarTarifLayananUntukTarifTindakanSah([...ids], 'tindakan');
     }
-    async tindakanKlinik(fasyankesId, cari, batas) {
+    async tindakanKlinik(cari, batas) {
         const q = cari.trim();
-        const t = await db.daftarTarifLayananUntukTindakanKlinik(fasyankesId, 'tindakan', true, q, q, q, batas);
+        const t = await db.daftarTarifLayananUntukTindakanKlinik('tindakan', true, q, q, q, batas);
         return t.map((x) => ({ id: x.id, kode: x.kode, nama: x.nama, kode_icd9cm: x.kode_icd9cm, harga_umum: x.harga_umum, harga_jkn: x.harga_jkn }));
     }
-    sinkronTagihanTindakan(fasyankesId, kunjunganId, oleh, item) {
-        return db.transaksi((tx) => sinkronItemTindakanDalam(tx, fasyankesId, kunjunganId, oleh, item));
+    sinkronTagihanTindakan(kunjunganId, oleh, item) {
+        return db.transaksi((tx) => sinkronItemTindakanDalam(tx, kunjunganId, oleh, item));
     }
     /** Referensi ICD dari JSON primer; sistem lain tetap memakai master terminologi. */
     async kamusTerminologi(q) {
@@ -388,14 +388,14 @@ export class RepositoriKlinisMysql {
         }
         return hasil.slice(0, batas);
     }
-    async daftarFavorit(fasyankesId, penggunaId, jenis) {
-        const baris = await db.daftarFavoritDokterUntukDaftarFavorit(fasyankesId, penggunaId, (jenis) ? (jenis) : undefined, 200);
+    async daftarFavorit(penggunaId, jenis) {
+        const baris = await db.daftarFavoritDokterUntukDaftarFavorit(penggunaId, (jenis) ? (jenis) : undefined, 200);
         return baris.map(favoritKeDto);
     }
-    async tambahFavorit(fasyankesId, penggunaId, d) {
+    async tambahFavorit(penggunaId, d) {
         const terakhir = await db.ringkasanFavoritDokterUntukTambahFavorit(penggunaId, d.jenis);
         try {
-            return favoritKeDto(await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahFavoritDokterUntukTambahFavorit(fasyankesId, penggunaId, (d)?.jenis, (d)?.kode, (d)?.nama, (terakhir._max.urutan ?? -1) + 1, penggunaId, koneksiBaru); return db.tambahFavoritDokterUntukTambahFavoritHasil(_hasil.id, koneksiBaru); }));
+            return favoritKeDto(await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahFavoritDokterUntukTambahFavorit(penggunaId, (d)?.jenis, (d)?.kode, (d)?.nama, (terakhir._max.urutan ?? -1) + 1, penggunaId, koneksiBaru); return db.tambahFavoritDokterUntukTambahFavoritHasil(_hasil.id, koneksiBaru); }));
         }
         catch (e) {
             if (db.bentrokUnik(e))
@@ -403,38 +403,38 @@ export class RepositoriKlinisMysql {
             throw e;
         }
     }
-    async ubahUrutanFavorit(fasyankesId, penggunaId, id, urutan) {
-        const hasil = await db.ubahFavoritDokterUntukUbahUrutanFavorit(urutan, id, fasyankesId, penggunaId);
+    async ubahUrutanFavorit(penggunaId, id, urutan) {
+        const hasil = await db.ubahFavoritDokterUntukUbahUrutanFavorit(urutan, id, penggunaId);
         if (!hasil.count)
             return null;
         return favoritKeDto(await db.tambahFavoritDokterUntukTambahFavoritHasil(id));
     }
-    async hapusFavorit(fasyankesId, penggunaId, id) {
-        return (await db.hapusFavoritDokterUntukHapusFavorit(id, fasyankesId, penggunaId)).count > 0;
+    async hapusFavorit(penggunaId, id) {
+        return (await db.hapusFavoritDokterUntukHapusFavorit(id, penggunaId)).count > 0;
     }
-    async daftarTemplat(fasyankesId, penggunaId, bagian) {
-        const baris = await db.daftarTemplatCatatanUntukDaftarTemplat(fasyankesId, penggunaId, (bagian) ? (bagian) : undefined, 200);
+    async daftarTemplat(penggunaId, bagian) {
+        const baris = await db.daftarTemplatCatatanUntukDaftarTemplat(penggunaId, (bagian) ? (bagian) : undefined, 200);
         return baris.map(templatKeDto);
     }
-    async tambahTemplat(fasyankesId, penggunaId, d) {
-        return templatKeDto(await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahTemplatCatatanUntukTambahTemplat(fasyankesId, penggunaId, d.bagian, d.nama, d.isi, penggunaId, koneksiBaru); return db.tambahTemplatCatatanUntukTambahTemplatHasil(_hasil.id, koneksiBaru); }));
+    async tambahTemplat(penggunaId, d) {
+        return templatKeDto(await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahTemplatCatatanUntukTambahTemplat(penggunaId, d.bagian, d.nama, d.isi, penggunaId, koneksiBaru); return db.tambahTemplatCatatanUntukTambahTemplatHasil(_hasil.id, koneksiBaru); }));
     }
-    async hapusTemplat(fasyankesId, penggunaId, id) {
-        return (await db.hapusTemplatCatatanUntukHapusTemplat(id, fasyankesId, penggunaId)).count > 0;
+    async hapusTemplat(penggunaId, id) {
+        return (await db.hapusTemplatCatatanUntukHapusTemplat(id, penggunaId)).count > 0;
     }
-    async pasienAda(fasyankesId, id) {
-        return (await db.hitungPasienUntukPasienAda(id, fasyankesId)) > 0;
+    async pasienAda(id) {
+        return (await db.hitungPasienUntukPasienAda(id)) > 0;
     }
-    async folderKeluarga(fasyankesId, pasienId) {
+    async folderKeluarga(pasienId) {
         const [wali, anggota] = await Promise.all([
-            db.daftarWaliKeluargaUntukFolderKeluarga(fasyankesId, pasienId, 50),
-            db.daftarKeluargaPasienUntukFolderKeluarga(fasyankesId, pasienId, 100),
+            db.daftarWaliKeluargaUntukFolderKeluarga(pasienId, 50),
+            db.daftarKeluargaPasienUntukFolderKeluarga(pasienId, 100),
         ]);
         return { wali: wali.map((w) => ({ id: w.id, hubungan: w.hubungan, nama: w.nama, kontak: w.kontak })), anggota: anggota.map(folderKeDto) };
     }
-    async tautkanKeluarga(fasyankesId, oleh, pasienId, d) {
+    async tautkanKeluarga(oleh, pasienId, d) {
         try {
-            const k = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahKeluargaPasienUntukTautkanKeluarga(fasyankesId, pasienId, d.anggota_pasien_id, d.hubungan, oleh, koneksiBaru); return db.tambahKeluargaPasienUntukTautkanKeluargaHasil(_hasil.id, koneksiBaru); });
+            const k = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahKeluargaPasienUntukTautkanKeluarga(pasienId, d.anggota_pasien_id, d.hubungan, oleh, koneksiBaru); return db.tambahKeluargaPasienUntukTautkanKeluargaHasil(_hasil.id, koneksiBaru); });
             return folderKeDto(k);
         }
         catch (e) {
@@ -443,42 +443,42 @@ export class RepositoriKlinisMysql {
             throw e;
         }
     }
-    async ubahKeluarga(fasyankesId, pasienId, id, d) {
-        const hasil = await db.ubahKeluargaPasienUntukUbahKeluarga((d)?.hubungan, (d)?.dibatasi, id, fasyankesId, pasienId);
+    async ubahKeluarga(pasienId, id, d) {
+        const hasil = await db.ubahKeluargaPasienUntukUbahKeluarga((d)?.hubungan, (d)?.dibatasi, id, pasienId);
         if (!hasil.count)
             return null;
         return folderKeDto(await db.tambahKeluargaPasienUntukTautkanKeluargaHasil(id));
     }
-    async bacaDraf(fasyankesId, penggunaId, alur, kunjunganId) {
-        const d = await db.cariDrafUntukBacaDraf(fasyankesId, penggunaId, alur, kunjunganId);
+    async bacaDraf(penggunaId, alur, kunjunganId) {
+        const d = await db.cariDrafUntukBacaDraf(penggunaId, alur, kunjunganId);
         return d ? { langkah: d.langkah_terakhir, isi: d.isi, diperbarui_pada: d.diperbarui_pada } : null;
     }
     async simpanDraf(d) {
         const isi = d.isi;
-        const r = await db.transaksi(async (koneksiBaru) => { (await db.simpanDrafUntukSimpanDraf(d.fasyankesId, d.penggunaId, d.alur, d.kunjunganId, d.pasienId, d.langkah, isi, d.sekarang, d.penggunaId, koneksiBaru)); return db.simpanDrafUntukSimpanDrafHasil(d.penggunaId, d.alur, d.kunjunganId, koneksiBaru); });
+        const r = await db.transaksi(async (koneksiBaru) => { (await db.simpanDrafUntukSimpanDraf(d.penggunaId, d.alur, d.kunjunganId, d.pasienId, d.langkah, isi, d.sekarang, d.penggunaId, koneksiBaru)); return db.simpanDrafUntukSimpanDrafHasil(d.penggunaId, d.alur, d.kunjunganId, koneksiBaru); });
         return { langkah: r.langkah_terakhir, isi: r.isi, diperbarui_pada: r.diperbarui_pada };
     }
-    async hapusDraf(fasyankesId, kunjunganId, penggunaId, alur) {
+    async hapusDraf(kunjunganId, penggunaId, alur) {
         // Tanpa alur: hanya draf catatan klinis (draf hasil lab dan persetujuan tindakan tidak ikut terhapus).
-        const h = await db.hapusDrafUntukHapusDraf(fasyankesId, kunjunganId, (penggunaId !== undefined) ? (penggunaId) : undefined, alur ? [alur] : ['pemeriksaan-klinis', 'skrining']);
+        const h = await db.hapusDrafUntukHapusDraf(kunjunganId, (penggunaId !== undefined) ? (penggunaId) : undefined, alur ? [alur] : ['pemeriksaan-klinis', 'skrining']);
         return h.count;
     }
-    async bacaOdontogram(fasyankesId, pasienId) {
-        return db.bacaOdontogramPasien(fasyankesId, pasienId);
+    async bacaOdontogram(pasienId) {
+        return db.bacaOdontogramPasien(pasienId);
     }
-    async simpanOdontogram(fasyankesId, pasienId, kunjunganId, gigi, intraoral, penggunaId) {
-        return db.simpanOdontogramPasien(fasyankesId, pasienId, kunjunganId, gigi, intraoral, penggunaId);
+    async simpanOdontogram(pasienId, kunjunganId, gigi, intraoral, penggunaId) {
+        return db.simpanOdontogramPasien(pasienId, kunjunganId, gigi, intraoral, penggunaId);
     }
-    async bacaKia(fasyankesId, kunjunganId, pasienId) {
-        return db.bacaKiaKunjungan(fasyankesId, kunjunganId, pasienId);
+    async bacaKia(kunjunganId, pasienId) {
+        return db.bacaKiaKunjungan(kunjunganId, pasienId);
     }
-    async simpanKia(fasyankesId, pasienId, kunjunganId, layanan, data, penggunaId) {
-        return db.simpanKiaKunjungan(fasyankesId, pasienId, kunjunganId, layanan, data, penggunaId);
+    async simpanKia(pasienId, kunjunganId, layanan, data, penggunaId) {
+        return db.simpanKiaKunjungan(pasienId, kunjunganId, layanan, data, penggunaId);
     }
-    async bacaUgd(fasyankesId, kunjunganId) {
-        return db.bacaUgdKunjungan(fasyankesId, kunjunganId);
+    async bacaUgd(kunjunganId) {
+        return db.bacaUgdKunjungan(kunjunganId);
     }
-    async simpanUgd(fasyankesId, pasienId, kunjunganId, triase, data, penggunaId) {
-        return db.simpanUgdKunjungan(fasyankesId, pasienId, kunjunganId, triase, data, penggunaId);
+    async simpanUgd(pasienId, kunjunganId, triase, data, penggunaId) {
+        return db.simpanUgdKunjungan(pasienId, kunjunganId, triase, data, penggunaId);
     }
 }

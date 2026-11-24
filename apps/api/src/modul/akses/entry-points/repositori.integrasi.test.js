@@ -47,7 +47,7 @@ d('RepositoriAksesMysql (database pengujian)', () => {
         expect(await repo.usernameDipakai('tidakada', idA)).toBe(false);
     });
     it('gantiKredensial atomik: ubah akun, cabut semua sesi lama, buat sesi baru', async () => {
-        const akun = { id: idA, fasyankes_id: fasA, nama: 'U', username: 'Budi', kata_sandi_hash: 'h', aktif: true, wajib_ganti_kredensial: true };
+        const akun = { id: idA, nama: 'U', username: 'Budi', kata_sandi_hash: 'h', aktif: true, wajib_ganti_kredensial: true };
         const kedaluwarsa = new Date(Date.now() + 3_600_000);
         await repo.buatSesi({ idHash: `${kode}-s1`, akun, kedaluwarsa });
         await repo.buatSesi({ idHash: `${kode}-s2`, akun, kedaluwarsa });
@@ -60,7 +60,7 @@ d('RepositoriAksesMysql (database pengujian)', () => {
         expect(await repo.cariSesi(`${kode}-s1`, new Date())).toBeNull();
     });
     it('gantiKredensial: username bentrok dalam fasyankes sama melempar KonflikUsername dan tidak mengubah sesi', async () => {
-        const akun = { id: idA, fasyankes_id: fasA, nama: 'U', username: 'budi.baru', kata_sandi_hash: 'hash-baru', aktif: true, wajib_ganti_kredensial: false };
+        const akun = { id: idA, nama: 'U', username: 'budi.baru', kata_sandi_hash: 'hash-baru', aktif: true, wajib_ganti_kredensial: false };
         const kedaluwarsa = new Date(Date.now() + 3_600_000);
         await expect(repo.gantiKredensial({ akun, username: 'siti', kataSandiHash: 'z', sesiBaru: { idHash: `${kode}-s4`, kedaluwarsa } })).rejects.toBeInstanceOf(KonflikUsername);
         const p = await uji.tambahPenggunaUntukBuatPenggunaHasil(idA);

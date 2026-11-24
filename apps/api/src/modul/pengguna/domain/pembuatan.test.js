@@ -13,9 +13,9 @@ const izinCat = [
 ];
 
 const jenis = [
-    { id: 10, fasyankes_id: 7, nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', aktif: true, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [izinCat[0]] },
-    { id: 11, fasyankes_id: 7, nama: 'Petugas pendaftaran', syarat_profesi: null, aktif: true, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [izinCat[1]] },
-    { id: 12, fasyankes_id: 7, nama: 'Nonaktif', syarat_profesi: null, aktif: false, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [] },
+    { id: 10, nama: 'Dokter/DPJP', syarat_profesi: 'dokter ber-SIP', aktif: true, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [izinCat[0]] },
+    { id: 11, nama: 'Petugas pendaftaran', syarat_profesi: null, aktif: true, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [izinCat[1]] },
+    { id: 12, nama: 'Nonaktif', syarat_profesi: null, aktif: false, diubah_oleh: null, alasan_perubahan: null, dibuat_pada: new Date(), izin: [] },
 ];
 
 function siapkan(opsi = {}) {
@@ -50,7 +50,7 @@ function siapkan(opsi = {}) {
     return { layanan, audit, disimpan, hashDari: () => hashDari };
 }
 
-const pelaku = { id: 1, fasyankes_id: 7 };
+const pelaku = { id: 1 };
 
 const dasar = {
     nama: 'Dewi Lestari', nik: '3201010101010001', username: 'dewi.l',
@@ -88,7 +88,7 @@ describe('pembuatan akun', () => {
         expect(hashDari()).toBe(SANDI);
         expect(disimpan[0].kata_sandi_hash).toBe(`hash:${SANDI.length}`);
         expect(JSON.stringify(disimpan[0])).not.toContain(SANDI);
-        expect(disimpan[0]).toMatchObject({ fasyankes_id: 7, oleh: 1, profil: null });
+        expect(disimpan[0]).toMatchObject({ oleh: 1, profil: null });
     });
     it('peringatan tanpa alasan menjawab perlu_konfirmasi dan tidak menyimpan', async () => {
         const { layanan, disimpan, audit } = siapkan();

@@ -20,7 +20,8 @@ jest.unstable_mockModule('@klira/db', () => {
     const cariPasienUntukBuatRuteWhatsapp = jest.fn();
     const cariPenggunaUntukBuatRuteInstagram = jest.fn();
     const kunci = jest.fn();
-    return { ...kliraActual1,
+    return {
+        ...kliraActual1,
         pool: {},
         cariWaPercakapanUntukBuatRuteWhatsapp: cariWaPercakapanUntukBuatRuteWhatsapp,
         ambilWaPercakapanUntukBuatRuteWhatsapp: ambilWaPercakapanUntukBuatRuteWhatsapp,
@@ -55,7 +56,8 @@ jest.unstable_mockModule('@klira/db', () => {
         kunciPercakapanWhatsapp: jest.fn(async () => { }),
         pangkasPesanWhatsapp: jest.fn(async () => { }),
         dekripsiRahasia: jest.fn((v) => v),
-        enkripsiRahasia: jest.fn((v) => v) };
+        enkripsiRahasia: jest.fn((v) => v)
+    };
 });
 jest.unstable_mockModule('../../../middleware/audit.js', () => ({
     alamatDari: () => 'uji',
@@ -125,7 +127,7 @@ it('menolak pengguna tanpa sesi dan tanpa izin', async () => {
 it('membatasi percakapan ke fasyankes pengguna', async () => {
     jest.mocked(db.cariWaPercakapanUntukBuatRuteWhatsapp).mockResolvedValue(null);
     expect((await call('/percakapan/99/pesan')).status).toBe(404);
-    expect(jest.mocked(db.cariWaPercakapanUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 99, 1: 2 })]));
+    expect(jest.mocked(db.cariWaPercakapanUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 99 })]));
 });
 
 it('satu izin WhatsApp memberi akses pengelolaan koneksi', async () => {
@@ -203,7 +205,7 @@ it('penanda baca hanya bergerak maju sampai pesan yang benar-benar dibuka', asyn
 it('memutuskan koneksi membersihkan pesan fasyankes peminta', async () => {
     jest.mocked(db.ambilWaKoneksi).mockResolvedValue({ fasyankes_id: 2 });
     expect((await call('/koneksi', { aksi: 'putuskan' })).status).toBe(200);
-    expect(putuskanDanBersihkan).toHaveBeenCalledWith('whatsapp', expect.objectContaining({ fasyankes_id: 2 }), expect.any(String));
+    expect(putuskanDanBersihkan).toHaveBeenCalledWith('whatsapp', expect.objectContaining({ id: 7 }), expect.any(String));
 });
 
 it('izin inbox saja tidak boleh mengambil identitas pasien melalui penautan', async () => {
@@ -235,7 +237,7 @@ describe('pratinjau lampiran terautentikasi', () => {
         expect(preview.headers.get('content-type')).toContain('video/mp4');
         expect(preview.headers.get('content-disposition')).toBe('inline');
         expect(await preview.text()).toBe('abcdef');
-        expect(jest.mocked(db.cariWaMediaUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'media-uji', 1: 2 })]));
+        expect(jest.mocked(db.cariWaMediaUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'media-uji' })]));
     });
     it('mendukung range agar video dapat diputar dan digeser', async () => {
         const response = await call('/media/media-uji?pratinjau=1', undefined, { range: 'bytes=1-3' });
@@ -274,12 +276,12 @@ describe('informasi kontak dan penautan pasien', () => {
         jest
             .mocked(db.cariWaPercakapanUntukBuatRuteWhatsapp)
             .mockResolvedValue({
-            id: 3,
-            fasyankes_id: 2,
-            jid: '6281234567890@s.whatsapp.net',
-            pasien_id: 5,
-            penanggung_jawab: null,
-        });
+                id: 3,
+                fasyankes_id: 2,
+                jid: '6281234567890@s.whatsapp.net',
+                pasien_id: 5,
+                penanggung_jawab: null,
+            });
     });
     const patch = (body) => fetch(`http://127.0.0.1:${port}/api/whatsapp/percakapan/3`, {
         method: 'PATCH',
@@ -297,7 +299,7 @@ describe('informasi kontak dan penautan pasien', () => {
         user.izin.push({ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' });
         jest.mocked(db.cariPasienUntukBuatRuteWhatsapp).mockResolvedValue({ id: 5, nama: 'Pasien uji', nomor_rm: 'RM005' });
         expect((await call('/percakapan/3/info')).status).toBe(200);
-        expect(jest.mocked(db.cariPasienUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 5, 1: 2 })]));
+        expect(jest.mocked(db.cariPasienUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 5 })]));
     });
     it('menautkan dengan pembatas agar tautan pasien lain tidak tertimpa', async () => {
         user.izin.push({ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' });
@@ -318,7 +320,7 @@ describe('kontak WhatsApp dari data pasien', () => {
         const res = await call('/pasien/5');
         expect(res.status).toBe(200);
         expect((await res.json()).data).toEqual(pasien);
-        expect(jest.mocked(db.cariPasienUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 5, 1: 2 })]));
+        expect(jest.mocked(db.cariPasienUntukBuatRuteWhatsapp).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 5 })]));
     });
     it('tetap menyediakan kontak wali ketika nomor pasien kosong', async () => {
         user.izin.push({ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' });

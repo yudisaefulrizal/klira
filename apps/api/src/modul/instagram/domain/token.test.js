@@ -27,7 +27,7 @@ const { perbaruiTokenInstagram } = await import("./token.js");
 beforeEach(() => jest.clearAllMocks());
 
 it('memperpanjang token sebelum habis dengan pembaruan bersyarat agar disconnect tidak dibatalkan', async () => {
-    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ id: 1, fasyankes_id: 10, penyedia: 'meta', aktif: true, access_token: 'old', generasi: 5, token_berakhir: new Date(Date.now() + 86400000), token_diperbarui: new Date(Date.now() - 2 * 86400000) });
+    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ id: 1, penyedia: 'meta', aktif: true, access_token: 'old', generasi: 5, token_berakhir: new Date(Date.now() + 86400000), token_diperbarui: new Date(Date.now() - 2 * 86400000) });
     jest.mocked(perpanjangToken).mockResolvedValue({ token: 'new', masa: 5184000 });
     await perbaruiTokenInstagram();
     expect(perpanjangToken).toHaveBeenCalledWith('old');

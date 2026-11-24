@@ -1,42 +1,36 @@
 import * as db from '@klira/db';
 export class RepositoriPersetujuanMysql {
-    async kunjungan(fasyankesId, id) {
-        return db.cariKunjunganUntukKunjungan(id, fasyankesId);
+    async kunjungan(id) {
+        return db.cariKunjunganUntukKunjungan(id);
     }
-    async pasien(fasyankesId, id) {
-        return db.cariPasienUntukPasien3(id, fasyankesId);
+    async pasien(id) {
+        return db.cariPasienUntukPasien3(id);
     }
-    async teksAktif(fasyankesId) {
-        // Teks klinik sendiri didahulukan, lalu teks bawaan; yang aktif dengan versi tertinggi.
-        for (const fas of [fasyankesId, null]) {
-            const t = await db.cariTeksPersetujuanUntukTeksAktif(fas, 'tindakan', true);
-            if (t)
-                return t;
-        }
-        return null;
+    async teksAktif() {
+        return (await db.cariTeksPersetujuanUntukTeksAktif('tindakan', true)) ?? null;
     }
-    async teksUntukPakai(fasyankesId, id) {
-        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, 'tindakan', true, fasyankesId, null);
+    async teksUntukPakai(id) {
+        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, 'tindakan', true, null);
     }
-    async wali(fasyankesId, pasienId) {
-        return db.daftarWaliKeluargaUntukWali(fasyankesId, pasienId);
+    async wali(pasienId) {
+        return db.daftarWaliKeluargaUntukWali(pasienId);
     }
-    async saksiOpsi(fasyankesId) {
-        return db.daftarPenggunaUntukSaksiOpsi(fasyankesId, true, 300);
+    async saksiOpsi() {
+        return db.daftarPenggunaUntukSaksiOpsi(true, 300);
     }
-    async saksi(fasyankesId, id) {
-        return db.cariPenggunaUntukSaksi(id, fasyankesId, true);
+    async saksi(id) {
+        return db.cariPenggunaUntukSaksi(id, true);
     }
     async catat(d) {
-        const p = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahPersetujuanUntukCatat(d.fasyankesId, d.pasienId, 'tindakan', d.teks.id, d.teks.versi, d.teks.tujuan, d.penjelasan, d.bentuk, 'diberikan', d.waktu, d.penandatangan, d.waliId, d.penandatanganNama, d.saksiId, d.kunjunganId, d.tindakanKode, d.tindakanNama, d.oleh, koneksiBaru); return db.tambahPersetujuanUntukDaftarkanHasil(_hasil.id, koneksiBaru); });
-        return (await this.daftarDari(d.fasyankesId, [p]))[0];
+        const p = await db.transaksi(async (koneksiBaru) => { const _hasil = await db.tambahPersetujuanUntukCatat(d.pasienId, 'tindakan', d.teks.id, d.teks.versi, d.teks.tujuan, d.penjelasan, d.bentuk, 'diberikan', d.waktu, d.penandatangan, d.waliId, d.penandatanganNama, d.saksiId, d.kunjunganId, d.tindakanKode, d.tindakanNama, d.oleh, koneksiBaru); return db.tambahPersetujuanUntukDaftarkanHasil(_hasil.id, koneksiBaru); });
+        return (await this.daftarDari([p]))[0];
     }
-    async daftar(fasyankesId, kunjunganId) {
-        return this.daftarDari(fasyankesId, await db.daftarPersetujuanUntukDaftar(fasyankesId, kunjunganId, 'tindakan', 200));
+    async daftar(kunjunganId) {
+        return this.daftarDari(await db.daftarPersetujuanUntukDaftar(kunjunganId, 'tindakan', 200));
     }
-    async daftarDari(fasyankesId, baris) {
+    async daftarDari(baris) {
         const ids = [...new Set(baris.flatMap((b) => [b.saksi_pengguna_id, b.dibuat_oleh].filter((x) => !!x)))];
-        const pengguna = ids.length ? await db.daftarPenggunaUntukRiwayat(ids, fasyankesId) : [];
+        const pengguna = ids.length ? await db.daftarPenggunaUntukRiwayat(ids) : [];
         const nama = new Map(pengguna.map((x) => [x.id, x.nama]));
         return baris.map((b) => ({
             id: b.id, kunjungan_id: b.kunjungan_id, tindakan_kode: b.tindakan_kode, tindakan_nama: b.tindakan_nama, versi_teks: b.versi_teks, tujuan: b.tujuan, penjelasan: b.penjelasan,

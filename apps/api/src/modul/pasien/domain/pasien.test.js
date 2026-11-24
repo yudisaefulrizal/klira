@@ -41,7 +41,7 @@ describe('normalkanRegistrasi', () => {
 describe('layanan pasien dengan repositori tiruan', () => {
     const catatan = [];
     const audit = { catat: async (e) => void catatan.push(e) };
-    const saya = { id: 3, fasyankes_id: 1 };
+    const saya = { id: 3 };
     const buat = (sisa) => buatLayananPasien({
         repo: {
             perbaiki: async () => true,
@@ -84,7 +84,7 @@ describe('layanan pasien dengan repositori tiruan', () => {
         const l = buat({});
         expect(await l.detail(saya, 9)).toMatchObject({ ok: true });
         expect(catatan).toEqual([expect.objectContaining({ aksi: 'lihat', entitas: 'pasien', keterangan: 'Membuka data pasien' })]);
-        expect(await l.detail({ id: 3, fasyankes_id: 2 }, 9)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
+        expect(await l.detail({ id: 3 }, 9)).toMatchObject({ ok: false, kode: 'tidak_ditemukan' });
         expect(catatan).toHaveLength(1);
     });
     it('cek duplikat tanpa kriteria cukup tidak mencari', async () => {

@@ -46,7 +46,7 @@ d('mesin izin terhadap database pengujian', () => {
     }
     const jenisPaket = async (nama, izin, syarat) => {
         const j = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahJenisAkunUntukJenisPaket(fas, `${kode}-${nama}`, syarat, koneksiBaru); return uji.tambahJenisAkunUntukJenisPaketHasil(_hasil.id, koneksiBaru); });
-        await uji.tambahBanyakIzinJenisAkunUntukJenisPaket(izin.map((i) => ({ fasyankes_id: fas, jenis_akun_id: j.id, izin_id: izinId[i.join('|')] })));
+        await uji.tambahBanyakIzinJenisAkunUntukJenisPaket(izin.map((i) => ({ jenis_akun_id: j.id, izin_id: izinId[i.join('|')] })));
         return j.id;
     };
     beforeAll(async () => {
@@ -224,7 +224,7 @@ d('mesin izin terhadap database pengujian', () => {
         expect(rm.badan.galat.pesan).toBeTruthy();
     });
     it('peringatan saat tindakan: tercatat, tidak memblokir, tidak berulang dalam sehari; pembuat=penyetuju tiap kali', async () => {
-        const pelaku = { id: id.perawat, fasyankes_id: fas, izin: [] };
+        const pelaku = { id: id.perawat, izin: [] };
         const a = await layananIzin.catatTindakan(pelaku, 'resep');
         expect(a.map((r) => r.jenis_peringatan).sort()).toEqual(['izin_klinis_non_dokter', 'nakes_tanpa_sip']);
         expect(a.find((r) => r.jenis_peringatan === 'izin_klinis_non_dokter')).toMatchObject({ sumber: 'tindakan', diterima_untuk_akun: true, alasan_pimpinan: 'Menunggu dokter' });

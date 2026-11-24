@@ -6,7 +6,7 @@ jest.unstable_mockModule('../../../middleware/auth.js', () => ({ wajibMasuk: () 
             return void res.status(401).end();
         const izin = a === 'penuh' ? ['lihat', 'perbaikan'] : a === 'lihat' ? ['lihat'] : [];
         const fitur = a === 'pendaftaran' ? 'pasien' : 'satusehat';
-        res.locals.pengguna = { id: 3, fasyankes_id: 7, izin: (a === 'pendaftaran' ? ['perbaikan'] : izin).map((aksi) => ({ fitur, aksi, cakupan: 'unit' })) };
+        res.locals.pengguna = { id: 3, izin: (a === 'pendaftaran' ? ['perbaikan'] : izin).map((aksi) => ({ fitur, aksi, cakupan: 'unit' })) };
         next();
     } }));
 const { default: express } = await import("express");
@@ -57,7 +57,7 @@ describe('simpan', () => {
         const r = await panggil('PUT', '/satusehat/konfigurasi', { auth: 'penuh', body: { ...sah, client_secret: '', base_url: '' } });
         expect(r.status).toBe(200);
         const [pengguna, masukan] = layanan.simpan.mock.calls[0];
-        expect(pengguna).toMatchObject({ id: 3, fasyankes_id: 7 });
+        expect(pengguna).toMatchObject({ id: 3 });
         expect(masukan).toEqual({ environment: 'sandbox', client_id: 'cid', client_secret: undefined, base_url: undefined });
     });
 

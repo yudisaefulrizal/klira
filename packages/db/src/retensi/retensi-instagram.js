@@ -20,11 +20,11 @@ export async function pangkasPesanInstagram(tx, id) {
     return lama.length;
 }
 /** Menyesuaikan riwayat lama saat engine mulai, termasuk ketika halaman tidak dibuka. */
-export async function rapikanRiwayatInstagram(fasyankesId) {
+export async function rapikanRiwayatInstagram() {
     let sesudah = 0;
     let dihapus = 0;
     while (true) {
-        const baris = await db.daftarIgPercakapanUntukRapikanRiwayatInstagram(sesudah, (fasyankesId) ? (fasyankesId) : undefined, 100);
+        const baris = await db.daftarIgPercakapanUntukRapikanRiwayatInstagram(sesudah, 100);
         if (!baris.length)
             return dihapus;
         for (const row of baris)

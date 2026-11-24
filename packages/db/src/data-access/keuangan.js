@@ -15,57 +15,57 @@ export const COA_BAWAAN = [
 const akunKasDariMetode = (metode) => (metode === 'tunai' ? '1101' : '1102');
 
 /** Pastikan akun COA standar klinik tersedia untuk fasyankes terkait. */
-export async function pastikanCoaBawaan(fasyankes_id, koneksi = pool) {
+export async function pastikanCoaBawaan(koneksi = pool) {
     for (const [kode, nama, tipe] of COA_BAWAAN) {
         await tulis(
-            'INSERT IGNORE INTO `akun_keuangan` (`fasyankes_id`, `kode`, `nama`, `tipe`, `aktif`) VALUES (?, ?, ?, ?, true)',
-            [fasyankes_id, kode, nama, tipe],
+            'INSERT IGNORE INTO `akun_keuangan` (`kode`, `nama`, `tipe`, `aktif`) VALUES (?, ?, ?, true)',
+            [kode, nama, tipe],
             koneksi,
         );
     }
 }
 
-export async function daftarCoa(fasyankes_id, koneksi = pool) {
-    await pastikanCoaBawaan(fasyankes_id, koneksi);
+export async function daftarCoa(koneksi = pool) {
+    await pastikanCoaBawaan(koneksi);
     return baca(
-        'SELECT `id`, `kode`, `nama`, `tipe`, `aktif` FROM `akun_keuangan` WHERE `fasyankes_id` = ? ORDER BY `kode` ASC',
-        [fasyankes_id],
+        'SELECT `id`, `kode`, `nama`, `tipe`, `aktif` FROM `akun_keuangan` WHERE TRUE ORDER BY `kode` ASC',
+        [],
         koneksi,
     );
 }
 
-export async function tambahCoa(fasyankes_id, { kode, nama, tipe }, koneksi = pool) {
-    await pastikanCoaBawaan(fasyankes_id, koneksi);
+export async function tambahCoa({ kode, nama, tipe }, koneksi = pool) {
+    await pastikanCoaBawaan(koneksi);
     await tulis(
-        'INSERT INTO `akun_keuangan` (`fasyankes_id`, `kode`, `nama`, `tipe`, `aktif`) VALUES (?, ?, ?, ?, true)',
-        [fasyankes_id, kode, nama, tipe],
+        'INSERT INTO `akun_keuangan` (`kode`, `nama`, `tipe`, `aktif`) VALUES (?, ?, ?, true)',
+        [kode, nama, tipe],
         koneksi,
     );
-    const rows = await baca('SELECT `id`, `kode`, `nama`, `tipe`, `aktif` FROM `akun_keuangan` WHERE `fasyankes_id` = ? AND `kode` = ? LIMIT 1', [fasyankes_id, kode], koneksi);
+    const rows = await baca('SELECT `id`, `kode`, `nama`, `tipe`, `aktif` FROM `akun_keuangan` WHERE `kode` = ? LIMIT 1', [kode], koneksi);
     return rows[0];
 }
 
 /** Catat jurnal double-entry; melempar galat bila debit != kredit atau total <= 0. */
-export async function catatJurnal(fasyankes_id, { tanggal, sumber, referensi_id = null, keterangan, baris = [], dibuat_oleh = null }, koneksi = pool) {
+export async function catatJurnal({ tanggal, sumber, referensi_id = null, keterangan, baris = [], dibuat_oleh = null }, koneksi = pool) {
     const totalDebit = baris.reduce((s, b) => s + Number(b.debit || 0), 0);
     const totalKredit = baris.reduce((s, b) => s + Number(b.kredit || 0), 0);
     if (totalDebit <= 0 || totalDebit !== totalKredit) {
         throw new Error(`Jurnal tidak seimbang (debit=${totalDebit}, kredit=${totalKredit}).`);
     }
     const jalankan = async (c) => {
-        await pastikanCoaBawaan(fasyankes_id, c);
+        await pastikanCoaBawaan(c);
         const tgl = tanggal || new Date().toISOString().slice(0, 10);
         const nomor = `JRN-${tgl.replaceAll('-', '')}-${Date.now().toString().slice(-5)}${Math.floor(Math.random() * 90 + 10)}`;
         const res = await tulis(
-            'INSERT INTO `jurnal` (`fasyankes_id`, `nomor`, `tanggal`, `sumber`, `referensi_id`, `keterangan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [fasyankes_id, nomor, tgl, sumber, referensi_id, keterangan, dibuat_oleh],
+            'INSERT INTO `jurnal` (`nomor`, `tanggal`, `sumber`, `referensi_id`, `keterangan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?)',
+            [nomor, tgl, sumber, referensi_id, keterangan, dibuat_oleh],
             c,
         );
         const jurnalId = res.insertId;
         for (const b of baris) {
             await tulis(
-                'INSERT INTO `detail_jurnal` (`fasyankes_id`, `jurnal_id`, `akun_kode`, `debit`, `kredit`, `keterangan`) VALUES (?, ?, ?, ?, ?, ?)',
-                [fasyankes_id, jurnalId, b.akun_kode, Number(b.debit || 0), Number(b.kredit || 0), b.keterangan ?? null],
+                'INSERT INTO `detail_jurnal` (`jurnal_id`, `akun_kode`, `debit`, `kredit`, `keterangan`) VALUES (?, ?, ?, ?, ?)',
+                [jurnalId, b.akun_kode, Number(b.debit || 0), Number(b.kredit || 0), b.keterangan ?? null],
                 c,
             );
         }
@@ -74,9 +74,9 @@ export async function catatJurnal(fasyankes_id, { tanggal, sumber, referensi_id 
     return koneksi === pool ? transaksi(jalankan) : jalankan(koneksi);
 }
 
-export async function daftarJurnal(fasyankes_id, { dari, sampai, batas = 50 } = {}, koneksi = pool) {
-    const kondisi = ['j.`fasyankes_id` = ?'];
-    const param = [fasyankes_id];
+export async function daftarJurnal({ dari, sampai, batas = 50 } = {}, koneksi = pool) {
+    const kondisi = ['TRUE'];
+    const param = [];
     if (dari) { kondisi.push('j.`tanggal` >= ?'); param.push(dari); }
     if (sampai) { kondisi.push('j.`tanggal` <= ?'); param.push(sampai); }
     const kepala = await baca(
@@ -87,7 +87,7 @@ export async function daftarJurnal(fasyankes_id, { dari, sampai, batas = 50 } = 
     if (!kepala.length) return [];
     const ids = kepala.map((k) => k.id);
     const rincian = await baca(
-        `SELECT d.\`jurnal_id\`, d.\`akun_kode\`, a.\`nama\` AS akun_nama, d.\`debit\`, d.\`kredit\`, d.\`keterangan\` FROM \`detail_jurnal\` d LEFT JOIN \`akun_keuangan\` a ON a.\`fasyankes_id\` = d.\`fasyankes_id\` AND a.\`kode\` = d.\`akun_kode\` WHERE d.\`jurnal_id\` IN (${ids.map(() => '?').join(',')}) ORDER BY d.\`id\` ASC`,
+        `SELECT d.\`jurnal_id\`, d.\`akun_kode\`, a.\`nama\` AS akun_nama, d.\`debit\`, d.\`kredit\`, d.\`keterangan\` FROM \`detail_jurnal\` d LEFT JOIN \`akun_keuangan\` a ON a.\`kode\` = d.\`akun_kode\` WHERE d.\`jurnal_id\` IN (${ids.map(() => '?').join(',')}) ORDER BY d.\`id\` ASC`,
         ids,
         koneksi,
     );
@@ -99,9 +99,9 @@ export async function daftarJurnal(fasyankes_id, { dari, sampai, batas = 50 } = 
     return kepala.map((k) => ({ ...k, detail: peta.get(k.id) ?? [] }));
 }
 
-export async function daftarPengeluaran(fasyankes_id, { dari, sampai } = {}, koneksi = pool) {
-    const kondisi = ['`fasyankes_id` = ?'];
-    const param = [fasyankes_id];
+export async function daftarPengeluaran({ dari, sampai } = {}, koneksi = pool) {
+    const kondisi = ['TRUE'];
+    const param = [];
     if (dari) { kondisi.push('`tanggal` >= ?'); param.push(dari); }
     if (sampai) { kondisi.push('`tanggal` <= ?'); param.push(sampai); }
     return baca(
@@ -111,14 +111,14 @@ export async function daftarPengeluaran(fasyankes_id, { dari, sampai } = {}, kon
     );
 }
 
-export async function tambahPengeluaran(fasyankes_id, d, pengguna_id) {
+export async function tambahPengeluaran(d, pengguna_id) {
     return transaksi(async (c) => {
         const res = await tulis(
-            'INSERT INTO `pengeluaran_operasional` (`fasyankes_id`, `tanggal`, `kategori`, `metode`, `jumlah`, `penerima`, `keterangan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [fasyankes_id, d.tanggal, d.kategori, d.metode, d.jumlah, d.penerima || null, d.keterangan, pengguna_id],
+            'INSERT INTO `pengeluaran_operasional` (`tanggal`, `kategori`, `metode`, `jumlah`, `penerima`, `keterangan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [d.tanggal, d.kategori, d.metode, d.jumlah, d.penerima || null, d.keterangan, pengguna_id],
             c,
         );
-        await catatJurnal(fasyankes_id, {
+        await catatJurnal({
             tanggal: d.tanggal,
             sumber: 'pengeluaran',
             referensi_id: res.insertId,
@@ -134,22 +134,22 @@ export async function tambahPengeluaran(fasyankes_id, d, pengguna_id) {
     });
 }
 
-export async function daftarFakturSupplier(fasyankes_id, koneksi = pool) {
+export async function daftarFakturSupplier(koneksi = pool) {
     return baca(
-        'SELECT `id`, `nomor_faktur`, `supplier`, DATE_FORMAT(`tanggal_faktur`, \'%Y-%m-%d\') AS tanggal_faktur, DATE_FORMAT(`jatuh_tempo`, \'%Y-%m-%d\') AS jatuh_tempo, `total`, `terbayar`, `status`, `catatan`, `dibuat_pada` FROM `faktur_supplier` WHERE `fasyankes_id` = ? ORDER BY `tanggal_faktur` DESC, `id\` DESC LIMIT 100',
-        [fasyankes_id],
+        'SELECT `id`, `nomor_faktur`, `supplier`, DATE_FORMAT(`tanggal_faktur`, \'%Y-%m-%d\') AS tanggal_faktur, DATE_FORMAT(`jatuh_tempo`, \'%Y-%m-%d\') AS jatuh_tempo, `total`, `terbayar`, `status`, `catatan`, `dibuat_pada` FROM `faktur_supplier` WHERE TRUE ORDER BY `tanggal_faktur` DESC, `id\` DESC LIMIT 100',
+        [],
         koneksi,
     );
 }
 
-export async function tambahFakturSupplier(fasyankes_id, d, pengguna_id) {
+export async function tambahFakturSupplier(d, pengguna_id) {
     return transaksi(async (c) => {
         const res = await tulis(
-            'INSERT INTO `faktur_supplier` (`fasyankes_id`, `nomor_faktur`, `supplier`, `tanggal_faktur`, `jatuh_tempo`, `total`, `terbayar`, `status`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, 0, \'belum\', ?, ?)',
-            [fasyankes_id, d.nomor_faktur, d.supplier, d.tanggal_faktur, d.jatuh_tempo || null, d.total, d.catatan || null, pengguna_id],
+            'INSERT INTO `faktur_supplier` (`nomor_faktur`, `supplier`, `tanggal_faktur`, `jatuh_tempo`, `total`, `terbayar`, `status`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, 0, \'belum\', ?, ?)',
+            [d.nomor_faktur, d.supplier, d.tanggal_faktur, d.jatuh_tempo || null, d.total, d.catatan || null, pengguna_id],
             c,
         );
-        await catatJurnal(fasyankes_id, {
+        await catatJurnal({
             tanggal: d.tanggal_faktur,
             sumber: 'hutang_supplier',
             referensi_id: res.insertId,
@@ -165,9 +165,9 @@ export async function tambahFakturSupplier(fasyankes_id, d, pengguna_id) {
     });
 }
 
-export async function bayarHutangSupplier(fasyankes_id, faktur_id, d, pengguna_id) {
+export async function bayarHutangSupplier(faktur_id, d, pengguna_id) {
     return transaksi(async (c) => {
-        const rows = await baca('SELECT `id`, `nomor_faktur`, `supplier`, `total`, `terbayar`, `status` FROM `faktur_supplier` WHERE `id` = ? AND `fasyankes_id` = ? LIMIT 1 FOR UPDATE', [faktur_id, fasyankes_id], c);
+        const rows = await baca('SELECT `id`, `nomor_faktur`, `supplier`, `total`, `terbayar`, `status` FROM `faktur_supplier` WHERE `id` = ? LIMIT 1 FOR UPDATE', [faktur_id], c);
         const f = rows[0];
         if (!f) return { ok: false, sebab: 'tidak_ada' };
         const sisa = f.total - f.terbayar;
@@ -176,12 +176,12 @@ export async function bayarHutangSupplier(fasyankes_id, faktur_id, d, pengguna_i
         const baruTerbayar = f.terbayar + d.jumlah;
         const statusBaru = baruTerbayar >= f.total ? 'lunas' : 'sebagian';
         const bayarRes = await tulis(
-            'INSERT INTO `bayar_hutang_supplier` (`fasyankes_id`, `faktur_id`, `tanggal`, `metode`, `jumlah`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [fasyankes_id, faktur_id, d.tanggal, d.metode, d.jumlah, d.catatan || null, pengguna_id],
+            'INSERT INTO `bayar_hutang_supplier` (`faktur_id`, `tanggal`, `metode`, `jumlah`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?)',
+            [faktur_id, d.tanggal, d.metode, d.jumlah, d.catatan || null, pengguna_id],
             c,
         );
         await tulis('UPDATE `faktur_supplier` SET `terbayar` = ?, `status` = ? WHERE `id` = ?', [baruTerbayar, statusBaru, faktur_id], c);
-        await catatJurnal(fasyankes_id, {
+        await catatJurnal({
             tanggal: d.tanggal,
             sumber: 'hutang_supplier',
             referensi_id: bayarRes.insertId,
@@ -196,25 +196,25 @@ export async function bayarHutangSupplier(fasyankes_id, faktur_id, d, pengguna_i
     });
 }
 
-export async function daftarPiutang(fasyankes_id, koneksi = pool) {
+export async function daftarPiutang(koneksi = pool) {
     return baca(
-        'SELECT p.`id`, p.`kunjungan_id`, k.`id_layanan`, ps.`nama` AS pasien_nama, p.`penjamin`, p.`total`, p.`terbayar`, p.`status`, DATE_FORMAT(p.`jatuh_tempo`, \'%Y-%m-%d\') AS jatuh_tempo, p.`catatan`, p.`dibuat_pada` FROM `piutang_kunjungan` p LEFT JOIN `kunjungan` k ON k.`id` = p.`kunjungan_id` LEFT JOIN `pasien` ps ON ps.`id` = k.`pasien_id` WHERE p.`fasyankes_id` = ? ORDER BY p.`id` DESC LIMIT 100',
-        [fasyankes_id],
+        'SELECT p.`id`, p.`kunjungan_id`, k.`id_layanan`, ps.`nama` AS pasien_nama, p.`penjamin`, p.`total`, p.`terbayar`, p.`status`, DATE_FORMAT(p.`jatuh_tempo`, \'%Y-%m-%d\') AS jatuh_tempo, p.`catatan`, p.`dibuat_pada` FROM `piutang_kunjungan` p LEFT JOIN `kunjungan` k ON k.`id` = p.`kunjungan_id` LEFT JOIN `pasien` ps ON ps.`id` = k.`pasien_id` WHERE TRUE ORDER BY p.`id` DESC LIMIT 100',
+        [],
         koneksi,
     );
 }
 
-export async function tambahPiutang(fasyankes_id, d, pengguna_id) {
+export async function tambahPiutang(d, pengguna_id) {
     return transaksi(async (c) => {
-        const k = await baca('SELECT `id` FROM `kunjungan` WHERE `id` = ? AND `fasyankes_id` = ? LIMIT 1', [d.kunjungan_id, fasyankes_id], c);
+        const k = await baca('SELECT `id` FROM `kunjungan` WHERE `id` = ? LIMIT 1', [d.kunjungan_id], c);
         if (!k[0]) return { ok: false, sebab: 'kunjungan_tidak_ada' };
         const res = await tulis(
-            'INSERT INTO `piutang_kunjungan` (`fasyankes_id`, `kunjungan_id`, `tagihan_id`, `penjamin`, `total`, `terbayar`, `status`, `jatuh_tempo`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, 0, \'belum\', ?, ?, ?) ON DUPLICATE KEY UPDATE `penjamin` = VALUES(`penjamin`), `total` = VALUES(`total`), `jatuh_tempo` = VALUES(`jatuh_tempo`), `catatan` = VALUES(`catatan`)',
-            [fasyankes_id, d.kunjungan_id, d.tagihan_id || null, d.penjamin, d.total, d.jatuh_tempo || null, d.catatan || null, pengguna_id],
+            'INSERT INTO `piutang_kunjungan` (`kunjungan_id`, `tagihan_id`, `penjamin`, `total`, `terbayar`, `status`, `jatuh_tempo`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, 0, \'belum\', ?, ?, ?) ON DUPLICATE KEY UPDATE `penjamin` = VALUES(`penjamin`), `total` = VALUES(`total`), `jatuh_tempo` = VALUES(`jatuh_tempo`), `catatan` = VALUES(`catatan`)',
+            [d.kunjungan_id, d.tagihan_id || null, d.penjamin, d.total, d.jatuh_tempo || null, d.catatan || null, pengguna_id],
             c,
         );
-        const idPiutang = res.insertId || (await baca('SELECT `id` FROM `piutang_kunjungan` WHERE `fasyankes_id` = ? AND `kunjungan_id` = ? LIMIT 1', [fasyankes_id, d.kunjungan_id], c))[0]?.id;
-        await catatJurnal(fasyankes_id, {
+        const idPiutang = res.insertId || (await baca('SELECT `id` FROM `piutang_kunjungan` WHERE `kunjungan_id` = ? LIMIT 1', [d.kunjungan_id], c))[0]?.id;
+        await catatJurnal({
             tanggal: new Date().toISOString().slice(0, 10),
             sumber: 'piutang',
             referensi_id: idPiutang,
@@ -229,9 +229,9 @@ export async function tambahPiutang(fasyankes_id, d, pengguna_id) {
     });
 }
 
-export async function bayarPiutang(fasyankes_id, piutang_id, d, pengguna_id) {
+export async function bayarPiutang(piutang_id, d, pengguna_id) {
     return transaksi(async (c) => {
-        const rows = await baca('SELECT `id`, `kunjungan_id`, `penjamin`, `total`, `terbayar`, `status` FROM `piutang_kunjungan` WHERE `id` = ? AND `fasyankes_id` = ? LIMIT 1 FOR UPDATE', [piutang_id, fasyankes_id], c);
+        const rows = await baca('SELECT `id`, `kunjungan_id`, `penjamin`, `total`, `terbayar`, `status` FROM `piutang_kunjungan` WHERE `id` = ? LIMIT 1 FOR UPDATE', [piutang_id], c);
         const p = rows[0];
         if (!p) return { ok: false, sebab: 'tidak_ada' };
         const sisa = p.total - p.terbayar;
@@ -240,12 +240,12 @@ export async function bayarPiutang(fasyankes_id, piutang_id, d, pengguna_id) {
         const baruTerbayar = p.terbayar + d.jumlah;
         const statusBaru = baruTerbayar >= p.total ? 'lunas' : 'sebagian';
         const bayarRes = await tulis(
-            'INSERT INTO `bayar_piutang` (`fasyankes_id`, `piutang_id`, `tanggal`, `metode`, `jumlah`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [fasyankes_id, piutang_id, d.tanggal, d.metode, d.jumlah, d.catatan || null, pengguna_id],
+            'INSERT INTO `bayar_piutang` (`piutang_id`, `tanggal`, `metode`, `jumlah`, `catatan`, `dibuat_oleh`) VALUES (?, ?, ?, ?, ?, ?)',
+            [piutang_id, d.tanggal, d.metode, d.jumlah, d.catatan || null, pengguna_id],
             c,
         );
         await tulis('UPDATE `piutang_kunjungan` SET `terbayar` = ?, `status` = ? WHERE `id` = ?', [baruTerbayar, statusBaru, piutang_id], c);
-        await catatJurnal(fasyankes_id, {
+        await catatJurnal({
             tanggal: d.tanggal,
             sumber: 'piutang',
             referensi_id: bayarRes.insertId,
@@ -260,30 +260,30 @@ export async function bayarPiutang(fasyankes_id, piutang_id, d, pengguna_id) {
     });
 }
 
-export async function rekapJasaMedis(fasyankes_id, { dari, sampai } = {}, koneksi = pool) {
-    const kondisi = ['i.`fasyankes_id` = ?', 'k.`fasyankes_id` = ?', '(tl.`jasa_dpjp` > 0 OR tl.`jasa_perawat` > 0 OR tl.`jasa_klinik` > 0)'];
-    const param = [fasyankes_id, fasyankes_id, fasyankes_id];
+export async function rekapJasaMedis({ dari, sampai } = {}, koneksi = pool) {
+    const kondisi = ['(tl.`jasa_dpjp` > 0 OR tl.`jasa_perawat` > 0 OR tl.`jasa_klinik` > 0)'];
+    const param = [];
     if (dari) { kondisi.push('DATE(i.`dibuat_pada`) >= ?'); param.push(dari); }
     if (sampai) { kondisi.push('DATE(i.`dibuat_pada`) <= ?'); param.push(sampai); }
     return baca(
-        `SELECT COALESCE(u.\`nama\`, 'Belum ditentukan') AS praktisi_nama, COALESCE(dp.\`dpjp_id\`, i.\`dibuat_oleh\`) AS dpjp_id, COUNT(i.\`id\`) AS jumlah_item, SUM(i.\`jumlah\` * tl.\`jasa_dpjp\`) AS total_jasa_dpjp, SUM(i.\`jumlah\` * tl.\`jasa_perawat\`) AS total_jasa_perawat, SUM(i.\`jumlah\` * tl.\`jasa_klinik\`) AS total_jasa_klinik FROM \`item_tagihan\` i JOIN \`tagihan\` t ON t.\`id\` = i.\`tagihan_id\` JOIN \`kunjungan\` k ON k.\`id\` = t.\`kunjungan_id\` JOIN \`tarif_layanan\` tl ON tl.\`id\` = i.\`tarif_layanan_id\` LEFT JOIN (SELECT \`kunjungan_id\`, MIN(\`pengguna_id\`) AS dpjp_id FROM \`peserta_kunjungan\` WHERE \`fasyankes_id\` = ? AND \`tipe\` = 'ATND' GROUP BY \`kunjungan_id\`) dp ON dp.\`kunjungan_id\` = k.\`id\` LEFT JOIN \`pengguna\` u ON u.\`id\` = COALESCE(dp.\`dpjp_id\`, i.\`dibuat_oleh\`) WHERE ${kondisi.join(' AND ')} GROUP BY COALESCE(dp.\`dpjp_id\`, i.\`dibuat_oleh\`), u.\`nama\` ORDER BY total_jasa_dpjp DESC`,
+        `SELECT COALESCE(u.\`nama\`, 'Belum ditentukan') AS praktisi_nama, COALESCE(dp.\`dpjp_id\`, i.\`dibuat_oleh\`) AS dpjp_id, COUNT(i.\`id\`) AS jumlah_item, SUM(i.\`jumlah\` * tl.\`jasa_dpjp\`) AS total_jasa_dpjp, SUM(i.\`jumlah\` * tl.\`jasa_perawat\`) AS total_jasa_perawat, SUM(i.\`jumlah\` * tl.\`jasa_klinik\`) AS total_jasa_klinik FROM \`item_tagihan\` i JOIN \`tagihan\` t ON t.\`id\` = i.\`tagihan_id\` JOIN \`kunjungan\` k ON k.\`id\` = t.\`kunjungan_id\` JOIN \`tarif_layanan\` tl ON tl.\`id\` = i.\`tarif_layanan_id\` LEFT JOIN (SELECT \`kunjungan_id\`, MIN(\`pengguna_id\`) AS dpjp_id FROM \`peserta_kunjungan\` WHERE \`tipe\` = 'ATND' GROUP BY \`kunjungan_id\`) dp ON dp.\`kunjungan_id\` = k.\`id\` LEFT JOIN \`pengguna\` u ON u.\`id\` = COALESCE(dp.\`dpjp_id\`, i.\`dibuat_oleh\`) WHERE ${kondisi.join(' AND ')} GROUP BY COALESCE(dp.\`dpjp_id\`, i.\`dibuat_oleh\`), u.\`nama\` ORDER BY total_jasa_dpjp DESC`,
         param,
         koneksi,
     );
 }
 
-export async function daftarTarifJasa(fasyankes_id, koneksi = pool) {
+export async function daftarTarifJasa(koneksi = pool) {
     return baca(
-        'SELECT `id`, `kode`, `nama`, `jenis`, `harga_umum`, `jasa_klinik`, `jasa_dpjp`, `jasa_perawat` FROM `tarif_layanan` WHERE `fasyankes_id` = ? AND `aktif` = true ORDER BY `nama` ASC LIMIT 200',
-        [fasyankes_id],
+        'SELECT `id`, `kode`, `nama`, `jenis`, `harga_umum`, `jasa_klinik`, `jasa_dpjp`, `jasa_perawat` FROM `tarif_layanan` WHERE `aktif` = true ORDER BY `nama` ASC LIMIT 200',
+        [],
         koneksi,
     );
 }
 
-export async function simpanTarifJasa(fasyankes_id, tarif_id, { jasa_klinik, jasa_dpjp, jasa_perawat }, koneksi = pool) {
+export async function simpanTarifJasa(tarif_id, { jasa_klinik, jasa_dpjp, jasa_perawat }, koneksi = pool) {
     const res = await tulis(
-        'UPDATE `tarif_layanan` SET `jasa_klinik` = ?, `jasa_dpjp` = ?, `jasa_perawat` = ? WHERE `id` = ? AND `fasyankes_id` = ?',
-        [jasa_klinik, jasa_dpjp, jasa_perawat, tarif_id, fasyankes_id],
+        'UPDATE `tarif_layanan` SET `jasa_klinik` = ?, `jasa_dpjp` = ?, `jasa_perawat` = ? WHERE `id` = ?',
+        [jasa_klinik, jasa_dpjp, jasa_perawat, tarif_id],
         koneksi,
     );
     if (!res.affectedRows) return null;
@@ -291,16 +291,16 @@ export async function simpanTarifJasa(fasyankes_id, tarif_id, { jasa_klinik, jas
     return rows[0] ?? null;
 }
 
-export async function ringkasanKeuangan(fasyankes_id, { dari, sampai } = {}, koneksi = pool) {
-    await pastikanCoaBawaan(fasyankes_id, koneksi);
-    const kondisiJ = ['j.`fasyankes_id` = ?'];
-    const paramJ = [fasyankes_id];
+export async function ringkasanKeuangan({ dari, sampai } = {}, koneksi = pool) {
+    await pastikanCoaBawaan(koneksi);
+    const kondisiJ = ['TRUE'];
+    const paramJ = [];
     if (dari) { kondisiJ.push('j.`tanggal` >= ?'); paramJ.push(dari); }
     if (sampai) { kondisiJ.push('j.`tanggal` <= ?'); paramJ.push(sampai); }
 
     const perAkun = await baca(
-        `SELECT a.\`kode\`, a.\`nama\`, a.\`tipe\`, COALESCE(SUM(d.\`debit\`), 0) AS total_debit, COALESCE(SUM(d.\`kredit\`), 0) AS total_kredit FROM \`akun_keuangan\` a LEFT JOIN \`detail_jurnal\` d ON d.\`fasyankes_id\` = a.\`fasyankes_id\` AND d.\`akun_kode\` = a.\`kode\` LEFT JOIN \`jurnal\` j ON j.\`id\` = d.\`jurnal_id\` AND ${kondisiJ.join(' AND ')} WHERE a.\`fasyankes_id\` = ? GROUP BY a.\`id\`, a.\`kode\`, a.\`nama\`, a.\`tipe\` ORDER BY a.\`kode\` ASC`,
-        [...paramJ, fasyankes_id],
+        `SELECT a.\`kode\`, a.\`nama\`, a.\`tipe\`, COALESCE(SUM(d.\`debit\`), 0) AS total_debit, COALESCE(SUM(d.\`kredit\`), 0) AS total_kredit FROM \`akun_keuangan\` a LEFT JOIN \`detail_jurnal\` d ON d.\`akun_kode\` = a.\`kode\` LEFT JOIN \`jurnal\` j ON j.\`id\` = d.\`jurnal_id\` AND ${kondisiJ.join(' AND ')} WHERE TRUE GROUP BY a.\`id\`, a.\`kode\`, a.\`nama\`, a.\`tipe\` ORDER BY a.\`kode\` ASC`,
+        [...paramJ],
         koneksi,
     );
 
@@ -310,8 +310,8 @@ export async function ringkasanKeuangan(fasyankes_id, { dari, sampai } = {}, kon
     const kasKeluar = perAkun.filter((a) => a.kode === '1101' || a.kode === '1102').reduce((s, a) => s + Number(a.total_kredit), 0);
 
     const [piutangRow, hutangRow] = await Promise.all([
-        baca('SELECT COALESCE(SUM(`total` - `terbayar`), 0) AS sisa FROM `piutang_kunjungan` WHERE `fasyankes_id` = ? AND `status` != \'lunas\'', [fasyankes_id], koneksi),
-        baca('SELECT COALESCE(SUM(`total` - `terbayar`), 0) AS sisa FROM `faktur_supplier` WHERE `fasyankes_id` = ? AND `status` != \'lunas\'', [fasyankes_id], koneksi),
+        baca('SELECT COALESCE(SUM(`total` - `terbayar`), 0) AS sisa FROM `piutang_kunjungan` WHERE `status` != \'lunas\'', [], koneksi),
+        baca('SELECT COALESCE(SUM(`total` - `terbayar`), 0) AS sisa FROM `faktur_supplier` WHERE `status` != \'lunas\'', [], koneksi),
     ]);
 
     return {

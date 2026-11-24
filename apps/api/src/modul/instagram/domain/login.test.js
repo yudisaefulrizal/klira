@@ -33,7 +33,7 @@ const db = await import("@klira/db");
 const { mulaiLogin, selesaikanLogin } = await import("./login.js");
 const { hash, tukarKode, langgananWebhook } = await import("./meta.js");
 
-const user = { id: 7, fasyankes_id: 10, wajib_ganti_kredensial: false, izin: [{ fitur: 'instagram', aksi: 'lihat', cakupan: 'unit' }] };
+const user = { id: 7, wajib_ganti_kredensial: false, izin: [{ fitur: 'instagram', aksi: 'lihat', cakupan: 'unit' }] };
 
 const akses = { saya: jest.fn(async () => user) };
 
@@ -43,7 +43,7 @@ const state = 'a'.repeat(64);
 
 const request = (query, sesi = 'session-uji') => ({ query, headers: { cookie: `klira_sesi=${sesi}` } });
 
-const saved = () => ({ hash: hash(state), pengguna_id: 7, fasyankes_id: 10, sesi_hash: hash('session-uji'), generasi: 3, berakhir: new Date(Date.now() + 60000) });
+const saved = () => ({ hash: hash(state), pengguna_id: 7, sesi_hash: hash('session-uji'), generasi: 3, berakhir: new Date(Date.now() + 60000) });
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -52,7 +52,7 @@ beforeEach(() => {
     process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN = 'verify';
     process.env.BASE_URL = 'https://klira.test';
     jest.mocked(db.transaksi).mockImplementation(async (fn) => fn(db.pool));
-    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ id: 1, fasyankes_id: 10, generasi: 3, penyedia: 'meta', akun_id: '' });
+    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ id: 1, generasi: 3, penyedia: 'meta', akun_id: '' });
     jest.mocked(db.ubahIgKoneksiUntukMulaiLogin).mockResolvedValue({ generasi: 3 });
     jest.mocked(db.ubahIgKoneksiUntukSelesaikanLogin).mockResolvedValue({ count: 1 });
     jest.mocked(db.ambilIgOauthStateUntukSelesaikanLogin).mockResolvedValue(saved());
@@ -69,9 +69,9 @@ it('membuat state acak sekali pakai, terikat sesi dan fasyankes, dengan scope DM
     expect(target.origin).toBe('https://www.instagram.com');
     expect(target.searchParams.get('scope')).toBe('instagram_business_basic,instagram_business_manage_messages');
     expect(target.searchParams.get('redirect_uri')).toBe('https://klira.test/auth/instagram/callback');
-    const [hashState, pengguna_id, fasyankes_id, sesi_hash] = jest.mocked(db.tambahIgOauthStateUntukMulaiLogin).mock.calls[0];
-    const data = { hash: hashState, pengguna_id, fasyankes_id, sesi_hash };
-    expect(data).toMatchObject({ hash: hash(target.searchParams.get('state')), sesi_hash: hash('session-uji'), pengguna_id: 7, fasyankes_id: 10 });
+    const [hashState, pengguna_id, sesi_hash] = jest.mocked(db.tambahIgOauthStateUntukMulaiLogin).mock.calls[0];
+    const data = { hash: hashState, pengguna_id, sesi_hash };
+    expect(data).toMatchObject({ hash: hash(target.searchParams.get('state')), sesi_hash: hash('session-uji'), pengguna_id: 7 });
     expect(data.hash).not.toBe(target.searchParams.get('state'));
 });
 
@@ -86,10 +86,10 @@ it('menolak callback dari sesi lain, state kedaluwarsa dan replay sebelum memang
 });
 
 it('menolak akun Instagram kedua dan callback yang digantikan login lebih baru', async () => {
-    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ fasyankes_id: 10, generasi: 3, penyedia: 'meta', akun_id: '999999999' });
+    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ generasi: 3, penyedia: 'meta', akun_id: '999999999' });
     expect(await selesaikanLogin(request({ state, code: 'kode' }), akses)).toBe('akun-berbeda');
     expect(langgananWebhook).not.toHaveBeenCalled();
-    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ fasyankes_id: 10, generasi: 4, penyedia: 'meta', akun_id: '' });
+    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ generasi: 4, penyedia: 'meta', akun_id: '' });
     expect(await selesaikanLogin(request({ state, code: 'kode' }), akses)).toBe('state');
 });
 
@@ -101,7 +101,7 @@ it('tidak mengaktifkan akun ketika langganan webhook gagal', async () => {
 
 it('menyimpan token terenkripsi sesudah webhook siap, tanpa token di URL hasil', async () => {
     expect(await selesaikanLogin(request({ state, code: 'kode' }), akses)).toBe('terhubung');
-    expect(jest.mocked(db.ubahIgKoneksiUntukSelesaikanLogin).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: true, 4: null, 7: 'encrypted:token-uji', 10: 1, 11: 10, 12: 3 })]));
+    expect(jest.mocked(db.ubahIgKoneksiUntukSelesaikanLogin).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: true, 4: null, 7: 'encrypted:token-uji', 10: 1, 11: 3 })]));
 });
 
 it('memeriksa ulang izin setelah jaringan Meta dan menolak pembatalan', async () => {

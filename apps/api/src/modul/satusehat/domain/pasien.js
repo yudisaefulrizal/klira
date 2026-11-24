@@ -14,12 +14,12 @@ export const BATAS_WAKTU_PENDAFTARAN_MS = 4000;
 export function buatSinkronIhs({ repo, klienAktif, audit }) {
     return async function sinkronIhs(p, pasienId, { paksa = false, nikBerubah = false, alamat } = {}) {
         try {
-            const pasien = await repo.pasienUntukSinkron(p.fasyankes_id, pasienId);
+            const pasien = await repo.pasienUntukSinkron(pasienId);
             if (!pasien)
                 return { status: 'dilewati', alasan: 'pasien_tidak_ada', pesan: '' };
-            const catat = (keterangan) => audit.catat({ fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'perbaikan', entitas: 'pasien', entitas_id: pasienId, keterangan, alamat });
+            const catat = (keterangan) => audit.catat({ pengguna_id: p.id, aksi: 'perbaikan', entitas: 'pasien', entitas_id: pasienId, keterangan, alamat });
             if (nikBerubah && pasien.ihs_number) {
-                await repo.isiIhs(p.fasyankes_id, pasienId, null);
+                await repo.isiIhs(pasienId, null);
                 pasien.ihs_number = null;
                 await catat('IHS Number dihapus karena NIK berubah');
             }
@@ -27,19 +27,19 @@ export function buatSinkronIhs({ repo, klienAktif, audit }) {
                 return { status: 'sudah', ihs_number: pasien.ihs_number, pesan: '' };
             if (!pasien.nik)
                 return { status: 'dilewati', alasan: 'tanpa_nik', pesan: S.ihs.tanpaNik };
-            const aktif = await klienAktif(p.fasyankes_id, { batasWaktuMs: BATAS_WAKTU_PENDAFTARAN_MS });
+            const aktif = await klienAktif({ batasWaktuMs: BATAS_WAKTU_PENDAFTARAN_MS });
             if (!aktif)
                 return { status: 'dilewati', alasan: 'belum_dikonfigurasi', pesan: S.ihs.belumDikonfigurasi };
             const hasil = await aktif.klien.cariPasienNik(pasien.nik);
             if (!hasil.ditemukan) {
                 if (pasien.ihs_number) {
-                    await repo.isiIhs(p.fasyankes_id, pasienId, null);
+                    await repo.isiIhs(pasienId, null);
                     await catat('IHS Number dihapus: NIK tidak ditemukan di SATUSEHAT');
                 }
                 return { status: 'tidak_ditemukan', pesan: S.ihs.tidakDitemukan };
             }
             if (hasil.id !== pasien.ihs_number) {
-                await repo.isiIhs(p.fasyankes_id, pasienId, hasil.id);
+                await repo.isiIhs(pasienId, hasil.id);
                 await catat(`IHS Number diisi dari SATUSEHAT (${aktif.environment})`);
             }
             return { status: 'terhubung', ihs_number: hasil.id, pesan: S.ihs.terhubung };

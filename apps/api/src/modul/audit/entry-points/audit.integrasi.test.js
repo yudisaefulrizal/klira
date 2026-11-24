@@ -124,7 +124,7 @@ d('log audit terhadap database pengujian', () => {
         expect(baris).toHaveLength(6);
         const e = await uji.daftarLogAuditUntukAudit('ekspor', id.auditor);
         expect(e).toHaveLength(1);
-        expect(e[0]).toMatchObject({ entitas: 'log_audit', fasyankes_id: fas });
+        expect(e[0]).toMatchObject({ entitas: 'log_audit' });
         expect(e[0].keterangan).toContain('5 baris');
     });
     it('aksi akun tercatat: masuk_gagal tanpa username mentah, keluar', async () => {

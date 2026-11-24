@@ -91,7 +91,7 @@ it('menolak signed_request palsu dan menerbitkan status hanya setelah pemrosesan
 it('URL gambar sementara menyimpan hash dan menolak URL kadaluwarsa atau koneksi nonaktif', async () => {
     const token = 'b'.repeat(64);
     jest.mocked(db.ambilIgMediaPublikUntukBuatRuteInstagramPublik).mockResolvedValue({ token_hash: hash(token), media_id: 'foto', generasi: 2, berakhir: new Date(Date.now() + 60000) });
-    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ aktif: true, penyedia: 'meta', generasi: 2, fasyankes_id: 10 });
+    jest.mocked(db.ambilIgKoneksi).mockResolvedValue({ aktif: true, penyedia: 'meta', generasi: 2 });
     jest.mocked(db.cariIgMediaUntukBuatRuteInstagram).mockResolvedValue({ mime: 'image/png', isi: Buffer.from('png-uji').toString('base64') });
     const res = await fetch(`${url}/instagram/media/${token}`);
     expect(res.status).toBe(200);

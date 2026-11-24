@@ -1,6 +1,6 @@
 import { tulis, pool } from '../koneksi.js';
-export async function hapusIgBacaUntukBersihkanDalam(fasyankes_id, koneksi = pool) {
-    const hasil = await tulis("DELETE t FROM `ig_baca` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id` AND (((? OR r1.`fasyankes_id` <=> ?)))))", [fasyankes_id === undefined, fasyankes_id ?? null], koneksi);
+export async function hapusIgBacaUntukBersihkanDalam(koneksi = pool) {
+    const hasil = await tulis("DELETE t FROM `ig_baca` t WHERE (EXISTS (SELECT 1 FROM `ig_percakapan` r1 WHERE t.`percakapan_id` = r1.`id`))", [], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function simpanIgBacaUntukBuatRuteInstagram(percakapan_id, pengguna_id, pesan_id, koneksi = pool) {

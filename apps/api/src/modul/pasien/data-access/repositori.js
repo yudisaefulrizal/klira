@@ -23,7 +23,7 @@ const tingkatUrutanKunjungan = (k) => {
 };
 const urutkanKunjungan = (a, b) => tingkatUrutanKunjungan(a) - tingkatUrutanKunjungan(b) || (b.mulai.getTime() - a.mulai.getTime()) || (b.id - a.id);
 export class RepositoriPasienMysql {
-    async cari(fasyankesId, f) {
+    async cari(f) {
         const { awal, akhir } = rentangHariWib(f.tanggal ?? tanggalWib(new Date()), f.tanggal ?? tanggalWib(new Date()));
         const mulai = { gte: awal, lt: akhir };
         // Pencarian dan daftar `semua` melintasi semua tanggal (tanpa tanggal eksplisit); selain itu daftar berisi kunjungan pada tanggal itu.
@@ -33,9 +33,9 @@ export class RepositoriPasienMysql {
         if (!f.cari && !semua) {
             // Tanpa pencarian dan tanpa filter tanggal eksplisit: muat antrean sesi aktif saja (bukan arsip antrean sesi sebelumnya).
             if (!f.tanggal && f.semua_tanggal !== 'true') {
-                const sesi = await db.ambilSesiAntreanAktif(fasyankesId);
+                const sesi = await db.ambilSesiAntreanAktif();
                 if (!sesi) {
-                    const sementara = await db.daftarAntreanSementaraJkn(fasyankesId, 'menunggu');
+                    const sementara = await db.daftarAntreanSementaraJkn('menunggu');
                     return {
                         data: [], halaman, ukuran: f.ambil, total: 0,
                         jumlah_tahap: { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0, batal: 0, rawat_inap: 0 },
@@ -43,7 +43,7 @@ export class RepositoriPasienMysql {
                         antrean_sementara_jkn: sementara,
                     };
                 }
-                const semuaSesi = await db.daftarKunjunganDalamSesi(fasyankesId, sesi.id);
+                const semuaSesi = await db.daftarKunjunganDalamSesi(sesi.id);
                 const milik = f.dpjpId ? semuaSesi.filter((k) => k.peserta.some((p) => p.pengguna_id === f.dpjpId)) : semuaSesi;
                 const jumlah = { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0, batal: 0, rawat_inap: 0 };
                 for (const k of milik) {
@@ -63,7 +63,7 @@ export class RepositoriPasienMysql {
                         : f.tahap === 'rawat_inap'
                             ? milik.filter((k) => k.jenis === 'IMP' && k.antrean?.status !== 'batal' && k.tahap_layanan !== 'ditutup')
                             : milik.filter((k) => k.antrean?.status !== 'batal' && k.tahap_layanan === f.tahap)).slice().sort(urutkanKunjungan);
-                const baris = await this.petakan(fasyankesId, tersaring.slice(f.lewati, f.lewati + f.ambil).map((k) => ({ pasien: k.pasien, kunjungan: k })));
+                const baris = await this.petakan(tersaring.slice(f.lewati, f.lewati + f.ambil).map((k) => ({ pasien: k.pasien, kunjungan: k })));
                 return {
                     data: baris, halaman, ukuran: f.ambil, total: tersaring.length, jumlah_tahap: jumlah,
                     sesi_antrean: { id: sesi.id, status: sesi.status, dibuka_pada: sesi.dibuka_pada.toISOString() },
@@ -72,7 +72,7 @@ export class RepositoriPasienMysql {
             }
             if (f.dpjpId || f.semua_tanggal === 'true') {
                 const pakaiRentang = f.semua_tanggal !== 'true' && !tanpaTanggal;
-                const semuaHari = await db.daftarKunjunganUntukCari(fasyankesId, undefined, undefined, 'batal', false, pakaiRentang ? awal : undefined, pakaiRentang ? akhir : undefined, undefined, undefined, undefined, false, 500, 0, 'ATND', 1);
+                const semuaHari = await db.daftarKunjunganUntukCari(undefined, undefined, 'batal', false, pakaiRentang ? awal : undefined, pakaiRentang ? akhir : undefined, undefined, undefined, undefined, false, 500, 0, 'ATND', 1);
                 const milik = f.dpjpId ? semuaHari.filter((k) => k.peserta.some((p) => p.pengguna_id === f.dpjpId)) : semuaHari;
                 const jumlah = { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0, batal: 0, rawat_inap: 0 };
                 for (const k of milik) {
@@ -92,41 +92,41 @@ export class RepositoriPasienMysql {
                         : f.tahap === 'rawat_inap'
                             ? milik.filter((k) => k.jenis === 'IMP' && k.antrean?.status !== 'batal' && k.tahap_layanan !== 'ditutup')
                             : milik.filter((k) => k.antrean?.status !== 'batal' && k.tahap_layanan === f.tahap)).slice().sort(urutkanKunjungan);
-                const baris = await this.petakan(fasyankesId, tersaring.slice(f.lewati, f.lewati + f.ambil).map((k) => ({ pasien: k.pasien, kunjungan: k })));
+                const baris = await this.petakan(tersaring.slice(f.lewati, f.lewati + f.ambil).map((k) => ({ pasien: k.pasien, kunjungan: k })));
                 return { data: baris, halaman, ukuran: f.ambil, total: tersaring.length, jumlah_tahap: jumlah };
             }
-            const jumlahTahap = await this.hitungTahap(fasyankesId, mulai);
+            const jumlahTahap = await this.hitungTahap(mulai);
             const [total, kunjungan] = await Promise.all([
-                db.hitungKunjunganUntukCari(fasyankesId, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, 'batal', f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))),
-                db.daftarKunjunganUntukCari(fasyankesId, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, 'batal', f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua')), f.ambil, f.lewati, 'ATND', 1),
+                db.hitungKunjunganUntukCari(((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, 'batal', f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))),
+                db.daftarKunjunganUntukCari(((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, 'batal', f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua')), f.ambil, f.lewati, 'ATND', 1),
             ]);
-            const baris = await this.petakan(fasyankesId, kunjungan.slice().sort(urutkanKunjungan).map((k) => ({ pasien: k.pasien, kunjungan: k })));
+            const baris = await this.petakan(kunjungan.slice().sort(urutkanKunjungan).map((k) => ({ pasien: k.pasien, kunjungan: k })));
             return { data: baris, halaman, ukuran: f.ambil, total, jumlah_tahap: jumlahTahap };
         }
-        const jumlahTahap = await this.hitungTahap(fasyankesId, mulai);
+        const jumlahTahap = await this.hitungTahap(mulai);
         const digit = /^\d+$/.test(f.cari);
         const [total, pasien] = await Promise.all([
-            db.hitungPasienUntukCari(fasyankesId, [...TAHAP_BERJALAN], 'batal', f.untuk_kunjungan === 'true', f.cari, f.cari, (digit) && (true), ((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua')), !(f.tahap === 'semua' && !f.tanggal)),
-            db.daftarPasienUntukCari(fasyankesId, [...TAHAP_BERJALAN], 'batal', f.untuk_kunjungan === 'true', f.cari, f.cari, (digit) && (true), ((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua')), !(f.tahap === 'semua' && !f.tanggal), f.ambil, f.lewati, 1, 'ATND'),
+            db.hitungPasienUntukCari([...TAHAP_BERJALAN], 'batal', f.untuk_kunjungan === 'true', f.cari, f.cari, (digit) && (true), ((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua')), !(f.tahap === 'semua' && !f.tanggal)),
+            db.daftarPasienUntukCari([...TAHAP_BERJALAN], 'batal', f.untuk_kunjungan === 'true', f.cari, f.cari, (digit) && (true), ((f.tahap === 'batal') && (!tanpaTanggal)) ? (awal) : undefined, ((f.tahap === 'batal') && (!tanpaTanggal)) ? (akhir) : undefined, f.tahap === 'batal', (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (f.tahap === 'semua')) && (!tanpaTanggal)) ? (akhir) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (awal) : undefined, (((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) && (!tanpaTanggal)) ? (akhir) : undefined, ((!(f.tahap === 'batal')) && (!(f.tahap === 'semua'))) ? (tahapSet) : undefined, (!(f.tahap === 'batal')) && (!(f.tahap === 'semua')), !(f.tahap === 'semua' && !f.tanggal), f.ambil, f.lewati, 1, 'ATND'),
         ]);
-        const baris = await this.petakan(fasyankesId, pasien.map((p) => ({ pasien: p, kunjungan: p.kunjungan[0] ?? null })));
+        const baris = await this.petakan(pasien.map((p) => ({ pasien: p, kunjungan: p.kunjungan[0] ?? null })));
         return { data: baris, halaman, ukuran: f.ambil, total, jumlah_tahap: jumlahTahap };
     }
-    async hitungTahap(fasyankesId, mulai) {
-        const g = await db.kelompokKunjunganUntukHitungTahap(fasyankesId, mulai, 'batal');
-        const hasil = { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0, batal: await db.hitungKunjunganUntukHitungTahap(fasyankesId, mulai, 'batal') };
+    async hitungTahap(mulai) {
+        const g = await db.kelompokKunjunganUntukHitungTahap(mulai, 'batal');
+        const hasil = { menunggu_skrining: 0, pemeriksaan: 0, resep: 0, kasir: 0, ditutup: 0, batal: await db.hitungKunjunganUntukHitungTahap(mulai, 'batal') };
         for (const r of g)
             hasil[r.tahap_layanan] = r._count._all;
         return hasil;
     }
     /** Susun baris minimal; nama poli dan DPJP diambil sekaligus (hanya milik fasyankes ini). */
-    async petakan(fasyankesId, isi) {
+    async petakan(isi) {
         const lokasiIds = [...new Set(isi.flatMap((i) => (i.kunjungan?.lokasi_id ? [i.kunjungan.lokasi_id] : [])))];
         const penggunaIds = [...new Set(isi.flatMap((i) => i.kunjungan?.peserta.map((p) => p.pengguna_id) ?? []))];
         const kunjunganIds = isi.flatMap((i) => (i.kunjungan ? [i.kunjungan.id] : []));
         // Aksi Panggil ditahan bila ruang periksa yang memegang antrean ini masih melayani pasien lain (panggil ulang), atau bila antrean
         // belum punya ruang dan semua ruang poli itu sibuk atau dokter pilihan pasien sedang menangani pasien lain.
-        const sesiAktif = await db.ambilSesiAntreanAktif(fasyankesId);
+        const sesiAktif = await db.ambilSesiAntreanAktif();
         const sesiId = sesiAktif?.id ?? null;
         const kandidatPenuh = [];
         const kunciPenuhSet = new Set();
@@ -142,14 +142,14 @@ export class RepositoriPasienMysql {
         }
         const ruangIds = [...new Set(isi.flatMap((i) => (i.kunjungan?.antrean?.ruang_id ? [i.kunjungan.antrean.ruang_id] : [])))];
         const [lokasi, pengguna, antreanSibuk, ringkasanLabBaris, lab, resepBaris, sumberAntreanBaris, ...hasilJenisPenuh] = await Promise.all([
-            lokasiIds.length || ruangIds.length ? db.daftarLokasiUntukPetakan([...lokasiIds, ...ruangIds], fasyankesId) : [],
-            penggunaIds.length ? db.daftarPenggunaUntukRiwayat(penggunaIds, fasyankesId) : [],
-            ruangIds.length && sesiId ? db.daftarAntreanSibukUntukPetakan(fasyankesId, ruangIds, sesiId) : [],
-            kunjunganIds.length ? db.ringkasanHasilLabUntukKunjungan(fasyankesId, kunjunganIds) : [],
-            kunjunganIds.length ? db.kelompokOrderPenunjangUntukPetakan(fasyankesId, kunjunganIds, 'divalidasi') : [],
-            kunjunganIds.length ? db.daftarResepUntukPetakan(fasyankesId, kunjunganIds) : [],
-            kunjunganIds.length ? db.daftarSumberAntreanUntukKunjungan(fasyankesId, kunjunganIds) : [],
-            ...kandidatPenuh.map(async (p) => [p.kunci, sesiId ? ['ruang_sibuk', 'dokter_sibuk', 'ruang_tidak_operasional'].includes((await pilihRuangPanggil(fasyankesId, { poliId: p.poliId, sesiId, dpjpId: p.dpjp ?? null })).galat) : false]),
+            lokasiIds.length || ruangIds.length ? db.daftarLokasiUntukPetakan([...lokasiIds, ...ruangIds]) : [],
+            penggunaIds.length ? db.daftarPenggunaUntukRiwayat(penggunaIds) : [],
+            ruangIds.length && sesiId ? db.daftarAntreanSibukUntukPetakan(ruangIds, sesiId) : [],
+            kunjunganIds.length ? db.ringkasanHasilLabUntukKunjungan(kunjunganIds) : [],
+            kunjunganIds.length ? db.kelompokOrderPenunjangUntukPetakan(kunjunganIds, 'divalidasi') : [],
+            kunjunganIds.length ? db.daftarResepUntukPetakan(kunjunganIds) : [],
+            kunjunganIds.length ? db.daftarSumberAntreanUntukKunjungan(kunjunganIds) : [],
+            ...kandidatPenuh.map(async (p) => [p.kunci, sesiId ? ['ruang_sibuk', 'dokter_sibuk', 'ruang_tidak_operasional'].includes((await pilihRuangPanggil({ poliId: p.poliId, sesiId, dpjpId: p.dpjp ?? null })).galat) : false]),
         ]);
         const sibukPoli = new Map();
         for (const a of antreanSibuk)
@@ -210,8 +210,8 @@ export class RepositoriPasienMysql {
             };
         });
     }
-    async detail(fasyankesId, id) {
-        const p = await db.cariPasienUntukDetail(id, fasyankesId);
+    async detail(id) {
+        const p = await db.cariPasienUntukDetail(id);
         if (!p)
             return null;
         return {
@@ -222,51 +222,46 @@ export class RepositoriPasienMysql {
             tidak_cakap: p.tidak_cakap, wali: p.wali_keluarga.map((w) => ({ id: w.id, hubungan: w.hubungan, nama: w.nama, kontak: w.kontak })),
         };
     }
-    async duplikat(fasyankesId, k) {
+    async duplikat(k) {
         const hasil = new Map();
         const ke = (p, alasan) => hasil.set(p.id, { id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, tanggal_lahir: tgl(p.tanggal_lahir), alasan });
         if (k.nik) {
-            for (const p of await db.daftarPasienUntukDuplikat(fasyankesId, k.nik, 5))
+            for (const p of await db.daftarPasienUntukDuplikat(k.nik, 5))
                 ke(p, 'nik');
         }
         if (k.nama && k.tanggal_lahir && k.ibu_kandung) {
-            const lain = await db.daftarPasienUntukDuplikat2(fasyankesId, k.nama, tglDb(k.tanggal_lahir), k.ibu_kandung, 5);
+            const lain = await db.daftarPasienUntukDuplikat2(k.nama, tglDb(k.tanggal_lahir), k.ibu_kandung, 5);
             for (const p of lain)
                 if (!hasil.has(p.id))
                     ke(p, 'nama_lahir_ibu');
         }
         return [...hasil.values()];
     }
-    async teksAktif(fasyankesId, jenis) {
-        // Teks klinik sendiri didahulukan, lalu teks bawaan; yang aktif dengan versi tertinggi.
-        for (const fas of [fasyankesId, null]) {
-            const t = await db.cariTeksPersetujuanUntukTeksAktif(fas, jenis, true);
-            if (t)
-                return { ...t, jenis: t.jenis };
-        }
-        return null;
+    async teksAktif(jenis) {
+        const t = await db.cariTeksPersetujuanUntukTeksAktif(jenis, true);
+        return t ? { ...t, jenis: t.jenis } : null;
     }
-    async teksUntukPakai(fasyankesId, id, jenis) {
-        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, jenis, true, fasyankesId, null);
+    async teksUntukPakai(id, jenis) {
+        return db.cariTeksPersetujuanUntukTeksUntukPakai(id, jenis, true, null);
     }
-    async perbaiki(fasyankesId, id, oleh, data) {
+    async perbaiki(id, oleh, data) {
         try {
             return await db.transaksi(async (tx) => {
-                const ada = await db.kunciPasien(id, fasyankesId, tx);
+                const ada = await db.kunciPasien(id, tx);
                 if (!ada.length)
                     return false;
-                const lama = await db.daftarWaliKeluargaUntukPerbaiki(id, fasyankesId, tx);
+                const lama = await db.daftarWaliKeluargaUntukPerbaiki(id, tx);
                 const ids = data.wali.flatMap((w) => w.id ? [w.id] : []);
                 // Keep the IDs referenced by existing consent records; never delete/recreate guardians.
                 if (ids.length !== lama.length || ids.some((waliId) => !lama.some((w) => w.id === waliId)))
                     throw new WaliTidakSahError();
                 const { wali, tanggal_lahir, ...pasien } = data;
-                await db.ubahPasienUntukPerbaiki((pasien)?.nik, (pasien)?.nama, (pasien)?.nomor_hp, (pasien)?.ibu_kandung, (pasien)?.tempat_lahir, tglDb(tanggal_lahir), (pasien)?.jenis_kelamin, (pasien)?.agama, (pasien)?.suku, (pasien)?.bahasa, (pasien)?.pekerjaan, (pasien)?.pendidikan, (pasien)?.status_kawin, (pasien)?.alamat, (pasien)?.kode_wilayah, (pasien)?.nomor_paspor, (pasien)?.nomor_kitas, (pasien)?.jkn_nomor_kartu, (pasien)?.asuransi_nama, (pasien)?.asuransi_nomor_polis, (pasien)?.status_identitas, (pasien)?.jalur_identitas, (pasien)?.tidak_cakap, id, fasyankesId, tx);
+                await db.ubahPasienUntukPerbaiki((pasien)?.nik, (pasien)?.nama, (pasien)?.nomor_hp, (pasien)?.ibu_kandung, (pasien)?.tempat_lahir, tglDb(tanggal_lahir), (pasien)?.jenis_kelamin, (pasien)?.agama, (pasien)?.suku, (pasien)?.bahasa, (pasien)?.pekerjaan, (pasien)?.pendidikan, (pasien)?.status_kawin, (pasien)?.alamat, (pasien)?.kode_wilayah, (pasien)?.nomor_paspor, (pasien)?.nomor_kitas, (pasien)?.jkn_nomor_kartu, (pasien)?.asuransi_nama, (pasien)?.asuransi_nomor_polis, (pasien)?.status_identitas, (pasien)?.jalur_identitas, (pasien)?.tidak_cakap, id, tx);
                 for (const { id: waliId, ...w } of wali) {
                     if (waliId)
-                        await db.ubahWaliKeluargaUntukPerbaiki((w)?.hubungan, (w)?.nama, (w)?.kontak, waliId, id, fasyankesId, tx);
+                        await db.ubahWaliKeluargaUntukPerbaiki((w)?.hubungan, (w)?.nama, (w)?.kontak, waliId, id, tx);
                     else
-                        await db.tambahWaliKeluargaUntukPerbaiki(fasyankesId, id, (w)?.hubungan, (w)?.nama, (w)?.kontak, oleh, tx);
+                        await db.tambahWaliKeluargaUntukPerbaiki(id, (w)?.hubungan, (w)?.nama, (w)?.kontak, oleh, tx);
                 }
                 return true;
             });
@@ -277,10 +272,10 @@ export class RepositoriPasienMysql {
             throw e;
         }
     }
-    async daftarkan(fasyankesId, oleh, d) {
+    async daftarkan(oleh, d) {
         // Baris urutan dipastikan ada di luar transaksi agar kenaikan di dalamnya bebas balapan pembuatan pertama.
         try {
-            await db.tambahUrutanNomorRmUntukDaftarkan(fasyankesId, 0);
+            await db.tambahUrutanNomorRmUntukDaftarkan(0);
         }
         catch (e) {
             if (!(db.bentrokUnik(e)))
@@ -288,15 +283,15 @@ export class RepositoriPasienMysql {
         }
         try {
             return await db.transaksi(async (tx) => {
-                const urutan = await (async () => { (await db.ubahUrutanNomorRmUntukDaftarkan(1, fasyankesId, tx)); return db.ubahUrutanNomorRmUntukDaftarkanHasil(fasyankesId, tx); })();
-                const pasien = await (async () => { const _hasil = await db.tambahPasienUntukDaftarkan(fasyankesId, formatNomorRm(urutan.terakhir), d.nik, d.nama, d.nomor_hp, d.ibu_kandung, d.tempat_lahir, tglDb(d.tanggal_lahir), d.jenis_kelamin, d.agama, d.suku, d.bahasa, d.pekerjaan, d.pendidikan, d.status_kawin, d.alamat, d.kode_wilayah, d.nomor_paspor, d.nomor_kitas, d.jkn_nomor_kartu, d.asuransi_nama, d.asuransi_nomor_polis, d.status_identitas, d.jalur_identitas, d.tidak_cakap, oleh, tx); return db.tambahPasienUntukDaftarkanHasil(_hasil.id, tx); })();
+                const urutan = await (async () => { (await db.ubahUrutanNomorRmUntukDaftarkan(1, tx)); return db.ubahUrutanNomorRmUntukDaftarkanHasil(tx); })();
+                const pasien = await (async () => { const _hasil = await db.tambahPasienUntukDaftarkan(formatNomorRm(urutan.terakhir), d.nik, d.nama, d.nomor_hp, d.ibu_kandung, d.tempat_lahir, tglDb(d.tanggal_lahir), d.jenis_kelamin, d.agama, d.suku, d.bahasa, d.pekerjaan, d.pendidikan, d.status_kawin, d.alamat, d.kode_wilayah, d.nomor_paspor, d.nomor_kitas, d.jkn_nomor_kartu, d.asuransi_nama, d.asuransi_nomor_polis, d.status_identitas, d.jalur_identitas, d.tidak_cakap, oleh, tx); return db.tambahPasienUntukDaftarkanHasil(_hasil.id, tx); })();
                 const waliId = [];
                 for (const w of d.wali) {
-                    const baru = await (async () => { const _hasil = await db.tambahWaliKeluargaUntukPerbaiki(fasyankesId, pasien.id, w.hubungan, w.nama, w.kontak, oleh, tx); return db.tambahWaliKeluargaUntukDaftarkanHasil(_hasil.id, tx); })();
+                    const baru = await (async () => { const _hasil = await db.tambahWaliKeluargaUntukPerbaiki(pasien.id, w.hubungan, w.nama, w.kontak, oleh, tx); return db.tambahWaliKeluargaUntukDaftarkanHasil(_hasil.id, tx); })();
                     waliId.push(baru.id);
                 }
                 const p = d.persetujuan;
-                const persetujuan = await (async () => { const _hasil = await db.tambahPersetujuanUntukDaftarkan(fasyankesId, pasien.id, 'general', p.teks.id, p.teks.versi, p.teks.tujuan, p.teks.isi, p.bentuk, 'diberikan', p.penandatangan, p.wali_ke != null ? waliId[p.wali_ke] ?? null : null, p.penandatangan_nama, oleh, tx); return db.tambahPersetujuanUntukDaftarkanHasil(_hasil.id, tx); })();
+                const persetujuan = await (async () => { const _hasil = await db.tambahPersetujuanUntukDaftarkan(pasien.id, 'general', p.teks.id, p.teks.versi, p.teks.tujuan, p.teks.isi, p.bentuk, 'diberikan', p.penandatangan, p.wali_ke != null ? waliId[p.wali_ke] ?? null : null, p.penandatangan_nama, oleh, tx); return db.tambahPersetujuanUntukDaftarkanHasil(_hasil.id, tx); })();
                 return { id: pasien.id, nomor_rm: pasien.nomor_rm, nama: pasien.nama, status_identitas: pasien.status_identitas, persetujuan_id: persetujuan.id };
             });
         }

@@ -20,11 +20,11 @@ export async function pangkasPesanWhatsapp(tx, id) {
     return lama.length;
 }
 /** Menyesuaikan riwayat lama saat engine mulai, termasuk ketika halaman tidak dibuka. */
-export async function rapikanRiwayatWhatsapp(fasyankesId) {
+export async function rapikanRiwayatWhatsapp() {
     let sesudah = 0;
     let dihapus = 0;
     while (true) {
-        const baris = await db.daftarWaPercakapanUntukRapikanRiwayatWhatsapp(sesudah, (fasyankesId) ? (fasyankesId) : undefined, 100);
+        const baris = await db.daftarWaPercakapanUntukRapikanRiwayatWhatsapp(sesudah, 100);
         if (!baris.length)
             return dihapus;
         for (const row of baris)

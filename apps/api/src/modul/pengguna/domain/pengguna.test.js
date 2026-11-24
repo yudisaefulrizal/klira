@@ -13,7 +13,7 @@ function siapkan(aktifAwal = true) {
     return { layanan, audit };
 }
 
-const pelaku = { id: 1, fasyankes_id: 7 };
+const pelaku = { id: 1 };
 
 describe('layanan pengguna', () => {
     it('daftar membungkus paginasi', async () => {

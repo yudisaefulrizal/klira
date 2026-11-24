@@ -10,7 +10,8 @@ jest.unstable_mockModule('@klira/db', () => {
     const ringkasanAntreanUntukDaftarkan = jest.fn();
     const tambahAntreanUntukDaftarkan = jest.fn();
     const kunci = jest.fn();
-    return { ...kliraActual0,
+    return {
+        ...kliraActual0,
         pool: {},
         hitungKunjunganUntukKunjunganBerjalan: hitungKunjunganUntukKunjunganBerjalan,
         ambilSesiAntreanAktif: ambilSesiAntreanAktif,
@@ -22,7 +23,8 @@ jest.unstable_mockModule('@klira/db', () => {
         tambahAntreanUntukDaftarkan: tambahAntreanUntukDaftarkan,
         transaksi: jest.fn(async (fn) => fn({})),
         kunciPasien: kunci,
-        kunciFasyankes: kunci };
+        kunciFasyankes: kunci
+    };
 });
 const db = await import("@klira/db");
 const { KunjunganBerjalanError, RepositoriKunjunganMysql } = await import("../data-access/repositori.js");
@@ -39,8 +41,8 @@ beforeEach(() => jest.clearAllMocks());
 
 test('pemeriksaan awal mengabaikan antrean batal, termasuk data lama', async () => {
     jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mockResolvedValue(0);
-    expect(await repo.kunjunganBerjalan(7, 10)).toBe(false);
-    expect(jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mock.calls[0].slice(0, 4)).toEqual([7, 10, ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'], 'batal']);
+    expect(await repo.kunjunganBerjalan(10)).toBe(false);
+    expect(jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mock.calls[0].slice(0, 3)).toEqual([10, ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'], 'batal']);
 });
 
 test('pendaftaran ulang memeriksa kembali dalam transaksi dan membuat kunjungan serta antrean baru', async () => {
@@ -53,10 +55,10 @@ test('pendaftaran ulang memeriksa kembali dalam transaksi dan membuat kunjungan 
     jest.mocked(db.ringkasanAntreanUntukDaftarkan).mockImplementation(jest.fn().mockResolvedValue({ _max: { nomor: null } }));
     jest.mocked(db.tambahAntreanUntukDaftarkan).mockImplementation(jest.fn());
     jest.mocked(db.transaksi).mockImplementation(async (fn) => fn(tx));
-    const hasil = await repo.daftarkan(7, 4, data, waktu);
-    expect(jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mock.calls[0].slice(0, 4)).toEqual([7, 10, ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'], 'batal']);
-    expect(jest.mocked(db.tambahKunjunganUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 7, 1: 'LY-261029-0001', 2: 10, 10: waktu })]));
-    expect(jest.mocked(db.tambahAntreanUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 1: 5, 2: 22, 4: 'Umum', 5: 'U', 6: new Date('2026-10-29T00:00:00Z'), 7: 1 })]));
+    const hasil = await repo.daftarkan(4, data, waktu);
+    expect(jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mock.calls[0].slice(0, 3)).toEqual([10, ['menunggu_skrining', 'pemeriksaan', 'resep', 'kasir'], 'batal']);
+    expect(jest.mocked(db.tambahKunjunganUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 'LY-261029-0001', 1: 10, 9: waktu })]));
+    expect(jest.mocked(db.tambahAntreanUntukDaftarkan).mock.calls.map(args => ({ ...args }))).toEqual(expect.arrayContaining([expect.objectContaining({ 0: 5, 1: 22, 3: 'Umum', 4: 'U', 5: new Date('2026-10-29T00:00:00Z'), 6: 1 })]));
     expect(hasil).toMatchObject({ id: 22, pasien_id: 10, antrean: { status: 'menunggu' } });
 });
 
@@ -65,6 +67,6 @@ test('kunjungan aktif tetap menolak pendaftaran ganda di dalam transaksi', async
     jest.mocked(db.hitungKunjunganUntukKunjunganBerjalan).mockImplementation(jest.fn().mockResolvedValue(1));
     jest.mocked(db.tambahKunjunganUntukDaftarkan).mockImplementation(jest.fn());
     jest.mocked(db.transaksi).mockImplementation(async (fn) => fn(tx));
-    await expect(repo.daftarkan(7, 4, data, waktu)).rejects.toBeInstanceOf(KunjunganBerjalanError);
+    await expect(repo.daftarkan(4, data, waktu)).rejects.toBeInstanceOf(KunjunganBerjalanError);
     expect(db.tambahKunjunganUntukDaftarkan).not.toHaveBeenCalled();
 });

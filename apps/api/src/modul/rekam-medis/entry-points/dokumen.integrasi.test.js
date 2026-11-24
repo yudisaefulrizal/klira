@@ -154,7 +154,7 @@ d('rekam medis (resume, surat, pembukaan, penyampaian, laporan) terhadap databas
         const poli = await uji.transaksi(async (koneksiBaru) => { const _hasil = await uji.tambahLokasiUntukKlinisKlinisIntegrasiTest(fas, 'Poli Umum', 'poli', koneksiBaru); return uji.tambahLokasiUntukKlinisKlinisIntegrasiTestHasil(_hasil.id, koneksiBaru); });
         const k1 = await kunjunganTutup('ditutup', fas, poli.id);
         const k2 = await kunjunganTutup('ditutup', fas, poli.id);
-        await uji.tambahBanyakDiagnosisUntukKunjunganBaru([k1, k2].map((kunjungan_id) => ({ fasyankes_id: fas, kunjungan_id, versi: 1, kode_icd10: 'I10', nama: 'Hipertensi esensial', peran: 'utama', urutan: 1 })));
+        await uji.tambahBanyakDiagnosisUntukKunjunganBaru([k1, k2].map((kunjungan_id) => ({ kunjungan_id, versi: 1, kode_icd10: 'I10', nama: 'Hipertensi esensial', peran: 'utama', urutan: 1 })));
         const poliLap = await panggil('GET', '/rekam-medis/laporan?jenis=kunjungan_per_poli', 'perekam');
         expect(poliLap.status).toBe(200);
         expect(poliLap.badan.data.baris.find((b) => b[0] === 'Poli Umum')[1]).toBe(2);

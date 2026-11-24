@@ -48,13 +48,13 @@ export function buatLayananUjiEndpoint({ layananSatusehat, layananPcare, audit, 
                     return gagal('tidak_valid', U.galat.badanBukanJson, 'badan');
                 }
             }
-            const aktif = await klienDari(m.layanan, p.fasyankes_id);
+            const aktif = await klienDari(m.layanan);
             if (!aktif)
                 return gagal('belum_lengkap', U.galat.belumAktif);
             if (aktif.environment !== 'sandbox')
                 return gagal('dilarang', U.galat.hanyaSandbox(aktif.environment));
             await audit.catat({
-                fasyankes_id: p.fasyankes_id, pengguna_id: p.id, aksi: 'input', entitas: 'test_endpoint',
+                pengguna_id: p.id, aksi: 'input', entitas: 'test_endpoint',
                 keterangan: `${m.layanan} ${endpoint.id} ${endpoint.metode} (${aktif.environment})`, alamat,
             });
             const mulai = tick();
