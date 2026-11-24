@@ -400,6 +400,23 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
             const yLurus = (p1.y + p2.y) / 2;
             return `M ${p1.x} ${yLurus} L ${p2.x} ${yLurus}`;
         }
+        // Jalur L (1 belokan) jika keluar horizontal lalu masuk vertikal (atau sebaliknya) dan bebas halangan
+        const keluarHoriz = sisiA === 'L' || sisiA === 'R';
+        const masukVert = sisiB === 'T' || sisiB === 'B';
+        if (keluarHoriz && masukVert) {
+            const cocokArahX = (sisiA === 'R' && p2.x > p1.x + 12) || (sisiA === 'L' && p2.x < p1.x - 12);
+            const cocokArahY = (sisiB === 'T' && p2.y > p1.y + 12) || (sisiB === 'B' && p2.y < p1.y - 12);
+            if (cocokArahX && cocokArahY && bebasHalangan(p1.x, p1.y, p2.x, p1.y) && bebasHalangan(p2.x, p1.y, p2.x, p2.y)) {
+                return buatKurvaSudut([p1, { x: p2.x, y: p1.y }, p2]);
+            }
+        }
+        if (!keluarHoriz && !masukVert) {
+            const cocokArahY = (sisiA === 'B' && p2.y > p1.y + 12) || (sisiA === 'T' && p2.y < p1.y - 12);
+            const cocokArahX = (sisiB === 'L' && p2.x > p1.x + 12) || (sisiB === 'R' && p2.x < p1.x - 12);
+            if (cocokArahX && cocokArahY && bebasHalangan(p1.x, p1.y, p1.x, p2.y) && bebasHalangan(p1.x, p2.y, p2.x, p2.y)) {
+                return buatKurvaSudut([p1, { x: p1.x, y: p2.y }, p2]);
+            }
+        }
 
         const s = cariSelKoridor(p1.x, p1.y, sisiA);
         const e = cariSelKoridor(p2.x, p2.y, sisiB);
@@ -517,6 +534,180 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
     };
 }
 
+/**
+ * Model tata letak otomatis Sugiyama (layering + minimasi persilangan barycenter + penempatan koridor)
+ * dan pemilihan port otomatis agar flowchart bebas tabrakan & minimal belokan tanpa koordinat manual.
+ */
+function tataLetakAlurOtomatis(nodesInput, edgesInput) {
+    const UKURAN_BENTUK = {
+        oval: { w: 192, h: 48 },
+        diamond: { w: 216, h: 92 },
+        cylinder: { w: 218, h: 90 },
+        rect: { w: 212, h: 90 },
+    };
+
+    const nodes = nodesInput.map((n, idx) => {
+        const uk = UKURAN_BENTUK[n.bentuk] || UKURAN_BENTUK.rect;
+        return { ...n, w: uk.w, h: uk.h, _idx: idx };
+    });
+    const peta = new Map(nodes.map((n) => [n.id, n]));
+
+    // 1. Hitung layer topologis (abaikan back-edge 'kembali' & edge lateral 'samping')
+    const rank = new Map(nodes.map((n) => [n.id, 0]));
+    const forwardEdges = edgesInput.filter((e) => e.jenis !== 'kembali' && e.jenis !== 'samping');
+    for (let i = 0; i < nodes.length; i += 1) {
+        let berubah = false;
+        for (const e of forwardEdges) {
+            const rA = rank.get(e.dari) ?? 0;
+            const rB = rank.get(e.ke) ?? 0;
+            if (rB < rA + 1) {
+                rank.set(e.ke, rA + 1);
+                berubah = true;
+            }
+        }
+        if (!berubah) break;
+    }
+
+    // Node samping (mis. integrasi eksternal) ditempatkan sejajar dengan node sumbernya
+    for (const e of edgesInput) {
+        if (e.jenis === 'samping' && peta.has(e.dari) && peta.has(e.ke)) {
+            rank.set(e.ke, rank.get(e.dari) ?? 0);
+        }
+    }
+
+    // Node paling akhir (oval selesai) selalu di baris terbawah
+    const maksLayerNonAkhir = Math.max(0, ...nodes.filter((n) => n.id !== 'selesai').map((n) => rank.get(n.id) ?? 0));
+    if (peta.has('selesai')) rank.set('selesai', maksLayerNonAkhir + 1);
+
+    const maksLayer = Math.max(0, ...nodes.map((n) => rank.get(n.id) ?? 0));
+    const layers = Array.from({ length: maksLayer + 1 }, () => []);
+    for (const n of nodes) {
+        n.layer = rank.get(n.id) ?? 0;
+        layers[n.layer].push(n);
+    }
+
+    // 2. Minimasi persilangan garis lewat sapuan barycenter (atas-bawah & bawah-atas)
+    const orangTua = new Map(nodes.map((n) => [n.id, []]));
+    const anak = new Map(nodes.map((n) => [n.id, []]));
+    for (const e of edgesInput) {
+        if (e.jenis === 'kembali') continue;
+        if (orangTua.has(e.ke)) orangTua.get(e.ke).push(e.dari);
+        if (anak.has(e.dari)) anak.get(e.dari).push(e.ke);
+    }
+
+    const posDiLayer = new Map();
+    const segarkanPos = () => {
+        for (const l of layers) l.forEach((n, i) => posDiLayer.set(n.id, i));
+    };
+    segarkanPos();
+
+    for (let sweep = 0; sweep < 6; sweep += 1) {
+        for (let l = 1; l <= maksLayer; l += 1) {
+            layers[l].sort((a, b) => {
+                const pA = (orangTua.get(a.id) || []).filter((id) => (peta.get(id)?.layer ?? 0) < l);
+                const pB = (orangTua.get(b.id) || []).filter((id) => (peta.get(id)?.layer ?? 0) < l);
+                const avgA = pA.length ? pA.reduce((s, id) => s + (posDiLayer.get(id) ?? 0), 0) / pA.length : a._idx;
+                const avgB = pB.length ? pB.reduce((s, id) => s + (posDiLayer.get(id) ?? 0), 0) / pB.length : b._idx;
+                return avgA - avgB || a._idx - b._idx;
+            });
+            segarkanPos();
+        }
+        for (let l = maksLayer - 1; l >= 0; l -= 1) {
+            layers[l].sort((a, b) => {
+                const cA = (anak.get(a.id) || []).filter((id) => (peta.get(id)?.layer ?? 0) > l);
+                const cB = (anak.get(b.id) || []).filter((id) => (peta.get(b.id)?.layer ?? 0) > l);
+                const avgA = cA.length ? cA.reduce((s, id) => s + (posDiLayer.get(id) ?? 0), 0) / cA.length : a._idx;
+                const avgB = cB.length ? cB.reduce((s, id) => s + (posDiLayer.get(id) ?? 0), 0) / cB.length : b._idx;
+                return avgA - avgB || a._idx - b._idx;
+            });
+            segarkanPos();
+        }
+    }
+
+    // 3. Penempatan koordinat X & Y terpusat simetris dengan koridor lega
+    const GAP_X = 64;
+    const GAP_Y = 62;
+    const PAD = 44;
+    const lebarBaris = layers.map((l) => (l.length ? l.reduce((s, n) => s + n.w, 0) + (l.length - 1) * GAP_X : 0));
+    const lebarKanvas = Math.max(820, Math.max(...lebarBaris) + PAD * 2);
+
+    let curY = PAD;
+    for (let l = 0; l <= maksLayer; l += 1) {
+        const daftar = layers[l];
+        if (!daftar.length) continue;
+        const tinggiBaris = Math.max(...daftar.map((n) => n.h));
+        let curX = Math.round((lebarKanvas - lebarBaris[l]) / 2);
+        for (const n of daftar) {
+            n.x = curX;
+            n.y = curY + Math.round((tinggiBaris - n.h) / 2);
+            curX += n.w + GAP_X;
+        }
+        curY += tinggiBaris + GAP_Y;
+    }
+    const tinggiKanvas = curY - GAP_Y + PAD;
+
+    // 4. Pemilihan sisi keluar/masuk otomatis berdasarkan geometri relatif & bentuk diamond
+    const keluarPerNode = new Map(nodes.map((n) => [n.id, []]));
+    edgesInput.forEach((e, idx) => {
+        if (keluarPerNode.has(e.dari)) keluarPerNode.get(e.dari).push({ e, idx });
+    });
+    for (const arr of keluarPerNode.values()) {
+        arr.sort((u, v) => (peta.get(u.e.ke)?.x ?? 0) - (peta.get(v.e.ke)?.x ?? 0));
+    }
+
+    const semuaPort = new Map();
+    const daftarPanah = edgesInput.map((e, idx) => {
+        const a = peta.get(e.dari);
+        const b = peta.get(e.ke);
+        const cxA = a.x + a.w / 2;
+        const cxB = b.x + b.w / 2;
+        let sisiA = 'B';
+        let sisiB = 'T';
+
+        if (e.jenis === 'kembali' || a.layer === b.layer) {
+            sisiA = cxB >= cxA ? 'R' : 'L';
+            sisiB = cxB >= cxA ? 'L' : 'R';
+        } else if (a.bentuk === 'diamond') {
+            const cabang = (keluarPerNode.get(a.id) || []).filter((x) => x.e.jenis !== 'kembali');
+            if (cabang.length >= 3) {
+                const pos = cabang.findIndex((x) => x.idx === idx);
+                if (pos === 0) sisiA = 'L';
+                else if (pos === cabang.length - 1) sisiA = 'R';
+                else sisiA = 'B';
+            } else if (cabang.length === 2) {
+                if (Math.abs(cxB - cxA) < 40) sisiA = 'B';
+                else sisiA = cxB < cxA ? 'L' : 'R';
+            }
+            if (b.layer > a.layer + 1 && cxB < cxA && sisiA === 'R') sisiB = 'R';
+        } else if (b.layer > a.layer + 1 && Math.abs(cxA - cxB) > a.w) {
+            sisiA = cxB > cxA ? 'B' : 'B';
+            sisiB = cxA > cxB ? 'R' : 'L';
+        }
+
+        const kA = `${e.dari}:${sisiA}`;
+        const kB = `${e.ke}:${sisiB}`;
+        if (!semuaPort.has(kA)) semuaPort.set(kA, []);
+        if (!semuaPort.has(kB)) semuaPort.set(kB, []);
+        semuaPort.get(kA).push({ id: `out:${idx}`, kunci: sisiA === 'B' || sisiA === 'T' ? cxB : b.y + b.h / 2 });
+        semuaPort.get(kB).push({ id: `in:${idx}`, kunci: sisiB === 'T' || sisiB === 'B' ? cxA : a.y + a.h / 2 });
+        return { e, a, b, sisiA, sisiB, kA, kB, idx };
+    });
+
+    for (const arr of semuaPort.values()) arr.sort((u, v) => u.kunci - v.kunci);
+
+    const titikPort = (n, sisi, kunciPort, tagId) => {
+        const daftar = semuaPort.get(kunciPort) || [];
+        const posIdx = Math.max(0, daftar.findIndex((x) => x.id === tagId));
+        const fraksi = n.bentuk === 'diamond' || daftar.length <= 1 ? 0.5 : 0.24 + (posIdx / (daftar.length - 1)) * 0.52;
+        if (sisi === 'R') return { x: n.x + n.w, y: n.y + n.h * fraksi };
+        if (sisi === 'L') return { x: n.x, y: n.y + n.h * fraksi };
+        if (sisi === 'B') return { x: n.x + n.w * fraksi, y: n.y + n.h };
+        return { x: n.x + n.w * fraksi, y: n.y };
+    };
+
+    return { nodes, peta, daftarPanah, titikPort, lebarKanvas, tinggiKanvas };
+}
+
 /** Halaman dinamis Diagram Database (ERD) bergaya peta auto-layout, Alur Layanan, dan Peta Endpoint API. */
 export function TabArsitektur() {
     const el = document.createElement('div');
@@ -585,271 +776,30 @@ export function TabArsitektur() {
         const petaTabel = new Map((data.tabel || []).map((t) => [t.nama, t]));
         const petaDomain = new Map((data.domain || []).map((d) => [d.id, d]));
 
-        // Flowchart standar ISO 100% sesuai modul Klira (tanpa penomoran, arah ke bawah)
-        const nodeAlur = [
-            {
-                id: 'start',
-                bentuk: 'oval',
-                judul: 'Pasien Datang',
-                domain: 'pasien',
-                ringkas: 'Pasien tiba di fasyankes untuk mendapatkan layanan.',
-                tabel: ['pasien'],
-                endpoint: ['POST /api/pasien'],
-                x: 450,
-                y: 24,
-                w: 190,
-                h: 48,
-            },
-            {
-                id: 'daftar',
-                bentuk: 'rect',
-                judul: 'Pendaftaran & Kunjungan',
-                domain: 'pasien',
-                ringkas: 'Registrasi pasien, pembuatan kunjungan, & nomor antrean.',
-                tabel: ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'],
-                endpoint: ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'],
-                x: 435,
-                y: 124,
-                w: 220,
-                h: 90,
-            },
-            {
-                id: 'dec_layanan',
-                bentuk: 'diamond',
-                judul: 'Jenis Layanan?',
-                domain: 'klinis',
-                ringkas: 'Pemilihan alur kunjungan: Rawat Jalan, UGD, Admisi Ranap, atau Hanya Penunjang.',
-                tabel: ['kunjungan', 'antrean', 'ugd_kunjungan', 'rawat_inap'],
-                endpoint: ['POST /api/kunjungan', 'POST /api/rawat-inap/admisi'],
-                x: 435,
-                y: 268,
-                w: 220,
-                h: 92,
-            },
-            {
-                id: 'skrining',
-                bentuk: 'rect',
-                judul: 'Skrining Perawat',
-                domain: 'klinis',
-                ringkas: 'Tanda Vital, Alergi, Keluhan awal, Nyeri & Gizi.',
-                tabel: ['pemeriksaan', 'pengesahan_catatan'],
-                endpoint: ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 130,
-                y: 420,
-                w: 215,
-                h: 90,
-            },
-            {
-                id: 'ugd',
-                bentuk: 'rect',
-                judul: 'Layanan UGD & Observasi',
-                domain: 'klinis',
-                ringkas: 'Triase gawat darurat, observasi berkala, & stabilisasi.',
-                tabel: ['ugd_kunjungan', 'observasi', 'tindakan'],
-                endpoint: ['GET /api/kunjungan/:id/ugd', 'PUT /api/kunjungan/:id/ugd'],
-                x: 438,
-                y: 420,
-                w: 215,
-                h: 90,
-            },
-            {
-                id: 'lab_saja',
-                bentuk: 'rect',
-                judul: 'Lab & Penunjang (Langsung)',
-                domain: 'penunjang',
-                ringkas: 'Kunjungan khusus order lab/penunjang: spesimen, hasil & validasi.',
-                tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'],
-                endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'],
-                x: 750,
-                y: 420,
-                w: 225,
-                h: 90,
-            },
-            {
-                id: 'dec_poli',
-                bentuk: 'diamond',
-                judul: 'Jenis Poli?',
-                domain: 'klinis',
-                ringkas: 'Menentukan poli pemeriksaan dokter sesuai kebutuhan klinis.',
-                tabel: ['kunjungan', 'lokasi'],
-                endpoint: ['GET /api/kunjungan/:id'],
-                x: 128,
-                y: 568,
-                w: 220,
-                h: 92,
-            },
-            {
-                id: 'poli_umum',
-                bentuk: 'rect',
-                judul: 'Poli Umum & Spesialis',
-                domain: 'klinis',
-                ringkas: 'SOAPIE, Pemeriksaan Fisik, Diagnosis ICD-10, & Tindakan.',
-                tabel: ['pemeriksaan', 'diagnosis', 'tindakan'],
-                endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'],
-                x: 24,
-                y: 720,
-                w: 196,
-                h: 90,
-            },
-            {
-                id: 'poli_gigi',
-                bentuk: 'rect',
-                judul: 'Poli Gigi & Mulut',
-                domain: 'klinis',
-                ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan.',
-                tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'],
-                endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'],
-                x: 256,
-                y: 720,
-                w: 196,
-                h: 90,
-            },
-            {
-                id: 'poli_kia',
-                bentuk: 'rect',
-                judul: 'Poli KIA, KB & Imunisasi',
-                domain: 'klinis',
-                ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & imunisasi.',
-                tabel: ['kia_kunjungan', 'pemeriksaan'],
-                endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'],
-                x: 488,
-                y: 720,
-                w: 196,
-                h: 90,
-            },
-            {
-                id: 'dec_lab',
-                bentuk: 'diamond',
-                judul: 'Perlu Lab?',
-                domain: 'penunjang',
-                ringkas: 'Opsional: order pemeriksaan lab/penunjang lalu hasil dikembalikan ke dokter.',
-                tabel: ['order_penunjang', 'hasil_penunjang'],
-                endpoint: ['POST /api/kunjungan/:id/penunjang/order'],
-                x: 244,
-                y: 872,
-                w: 220,
-                h: 92,
-            },
-            {
-                id: 'lab',
-                bentuk: 'rect',
-                judul: 'Lab & Penunjang',
-                domain: 'penunjang',
-                ringkas: 'Pengambilan spesimen, input hasil, & validasi oleh analis.',
-                tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'],
-                endpoint: ['POST /api/penunjang/order/:id/spesimen', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'],
-                x: 750,
-                y: 872,
-                w: 225,
-                h: 90,
-            },
-            {
-                id: 'dec_lanjut',
-                bentuk: 'diamond',
-                judul: 'Tindak Lanjut?',
-                domain: 'farmasi',
-                ringkas: 'Menentukan tindak lanjut: Farmasi, Rawat Inap, Rujukan, atau langsung Kasir.',
-                tabel: ['resep', 'rawat_inap', 'tindak_lanjut'],
-                endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/kunjungan/:id/selesai'],
-                x: 244,
-                y: 1024,
-                w: 220,
-                h: 92,
-            },
-            {
-                id: 'farmasi',
-                bentuk: 'rect',
-                judul: 'Farmasi & Racikan',
-                domain: 'farmasi',
-                ringkas: 'Telaah resep, peracikan obat/puyer, & penyerahan ke pasien.',
-                tabel: ['resep', 'item_resep', 'stok_obat'],
-                endpoint: ['PUT /api/kunjungan/:id/resep'],
-                x: 750,
-                y: 1024,
-                w: 225,
-                h: 90,
-            },
-            {
-                id: 'ranap_admisi',
-                bentuk: 'rect',
-                judul: 'Admisi & Penempatan Bed',
-                domain: 'penunjang',
-                ringkas: 'Pendaftaran rawat inap, pemilihan DPJP, kamar & bed.',
-                tabel: ['rawat_inap', 'tempat_tidur'],
-                endpoint: ['POST /api/rawat-inap/admisi', 'GET /api/rawat-inap/papan', 'PUT /api/kunjungan/:id/penempatan'],
-                x: 24,
-                y: 1178,
-                w: 205,
-                h: 90,
-            },
-            {
-                id: 'ranap_cppt',
-                bentuk: 'rect',
-                judul: 'Perawatan Ranap & CPPT',
-                domain: 'penunjang',
-                ringkas: 'Catatan CPPT harian & ringkasan pemulangan rawat inap.',
-                tabel: ['cppt', 'pemeriksaan'],
-                endpoint: ['POST /api/kunjungan/:id/cppt', 'POST /api/kunjungan/:id/pemulangan'],
-                x: 274,
-                y: 1178,
-                w: 205,
-                h: 90,
-            },
-            {
-                id: 'rujukan',
-                bentuk: 'rect',
-                judul: 'Rujukan & Kontrol',
-                domain: 'pasien',
-                ringkas: 'Tindak lanjut rujukan ke RS/FKTL atau jadwal kontrol ulang.',
-                tabel: ['tindak_lanjut', 'kunjungan'],
-                endpoint: ['POST /api/kunjungan/:id/selesai'],
-                x: 564,
-                y: 1178,
-                w: 200,
-                h: 90,
-            },
-            {
-                id: 'kasir',
-                bentuk: 'rect',
-                judul: 'Kasir, Klaim & Akuntansi',
-                domain: 'keuangan',
-                ringkas: 'Tagihan kunjungan, pembayaran kasir, klaim JKN, & jurnal.',
-                tabel: ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'],
-                endpoint: ['GET /api/kunjungan/:id/tagihan', 'POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'],
-                x: 420,
-                y: 1348,
-                w: 220,
-                h: 90,
-            },
-            {
-                id: 'integrasi',
-                bentuk: 'cylinder',
-                judul: 'SATUSEHAT & BPJS PCare',
-                domain: 'integrasi',
-                ringkas: 'Sinkronisasi FHIR & integrasi BPJS PCare / Antrean JKN.',
-                tabel: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
-                endpoint: ['GET /api/satusehat/status', 'GET /api/pcare/status'],
-                x: 750,
-                y: 1348,
-                w: 225,
-                h: 90,
-            },
-            {
-                id: 'selesai',
-                bentuk: 'oval',
-                judul: 'Pasien Pulang / Selesai',
-                domain: 'keuangan',
-                ringkas: 'Kunjungan selesai dan seluruh data pelayanan tersimpan.',
-                tabel: ['kunjungan', 'pembayaran'],
-                endpoint: ['POST /api/kunjungan/:id/selesai'],
-                x: 435,
-                y: 1492,
-                w: 190,
-                h: 48,
-            },
+        // Definisi deklaratif node & relasi alur Klira; posisi & jalur dihitung otomatis oleh tataLetakAlurOtomatis
+        const nodeAlurInput = [
+            { id: 'start', bentuk: 'oval', judul: 'Pasien Datang', domain: 'pasien', ringkas: 'Pasien tiba di fasyankes untuk mendapatkan layanan.', tabel: ['pasien'], endpoint: ['POST /api/pasien'] },
+            { id: 'daftar', bentuk: 'rect', judul: 'Pendaftaran & Kunjungan', domain: 'pasien', ringkas: 'Registrasi pasien, pembuatan kunjungan, & nomor antrean.', tabel: ['pasien', 'kunjungan', 'antrean', 'sesi_antrean'], endpoint: ['POST /api/pasien', 'POST /api/kunjungan', 'GET /api/antrean'] },
+            { id: 'dec_layanan', bentuk: 'diamond', judul: 'Jenis Layanan?', domain: 'klinis', ringkas: 'Pemilihan alur kunjungan: Rawat Jalan, UGD, atau Hanya Penunjang.', tabel: ['kunjungan', 'antrean', 'ugd_kunjungan', 'rawat_inap'], endpoint: ['POST /api/kunjungan', 'POST /api/rawat-inap/admisi'] },
+            { id: 'skrining', bentuk: 'rect', judul: 'Skrining Perawat', domain: 'klinis', ringkas: 'Tanda Vital, Alergi, Keluhan awal, Nyeri & Gizi.', tabel: ['pemeriksaan', 'pengesahan_catatan'], endpoint: ['GET /api/kunjungan/:id/klinis', 'PUT /api/kunjungan/:id/klinis/:bagian'] },
+            { id: 'ugd', bentuk: 'rect', judul: 'Layanan UGD & Observasi', domain: 'klinis', ringkas: 'Triase gawat darurat, observasi berkala, & stabilisasi.', tabel: ['ugd_kunjungan', 'observasi', 'tindakan'], endpoint: ['GET /api/kunjungan/:id/ugd', 'PUT /api/kunjungan/:id/ugd'] },
+            { id: 'lab_saja', bentuk: 'rect', judul: 'Lab & Penunjang (Langsung)', domain: 'penunjang', ringkas: 'Kunjungan khusus order lab/penunjang: spesimen, hasil & validasi.', tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'], endpoint: ['POST /api/kunjungan/:id/penunjang/order', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'] },
+            { id: 'dec_poli', bentuk: 'diamond', judul: 'Jenis Poli?', domain: 'klinis', ringkas: 'Menentukan poli pemeriksaan dokter sesuai kebutuhan klinis.', tabel: ['kunjungan', 'lokasi'], endpoint: ['GET /api/kunjungan/:id'] },
+            { id: 'poli_umum', bentuk: 'rect', judul: 'Poli Umum & Spesialis', domain: 'klinis', ringkas: 'SOAPIE, Pemeriksaan Fisik, Diagnosis ICD-10, & Tindakan.', tabel: ['pemeriksaan', 'diagnosis', 'tindakan'], endpoint: ['POST /api/kunjungan/:id/selesai', 'PUT /api/kunjungan/:id/klinis/:bagian'] },
+            { id: 'poli_gigi', bentuk: 'rect', judul: 'Poli Gigi & Mulut', domain: 'klinis', ringkas: 'Odontogram gigi, kondisi karies/restorasi, & tindakan.', tabel: ['odontogram_pasien', 'pemeriksaan', 'tindakan'], endpoint: ['GET /api/kunjungan/:id/odontogram', 'PUT /api/kunjungan/:id/odontogram'] },
+            { id: 'poli_kia', bentuk: 'rect', judul: 'Poli KIA, KB & Imunisasi', domain: 'klinis', ringkas: 'ANC kehamilan, nifas/PNC, layanan KB, & imunisasi.', tabel: ['kia_kunjungan', 'pemeriksaan'], endpoint: ['GET /api/kunjungan/:id/kia', 'PUT /api/kunjungan/:id/kia'] },
+            { id: 'dec_lab', bentuk: 'diamond', judul: 'Perlu Lab?', domain: 'penunjang', ringkas: 'Opsional: order pemeriksaan lab/penunjang lalu hasil dikembalikan ke dokter.', tabel: ['order_penunjang', 'hasil_penunjang'], endpoint: ['POST /api/kunjungan/:id/penunjang/order'] },
+            { id: 'lab', bentuk: 'rect', judul: 'Lab & Penunjang', domain: 'penunjang', ringkas: 'Pengambilan spesimen, input hasil, & validasi oleh analis.', tabel: ['order_penunjang', 'hasil_penunjang', 'spesimen'], endpoint: ['POST /api/penunjang/order/:id/spesimen', 'PUT /api/penunjang/order/:id/hasil', 'POST /api/penunjang/order/:id/validasi'] },
+            { id: 'dec_lanjut', bentuk: 'diamond', judul: 'Tindak Lanjut?', domain: 'farmasi', ringkas: 'Menentukan tindak lanjut: Farmasi, Rawat Inap, Rujukan, atau langsung Kasir.', tabel: ['resep', 'rawat_inap', 'tindak_lanjut'], endpoint: ['PUT /api/kunjungan/:id/resep', 'POST /api/kunjungan/:id/selesai'] },
+            { id: 'farmasi', bentuk: 'rect', judul: 'Farmasi & Racikan', domain: 'farmasi', ringkas: 'Telaah resep, peracikan obat/puyer, & penyerahan ke pasien.', tabel: ['resep', 'item_resep', 'stok_obat'], endpoint: ['PUT /api/kunjungan/:id/resep'] },
+            { id: 'ranap_admisi', bentuk: 'rect', judul: 'Admisi & Penempatan Bed', domain: 'penunjang', ringkas: 'Pendaftaran rawat inap, pemilihan DPJP, kamar & bed.', tabel: ['rawat_inap', 'tempat_tidur'], endpoint: ['POST /api/rawat-inap/admisi', 'GET /api/rawat-inap/papan', 'PUT /api/kunjungan/:id/penempatan'] },
+            { id: 'ranap_cppt', bentuk: 'rect', judul: 'Perawatan Ranap & CPPT', domain: 'penunjang', ringkas: 'Catatan CPPT harian & ringkasan pemulangan rawat inap.', tabel: ['cppt', 'pemeriksaan'], endpoint: ['POST /api/kunjungan/:id/cppt', 'POST /api/kunjungan/:id/pemulangan'] },
+            { id: 'rujukan', bentuk: 'rect', judul: 'Rujukan & Kontrol', domain: 'pasien', ringkas: 'Tindak lanjut rujukan ke RS/FKTL atau jadwal kontrol ulang.', tabel: ['tindak_lanjut', 'kunjungan'], endpoint: ['POST /api/kunjungan/:id/selesai'] },
+            { id: 'kasir', bentuk: 'rect', judul: 'Kasir, Klaim & Akuntansi', domain: 'keuangan', ringkas: 'Tagihan kunjungan, pembayaran kasir, klaim JKN, & jurnal.', tabel: ['tagihan', 'pembayaran', 'klaim', 'jurnal', 'detail_jurnal', 'akun_keuangan'], endpoint: ['GET /api/kunjungan/:id/tagihan', 'POST /api/kunjungan/:id/pembayaran', 'GET /api/keuangan/ringkasan'] },
+            { id: 'integrasi', bentuk: 'cylinder', judul: 'SATUSEHAT & BPJS PCare', domain: 'integrasi', ringkas: 'Sinkronisasi FHIR & integrasi BPJS PCare / Antrean JKN.', tabel: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'], endpoint: ['GET /api/satusehat/status', 'GET /api/pcare/status'] },
+            { id: 'selesai', bentuk: 'oval', judul: 'Pasien Pulang / Selesai', domain: 'keuangan', ringkas: 'Kunjungan selesai dan seluruh data pelayanan tersimpan.', tabel: ['kunjungan', 'pembayaran'], endpoint: ['POST /api/kunjungan/:id/selesai'] },
         ];
 
-        const petaNode = new Map(nodeAlur.map((n) => [n.id, n]));
         const panahAlur = [
             { dari: 'start', ke: 'daftar', label: '' },
             { dari: 'daftar', ke: 'dec_layanan', label: '' },
@@ -864,22 +814,24 @@ export function TabArsitektur() {
             { dari: 'poli_gigi', ke: 'dec_lab', label: '' },
             { dari: 'poli_kia', ke: 'dec_lab', label: '' },
             { dari: 'ugd', ke: 'dec_lab', label: '' },
-            { dari: 'dec_lab', ke: 'lab', label: 'Ya (Order)', jenis: 'opsional' },
+            { dari: 'dec_lab', ke: 'lab', label: 'Ya (Order)', jenis: 'samping' },
             { dari: 'lab', ke: 'dec_lab', label: 'Hasil kembali', jenis: 'kembali' },
             { dari: 'dec_lab', ke: 'dec_lanjut', label: 'Tidak / Ada' },
-            { dari: 'dec_lanjut', ke: 'farmasi', label: 'Resep', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'ranap_admisi', label: 'Opname', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'rujukan', label: 'Rujuk', jenis: 'opsional' },
+            { dari: 'dec_lanjut', ke: 'farmasi', label: 'Resep', jenis: 'opsional' },
             { dari: 'dec_lanjut', ke: 'kasir', label: 'Langsung', jenis: 'opsional' },
-            { dari: 'ranap_admisi', ke: 'ranap_cppt', label: 'CPPT' },
-            { dari: 'ranap_cppt', ke: 'rujukan', label: 'Rujuk RS', jenis: 'opsional' },
+            { dari: 'ranap_admisi', ke: 'ranap_cppt', label: 'CPPT', jenis: 'samping' },
             { dari: 'ranap_cppt', ke: 'kasir', label: 'Pemulangan' },
             { dari: 'lab_saja', ke: 'kasir', label: 'Selesai Lab', jenis: 'opsional' },
             { dari: 'farmasi', ke: 'kasir', label: '' },
             { dari: 'rujukan', ke: 'kasir', label: '' },
-            { dari: 'kasir', ke: 'integrasi', label: 'FHIR / PCare', jenis: 'opsional' },
+            { dari: 'kasir', ke: 'integrasi', label: 'FHIR / PCare', jenis: 'samping' },
             { dari: 'kasir', ke: 'selesai', label: '' },
         ];
+
+        const hasilLayout = tataLetakAlurOtomatis(nodeAlurInput, panahAlur);
+        const { nodes: nodeAlur, peta: petaNode, daftarPanah, titikPort, lebarKanvas: lebarStage, tinggiKanvas: tinggiStage } = hasilLayout;
 
         if (!tahapTerpilih || !petaNode.has(tahapTerpilih)) tahapTerpilih = 'dec_layanan';
 
@@ -908,11 +860,9 @@ export function TabArsitektur() {
         });
 
         const stage = document.createElement('div');
-        const lebarStage = 1040;
-        const tinggiStage = 1565;
         Object.assign(stage.style, { position: 'relative', width: `${lebarStage}px`, height: `${tinggiStage}px`, margin: '12px auto' });
 
-        // SVG panah antar bentuk flowchart menggunakan router koridor A*
+        // SVG panah antar bentuk flowchart menggunakan router koridor A* + jalur lurus/1-belokan
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', String(lebarStage));
         svg.setAttribute('height', String(tinggiStage));
@@ -944,93 +894,15 @@ export function TabArsitektur() {
         const petaPosAlur = new Map(nodeAlur.map((n) => [n.id, { x: n.x, y: n.y, w: n.w, h: n.h }]));
         const ruteAlur = buatRouterGarisErd(petaPosAlur, lebarStage, tinggiStage);
 
-        const portKeluar = new Map();
-        const portMasuk = new Map();
-        const daftarPanah = panahAlur.map((e, idx) => {
-            const a = petaNode.get(e.dari);
-            const b = petaNode.get(e.ke);
-            let sisiA = 'B';
-            let sisiB = 'T';
-            if (e.dari === 'dec_layanan' && e.ke === 'skrining') {
-                sisiA = 'L';
-                sisiB = 'T';
-            } else if (e.dari === 'dec_layanan' && e.ke === 'lab_saja') {
-                sisiA = 'R';
-                sisiB = 'T';
-            } else if (e.dari === 'dec_poli' && e.ke === 'poli_umum') {
-                sisiA = 'L';
-                sisiB = 'T';
-            } else if (e.dari === 'dec_poli' && e.ke === 'poli_kia') {
-                sisiA = 'R';
-                sisiB = 'T';
-            } else if (e.dari === 'dec_lab' && e.ke === 'lab') {
-                sisiA = 'R';
-                sisiB = 'L';
-            } else if (e.dari === 'lab' && e.ke === 'dec_lab') {
-                sisiA = 'L';
-                sisiB = 'R';
-            } else if (e.dari === 'kasir' && e.ke === 'integrasi') {
-                sisiA = 'R';
-                sisiB = 'L';
-            } else if (e.dari === 'dec_lanjut' && e.ke === 'ranap_admisi') {
-                sisiA = 'L';
-                sisiB = 'T';
-            } else if (e.dari === 'dec_lanjut' && e.ke === 'farmasi') {
-                sisiA = 'R';
-                sisiB = 'L';
-            } else if (e.dari === 'dec_lanjut' && e.ke === 'kasir') {
-                sisiA = 'R';
-                sisiB = 'T';
-            } else if (e.dari === 'ranap_admisi' && e.ke === 'ranap_cppt') {
-                sisiA = 'R';
-                sisiB = 'L';
-            } else if (e.dari === 'ranap_cppt' && e.ke === 'rujukan') {
-                sisiA = 'R';
-                sisiB = 'L';
-            } else if (e.dari === 'lab_saja' && e.ke === 'kasir') {
-                sisiA = 'R';
-                sisiB = 'R';
-            } else if (e.dari === 'farmasi' && e.ke === 'kasir') {
-                sisiA = 'B';
-                sisiB = 'T';
-            }
-            const kA = `${e.dari}:${sisiA}`;
-            const kB = `${e.ke}:${sisiB}`;
-            if (!portKeluar.has(kA)) portKeluar.set(kA, []);
-            if (!portMasuk.has(kB)) portMasuk.set(kB, []);
-            const xEfektifA = e.dari === 'dec_lanjut' ? a.x + a.w + 40 : a.x;
-            portKeluar.get(kA).push({ idx, kunciUrut: sisiA === 'B' || sisiA === 'T' ? b.x : b.y });
-            portMasuk.get(kB).push({ idx, kunciUrut: sisiB === 'T' || sisiB === 'B' ? xEfektifA : a.y });
-            return { e, a, b, sisiA, sisiB, kA, kB, idx };
-        });
-
-        for (const arr of portKeluar.values()) arr.sort((u, v) => u.kunciUrut - v.kunciUrut);
-        for (const arr of portMasuk.values()) arr.sort((u, v) => u.kunciUrut - v.kunciUrut);
-
-        const titikPortAlur = (n, sisi, daftar, idx) => {
-            const posIdx = Math.max(0, daftar.findIndex((x) => x.idx === idx));
-            const fraksi = n.bentuk === 'diamond' || daftar.length <= 1 ? 0.5 : 0.25 + (posIdx / (daftar.length - 1)) * 0.5;
-            if (sisi === 'R') return { x: n.x + n.w, y: n.y + n.h * fraksi };
-            if (sisi === 'L') return { x: n.x, y: n.y + n.h * fraksi };
-            if (sisi === 'B') return { x: n.x + n.w * fraksi, y: n.y + n.h };
-            return { x: n.x + n.w * fraksi, y: n.y };
-        };
-
         for (const item of daftarPanah) {
             const { e, a, b, sisiA, sisiB, kA, kB, idx } = item;
             if (!a || !b) continue;
             const aktifGaris = e.dari === tahapTerpilih || e.ke === tahapTerpilih;
-            const opsional = e.jenis === 'opsional';
+            const opsional = e.jenis === 'opsional' || e.jenis === 'samping';
             const kembali = e.jenis === 'kembali';
 
-            let p1 = titikPortAlur(a, sisiA, portKeluar.get(kA) || [], idx);
-            let p2 = titikPortAlur(b, sisiB, portMasuk.get(kB) || [], idx);
-            if (e.dari === 'lab_saja' && e.ke === 'kasir') {
-                p2 = { x: b.x + b.w, y: b.y + Math.round(b.h * 0.25) };
-            } else if (e.dari === 'kasir' && e.ke === 'integrasi') {
-                p1 = { x: a.x + a.w, y: a.y + Math.round(a.h * 0.72) };
-                p2 = { x: b.x, y: a.y + Math.round(a.h * 0.72) };
-            }
+            const p1 = titikPort(a, sisiA, kA, `out:${idx}`);
+            const p2 = titikPort(b, sisiB, kB, `in:${idx}`);
             const dPath = ruteAlur(p1, sisiA, p2, sisiB);
 
             const warna = kembali ? '#10b981' : aktifGaris ? '#0ea5e9' : '#64748b';
