@@ -5,13 +5,13 @@ import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus } from '../../../umum/rute.js';
 const param = z.object({ entitas: z.string().min(1).max(50), id: z.coerce.number().pipe(idPositif) });
 /** API verifikasi pengesahan generik: GET /api/pengesahan/:entitas/:id (izin lihat klinis atau rekam medis). */
 export function buatRutePengesahan(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     rute.get('/pengesahan/:entitas/:id', masuk, wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat']), bungkus(async (req, res) => {
         const p = param.safeParse(req.params);
         if (!p.success)

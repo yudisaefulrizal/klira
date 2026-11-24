@@ -1,6 +1,6 @@
 import { FARMASI, STATUS_STOK } from '@klira/shared';
 import { daftarMasterObat, ubahMasterObat } from '../../api-klien/farmasi.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -26,11 +26,11 @@ export function pasangTabMasterObat(wadah) {
         const keadaan = sel(lencana(STATUS_STOK.label(o.status_stok), STATUS_STOK.warna(o.status_stok))); if (!o.aktif) keadaan.append(' ', lencana(M.nonaktif, 'abu'));
         const aksi = sel(), row = document.createElement('div'); Object.assign(row.style, { display: 'flex', gap: token.jarak.sm, justifyContent: 'flex-end', flexWrap: 'wrap' }); aksi.style.textAlign = 'right';
         if (boleh('farmasi', 'input')) row.append(tombol(M.mutasi, () => buka(o, true), 'teks'));
-        if (boleh('farmasi', 'perbaikan')) row.append(tombol(M.ubah, () => buka(o), 'teks'), tombol(o.aktif ? M.nonaktifkan : M.aktifkan, async () => { try { await ubahMasterObat(o.id, { aktif: !o.aktif }); if (aktif) jadwal(); } catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : M.gagalMuat)); } }, 'teks'));
+        if (boleh('farmasi', 'perbaikan')) row.append(tombol(M.ubah, () => buka(o), 'teks'), tombol(o.aktif ? M.nonaktifkan : M.aktifkan, async () => { try { await ubahMasterObat(o.id, { aktif: !o.aktif }); if (aktif) jadwal(); } catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, M.gagalMuat))); } }, 'teks'));
         aksi.append(row); table.tbody.append(baris(nom, sel(o.kfa_kode), sel(o.satuan), sel(rupiah(o.harga)), stok, sel(o.kedaluwarsa_terdekat ?? '-'), keadaan, aksi));
       }
       kosong.textContent = h.data.length ? '' : M.kosong; kosong.hidden = !!h.data.length; pages.replaceChildren(); const p = paginasi(halaman, h.total, h.ukuran, n => { halaman = n; jadwal(); }); if (p) pages.append(p);
-    } catch (e) { if (aktif && id === urut) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : M.gagalMuat)); }
+    } catch (e) { if (aktif && id === urut) status.replaceChildren(peringatan(pesanGalat(e, M.gagalMuat))); }
   }
   jadwal(); return { tutup() { aktif = false; urut++; clearTimeout(timer); modal?.tutup(); el.remove(); } };
 }

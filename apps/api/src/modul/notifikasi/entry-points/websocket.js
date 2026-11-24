@@ -1,5 +1,6 @@
 import { punyaIzin } from '@klira/shared';
-import { WebSocket, WebSocketServer } from 'ws';
+import { WebSocket } from 'ws';
+import { asalSah, buatServerWs, kirimAman, pasangSiklus, terimaKlien, tolak } from '../../../umum/websocket.js';
 import { bacaCookie } from '../../../middleware/auth.js';
 import { NAMA_COOKIE_SESI } from '../../akses/domain/skema.js';
 import { dengarkanNotifikasi } from '../domain/kanal.js';
@@ -54,18 +55,8 @@ function bentukPayload(event) {
 }
 
 export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 20000) {
-    const wss = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
+    const wss = buatServerWs();
     const klien = new Map();
-
-    const kirim = (ws, pesan) => {
-        if (ws.readyState !== WebSocket.OPEN)
-            return;
-        if (ws.bufferedAmount > 65536) {
-            ws.close(1013, 'Sambungkan ulang');
-            return;
-        }
-        ws.send(JSON.stringify(pesan));
-    };
 
     const lepas = dengarkanNotifikasi((event) => {
         const payload = bentukPayload(event);
@@ -73,7 +64,7 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
             return;
         for (const [ws, info] of klien) {
             if (cocokPenerima(info, event))
-                kirim(ws, payload);
+                kirimAman(ws, payload);
         }
     });
 
@@ -82,9 +73,8 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
         if (!cocokSocketNotifikasi(path))
             return;
         socket.on('error', () => { });
-        const asal = req.headers.origin;
-        if (!asal || ![new URL(baseUrl).origin, `${req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http'}://${req.headers.host}`].includes(asal)) {
-            socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+        if (!asalSah(req, baseUrl)) {
+            tolak(socket, '403 Forbidden');
             return;
         }
         const sesi = bacaCookie(req.headers.cookie, NAMA_COOKIE_SESI);
@@ -93,38 +83,22 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
             if (socket.destroyed)
                 return;
             if (!pengguna || pengguna.wajib_ganti_kredensial) {
-                socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+                tolak(socket, '401 Unauthorized');
                 return;
             }
-            wss.handleUpgrade(req, socket, head, (ws) => {
-                klien.set(ws, { pengguna, hidup: true, sesi });
-                ws.on('error', () => { });
-                ws.on('pong', () => {
-                    const info = klien.get(ws);
-                    if (info)
-                        info.hidup = true;
-                });
-                ws.on('close', () => {
-                    klien.delete(ws);
-                });
-                ws.on('message', () => ws.close(1008, 'Kanal hanya mengirim notifikasi'));
-                kirim(ws, { tipe: 'siap' });
+            terimaKlien(wss, klien, req, socket, head, { pengguna, hidup: true, sesi }, {
+                alasanTolakPesan: 'Kanal hanya mengirim notifikasi',
+                siap: (ws) => kirimAman(ws, { tipe: 'siap' }),
             });
         })().catch(() => socket.destroy());
     };
 
-    server.on('upgrade', upgrade);
-
-    const timer = setInterval(() => {
-        for (const [ws, info] of klien) {
-            if (!info.hidup) {
-                ws.terminate();
-                continue;
-            }
-            info.hidup = false;
+    return pasangSiklus({
+        server, wss, klien, upgrade, heartbeatMs, lepas,
+        denyut: (ws, info) => {
             if (ws.readyState === WebSocket.OPEN) {
                 ws.ping();
-                kirim(ws, { tipe: 'hidup' });
+                kirimAman(ws, { tipe: 'hidup' });
             }
             if (akses) {
                 void akses.saya(info.sesi).then((p) => {
@@ -135,22 +109,6 @@ export function pasangWebsocketNotifikasi(server, akses, baseUrl, heartbeatMs = 
                     }
                 }).catch(() => { });
             }
-        }
-    }, heartbeatMs);
-    timer.unref();
-
-    let ditutup = false;
-    const tutup = () => {
-        if (ditutup)
-            return;
-        ditutup = true;
-        clearInterval(timer);
-        lepas();
-        server.off('upgrade', upgrade);
-        for (const ws of klien.keys())
-            ws.terminate();
-        wss.close();
-    };
-    server.once('close', tutup);
-    return tutup;
+        },
+    });
 }

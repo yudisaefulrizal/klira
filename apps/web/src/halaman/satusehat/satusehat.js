@@ -1,5 +1,5 @@
 import { PENGATURAN_SATUSEHAT as S } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { aktifkanSatusehat, ambilKonfigurasiSatusehat, simpanKonfigurasiSatusehat, ujiSatusehat } from '../../api-klien/satusehat.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, lencana, peringatan, tombol } from '../../komponen/ui/primitif.js';
@@ -51,7 +51,7 @@ function kartuLingkungan(env, { bolehUbah, muat }) {
     memproses = true; galatServer = info = null; tampil();
     try { const h = await kerja(); info = sukses?.(h) ?? null; await muat({ resetForm, env }); }
     catch (e) {
-      galatServer = e instanceof GalatApi ? e.message : H.gagalSimpan;
+      galatServer = pesanGalat(e, H.gagalSimpan);
       if (e instanceof GalatApi) for (const r of e.rincian ?? []) kontrol[r.jalur]?.setGalat(r.pesan);
     } finally { memproses = false; tampil(); }
   }
@@ -87,7 +87,7 @@ export function HalamanSatusehat() {
       if (!data.organization_id) banner.append(peringatan(H.organisasiKosong, 'kuning'));
       ringkas.replaceChildren(...[[H.organisasi, data.organization_id ?? '-'], [H.lingkunganAktif, data.aktif ? H.lingkungan[data.aktif] : H.belumAktif]].map(([k, v]) => { const x = document.createElement('span'), b = document.createElement('strong'); b.textContent = v; b.style.color = token.warna.teks; x.append(`${k}: `, b); return x; }));
       for (const l of data.lingkungan) kartuPer[l.environment].terapkan(l, { resetForm: resetForm && (env === undefined || env === l.environment), ada: Boolean(data.organization_id) });
-    } catch (e) { if (hidup && saat === versi) { banner.replaceChildren(peringatan(e instanceof GalatApi ? e.message : H.gagalMuat)); } }
+    } catch (e) { if (hidup && saat === versi) { banner.replaceChildren(peringatan(pesanGalat(e, H.gagalMuat))); } }
   }
   const kartuPer = Object.fromEntries(LINGKUNGAN.map((env) => [env, kartuLingkungan(env, { bolehUbah, muat })]));
   for (const env of LINGKUNGAN) isi.append(kartuPer[env].el);

@@ -1,6 +1,6 @@
 import { KASIR } from '@klira/shared';
 import { lengkapiHargaItem } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 
@@ -20,7 +20,7 @@ export function LengkapiHarga({ kunjunganId, gambaran, onUbah }) {
     if (!/^\d+$/.test(harga)) { status.replaceChildren(peringatan(KASIR.galat.angka)); return; }
     sibuk(id); status.replaceChildren();
     try { const g = await lengkapiHargaItem(kunjunganId, id, harga); if (aktif) { perbarui(g); onUbah(g); } }
-    catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KASIR.bayar.gagal)); }
+    catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, KASIR.bayar.gagal))); }
     finally { if (aktif) sibuk(null); }
   }
   function perbarui(g) {

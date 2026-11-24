@@ -4,12 +4,12 @@ import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { kirimHasil } from '../../../umum/hasil.js';
+import { bungkus } from '../../../umum/rute.js';
 /** GET /api/kunjungan/:id/tagihan (izin lihat kasir, klinis, atau rekam medis). */
 export function buatRuteKasir(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     rute.get('/kunjungan/:id/tagihan', masuk, wajibIzinSalahSatu(['kasir', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat']), bungkus(async (req, res) => {
         const id = idParam.safeParse(req.params);
         if (!id.success)

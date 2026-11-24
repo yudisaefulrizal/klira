@@ -1,18 +1,16 @@
 import { Router } from 'express';
-import { admisiMasukan, catatanHarianMasukan, GALAT, idParam, pemulanganMasukan, penempatanMasukan } from '@klira/shared';
+import { admisiMasukan, catatanHarianMasukan, idParam, pemulanganMasukan, penempatanMasukan } from '@klira/shared';
 import { z } from 'zod';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /** Rute Rawat inap (3.1, 3.3): papan bed dan data (izin klinis lihat), admisi, penempatan, catatan harian, dan pemulangan (izin klinis input). Tidak ada rute hapus. */
 export function buatRuteRawatInap(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     const lihat = wajibIzin('klinis', 'lihat');
     const input = wajibIzin('klinis', 'input');
     rute.get('/rawat-inap/papan', masuk, lihat, bungkus(async (_req, res) => void res.json({ data: await layanan.papan(pengguna(res)) })));

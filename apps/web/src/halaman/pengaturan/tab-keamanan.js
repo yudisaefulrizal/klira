@@ -1,5 +1,5 @@
 import { KEAMANAN } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { ambilPengaturanKeamanan, simpanPengaturanKeamanan } from '../../api-klien/keamanan.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -26,9 +26,9 @@ export function pasangTabKeamanan(wadah) {
   formulir.addEventListener('submit', async e => {
     e.preventDefault(); dicoba = true; tampil(); if (!form || Object.keys(galatKeamanan(form)).length) return; memproses = true; galat = info = null; tampil();
     try { const p = await simpanPengaturanKeamanan(bentukKeamanan(form)); if (!aktif) return; terapkan(p); dicoba = false; info = KEAMANAN.tersimpan; }
-    catch (e) { if (aktif) galat = e instanceof GalatApi ? e.message : KEAMANAN.gagalSimpan; }
+    catch (e) { if (aktif) galat = pesanGalat(e, KEAMANAN.gagalSimpan); }
     finally { if (aktif) { memproses = false; tampil(); } }
   });
-  tampil(); ambilPengaturanKeamanan().then(p => { if (aktif) { terapkan(p); tampil(); } }).catch(e => { if (aktif) { galat = e instanceof GalatApi ? e.message : KEAMANAN.gagalMuat; tampil(); } });
+  tampil(); ambilPengaturanKeamanan().then(p => { if (aktif) { terapkan(p); tampil(); } }).catch(e => { if (aktif) { galat = pesanGalat(e, KEAMANAN.gagalMuat); tampil(); } });
   return { tutup() { aktif = false; wadah.replaceChildren(); } };
 }

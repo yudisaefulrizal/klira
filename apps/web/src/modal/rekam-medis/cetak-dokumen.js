@@ -1,6 +1,6 @@
 import { REKAM_MEDIS } from '@klira/shared';
 import { ambilDokumen } from '../../api-klien/dokumen-rm.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { tanggalWaktuPendek } from '../../util/format.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
@@ -128,7 +128,7 @@ export function bukaCetakDokumen({ kunjunganId, dok: dokAwal, pasien, kunjungan,
     } else {
         ambilDokumen(kunjunganId)
             .then((dok) => tampilkan(dok))
-            .catch((e) => { if (aktif) isi.replaceChildren(peringatan(e instanceof GalatApi ? e.message : C.gagal)); });
+            .catch((e) => { if (aktif) isi.replaceChildren(peringatan(pesanGalat(e, C.gagal))); });
     }
     return { tutup: hancurkan };
 }

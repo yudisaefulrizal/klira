@@ -1,6 +1,6 @@
 import { BUTIR_PERJANJIAN, PDP, TOMBOL } from '@klira/shared';
 import { simpanProsesor } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -48,7 +48,7 @@ export function bukaProsesorPdp({ prosesor = null, onTutup, onSelesai }) {
     dicoba = true; if (memproses) return; const g = validasi(), masalah = langkahBermasalahProsesor(g); if (masalah >= 0) { modal.ke(masalah); return; }
     memproses = true; modal.perbarui({ labelKirim: PDP.menyimpan, nonaktif: true, galat: '' });
     try { await simpanProsesor(prosesor?.id ?? null, bentukProsesor(k)); if (!aktif) return; selesai = true; const p = document.createElement('p'); p.style.margin = '0'; p.textContent = P.hasilPesan; modal.hasil({ judul: P.hasilJudul, isi: p, aksi: [tombol(TOMBOL.tutup, onSelesai)] }); }
-    catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : P.gagal }); }
+    catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, P.gagal)}); }
     finally { if (aktif) { memproses = false; modal.perbarui({ labelKirim: P.simpan, nonaktif: false }); } }
   }
   return () => { aktif = false; modal.tutup(); };

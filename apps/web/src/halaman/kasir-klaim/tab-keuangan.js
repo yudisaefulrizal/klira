@@ -3,7 +3,7 @@ import {
     daftarPengeluaran, tambahPengeluaran, daftarHutang, tambahFakturSupplier, bayarHutang,
     daftarPiutang, tambahPiutang, bayarPiutang, rekapJasaMedis, daftarTarifJasa, simpanTarifJasa,
 } from '../../api-klien/keuangan.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { kartu, tombol, tabel, baris, sel, lencana, peringatan, tab } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -179,7 +179,7 @@ export function TabKeuangan() {
 
     el.append(header, subTabs.el, status, isi);
 
-    const tampilGalat = (e) => status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : (e?.message || 'Gagal memuat data keuangan.')));
+    const tampilGalat = (e) => status.replaceChildren(peringatan(pesanGalat(e, (e?.message || 'Gagal memuat data keuangan.'))));
     const periode = () => ({ dari: inDari.value || undefined, sampai: inSampai.value || undefined });
 
     async function muatRingkasan() {

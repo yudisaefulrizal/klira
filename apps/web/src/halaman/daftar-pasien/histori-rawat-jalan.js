@@ -1,6 +1,6 @@
 import { HISTORI_RAWAT_JALAN } from '@klira/shared';
 import { historiRawatJalan } from '../../api-klien/klinis.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { peringatan } from '../../komponen/ui/primitif.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
@@ -76,7 +76,7 @@ export function TabelHistoriRawatJalan({ pasienId, kunjunganId, onPilih }) {
         } catch (e) {
             if (!aktif || saat !== versi) return;
             jumlah.textContent = '';
-            status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : H.gagal));
+            status.replaceChildren(peringatan(pesanGalat(e, H.gagal)));
         }
     }
 

@@ -1,16 +1,13 @@
+import { sambungkanKanalWs } from '../ws/kanal-ws.js';
+
 /** WebSocket memberi sinyal; HTTP berkursor memulihkan event yang tertinggal secara berurutan. */
 export function sambungkanLayarPanggilan(id, opsi) {
     const ambil = opsi.ambil ?? fetch;
-    const buatSocket = opsi.buatSocket ?? (url => new WebSocket(url));
     let aktif = true, siap = false, memuat = false, ulang = false;
     let kursor;
     let gagalMuat = false;
-    let socket;
     let pengontrol;
     let timerMuat;
-    let timerSocket;
-    let timerHidup;
-    let jeda = 1000;
     function jadwalkanMuat() {
         clearTimeout(timerMuat);
         if (aktif)
@@ -62,79 +59,39 @@ export function sambungkanLayarPanggilan(id, opsi) {
             }
         }
     }
-    function awasiHidup() {
-        clearTimeout(timerHidup);
-        timerHidup = setTimeout(() => putus(socket), siap ? 45000 : 10000);
-    }
-    function putus(lama) {
-        if (!aktif || !lama || socket !== lama)
-            return;
-        socket = undefined;
-        lama.onclose = null;
-        lama.onerror = null;
-        lama.onmessage = null;
-        lama.close();
-        clearTimeout(timerHidup);
-        siap = false;
-        opsi.mode('polling');
-        void muat();
-        clearTimeout(timerSocket);
-        timerSocket = setTimeout(hubungkan, jeda);
-        jeda = Math.min(jeda * 2, 15000);
-    }
-    function hubungkan() {
-        if (!aktif)
-            return;
-        try {
-            const url = new URL(`/api/publik/layar-panggilan/${id}/ws`, opsi.asal);
-            url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            const baru = buatSocket(url.href);
-            socket = baru;
-            awasiHidup();
-            baru.onmessage = event => {
-                if (!aktif || socket !== baru)
-                    return;
-                try {
-                    const pesan = JSON.parse(String(event.data));
-                    if (!['siap', 'perubahan', 'hidup'].includes(pesan.tipe))
-                        return;
-                    if (pesan.tipe === 'siap') {
-                        siap = true;
-                        jeda = 1000;
-                        opsi.mode('websocket');
-                    }
-                    awasiHidup();
-                    if (pesan.tipe !== 'hidup')
-                        void muat();
-                }
-                catch {
-                    putus(baru);
-                }
-            };
-            baru.onclose = () => putus(baru);
-            baru.onerror = () => putus(baru);
-        }
-        catch {
+    const sambungan = () => sambungkanKanalWs({
+        path: `/api/publik/layar-panggilan/${id}/ws`,
+        asal: opsi.asal,
+        buatSocket: opsi.buatSocket,
+        putusSaatGalat: true,
+        saatSiap() {
+            siap = true;
+            opsi.mode('websocket');
+            void muat();
+        },
+        saatPutus() {
             siap = false;
             opsi.mode('polling');
-            timerSocket = setTimeout(hubungkan, jeda);
-            jeda = Math.min(jeda * 2, 15000);
-        }
-    }
+            void muat();
+        },
+        saatGagalBuat() {
+            siap = false;
+            opsi.mode('polling');
+        },
+        saatPesan(pesan, awasi) {
+            if (pesan.tipe !== 'perubahan')
+                return;
+            awasi();
+            void muat();
+        },
+    });
     opsi.mode('menghubungkan');
-    hubungkan();
+    const kanal = sambungan();
     void muat();
     return () => {
         aktif = false;
         clearTimeout(timerMuat);
-        clearTimeout(timerSocket);
-        clearTimeout(timerHidup);
         pengontrol?.abort();
-        if (socket) {
-            socket.onclose = null;
-            socket.onerror = null;
-            socket.onmessage = null;
-            socket.close();
-        }
+        kanal.tutup();
     };
 }

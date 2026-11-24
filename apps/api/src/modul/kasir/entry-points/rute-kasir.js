@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { bayarMasukan, bukaShiftMasukan, filterRekap, GALAT, idParam, lengkapiHargaMasukan, serahHasilMasukan, tambahItemTarifMasukan, tutupKunjunganMasukan, tutupShiftMasukan, ubahHargaMasukan } from '@klira/shared';
+import { bayarMasukan, bukaShiftMasukan, filterRekap, idParam, lengkapiHargaMasukan, serahHasilMasukan, tambahItemTarifMasukan, tutupKunjunganMasukan, tutupShiftMasukan, ubahHargaMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /**
  * Rute kasir (3.1, 3.3, 4.5): shift dan rekap, pembayaran, tutup kunjungan. Izin fitur `kasir` (lihat, input, perbaikan);
  * shift dimiliki akun yang membuka. Semua dibatasi pada fasyankes akun; satu-satunya hapus adalah item tambahan kasir sebelum tutup.
@@ -12,9 +13,6 @@ export function buatRuteKasirLengkap(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     rute.get('/kasir/shift', masuk, wajibIzin('kasir', 'lihat'), bungkus(async (_req, res) => {
         res.json({ data: { terbuka: await layanan.shiftSaya(pengguna(res)) } });
     }));

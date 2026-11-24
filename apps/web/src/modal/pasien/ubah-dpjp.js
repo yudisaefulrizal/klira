@@ -1,6 +1,6 @@
 import { TOMBOL } from '@klira/shared';
 import { opsiKunjungan, ubahDpjpKunjungan } from '../../api-klien/kunjungan.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
@@ -57,7 +57,7 @@ export function bukaUbahDpjp({ pasienNama, kunjungan, onTutup, onSelesai }) {
             onSelesai?.();
         } catch (e) {
             if (aktif)
-                status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : 'Gagal mengubah dokter tujuan.'));
+                status.replaceChildren(peringatan(pesanGalat(e, 'Gagal mengubah dokter tujuan.')));
         } finally {
             if (aktif) {
                 proses = false;
@@ -88,7 +88,7 @@ export function bukaUbahDpjp({ pasienNama, kunjungan, onTutup, onSelesai }) {
         tombolSimpan.disabled = false;
     }).catch((e) => {
         if (aktif)
-            status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : 'Gagal memuat daftar dokter.'));
+            status.replaceChildren(peringatan(pesanGalat(e, 'Gagal memuat daftar dokter.')));
     });
 
     return { tutup: modal.tutup };

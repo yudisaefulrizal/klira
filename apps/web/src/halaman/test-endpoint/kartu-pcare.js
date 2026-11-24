@@ -1,5 +1,5 @@
 import { PENGATURAN_PCARE as P } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { aktifkanPcare, simpanKonfigurasiPcare, ujiPcare } from '../../api-klien/pcare.js';
 import { bidang, kartu, lencana, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -51,7 +51,7 @@ export function kartuPcare(env, { bolehUbah, muat }) {
     memproses = true; galatServer = info = null; tampil();
     try { const h = await kerja(); info = sukses?.(h) ?? null; await muat({ resetForm, env }); }
     catch (e) {
-      galatServer = e instanceof GalatApi ? e.message : H.gagalSimpan;
+      galatServer = pesanGalat(e, H.gagalSimpan);
       if (e instanceof GalatApi) for (const r of e.rincian ?? []) kontrol[r.jalur]?.setGalat(r.pesan);
     } finally { memproses = false; tampil(); }
   }

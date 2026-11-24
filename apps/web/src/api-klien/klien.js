@@ -12,6 +12,8 @@ export class GalatApi extends Error {
         this.rincian = rincian;
     }
 }
+/** Pesan galat untuk pengguna: pesan dari API bila galat API, selain itu teks cadangan. */
+export const pesanGalat = (e, cadangan) => (e instanceof GalatApi ? e.message : cadangan);
 /** Pemanggil API dasar: JSON, cookie sesi ikut terkirim, galat dipetakan ke GalatApi. */
 export async function panggilApi(metode, jalur, badan, ambil = fetch) {
     let res;

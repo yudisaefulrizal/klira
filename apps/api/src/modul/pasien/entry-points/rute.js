@@ -5,6 +5,7 @@ import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna } from '../../../umum/rute.js';
 /**
  * Rute pasien (3.1, 3.3). Melihat daftar dan data: fitur `pasien` atau `rekam-medis` (lihat); registrasi dan cek duplikat:
  * `pasien` input. Semua dibatasi pada fasyankes akun; pembukaan isi pasien dicatat audit `lihat`.
@@ -13,8 +14,6 @@ export function buatRutePasien(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin, wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     const lihat = wajibIzinSalahSatu(['pasien', 'lihat'], ['rekam-medis', 'lihat']);
     const izinWilayah = wajibIzinSalahSatu(['pasien', 'lihat'], ['pasien', 'input'], ['pasien', 'perbaikan'], ['rekam-medis', 'lihat']);
     rute.get('/wilayah', masuk, izinWilayah, (req, res) => {

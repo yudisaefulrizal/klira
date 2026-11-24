@@ -1,5 +1,5 @@
 import { PENUNJANG, TOMBOL } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { ambilSpesimen, ordersKunjungan } from '../../api-klien/penunjang.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
@@ -44,11 +44,11 @@ export function bukaAmbilSpesimen({ kunjunganId, pasien, onTutup, onSelesai }) {
       for (const id of k.terpilih) { await ambilSpesimen(id, bentukSpesimen(k, orders.find((o) => o.id === id))); jumlah++; tercatat = true; }
       if (!aktif) return; selesai = true; modal.isi.replaceChildren(S.tersimpan(jumlah)); modal.aksi.replaceChildren(tombol(TOMBOL.tutup, tutup)); modal.setLebar('modalKecil');
     } catch (e) {
-      if (!aktif) return; status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : S.gagal));
+      if (!aktif) return; status.replaceChildren(peringatan(pesanGalat(e, S.gagal)));
       try { const o = await ordersKunjungan(kunjunganId); if (aktif) { orders = o; k = { ...awalSpesimen(o), asal: k.asal, asalManual: k.asalManual, waktu: k.waktu }; tampil(); } } catch {}
     } finally { sibuk = false; simpan.textContent = S.simpan; simpan.disabled = !orders || !menungguSpesimen(orders).length; }
   }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); tampil(); modal.fokus();
-  ordersKunjungan(kunjunganId).then(o => { if (!aktif) return; orders = o; awal = awalSpesimen(o); k = { ...awal }; tampil(); }).catch(e => { if (aktif) { isi.replaceChildren(); status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : PENUNJANG.order.gagalMuat)); } });
+  ordersKunjungan(kunjunganId).then(o => { if (!aktif) return; orders = o; awal = awalSpesimen(o); k = { ...awal }; tampil(); }).catch(e => { if (aktif) { isi.replaceChildren(); status.replaceChildren(peringatan(pesanGalat(e, PENUNJANG.order.gagalMuat))); } });
   return { tutup() { aktif = false; modal.tutup(); } };
 }

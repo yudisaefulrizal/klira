@@ -1,6 +1,6 @@
 import { REKAM_MEDIS, TOMBOL } from '@klira/shared';
 import { catatPenyampaian } from '../../api-klien/dokumen-rm.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
@@ -17,6 +17,6 @@ export function bukaPenyampaianRm({ onTutup, onSelesai }) {
   const opsi = p => Object.entries(p).map(([nilai, label]) => ({ nilai, label })); champ('penerima_nama', P.penerima); champ('hubungan', P.hubungan, opsi(P.hubunganLabel)); champ('bentuk', P.bentuk, opsi(P.bentukLabel)); const bukti = champ('bukti_persetujuan', P.bukti), aide = document.createElement('small'); aide.textContent = P.buktiPetunjuk; aide.style.color = token.warna.teksRedup; form.append(aide); champ('catatan', P.catatan, undefined, 'textarea', 500);
   function perbarui() { const g = galatPenyampaian(k), perlu = ['keluarga', 'pihak_lain'].includes(k.hubungan); bukti.el.hidden = !perlu; aide.hidden = !perlu || !!(dicoba && g.bukti_persetujuan); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); pasien.perbarui({ pasienId: k.pasien_id, galat: dicoba ? g.pasien_id : undefined }); }
   const simpan = tombol(P.simpan, kirim);
-  async function kirim() { dicoba = true; perbarui(); if (proses || Object.keys(galatPenyampaian(k)).length) return; proses = true; simpan.disabled = true; simpan.textContent = P.menyimpan; status.replaceChildren(); try { await catatPenyampaian(bentukPenyampaian(k)); if (aktif) { bersih(); onSelesai(); } } catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : P.gagal)); } finally { proses = false; simpan.disabled = false; simpan.textContent = P.simpan; } }
+  async function kirim() { dicoba = true; perbarui(); if (proses || Object.keys(galatPenyampaian(k)).length) return; proses = true; simpan.disabled = true; simpan.textContent = P.menyimpan; status.replaceChildren(); try { await catatPenyampaian(bentukPenyampaian(k)); if (aktif) { bersih(); onSelesai(); } } catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, P.gagal))); } finally { proses = false; simpan.disabled = false; simpan.textContent = P.simpan; } }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); modal.isi.append(status, form); modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), simpan); perbarui(); modal.fokus(); return { tutup: bersih };
 }

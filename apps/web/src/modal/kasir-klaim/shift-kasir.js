@@ -1,6 +1,6 @@
 import { KASIR, TOMBOL } from '@klira/shared';
 import { bukaShift, tutupShift } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -32,7 +32,7 @@ export function bukaShiftKasir({ shift, onTutup, onSelesai }) {
     dicoba = true; perbarui(); if (proses || Object.keys(galatBidang()).length) return;
     proses = true; simpan.disabled = true; simpan.textContent = S.menyimpan; status.replaceChildren();
     try { if (menutup) await tutupShift({ kas_akhir: k.kas, alasan_selisih: k.alasan }); else await bukaShift({ kas_awal: k.kas }); if (aktif) { aktif = false; modal.tutup(); onSelesai(); } }
-    catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KASIR.bayar.gagal)); }
+    catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, KASIR.bayar.gagal))); }
     finally { proses = false; simpan.disabled = false; simpan.textContent = label; }
   }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); modal.isi.append(status, form); modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), simpan); perbarui(); modal.fokus();

@@ -1,6 +1,6 @@
 import { GALAT, INTERPRETASI_HASIL, MODAL, PENUNJANG, TOMBOL } from '@klira/shared';
 import { adaptorDrafServer } from '../../api-klien/draf-klinis.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { isiHasilLab, ordersKunjungan, validasiHasilLab } from '../../api-klien/penunjang.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
@@ -39,9 +39,9 @@ export function bukaHasilLab({ kunjunganId, pasien, onTutup, onSelesai }) {
     if (!orders || proses || !siap) return; const probleme = langkahBermasalahHasil(k, orders); if (probleme >= 0) { galat = probleme === 0 ? H.langkahSebelumnya : Object.values(galatHasilLab(k, orders))[0] ?? H.langkahSebelumnya; indeks = probleme; tampil(true); return; }
     galat = null; proses = true; afficherEtat(); const r = { disimpan: 0, divalidasi: 0, addendum: 0 }; let berjalan = ''; const validasi = k.validasi, rencana = rencanaHasil(k, orders);
     try { for (const x of rencana) { berjalan = x.order.nama; await isiHasilLab(x.order.id, { nilai: x.nilai, interpretasi: x.interpretasi, catatan: x.catatan }); r.disimpan++; tersimpan = true; if (validasi) { await validasiHasilLab(x.order.id); r.divalidasi++; } } draf.hapus(); if (!aktif) return; hasil = r; const isi = colonne(); isi.append(texte(H.selesaiPesan(r.disimpan, r.divalidasi))); modal.hasil({ judul: H.selesaiJudul, isi, aksi: [tombol(TOMBOL.tutup, tutup)] }); }
-    catch (e) { if (aktif) { galat = `${H.gagalSebagian(berjalan)} ${e instanceof GalatApi ? e.message : GALAT.umum}`; try { const o = await ordersKunjungan(kunjunganId); if (aktif) { orders = o; awal = awalHasilLab(o); } } catch {} tampil(true); } }
+    catch (e) { if (aktif) { galat = `${H.gagalSebagian(berjalan)} ${pesanGalat(e, GALAT.umum)}`; try { const o = await ordersKunjungan(kunjunganId); if (aktif) { orders = o; awal = awalHasilLab(o); } } catch {} tampil(true); } }
     finally { proses = false; if (aktif) afficherEtat(); }
   }
-  afficherEtat(); ordersKunjungan(kunjunganId).then(o => { if (!aktif) return; orders = o; awal = awalHasilLab(o); pulihkan(); tampil(true); }).catch(e => { if (aktif) { galatMuat = e instanceof GalatApi ? e.message : PENUNJANG.order.gagalMuat; tampil(true); } });
+  afficherEtat(); ordersKunjungan(kunjunganId).then(o => { if (!aktif) return; orders = o; awal = awalHasilLab(o); pulihkan(); tampil(true); }).catch(e => { if (aktif) { galatMuat = pesanGalat(e, PENUNJANG.order.gagalMuat); tampil(true); } });
   return { tutup() { aktif = false; draf.tutup(); modal.tutup(); } };
 }

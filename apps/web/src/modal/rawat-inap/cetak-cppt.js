@@ -1,7 +1,7 @@
 import { KLINIS, RAWAT_INAP, TANDA_VITAL } from '@klira/shared';
 import { ambilRekamMedisCetak } from '../../api-klien/klinis.js';
 import { ambilRawatInap, daftarCatatanHarian } from '../../api-klien/rawat-inap.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { bukaTabCetak } from '../../util/cetak-tab.js';
 import { tanggalPendek, tanggalWaktuPendek } from '../../util/format.js';
@@ -206,7 +206,7 @@ export function bukaCetakCppt({ kunjunganId, onTutup }) {
             print.disabled = false;
         })
         .catch((e) => {
-            if (aktif) contenu.replaceChildren(peringatan(e instanceof GalatApi ? e.message : C.gagal));
+            if (aktif) contenu.replaceChildren(peringatan(pesanGalat(e, C.gagal)));
         });
     return { tutup: detruire };
 }

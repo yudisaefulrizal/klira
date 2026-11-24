@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { filterLaporan, filterPembukaan, filterPenyampaian, GALAT, idParam, keputusanPerbaikanMasukan, laporanKeCsv, pembukaanMasukan, penyampaianMasukan, resumeMasukan, suratMasukan, } from '@klira/shared';
+import { filterLaporan, filterPembukaan, filterPenyampaian, idParam, keputusanPerbaikanMasukan, laporanKeCsv, pembukaanMasukan, penyampaianMasukan, resumeMasukan, suratMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /**
  * Rute dokumen Rekam medis (4.2, 4.4): resume dan surat (izin `klinis`), pembukaan dan penyampaian (izin `rekam-medis`; keputusan butuh aksi perbaikan),
  * laporan (lihat `rekam-medis`, ekspor CSV lewat `?format=csv`). Dibatasi pada fasyankes akun; tidak ada rute hapus.
@@ -12,9 +13,6 @@ export function buatRuteDokumen(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin, wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     const lihatDokumen = wajibIzinSalahSatu(['rekam-medis', 'lihat'], ['klinis', 'lihat']);
     rute.get('/kunjungan/:id/dokumen', masuk, lihatDokumen, bungkus(async (req, res) => {
         const id = idParam.safeParse(req.params);

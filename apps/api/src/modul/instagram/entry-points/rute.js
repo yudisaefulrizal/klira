@@ -11,7 +11,7 @@ import { punyaIzin, kirimPesanWa, ubahPercakapanWa, } from '@klira/shared';
 import { buatFasilitasAudit } from '../../../middleware/audit.js';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-const pengguna = (res) => res.locals.pengguna;
+import { pengguna } from '../../../umum/rute.js';
 const tolak = (res, pesan, status = 400) => {
     res.status(status).json({ galat: { kode: 'instagram', pesan } });
 };

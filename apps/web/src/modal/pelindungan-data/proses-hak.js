@@ -1,6 +1,6 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { prosesHak } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
 import { tombol } from '../../komponen/ui/primitif.js';
@@ -30,7 +30,7 @@ export function bukaProsesHak({ hak, onTutup, onSelesai }) {
     dicoba = true; if (!tahap || memproses) return; const g = f.perbarui(); if (Object.keys(g).length) { modal.ke(indeksTahapHak(tahap)); return; }
     memproses = true; modal.perbarui({ labelKirim: H.memproses, nonaktif: true, galat: '' });
     try { await prosesHak(hak.id, bentukProsesHak(tahap, k)); if (!aktif) return; selesai = true; const p = document.createElement('p'); p.style.margin = '0'; p.textContent = H.tahapTersimpan; modal.hasil({ judul: H.prosesJudul, isi: p, aksi: [tombol(TOMBOL.tutup, onSelesai)] }); }
-    catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : H.gagalProses }); }
+    catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, H.gagalProses)}); }
     finally { if (aktif) { memproses = false; modal.perbarui({ labelKirim: H.simpanProses, nonaktif: tahap === null }); } }
   }
   return () => { aktif = false; f.tutup(); modal.tutup(); };

@@ -1,6 +1,6 @@
 import { CARA_PEMBAYARAN, KUNJUNGAN, RAWAT_INAP, TOMBOL } from '@klira/shared';
 import { admisiRawatInap, ambilAsalAdmisi, ambilOpsiRawatInap } from '../../api-klien/rawat-inap.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
@@ -163,7 +163,7 @@ export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSele
         modal.aksi.replaceChildren(tombol(TOMBOL.tutup, tutup));
         modal.setLebar('modalKecil');
       } catch (e) {
-        if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : A.gagal));
+        if (aktif) status.replaceChildren(peringatan(pesanGalat(e, A.gagal)));
       } finally {
         proses = false;
         if (aktif && !hasil) perbarui();
@@ -180,7 +180,7 @@ export function bukaAdmisiRawatInap({ bedId, ruangNama, tarifId, onTutup, onSele
         if (b?.ruang_tarif_id) { k = { ...k, tarif_id: String(b.ruang_tarif_id) }; awal.tarif_id = k.tarif_id; }
       }
       lukis();
-    }).catch((e) => { if (aktif) { status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : A.gagal)); perbarui(); } });
+    }).catch((e) => { if (aktif) { status.replaceChildren(peringatan(pesanGalat(e, A.gagal))); perbarui(); } });
 
     return { tutup() { aktif = false; versiAsal++; bersihAnak(); modal.tutup(); } };
   }

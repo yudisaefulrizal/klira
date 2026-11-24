@@ -1,6 +1,6 @@
 import { DAFTAR_PASIEN, STATUS_IDENTITAS, TOMBOL, NAVIGASI } from '@klira/shared';
 import { detailPasien } from '../../api-klien/pasien.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { bukaPanel } from '../../komponen/panel/panel.js';
 import { tombol, peringatan, lencana } from '../../komponen/ui/primitif.js';
 import { DaftarRingkasan } from '../../komponen/ui/susunan.js';
@@ -46,6 +46,6 @@ export function bukaDetailPasien({ id, nama, onTutup }) {
         // Tampilkan kode dulu, lalu ganti dengan nama wilayah lengkap setelah termuat.
         lepasWilayah = tampilkanNamaWilayah(data.kode_wilayah, nama => afficher(nama));
     } }).catch(e => { if (actif)
-        contenu.replaceChildren(peringatan(e instanceof GalatApi ? e.message : DAFTAR_PASIEN.detailGagal)); });
+        contenu.replaceChildren(peringatan(pesanGalat(e, DAFTAR_PASIEN.detailGagal))); });
     return { tutup() { actif = false; lepasWilayah?.(); panel.tutup(); } };
 }

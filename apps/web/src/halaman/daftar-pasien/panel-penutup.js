@@ -1,6 +1,6 @@
 import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, NILAI_METODE_BAYAR } from '@klira/shared';
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan, tutupKunjungan } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, baris, kartu, lencana, peringatan, sel, tabel, tombol } from '../../komponen/ui/primitif.js';
@@ -47,7 +47,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
   async function jalankan(f) {
     if (memproses) return; memproses = true; galat = info = null; lukis(); onKepala?.();
     try { await f(); }
-    catch (e) { if (aktif) galat = e instanceof GalatApi ? e.message : B.gagal; }
+    catch (e) { if (aktif) galat = pesanGalat(e, B.gagal); }
     finally { memproses = false; if (aktif) { lukis(); onKepala?.(); } }
   }
 
@@ -264,7 +264,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
   el.muat = () => {
     if (!bolehKasir) return;
     kasirKunjungan(kunjunganId).then((h) => { if (aktif) { g = h; bayar = awalBayar(h.tagihan.sisa, metodeBawaan(h)); galatMuat = null; lukis(); onKepala?.(); } })
-      .catch((e) => { if (aktif) { galatMuat = e instanceof GalatApi ? e.message : B.gagal; lukis(); onKepala?.(); } });
+      .catch((e) => { if (aktif) { galatMuat = pesanGalat(e, B.gagal); lukis(); onKepala?.(); } });
   };
   el.keadaanKepala = () => ({ kasir: g, resepSerah: serah.resep ?? [], aksi: aksiKepala() });
   el.perbarui = () => lukis();

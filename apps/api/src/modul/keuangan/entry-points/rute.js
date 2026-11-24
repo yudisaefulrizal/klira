@@ -16,6 +16,7 @@ import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { kirimHasil } from '../../../umum/hasil.js';
+import { bungkus } from '../../../umum/rute.js';
 
 const gagalValidasi = (res, v) =>
     res.status(400).json({ galat: { kode: 'masukan_tidak_valid', pesan: GALAT.masukanTidakValid, rincian: v.error.flatten() } });
@@ -27,7 +28,6 @@ export function buatRuteKeuangan(layananAkses, layananIzin, layanan) {
     const { wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
     const bolehLihat = wajibIzinSalahSatu(['kasir', 'lihat'], ['klaim', 'lihat']);
     const bolehInput = wajibIzinSalahSatu(['kasir', 'input'], ['klaim', 'input']);
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
 
     rute.get('/keuangan/ringkasan', masuk, bolehLihat, bungkus(async (req, res) => {
         const f = filterPeriodeKeuangan.safeParse(req.query);

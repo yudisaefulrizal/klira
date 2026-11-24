@@ -1,6 +1,5 @@
 import * as db from '@klira/db';
-const tglIso = (d) => d.toISOString().slice(0, 10);
-const rentangWib = (tanggal) => new Date(`${tanggal}T00:00:00.000+07:00`);
+import { tglIso, awalHariWib } from '../../../umum/nilai.js';
 /** Akses data Rekam medis: permintaan perbaikan, daftar berkas. Hanya INSERT/UPDATE terkontrol; tidak ada hapus. */
 export class RepositoriRmMysql {
     async kunjungan(id) {
@@ -53,8 +52,8 @@ export class RepositoriRmMysql {
     async berkas(f, ringkasDokter) {
         const cari = f.cari?.trim();
         const [total, baris] = await Promise.all([
-            db.hitungKunjunganUntukBerkas('ditutup', cari, cari, cari, ((f.dari || f.sampai) && (f.dari)) ? (rentangWib(f.dari)) : undefined, ((f.dari || f.sampai) && (f.sampai)) ? (new Date(rentangWib(f.sampai).getTime() + 86_400_000)) : undefined),
-            db.daftarKunjunganUntukBerkas('ditutup', cari, cari, cari, ((f.dari || f.sampai) && (f.dari)) ? (rentangWib(f.dari)) : undefined, ((f.dari || f.sampai) && (f.sampai)) ? (new Date(rentangWib(f.sampai).getTime() + 86_400_000)) : undefined, f.ukuran, (f.halaman - 1) * f.ukuran),
+            db.hitungKunjunganUntukBerkas('ditutup', cari, cari, cari, ((f.dari || f.sampai) && (f.dari)) ? (awalHariWib(f.dari)) : undefined, ((f.dari || f.sampai) && (f.sampai)) ? (new Date(awalHariWib(f.sampai).getTime() + 86_400_000)) : undefined),
+            db.daftarKunjunganUntukBerkas('ditutup', cari, cari, cari, ((f.dari || f.sampai) && (f.dari)) ? (awalHariWib(f.dari)) : undefined, ((f.dari || f.sampai) && (f.sampai)) ? (new Date(awalHariWib(f.sampai).getTime() + 86_400_000)) : undefined, f.ukuran, (f.halaman - 1) * f.ukuran),
         ]);
         const ids = baris.map((b) => b.id);
         const dokter = await ringkasDokter(ids);

@@ -1,7 +1,7 @@
 import { REGISTRASI, statusIdentitasDari } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { NikKembarError, WaliTidakSahError } from '../data-access/repositori.js';
-const kosongJadiNull = (v) => (v == null || v.trim() === '' ? null : v.trim());
+import { kosongJadiNull } from '../../../umum/nilai.js';
 /** Masukan registrasi tervalidasi menjadi data simpan: string kosong menjadi null, identitas khusus dikosongkan sesuai jalur. */
 export function normalkanRegistrasi(m, teks) {
     const wali = m.wali.map((w) => ({ hubungan: w.hubungan.trim(), nama: w.nama.trim(), kontak: kosongJadiNull(w.kontak) }));

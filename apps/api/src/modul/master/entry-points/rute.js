@@ -4,12 +4,8 @@ import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { hitungKesiapan } from '../domain/kesiapan.js';
-function galatValidasi(res, e) {
-    const badan = {
-        galat: { kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: e.issues.map((i) => ({ jalur: i.path.join('.'), pesan: i.message })) },
-    };
-    res.status(400).json(badan);
-}
+import { bungkus, pengguna } from '../../../umum/rute.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 const KODE_HTTP = { tidak_valid: 400, konflik: 409, tidak_ditemukan: 404 };
 function kirimHasil(res, h, statusSukses = 200) {
     if (h.ok)
@@ -22,8 +18,6 @@ export function buatRuteMaster(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     const idRute = (req) => {
         const n = Number(req.params.id);
         return Number.isInteger(n) && n > 0 ? n : null;

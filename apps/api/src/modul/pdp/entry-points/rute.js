@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { dpiaMasukan, filterHak, filterPersetujuanPdp, filterUmumPdp, GALAT, hakMasukan, idParam, insidenMasukan, pemberitahuanMasukan, pemusnahanMasukan, prosesHakMasukan, prosesorMasukan, prosesPemusnahanMasukan, ropaMasukan, tarikMasukan, } from '@klira/shared';
+import { dpiaMasukan, filterHak, filterPersetujuanPdp, filterUmumPdp, hakMasukan, idParam, insidenMasukan, pemberitahuanMasukan, pemusnahanMasukan, prosesHakMasukan, prosesorMasukan, prosesPemusnahanMasukan, ropaMasukan, tarikMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /** Rute Pelindungan data (3.1, 4.7): lihat (izin pdp lihat), catat dan buat (input), proses dan ubah (perbaikan). Dibatasi pada fasyankes akun; tidak ada rute hapus. */
 export function buatRutePdp(layananAkses, layananIzin, layanan) {
     const rute = Router();
@@ -12,9 +13,6 @@ export function buatRutePdp(layananAkses, layananIzin, layanan) {
     const lihat = wajibIzin('pdp', 'lihat');
     const input = wajibIzin('pdp', 'input');
     const perbaikan = wajibIzin('pdp', 'perbaikan');
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     /** Daftar berhalaman sederhana: query halaman dan ukuran. */
     const daftar = (ambil) => bungkus(async (req, res) => {
         const f = filterUmumPdp.safeParse(req.query);

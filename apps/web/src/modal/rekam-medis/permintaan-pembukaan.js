@@ -1,6 +1,6 @@
 import { REKAM_MEDIS, TOMBOL } from '@klira/shared';
 import { ajukanPembukaan } from '../../api-klien/dokumen-rm.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
@@ -22,6 +22,6 @@ export function bukaPermintaanPembukaan({ onTutup, onSelesai }) {
     if (n === 2) { el.append(DaftarRingkasan({ bagian: [{ judul: P.judul, baris: [{ label: P.pemohon, nilai: [k.pemohon_nama, k.pemohon_instansi].filter(Boolean).join(' · ') || '-' }, { label: P.dasarLabel, nilai: `${P.dasar[k.dasar]}${k.dasar === 'hukum' && k.alasan_hukum ? ` · ${P.alasan[k.alasan_hukum]}` : ''}` }, { label: P.dasarRinci, nilai: k.dasar_rinci || '-' }, { label: P.cakupan, nilai: k.cakupan || '-' }, { label: P.samar, nilai: k.identitas_disamarkan ? P.samarYa : P.samarTidak }] }] })); const info = document.createElement('small'); info.textContent = P.info; info.style.color = token.warna.teksRedup; el.append(info); } return el;
   }
   modal = bukaModalBertahap({ judul: P.judul, langkah: ['pemohon', 'dasar', 'ringkasan'].map((id, n) => ({ id, judul: P.langkah[id], isi: () => isi(n), selesai: n < 2 ? () => { const g = galatPembukaan(k); return n === 0 ? !g.pasien_id && !g.pemohon_nama : !g.alasan_hukum && !g.dasar_rinci && !g.cakupan; } : undefined })), onIndeks(n) { indeks = n; }, onTutup: tutup, lindungiTutup: () => adaPerubahan(awal, k), onKirim: kirim, labelKirim: P.ajukan });
-  async function kirim() { dicoba = true; if (proses) return; const masalah = langkahBermasalahPembukaan(galatPembukaan(k)); if (masalah >= 0) { indeks = masalah; repeindre(); return; } proses = true; galat = null; perbarui(); try { await ajukanPembukaan(bentukPembukaan(k)); if (!aktif) return; selesai = true; pasien?.tutup(); const p = document.createElement('p'); p.style.margin = '0'; p.textContent = P.hasilPesan; modal.hasil({ judul: P.hasilJudul, isi: p, aksi: [tombol(TOMBOL.tutup, tutup)] }); } catch (e) { if (aktif) galat = e instanceof GalatApi ? e.message : P.gagal; } finally { proses = false; if (aktif) perbarui(); } }
+  async function kirim() { dicoba = true; if (proses) return; const masalah = langkahBermasalahPembukaan(galatPembukaan(k)); if (masalah >= 0) { indeks = masalah; repeindre(); return; } proses = true; galat = null; perbarui(); try { await ajukanPembukaan(bentukPembukaan(k)); if (!aktif) return; selesai = true; pasien?.tutup(); const p = document.createElement('p'); p.style.margin = '0'; p.textContent = P.hasilPesan; modal.hasil({ judul: P.hasilJudul, isi: p, aksi: [tombol(TOMBOL.tutup, tutup)] }); } catch (e) { if (aktif) galat = pesanGalat(e, P.gagal); } finally { proses = false; if (aktif) perbarui(); } }
   perbarui(); return { tutup() { aktif = false; pasien?.tutup(); modal.tutup(); } };
 }

@@ -5,13 +5,13 @@ import { tambahItemTagihanDalam, totalTagihan } from '../../kasir/data-access/re
 import { tulisAddendumDalam } from '../../rekam-medis/data-access/repositori-addendum.js';
 import { tulisPengesahanDalam } from '../../rekam-medis/data-access/repositori.js';
 import { susunIsiHasil } from '../domain/isi.js';
+import { iso } from '../../../umum/nilai.js';
 /** Penulisan serempak berebut status atau versi yang sama: pemanggil diminta memuat ulang. */
 export class BentrokError extends Error {
     constructor() {
         super('bentrok penunjang');
     }
 }
-const iso = (d) => d.toISOString();
 const tarifDto = (t) => ({ id: t.id, kode: t.kode, nama: t.nama, harga_umum: t.harga_umum, harga_jkn: t.harga_jkn });
 async function petakanMaster(baris, koneksi = db.pool) {
     const tarifIds = [...new Set(baris.flatMap((b) => (b.tarif_layanan_id ? [b.tarif_layanan_id] : [])))];

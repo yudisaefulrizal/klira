@@ -1,6 +1,6 @@
 import { JENIS_AKUN, STATUS_AKUN } from '@klira/shared';
 import { daftarJenisAkun, riwayatJenisAkun, ubahJenisAkun } from '../../api-klien/izin.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { bukaPanelDetail } from '../../komponen/panel/panel-detail.js';
@@ -23,11 +23,11 @@ export function pasangTabJenisAkun(wadah) {
       const tindakan = sel(aksi); tindakan.style.textAlign = 'right'; const st = j.aktif ? 'aktif' : 'nonaktif'; return baris(nama, sel(j.syarat_profesi || JENIS_AKUN.tanpaSyarat), sel(j.izin.length), sel(lencana(STATUS_AKUN.label(st), STATUS_AKUN.warna(st))), sel(j.jumlah_pemakai ?? 0), tindakan);
     }) ?? [])); ui.kosongkan(data && !data.length, JENIS_AKUN.kosong);
   }
-  async function muat() { const saat = ++versi; try { const rows = await daftarJenisAkun(); if (aktif && saat === versi) { data = rows; ui.galat(null); tampil(); } } catch (e) { if (aktif && saat === versi) ui.galat(e instanceof GalatApi ? e.message : JENIS_AKUN.gagalMuat); } }
+  async function muat() { const saat = ++versi; try { const rows = await daftarJenisAkun(); if (aktif && saat === versi) { data = rows; ui.galat(null); tampil(); } } catch (e) { if (aktif && saat === versi) ui.galat(pesanGalat(e, JENIS_AKUN.gagalMuat)); } }
   function status(j) {
     konfirmasi?.tutup(); konfirmasi = bukaKonfirmasi({ judul: JENIS_AKUN.statusJudul(j.nama, !j.aktif), pesan: j.aktif ? JENIS_AKUN.statusPesanNonaktif : JENIS_AKUN.statusPesanAktif, labelYa: j.aktif ? JENIS_AKUN.nonaktifkan : JENIS_AKUN.aktifkan, alasan: { label: JENIS_AKUN.alasan, wajib: true }, onTidak() { konfirmasi.tutup(); konfirmasi = undefined; }, onYa: alasan => void ubahStatus(j, alasan) });
   }
-  async function ubahStatus(j, alasan) { konfirmasi?.perbarui({ memproses: true }); try { await ubahJenisAkun(j.id, { aktif: !j.aktif, alasan_perubahan: alasan }); if (!aktif) return; konfirmasi?.tutup(); konfirmasi = undefined; await muat(); } catch (e) { if (aktif) { konfirmasi?.tutup(); konfirmasi = undefined; ui.galat(e instanceof GalatApi ? e.message : JENIS_AKUN.gagalSimpan); } } }
+  async function ubahStatus(j, alasan) { konfirmasi?.perbarui({ memproses: true }); try { await ubahJenisAkun(j.id, { aktif: !j.aktif, alasan_perubahan: alasan }); if (!aktif) return; konfirmasi?.tutup(); konfirmasi = undefined; await muat(); } catch (e) { if (aktif) { konfirmasi?.tutup(); konfirmasi = undefined; ui.galat(pesanGalat(e, JENIS_AKUN.gagalSimpan)); } } }
   async function riwayat(j) {
     const saat = ++versiRiwayat; panel?.tutup(); const close = () => { versiRiwayat++; panel?.tutup(); panel = undefined; }; panel = bukaPanelDetail({ judul: JENIS_AKUN.riwayatJudul(j.nama), onTutup: close, bagian: [] });
     try {

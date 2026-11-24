@@ -1,4 +1,4 @@
-import { GalatApi } from '../api-klien/klien.js';
+import { pesanGalat } from '../api-klien/klien.js';
 /** Daftar berhalaman; respons lama tidak menimpa permintaan terbaru atau halaman yang sudah ditutup. */
 export function buatDaftar(ambil, pesanGagal, berubah, awal = { halaman: 1, hasil: null, galat: null }) {
   let keadaan = { ...awal };
@@ -11,7 +11,7 @@ export function buatDaftar(ambil, pesanGagal, berubah, awal = { halaman: 1, hasi
       const hasil = await ambil(keadaan.halaman);
       if (!ditutup && permintaan === versi) { keadaan = { ...keadaan, hasil, galat: null }; beri(); }
     } catch (e) {
-      if (!ditutup && permintaan === versi) { keadaan = { ...keadaan, galat: e instanceof GalatApi ? e.message : pesanGagal }; beri(); }
+      if (!ditutup && permintaan === versi) { keadaan = { ...keadaan, galat: pesanGalat(e, pesanGagal)}; beri(); }
     }
   }
   return {

@@ -1,6 +1,6 @@
 import { PENUNJANG } from '@klira/shared';
 import { ordersKunjungan } from '../../api-klien/penunjang.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 import { bukaCetakHasilLab } from './cetak-hasil-lab.js';
@@ -23,7 +23,7 @@ export function HasilPenunjangKunjungan({ kunjunganId, pasien, kunjungan }) {
       isi.replaceChildren();
       if (!orders.length) isi.append('Belum ada hasil penunjang.');
       isi.append(DaftarOrderLab({ orders }));
-    } catch (e) { if (aktif && saat === versi) isi.replaceChildren(peringatan(e instanceof GalatApi ? e.message : 'Hasil penunjang gagal dimuat.')); }
+    } catch (e) { if (aktif && saat === versi) isi.replaceChildren(peringatan(pesanGalat(e, 'Hasil penunjang gagal dimuat.'))); }
   }
   el.perbarui = ({ kunjunganId: id }) => muat(id); el.tutup = () => { aktif = false; versi++; modal?.tutup(); }; void muat(kunjunganId); return el;
 }

@@ -1,5 +1,5 @@
 import { CARA_PEMBAYARAN, PENUNJANG } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { ordersKunjungan } from '../../api-klien/penunjang.js';
 import { peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { bukaTabCetak } from '../../util/cetak-tab.js';
@@ -147,7 +147,7 @@ export function bukaCetakHasilLab({ kunjunganId, orders: ordersAwal, pasien, kun
     } else {
         ordersKunjungan(kunjunganId)
             .then((daftar) => tampilkan(daftar))
-            .catch((e) => { if (aktif) isi.replaceChildren(peringatan(e instanceof GalatApi ? e.message : C.gagal)); });
+            .catch((e) => { if (aktif) isi.replaceChildren(peringatan(pesanGalat(e, C.gagal))); });
     }
     return { tutup: hancurkan };
 }

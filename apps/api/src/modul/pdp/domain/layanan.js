@@ -1,9 +1,9 @@
 import { butirKurang, hakTerlambat, laporanKeCsv, PDP, sisaJamPdp, tahapHakBerikut, tahapMusnahBerikut, waktuDariIsian } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { awalHariWib, GalatPdp } from '../data-access/repositori.js';
+import { tglIso } from '../../../umum/nilai.js';
 const G = PDP.galat;
 const iso = (d) => d?.toISOString() ?? null;
-const tgl = (d) => d.toISOString().slice(0, 10);
 /**
  * Pelindungan data pribadi (PP 33/2026): permintaan hak (3x24 jam, keputusan > pelaksanaan > notifikasi), teks pemberitahuan berversi dan penarikan persetujuan,
  * ROPA, DPIA, insiden (notifikasi 3x24 jam), pemusnahan berlangkah (perintah ke prosesor lebih dulu, berita acara), dan prosesor. Semua tercatat di audit; tidak ada hapus.
@@ -52,7 +52,7 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
         const awalHari = awalHariWib(sekarang());
         const [pasien, prosesor] = await Promise.all([repo.pasienBanyak(baris.flatMap((b) => (b.pasien_id ? [b.pasien_id] : []))), repo.namaProsesor(baris.flatMap((b) => (b.prosesor_id ? [b.prosesor_id] : [])))]);
         return baris.map((b) => ({
-            id: b.id, cakupan: b.cakupan, dasar: b.dasar, permintaan_hak_id: b.permintaan_hak_id, pasien_id: b.pasien_id, pasien_nama: b.pasien_id ? pasien.get(b.pasien_id)?.nama ?? null : null, jadwal: tgl(b.jadwal), status: b.status,
+            id: b.id, cakupan: b.cakupan, dasar: b.dasar, permintaan_hak_id: b.permintaan_hak_id, pasien_id: b.pasien_id, pasien_nama: b.pasien_id ? pasien.get(b.pasien_id)?.nama ?? null : null, jadwal: tglIso(b.jadwal), status: b.status,
             tahap_berikut: tahapMusnahBerikut(b.status), prosesor_id: b.prosesor_id, prosesor_nama: b.prosesor_id ? prosesor.get(b.prosesor_id) ?? null : null, nomor_perintah: b.nomor_perintah, perintah_pada: iso(b.perintah_pada), pelaksana: b.pelaksana,
             metode: b.metode, mencakup_cadangan: b.mencakup_cadangan, pelaksanaan_pada: iso(b.pelaksanaan_pada), berita_acara: b.berita_acara, berita_acara_pada: iso(b.berita_acara_pada), terlambat: b.status !== 'selesai' && b.jadwal.getTime() < awalHari.getTime(),
         }));
@@ -187,7 +187,7 @@ export function buatLayananPdp({ repo, audit, sekarang = () => new Date() }) {
             const r = await repo.daftarDpia(h, u);
             const hariIni = awalHariWib(sekarang());
             return halaman(r.baris.map((b) => ({
-                id: b.id, pemrosesan: b.pemrosesan, ropa_id: b.ropa_id, ropa_nama: b.ropa_id ? r.ropa.get(b.ropa_id) ?? null : null, risiko: b.risiko, mitigasi: b.mitigasi, saran_ppdp: b.saran_ppdp, tinjau_ulang_pada: tgl(b.tinjau_ulang_pada),
+                id: b.id, pemrosesan: b.pemrosesan, ropa_id: b.ropa_id, ropa_nama: b.ropa_id ? r.ropa.get(b.ropa_id) ?? null : null, risiko: b.risiko, mitigasi: b.mitigasi, saran_ppdp: b.saran_ppdp, tinjau_ulang_pada: tglIso(b.tinjau_ulang_pada),
                 ditinjau_pada: iso(b.ditinjau_pada), jatuh_tempo: b.tinjau_ulang_pada.getTime() < hariIni.getTime(), diperbarui_pada: b.diperbarui_pada.toISOString(),
             })), h, u, r.total);
         },

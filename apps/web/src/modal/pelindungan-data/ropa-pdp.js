@@ -1,6 +1,6 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { simpanRopa } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { bidang, tombol } from '../../komponen/ui/primitif.js';
@@ -47,7 +47,7 @@ export function bukaRopaPdp({ ropa = null, onTutup, onSelesai }) {
     dicoba = true; if (memproses) return; const g = validasi(), masalah = langkahBermasalahRopa(g); if (masalah >= 0) { modal.ke(masalah); return; }
     memproses = true; modal.perbarui({ labelKirim: PDP.menyimpan, nonaktif: true, galat: '' });
     try { await simpanRopa(ropa?.id ?? null, k); if (!aktif) return; selesai = true; const p = document.createElement('p'); p.style.margin = '0'; p.textContent = R.hasilPesan; modal.hasil({ judul: R.hasilJudul, isi: p, aksi: [tombol(TOMBOL.tutup, onSelesai)] }); }
-    catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : R.gagal }); }
+    catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, R.gagal)}); }
     finally { if (aktif) { memproses = false; modal.perbarui({ labelKirim: R.simpan, nonaktif: false }); } }
   }
   return () => { aktif = false; modal.tutup(); };

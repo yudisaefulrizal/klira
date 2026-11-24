@@ -1,6 +1,6 @@
 import { PENUNJANG } from '@klira/shared';
 import { daftarMasterPemeriksaan, ubahMasterPemeriksaan } from '../../api-klien/penunjang.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -19,9 +19,9 @@ export function pasangTabMasterPemeriksaan(wadah) {
   function jadwal() { clearTimeout(timer); const id = ++urut; timer = setTimeout(() => muat(id), 250); }
   async function muat(id) { try { const data = await daftarMasterPemeriksaan({ cari }); if (!aktif || id !== urut) return; status.replaceChildren(); table.tbody.replaceChildren(); for (const m of data) {
     const kode = sel(m.kode); kode.style.fontWeight = token.huruf.berat.tebal; const aksi = sel(); aksi.style.textAlign = 'right';
-    if (boleh('penunjang', 'perbaikan')) { const row = document.createElement('div'); Object.assign(row.style, { display: 'flex', gap: token.jarak.sm, justifyContent: 'flex-end' }); row.append(tombol(M.ubah, () => buka(m), 'teks'), tombol(m.aktif ? M.nonaktifkan : M.aktifkan, async () => { try { await ubahMasterPemeriksaan(m.id, { aktif: !m.aktif }); if (aktif) jadwal(); } catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : M.gagalMuat)); } }, 'teks')); aksi.append(row); }
+    if (boleh('penunjang', 'perbaikan')) { const row = document.createElement('div'); Object.assign(row.style, { display: 'flex', gap: token.jarak.sm, justifyContent: 'flex-end' }); row.append(tombol(M.ubah, () => buka(m), 'teks'), tombol(m.aktif ? M.nonaktifkan : M.aktifkan, async () => { try { await ubahMasterPemeriksaan(m.id, { aktif: !m.aktif }); if (aktif) jadwal(); } catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, M.gagalMuat))); } }, 'teks')); aksi.append(row); }
     const rujukan = m.rujukan_teks ?? (m.rujukan_min !== null || m.rujukan_maks !== null ? `${m.rujukan_min ?? ''} - ${m.rujukan_maks ?? ''}` : '-');
     table.tbody.append(baris(kode, sel(m.nama), sel(m.kode_loinc ?? '-'), sel(m.satuan ?? '-'), sel(rujukan), sel(m.tarif ? rupiahAtau(m.tarif.harga_umum) : M.tanpaTarif), sel(lencana(m.aktif ? M.aktif : M.nonaktif, m.aktif ? 'hijau' : 'abu')), aksi));
-  } kosong.hidden = !!data.length; kosong.textContent = data.length ? '' : M.kosong; } catch (e) { if (aktif && id === urut) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : M.gagalMuat)); } }
+  } kosong.hidden = !!data.length; kosong.textContent = data.length ? '' : M.kosong; } catch (e) { if (aktif && id === urut) status.replaceChildren(peringatan(pesanGalat(e, M.gagalMuat))); } }
   jadwal(); return { tutup() { aktif = false; urut++; clearTimeout(timer); modal?.tutup(); el.remove(); } };
 }

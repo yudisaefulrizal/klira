@@ -1,5 +1,5 @@
 import { PROFIL_KLINIK } from '@klira/shared';
-const kosongJadiNull = (v) => (v === undefined || v === null || v.trim() === '' ? null : v.trim());
+import { kosongJadiNull } from '../../../umum/nilai.js';
 const tgl = (v) => (v ? new Date(v).toISOString().slice(0, 10) : null);
 const LABEL = {
     nama: PROFIL_KLINIK.nama, jenis: PROFIL_KLINIK.jenis, bentuk_usaha: PROFIL_KLINIK.bentukUsaha, kode_registrasi: PROFIL_KLINIK.kodeRegistrasi,

@@ -4,7 +4,7 @@ import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { navigasi } from '../../util/navigasi/navigasi.js';
 import { ambilPapan } from '../../api-klien/rawat-inap.js';
 import { buatMaster, hapusMaster, ubahAktifMaster, ubahMaster } from '../../api-klien/master.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { token } from '../../gaya/token.js';
 import { bukaAdmisiRawatInap } from '../../modal/rawat-inap/admisi-rawat-inap.js';
@@ -69,7 +69,7 @@ export function HalamanRawatInap() {
       async onYa() {
         konf.perbarui({ memproses: true });
         try { await hapusMaster(jenis, id); konf.tutup(); status.replaceChildren(); void muat(); }
-        catch (e) { konf.tutup(); status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : RAWAT_INAP.gagalMuat)); }
+        catch (e) { konf.tutup(); status.replaceChildren(peringatan(pesanGalat(e, RAWAT_INAP.gagalMuat))); }
       },
     });
   }
@@ -89,7 +89,7 @@ export function HalamanRawatInap() {
       baris.append(tombol('Ubah', () => { editBedId = editBedId === r.id ? null : r.id; lukisPapan(); }, 'teks'));
       baris.append(tombol(r.status === 'tidak_operasional' ? 'Aktifkan' : 'Nonaktifkan', async () => {
         try { await ubahAktifMaster('bed', r.id, r.status === 'tidak_operasional'); status.replaceChildren(); void muat(); }
-        catch (e) { status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : RAWAT_INAP.gagalMuat)); }
+        catch (e) { status.replaceChildren(peringatan(pesanGalat(e, RAWAT_INAP.gagalMuat))); }
       }, 'teks'));
       baris.append(tombol('Hapus', () => hapusItem('bed', r.id, r.bed), 'teks'));
     }
@@ -147,7 +147,7 @@ export function HalamanRawatInap() {
         else await buatMaster('ruang', beban);
         formTambahKamar = false; editKamarId = null; status.replaceChildren(); void muat();
       } catch (err) {
-        status.replaceChildren(peringatan(err instanceof GalatApi ? err.message : RAWAT_INAP.gagalMuat));
+        status.replaceChildren(peringatan(pesanGalat(err, RAWAT_INAP.gagalMuat)));
       } finally { proses = false; btnSimpan.disabled = false; }
     });
     form.append(fNama, fHarga, btnSimpan, btnBatal);
@@ -171,7 +171,7 @@ export function HalamanRawatInap() {
         await buatMaster('bed', { nama, induk_id: Number(ruangId), status_operasional: 'O' });
         tambahBedDiKamarId = null; status.replaceChildren(); void muat();
       } catch (err) {
-        status.replaceChildren(peringatan(err instanceof GalatApi ? err.message : RAWAT_INAP.gagalMuat));
+        status.replaceChildren(peringatan(pesanGalat(err, RAWAT_INAP.gagalMuat)));
       } finally { proses = false; btnSimpan.disabled = false; }
     });
     form.append(fNama, btnSimpan, btnBatal);
@@ -200,7 +200,7 @@ export function HalamanRawatInap() {
             await ubahMaster('bed', r.id, { nama, induk_id: Number(kamar.id), status_operasional: r.status === 'tidak_operasional' ? 'U' : 'O' });
             editBedId = null; status.replaceChildren(); void muat();
           } catch (err) {
-            status.replaceChildren(peringatan(err instanceof GalatApi ? err.message : RAWAT_INAP.gagalMuat));
+            status.replaceChildren(peringatan(pesanGalat(err, RAWAT_INAP.gagalMuat)));
           } finally { proses = false; }
         };
         const batalBed = () => { editBedId = null; lukisPapan(); };
@@ -312,7 +312,7 @@ export function HalamanRawatInap() {
     if (!boleh('klinis', 'lihat')) return; const saat = ++versi;
     try {
       const papan = await ambilPapan(); if (!aktif || saat !== versi) return; status.replaceChildren(); papanTerakhir = papan; lukisPapan();
-    } catch (e) { if (aktif && saat === versi) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : RAWAT_INAP.gagalMuat)); }
+    } catch (e) { if (aktif && saat === versi) status.replaceChildren(peringatan(pesanGalat(e, RAWAT_INAP.gagalMuat))); }
   }
   void muat();
   // Halaman ini tidak memakai query; perubahan alamat (mis. kembali dari lapisan modal) tidak membangun ulang halaman dan menutup modalnya.

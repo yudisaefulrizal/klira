@@ -1,5 +1,5 @@
 import { BAGIAN_SOAPIE, alergiTercatat, FARMASI, GALAT, KESADARAN, KLINIS, LABEL_NARASI, MAKS_NARASI, PENUNJANG, PROFIL_PASIEN, RAWAT_INAP, REKAM_MEDIS, STATUS_PENGESAHAN, STATUS_RESEP, TANDA_VITAL } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { ambilKlinis, ambilKonteksKlinis, selesaikanPemeriksaan, simpanBagian } from '../../api-klien/klinis.js';
 import { tambahCatatanHarian } from '../../api-klien/rawat-inap.js';
 import { aksiAntrean, opsiKunjungan, ubahDpjpKunjungan } from '../../api-klien/kunjungan.js';
@@ -46,7 +46,6 @@ import { buatDrafOtomatis } from '../../util/draf/draf-otomatis.js';
 const T = PROFIL_PASIEN;
 const buat = (tag, kelas, teks) => { const el = document.createElement(tag); if (kelas) el.className = kelas; if (teks !== undefined) el.textContent = teks; return el; };
 const redup = (teks) => { const el = buat('p', 'profil-redup', teks); return el; };
-const pesanGalat = (e, bawaan) => (e instanceof GalatApi ? e.message : bawaan);
 
 /**
  * Panel kanan halaman Pasien untuk satu kunjungan: catatan pemeriksaan SOAPIE (isi dan sahkan selama pemeriksaan berjalan, baca saja

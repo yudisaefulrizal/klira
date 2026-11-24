@@ -1,5 +1,5 @@
 import { PENUNJANG, TOMBOL } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { buatMasterPemeriksaan, ubahMasterPemeriksaan } from '../../api-klien/penunjang.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
@@ -22,6 +22,6 @@ export function bukaMasterPemeriksaan({ master, onTutup, onSelesai }) {
   form.append(ligne('kode', 'nama'), loinc, ligne('jenis_spesimen', 'satuan'), ligne('rujukan_min', 'rujukan_maks'), champ('rujukan_teks'), ligne('harga_umum', 'harga_jkn'), KotakCentang({ id: 'mp-aktif', label: M.bidang.aktif, checked: k.aktif, onChange(e) { k = { ...k, aktif: e.target.checked }; } }));
   function erreurs() { const g = galatMasterPemeriksaan(k); for (const [nom, f] of controls) f.setGalat(dicoba ? g[nom] : undefined); loinc.perbarui({ galat: dicoba ? g.kode_loinc : undefined }); }
   const simpan = tombol(TOMBOL.simpan, kirim);
-  async function kirim() { dicoba = true; erreurs(); if (proses || Object.keys(galatMasterPemeriksaan(k)).length) return; proses = true; simpan.disabled = true; simpan.textContent = PENUNJANG.order.memesan; status.replaceChildren(); try { if (master) await ubahMasterPemeriksaan(master.id, perubahanMaster(awal, k)); else await buatMasterPemeriksaan(bentukMasterPemeriksaan(k)); if (aktif) { bersih(); onSelesai(); } } catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : M.gagalMuat)); } finally { proses = false; simpan.disabled = false; simpan.textContent = TOMBOL.simpan; } }
+  async function kirim() { dicoba = true; erreurs(); if (proses || Object.keys(galatMasterPemeriksaan(k)).length) return; proses = true; simpan.disabled = true; simpan.textContent = PENUNJANG.order.memesan; status.replaceChildren(); try { if (master) await ubahMasterPemeriksaan(master.id, perubahanMaster(awal, k)); else await buatMasterPemeriksaan(bentukMasterPemeriksaan(k)); if (aktif) { bersih(); onSelesai(); } } catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, M.gagalMuat))); } finally { proses = false; simpan.disabled = false; simpan.textContent = TOMBOL.simpan; } }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); modal.isi.append(status, form); modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), simpan); modal.fokus(); return { tutup: bersih };
 }

@@ -1,6 +1,6 @@
 import { GALAT, PENGGUNA, STATUS_AKUN, STATUS_PENGGUNA } from '@klira/shared';
 import { daftarPengguna, ubahAktifPengguna } from '../../api-klien/pengguna.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { baris, sel, tombol, lencana, bidang } from '../../komponen/ui/primitif.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
@@ -30,7 +30,7 @@ export function pasangTabPengguna(wadah, { search, ubahAlamat }) {
     ui.kosongkan(hasil && !hasil.data.length, PENGGUNA.kosong); ui.nav.replaceChildren();
     if (hasil && hasil.total > hasil.ukuran) { const n = Math.max(1, Math.ceil(hasil.total / hasil.ukuran)), nav = document.createElement('div'), sebelumnya = tombol(PENGGUNA.sebelumnya, () => terapkan({ halaman: keadaan.halaman - 1 }), 'sekunder'), berikut = tombol(PENGGUNA.berikutnya, () => terapkan({ halaman: keadaan.halaman + 1 }), 'sekunder'), angka = document.createElement('span'); Object.assign(nav.style, { display: 'flex', alignItems: 'center', gap: token.jarak.md, padding: token.jarak.md, justifyContent: 'flex-end' }); sebelumnya.disabled = keadaan.halaman <= 1; berikut.disabled = keadaan.halaman >= n; angka.textContent = `${keadaan.halaman} / ${n}`; nav.append(sebelumnya, angka, berikut); ui.nav.append(nav); }
   }
-  async function muat() { const saat = ++versi; try { const h = await daftarPengguna({ cari: keadaan.cari, status: keadaan.status, halaman: keadaan.halaman, ukuran: 20 }); if (aktif && saat === versi) { hasil = h; ui.galat(null); tampil(); } } catch (e) { if (aktif && saat === versi) ui.galat(e instanceof GalatApi ? e.message : PENGGUNA.gagalMuat); } }
-  async function ubahAktif(p) { try { await ubahAktifPengguna(p.id, !p.aktif); if (!aktif) return; if (hasil) hasil = { ...hasil, data: hasil.data.map(x => x.id === p.id ? { ...x, aktif: !p.aktif } : x) }; ui.galat(null); tampil(); } catch (e) { if (aktif) ui.galat(e instanceof GalatApi ? e.message : GALAT.umum); } }
+  async function muat() { const saat = ++versi; try { const h = await daftarPengguna({ cari: keadaan.cari, status: keadaan.status, halaman: keadaan.halaman, ukuran: 20 }); if (aktif && saat === versi) { hasil = h; ui.galat(null); tampil(); } } catch (e) { if (aktif && saat === versi) ui.galat(pesanGalat(e, PENGGUNA.gagalMuat)); } }
+  async function ubahAktif(p) { try { await ubahAktifPengguna(p.id, !p.aktif); if (!aktif) return; if (hasil) hasil = { ...hasil, data: hasil.data.map(x => x.id === p.id ? { ...x, aktif: !p.aktif } : x) }; ui.galat(null); tampil(); } catch (e) { if (aktif) ui.galat(pesanGalat(e, GALAT.umum)); } }
   void muat(); return { muat, perbaruiAlamat(baru) { clearTimeout(timer); const lama = JSON.stringify(keadaan); keadaan = keadaanDariQuery(baru); cari.kontrol.value = keadaan.cari; status.kontrol.value = keadaan.status; if (lama !== JSON.stringify(keadaan)) { tampil(); void muat(); } }, tutup() { aktif = false; versi++; clearTimeout(timer); tutup(); wadah.replaceChildren(); } };
 }

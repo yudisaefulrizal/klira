@@ -1,5 +1,5 @@
 import { LABEL_BENTUK_PERSETUJUAN, PERSETUJUAN_TINDAKAN, TOMBOL } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { catatPersetujuanTindakan, siapPersetujuanTindakan } from '../../api-klien/persetujuan.js';
 import { token } from '../../gaya/token.js';
 import { AreaTeks } from '../../komponen/ui/area-teks.js';
@@ -239,7 +239,7 @@ export function bukaPersetujuanTindakan({ kunjunganId, pasien, onTutup, onSelesa
         }
         catch (e) {
             if (aktif)
-                galat = e instanceof GalatApi ? e.message : P.galat.kunjunganTidakAda;
+                galat = pesanGalat(e, P.galat.kunjunganTidakAda);
         }
         finally {
             memproses = false;
@@ -257,7 +257,7 @@ export function bukaPersetujuanTindakan({ kunjunganId, pasien, onTutup, onSelesa
         }
     }).catch(e => {
         if (aktif) {
-            galat = e instanceof GalatApi ? e.message : P.galat.kunjunganTidakAda;
+            galat = pesanGalat(e, P.galat.kunjunganTidakAda);
             update();
         }
     });

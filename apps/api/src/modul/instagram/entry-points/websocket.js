@@ -1,21 +1,13 @@
-import { WebSocketServer, WebSocket } from 'ws';
+import { asalSah, buatServerWs, kirimAman, pasangSiklus, terimaKlien, tolak } from '../../../umum/websocket.js';
 import { punyaIzin } from '@klira/shared';
 import { bacaCookie } from '../../../middleware/auth.js';
 import { NAMA_COOKIE_SESI } from '../../akses/domain/skema.js';
 import { dengarkanInstagram } from '../domain/kanal.js';
 const URL_HALAMAN = '/api/instagram/ws';
 export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 30000) {
-    const wss = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
+    const wss = buatServerWs();
     const klien = new Map();
-    const kirim = (ws, event) => {
-        if (ws.readyState !== WebSocket.OPEN)
-            return;
-        if (ws.bufferedAmount > 65536) {
-            ws.close(1013, 'Sambungkan ulang');
-            return;
-        }
-        ws.send(JSON.stringify({ tipe: event.tipe, baru: event.baru ?? false }));
-    };
+    const kirim = (ws, event) => kirimAman(ws, { tipe: event.tipe, baru: event.baru ?? false });
     const lepas = dengarkanInstagram((event) => {
         for (const [ws] of klien)
             kirim(ws, event);
@@ -30,46 +22,28 @@ export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 3
             return;
         socket.on('error', () => { });
         void (async () => {
-            const origin = req.headers.origin;
-            if (!origin ||
-                ![
-                    new URL(baseUrl).origin,
-                    `${req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http'}://${req.headers.host}`,
-                ].includes(origin)) {
-                socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+            if (!asalSah(req, baseUrl)) {
+                tolak(socket, '403 Forbidden');
                 return;
             }
             const idSesi = bacaCookie(req.headers.cookie, NAMA_COOKIE_SESI);
             const user = idSesi ? await sah(idSesi) : null;
             if (!idSesi || !user) {
-                socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+                tolak(socket, '401 Unauthorized');
                 return;
             }
-            wss.handleUpgrade(req, socket, head, (ws) => {
-                klien.set(ws, { idSesi, hidup: true });
-                ws.on('error', () => { });
-                ws.on('close', () => klien.delete(ws));
-                ws.on('pong', () => {
-                    const info = klien.get(ws);
-                    if (info)
-                        info.hidup = true;
-                });
-                // Browser hanya menerima notifikasi. Semua pembacaan/penulisan tetap melalui API berizin.
-                ws.on('message', () => ws.close(1008, 'Kanal hanya menerima pembaruan'));
-                kirim(ws, { tipe: 'siap' });
+            // Browser hanya menerima notifikasi. Semua pembacaan/penulisan tetap melalui API berizin.
+            terimaKlien(wss, klien, req, socket, head, { idSesi, hidup: true }, {
+                alasanTolakPesan: 'Kanal hanya menerima pembaruan',
+                siap: (ws) => kirim(ws, { tipe: 'siap' }),
             });
         })().catch(() => {
             socket.destroy();
         });
     };
-    server.on('upgrade', upgrade);
-    const timer = setInterval(() => {
-        for (const [ws, info] of klien) {
-            if (!info.hidup) {
-                ws.terminate();
-                continue;
-            }
-            info.hidup = false;
+    return pasangSiklus({
+        server, wss, klien, upgrade, heartbeatMs, lepas,
+        denyut: (ws, info) => {
             ws.ping();
             void sah(info.idSesi)
                 .then((p) => {
@@ -77,17 +51,6 @@ export function pasangWebsocketInstagram(server, akses, baseUrl, heartbeatMs = 3
                     ws.close(1008, 'Akses berakhir');
             })
                 .catch(() => ws.close(1011));
-        }
-    }, heartbeatMs);
-    timer.unref();
-    const tutup = () => {
-        clearInterval(timer);
-        lepas();
-        server.off('upgrade', upgrade);
-        for (const ws of wss.clients)
-            ws.terminate();
-        wss.close();
-    };
-    server.once('close', tutup);
-    return tutup;
+        },
+    });
 }

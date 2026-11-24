@@ -1,7 +1,7 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { detailPasien } from '../../api-klien/pasien.js';
 import { simpanInsiden } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
@@ -33,7 +33,7 @@ export function bukaInsidenPdp({ insiden = null, onTutup, onSelesai }) {
       const tambah = tombol(I.tambahPasien, async () => {
         if (pilih === null) return;
         try { const p = await detailPasien(pilih); if (!aktif) return; k.pasien = tambahPasienTerdampak(k, { id: p.id, nama: p.nama, nomor_rm: p.nomor_rm }).pasien; pilih = null; picker.perbarui({ pasienId: null }); tambah.disabled = true; daftar(); f.perbarui(); modal.perbarui(); }
-        catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : I.gagal }); }
+        catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, I.gagal)}); }
       }, 'sekunder'); tambah.disabled = pilih === null;
       const picker = PemilihPasien({ id: 'ins-pasien', pasienId: pilih, onPilih(id) { pilih = id; tambah.disabled = id === null; } }); f.simpanCleanup(() => picker.tutup());
       el.append(f.isian('data_terungkap', I.dataTerungkap, { id: 'ins-data', jenis: 'textarea', maxLength: 1000 }), judul, list, picker, tambah); daftar(); f.perbarui(); return el;
@@ -49,7 +49,7 @@ export function bukaInsidenPdp({ insiden = null, onTutup, onSelesai }) {
     dicoba = true; if (memproses) return; const g = f.perbarui(), masalah = langkahBermasalahInsiden(g); if (masalah >= 0) { modal.ke(masalah); return; }
     memproses = true; modal.perbarui({ labelKirim: PDP.menyimpan, nonaktif: true, galat: '' });
     try { await simpanInsiden(insiden?.id ?? null, bentukInsiden(k)); if (!aktif) return; selesai = true; const p = document.createElement('p'); p.style.margin = '0'; p.textContent = I.hasilPesan; modal.hasil({ judul: I.hasilJudul, isi: p, aksi: [tombol(TOMBOL.tutup, onSelesai)] }); }
-    catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : I.gagal }); }
+    catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, I.gagal)}); }
     finally { if (aktif) { memproses = false; modal.perbarui({ labelKirim: I.simpan, nonaktif: false }); } }
   }
   return () => { aktif = false; f.tutup(); modal.tutup(); };

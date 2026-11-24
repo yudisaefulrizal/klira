@@ -1,7 +1,7 @@
 import { GALAT, MODAL, REGISTRASI } from '@klira/shared';
 import { ringkasStatusIhs } from '../../halaman/satusehat/keadaan-satusehat.js';
 import { cekDuplikatPasien, registrasiPasien, teksGeneralConsent } from '../../api-klien/pasien.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -42,7 +42,7 @@ export function bukaRegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan 
     wadah.replaceChildren(enfant); update();
     if (id) { const f = document.getElementById(id); f?.focus(); if (start != null) try { f.setSelectionRange(start, end); } catch { /* tipe isian tanpa seleksi */ } }
   }
-  function cariDuplikat() { clearTimeout(timer); const saat = ++versi; kandidat = null; galatCari = null; mencari = bisaCariDuplikat(keadaan); if (!mencari) { paint(); return; } const masukan = isianCariDuplikat(keadaan); timer = setTimeout(async () => { try { const h = await cekDuplikatPasien(masukan); if (aktif && saat === versi) kandidat = h; } catch (e) { if (aktif && saat === versi) galatCari = e instanceof GalatApi ? e.message : REGISTRASI.duplikatGagal; } finally { if (aktif && saat === versi) { mencari = false; paint(); } } }, 500); }
+  function cariDuplikat() { clearTimeout(timer); const saat = ++versi; kandidat = null; galatCari = null; mencari = bisaCariDuplikat(keadaan); if (!mencari) { paint(); return; } const masukan = isianCariDuplikat(keadaan); timer = setTimeout(async () => { try { const h = await cekDuplikatPasien(masukan); if (aktif && saat === versi) kandidat = h; } catch (e) { if (aktif && saat === versi) galatCari = pesanGalat(e, REGISTRASI.duplikatGagal); } finally { if (aktif && saat === versi) { mencari = false; paint(); } } }, 500); }
   function ubah(p) { keadaan = { ...keadaan, ...p }; if (BIDANG_KUNCI_DUPLIKAT.some(b => b in p)) { if (keadaan.konfirmasi_duplikat && !('konfirmasi_duplikat' in p)) keadaan = { ...keadaan, konfirmasi_duplikat: false }; cariDuplikat(); } autosave(); paint(); }
   const fokusSalah = () => wadah.querySelector('[aria-invalid="true"]')?.focus();
   async function kirim() {
@@ -60,10 +60,10 @@ export function bukaRegistrasiPasien({ onTutup, onSelesai, onDaftarkanKunjungan 
       modal.judul.textContent = REGISTRASI.berhasilJudul; modal.setLebar('modalSedang'); modal.konteks.replaceChildren(); modal.isi.replaceChildren(el);
       modal.aksi.replaceChildren(tombol(REGISTRASI.selesai, tutup, 'sekunder'), tombol(REGISTRASI.daftarkanKunjungan, () => { bersih(); onDaftarkanKunjungan({ id: h.id, nama: h.nama, nomor_rm: h.nomor_rm }); }));
     } catch (e) {
-      if (aktif) { galat = e instanceof GalatApi ? e.message : GALAT.umum; if (e instanceof GalatApi && e.status === 409) cariDuplikat(); paint(); }
+      if (aktif) { galat = pesanGalat(e, GALAT.umum); if (e instanceof GalatApi && e.status === 409) cariDuplikat(); paint(); }
     } finally { memproses = false; if (aktif && !hasil) update(); }
   }
   modal.fokus(); autosave(); cariDuplikat(); paint();
-  teksGeneralConsent().then(t => { if (aktif) teks = t; }).catch(e => { if (aktif) galatTeks = e instanceof GalatApi ? e.message : REGISTRASI.consentGagal; }).finally(() => { if (aktif) { memuatTeks = false; paint(); } });
+  teksGeneralConsent().then(t => { if (aktif) teks = t; }).catch(e => { if (aktif) galatTeks = pesanGalat(e, REGISTRASI.consentGagal); }).finally(() => { if (aktif) { memuatTeks = false; paint(); } });
   return { tutup: bersih };
 }

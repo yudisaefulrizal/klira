@@ -1,6 +1,6 @@
 import { JENIS_AKUN } from '@klira/shared';
 import { buatJenisAkun, daftarIzin, ubahJenisAkun } from '../../api-klien/izin.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -44,8 +44,8 @@ export function bukaModalJenisAkun({ jenis, onTutup, onSelesai }) {
     dicoba = true; perbarui(); if (memproses || Object.keys(galatJenis(form, ubah)).length || ubah && !adaPerubahanJenis(awal, form)) return;
     memproses = true; pesan.replaceChildren(); perbarui();
     try { if (jenis) await ubahJenisAkun(jenis.id, bentukUbah(awal, form)); else await buatJenisAkun(bentukBuat(form)); if (aktif) onSelesai(); }
-    catch (e) { if (aktif) { pesan.append(peringatan(e instanceof GalatApi ? e.message : JENIS_AKUN.gagalSimpan)); memproses = false; perbarui(); } }
+    catch (e) { if (aktif) { pesan.append(peringatan(pesanGalat(e, JENIS_AKUN.gagalSimpan))); memproses = false; perbarui(); } }
   }
-  daftarIzin().then(k => { if (aktif) { katalog = k; daftar(); } }).catch(e => { if (aktif) pesan.append(peringatan(e instanceof GalatApi ? e.message : JENIS_AKUN.gagalMuatKatalog)); });
+  daftarIzin().then(k => { if (aktif) { katalog = k; daftar(); } }).catch(e => { if (aktif) pesan.append(peringatan(pesanGalat(e, JENIS_AKUN.gagalMuatKatalog))); });
   perbarui(); modal.fokus(); return () => { aktif = false; modal.tutup(); };
 }

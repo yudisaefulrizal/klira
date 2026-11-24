@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { filterLoinc, filterMasterPemeriksaan, filterRekapLab, GALAT, hasilMasukan, idParam, masterPemeriksaanMasukan, orderLabMasukan, spesimenMasukan, ubahMasterPemeriksaanMasukan, } from '@klira/shared';
+import { filterLoinc, filterMasterPemeriksaan, filterRekapLab, hasilMasukan, idParam, masterPemeriksaanMasukan, orderLabMasukan, spesimenMasukan, ubahMasterPemeriksaanMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /**
  * Rute penunjang (3.1, 3.3, 4.3). Order dipesan dokter (izin `klinis` input); ambil spesimen, hasil, validasi, dan master oleh analis lab (izin `penunjang`
  * input atau perbaikan); lihat boleh lewat `penunjang`, `klinis`, atau `rekam-medis`. Semua dibatasi pada fasyankes akun; tidak ada rute hapus.
@@ -12,9 +13,6 @@ export function buatRutePenunjang(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin, wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     const lihatOrder = wajibIzinSalahSatu(['penunjang', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat'], ['kasir', 'lihat'], ['kasir', 'input']);
     const pesanOrder = wajibIzin('klinis', 'input');
     // Master dibaca juga oleh pemesan order (pilih pemeriksaan).

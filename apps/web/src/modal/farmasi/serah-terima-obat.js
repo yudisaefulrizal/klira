@@ -1,6 +1,6 @@
 import { KASIR, STATUS_RESEP, TOMBOL } from '@klira/shared';
 import { resepKunjungan, serahkanObat } from '../../api-klien/farmasi.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, lencana, peringatan, kartu } from '../../komponen/ui/primitif.js';
@@ -37,11 +37,11 @@ export function buatSerahObat(kunjunganId, diizinkan = true, onUbah = () => {}, 
     if (galatSerah(serah)) { dicoba = true; kabari(); return; }
     memproses = true; galat = info = null; kabari();
     try { await serahkanObat(kunjunganId, bentukSerah(serah)); if (!aktif) return; berubah = true; kekurangan = []; serah = awalSerah(); dicoba = false; info = B.serahTercatat; await muat(); }
-    catch (e) { if (aktif) { if (e instanceof GalatApi && e.rincian?.length) kekurangan = e.rincian.map(r => r.pesan); galat = e instanceof GalatApi ? e.message : B.gagal; } }
+    catch (e) { if (aktif) { if (e instanceof GalatApi && e.rincian?.length) kekurangan = e.rincian.map(r => r.pesan); galat = pesanGalat(e, B.gagal); } }
     finally { memproses = false; kabari(); }
   }
   tampil();
-  if (diizinkan) muat().then(kabari).catch(e => { if (aktif) { galat = e instanceof GalatApi ? e.message : B.gagal; kabari(); } });
+  if (diizinkan) muat().then(kabari).catch(e => { if (aktif) { galat = pesanGalat(e, B.gagal); kabari(); } });
   return { isi, serahkan, get resep() { return resep; }, get adaKekurangan() { return kekurangan.length > 0; }, get bisaSerah() { return siap().length > 0 && !belum().length; }, get selesai() { return !!resep && !siap().length && !belum().length; }, get memproses() { return memproses; }, get berubah() { return berubah; }, get galat() { return galat; }, get info() { return info; }, tutup() { aktif = false; } };
 }
 

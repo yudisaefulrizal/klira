@@ -3,19 +3,14 @@ import { GALAT, idParam, konfigurasiSatusehatMasukan, lingkunganParam } from '@k
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-function galatValidasi(res, e) {
-    res.status(400).json({
-        galat: { kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: e.issues.map((i) => ({ jalur: i.path.join('.'), pesan: i.message })) },
-    });
-}
+import { bungkus, pengguna } from '../../../umum/rute.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 const status = { tidak_valid: 400, belum_lengkap: 409 };
 /** Rute koneksi SATUSEHAT: lihat butuh `satusehat` lihat; simpan, aktifkan, dan uji butuh `satusehat` perbaikan. Rahasia tidak pernah dikembalikan. */
 export function buatRuteSatusehat(layananAkses, layananIzin, layanan, sinkronIhs) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin, wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     const jawab = (res, h) => {
         if (h.ok)
             return void res.json({ data: h.data });

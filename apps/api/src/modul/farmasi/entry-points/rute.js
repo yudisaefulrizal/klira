@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { filterKfa, filterMasterObat, filterRiwayatObat, GALAT, idParam, masterObatMasukan, mutasiStokMasukan, resepMasukan, serahTerimaMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
+import { filterKfa, filterMasterObat, filterRiwayatObat, idParam, masterObatMasukan, mutasiStokMasukan, resepMasukan, serahTerimaMasukan, telaahMasukan, ubahMasterObatMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /**
  * Rute Farmasi (3.1, 3.3, 4.3): master obat tertaut KFA, stok sederhana, resep dari dokter (izin `resep`), telaah dan siapkan oleh apoteker (izin `farmasi`).
  * Semua dibatasi pada fasyankes akun; tidak ada rute hapus (obat dinonaktifkan, mutasi hanya ditambah).
@@ -12,9 +13,6 @@ export function buatRuteFarmasi(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin, wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     // Master dibaca apoteker yang mengisi item resep saat telaah (dan dokter berizin resep).
     const bacaMaster = wajibIzinSalahSatu(['farmasi', 'lihat'], ['farmasi', 'input'], ['resep', 'input']);
     const lihatResep = wajibIzinSalahSatu(['farmasi', 'lihat'], ['farmasi', 'input'], ['resep', 'lihat'], ['klinis', 'lihat'], ['rekam-medis', 'lihat']);

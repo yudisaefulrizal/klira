@@ -1,5 +1,5 @@
 import { ambilWilayah, cariWilayah, ingatWilayah } from '../../api-klien/wilayah.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bidang } from '../ui/primitif.js';
 export function tampilkanNamaWilayah(kode, berubah) {
@@ -16,7 +16,7 @@ export function PencarianWilayah(awal) {
   el.append(input.el, setelah);
   function namaWilayah() { lepasNama?.(); lepasNama = tampilkanNamaWilayah(props.value, n => { nama = n; tampil(); }); }
   function pilih(w) { ingatWilayah(w); props.value = w.kode; props.onChange(w.kode); kata = ''; terbuka = false; pilihan = -1; hasil = { data: [], lebih_banyak: false }; namaWilayah(); tampil(); }
-  function cari() { clearTimeout(timer); const saat = ++versi; if (props.value || kata.trim().length < 2) return; timer = setTimeout(async () => { mencari = true; tampil(); try { const h = await cariWilayah(kata.trim()); if (aktif && saat === versi) hasil = h; } catch (e) { if (aktif && saat === versi) gagal = e instanceof GalatApi ? e.message : 'Pencarian wilayah gagal.'; } finally { if (aktif && saat === versi) { mencari = false; tampil(); } } }, 300); }
+  function cari() { clearTimeout(timer); const saat = ++versi; if (props.value || kata.trim().length < 2) return; timer = setTimeout(async () => { mencari = true; tampil(); try { const h = await cariWilayah(kata.trim()); if (aktif && saat === versi) hasil = h; } catch (e) { if (aktif && saat === versi) gagal = pesanGalat(e, 'Pencarian wilayah gagal.'); } finally { if (aktif && saat === versi) { mencari = false; tampil(); } } }, 300); }
   function tampil() {
     input.kontrol.value = props.value ? nama : kata; input.setGalat(props.galat); input.kontrol.setAttribute('aria-expanded', String(terbuka && !props.value && hasil.data.length > 0)); if (terbuka && pilihan >= 0) input.kontrol.setAttribute('aria-activedescendant', `${props.id}-opsi-${pilihan}`); else input.kontrol.removeAttribute('aria-activedescendant'); setelah.replaceChildren();
     if (props.value) { const clear = document.createElement('button'); clear.type = 'button'; clear.textContent = 'Hapus pilihan wilayah'; clear.style.alignSelf = 'flex-start'; clear.addEventListener('click', () => { props.value = ''; props.onChange(''); kata = ''; mencari = false; gagal = null; tampil(); }); setelah.append(clear); }

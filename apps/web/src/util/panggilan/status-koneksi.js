@@ -1,13 +1,11 @@
+import { sambungkanKanalWs } from '../ws/kanal-ws.js';
+
 /** Pemantau tidak dihitung sebagai layar publik yang sedang tersambung. */
 export function pantauStatusKoneksi(fasilitas, opsi) {
     const ambil = opsi.ambil ?? fetch;
-    const buatSocket = opsi.buatSocket ?? (url => new WebSocket(url));
-    let aktif = true, memeriksa = false, jeda = 1000;
-    let socket;
+    let aktif = true, memeriksa = false;
     let pengontrol;
     let timerServer;
-    let timerSocket;
-    let timerHidup;
     async function periksaServer() {
         if (!aktif || memeriksa)
             return;
@@ -32,86 +30,38 @@ export function pantauStatusKoneksi(fasilitas, opsi) {
                 timerServer = setTimeout(() => void periksaServer(), 15000);
         }
     }
-    function awasi(ms = 45000) {
-        clearTimeout(timerHidup);
-        timerHidup = setTimeout(() => { if (socket)
-            putus(socket); }, ms);
-    }
-    function putus(lama) {
-        if (!aktif || socket !== lama)
-            return;
-        socket = undefined;
-        lama.onmessage = null;
-        lama.onclose = null;
-        lama.onerror = null;
-        lama.close();
-        clearTimeout(timerHidup);
-        opsi.layar({ status: 'tidak-diketahui', jumlah: null });
-        void periksaServer();
-        clearTimeout(timerSocket);
-        timerSocket = setTimeout(hubungkan, jeda);
-        jeda = Math.min(jeda * 2, 15000);
-    }
-    function hubungkan() {
-        if (!aktif || !fasilitas)
-            return;
-        try {
-            const url = new URL(`/api/publik/layar-panggilan/${fasilitas}/ws?pemantau=1`, opsi.asal);
-            url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-            const baru = buatSocket(url.href);
-            socket = baru;
-            awasi(10000);
-            baru.onmessage = event => {
-                if (!aktif || socket !== baru)
-                    return;
-                try {
-                    const pesan = JSON.parse(String(event.data));
-                    if (pesan.tipe === 'siap') {
-                        jeda = 1000;
-                        awasi();
-                    }
-                    else if (pesan.tipe === 'hidup')
-                        awasi();
-                    else if (pesan.tipe === 'antrean') {
-                        awasi();
-                        opsi.antrean?.();
-                    }
-                    else if (pesan.tipe === 'layar' && Number.isSafeInteger(pesan.jumlah) && pesan.jumlah >= 0) {
-                        awasi();
-                        opsi.layar({ status: pesan.jumlah ? 'terhubung' : 'tidak-ada', jumlah: pesan.jumlah });
-                    }
-                }
-                catch {
-                    putus(baru);
-                }
-            };
-            baru.onclose = () => putus(baru);
-            baru.onerror = () => putus(baru);
-        }
-        catch {
+    const kanal = fasilitas ? () => sambungkanKanalWs({
+        path: `/api/publik/layar-panggilan/${fasilitas}/ws?pemantau=1`,
+        asal: opsi.asal,
+        buatSocket: opsi.buatSocket,
+        putusSaatGalat: true,
+        saatPutus() {
             opsi.layar({ status: 'tidak-diketahui', jumlah: null });
-            timerSocket = setTimeout(hubungkan, jeda);
-            jeda = Math.min(jeda * 2, 15000);
-        }
-    }
+            void periksaServer();
+        },
+        saatGagalBuat: () => opsi.layar({ status: 'tidak-diketahui', jumlah: null }),
+        saatPesan(pesan, awasi) {
+            if (pesan.tipe === 'antrean') {
+                awasi();
+                opsi.antrean?.();
+            }
+            else if (pesan.tipe === 'layar' && Number.isSafeInteger(pesan.jumlah) && pesan.jumlah >= 0) {
+                awasi();
+                opsi.layar({ status: pesan.jumlah ? 'terhubung' : 'tidak-ada', jumlah: pesan.jumlah });
+            }
+        },
+    }) : null;
     opsi.server('memeriksa');
     opsi.layar({ status: fasilitas ? 'memeriksa' : 'tanpa-fasilitas', jumlah: null });
     void periksaServer();
-    hubungkan();
+    const sambungan = kanal?.();
     return {
         periksaServer,
         tutup() {
             aktif = false;
             clearTimeout(timerServer);
-            clearTimeout(timerSocket);
-            clearTimeout(timerHidup);
             pengontrol?.abort();
-            if (socket) {
-                socket.onmessage = null;
-                socket.onclose = null;
-                socket.onerror = null;
-                socket.close();
-            }
+            sambungan?.tutup();
         },
     };
 }

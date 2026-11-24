@@ -1,6 +1,6 @@
 import { KASIR } from '@klira/shared';
 import { ubahHargaItem } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -28,7 +28,7 @@ export function bukaUbahHarga({ kunjunganId, item, onTutup, onUbah }) {
     dicoba = true; tampilGalat(); if (proses || Object.keys(galatUbahHarga(harga, alasan, item.harga)).length) return;
     proses = true; batal.disabled = simpan.disabled = true; simpan.textContent = U.menyimpan; status.replaceChildren();
     try { const g = await ubahHargaItem(kunjunganId, item.id, harga.trim(), alasan.trim()); if (aktif) { tersimpan = true; aktif = false; modal.tutup(); onUbah(g); } }
-    catch (e) { if (aktif) { status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KASIR.bayar.gagal)); proses = false; batal.disabled = simpan.disabled = false; simpan.textContent = U.simpan; } }
+    catch (e) { if (aktif) { status.replaceChildren(peringatan(pesanGalat(e, KASIR.bayar.gagal))); proses = false; batal.disabled = simpan.disabled = false; simpan.textContent = U.simpan; } }
   }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); modal.isi.append(status, form); modal.aksi.append(batal, simpan); modal.fokus();
   return { tutup() { aktif = false; modal.tutup(); } };

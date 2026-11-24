@@ -1,6 +1,6 @@
 import { REKAM_MEDIS } from '@klira/shared';
 import { daftarPenyampaian } from '../../api-klien/dokumen-rm.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -19,6 +19,6 @@ export function TabPenyampaian() {
   async function muat() { const saat = ++version; try { const h = await daftarPenyampaian({ cari: terapan.cari, halaman: terapan.halaman, ukuran: 20 }); if (!actif || saat !== version) return; status.replaceChildren();  table.tbody.replaceChildren();
     for (const q of h.data) { const patient = sel(), nom = document.createElement('div'), rm = document.createElement('small'); nom.textContent = q.pasien_nama; nom.style.fontWeight = token.huruf.berat.tebal; rm.textContent = q.pasien_nomor_rm; rm.style.color = token.warna.teksRedup; patient.append(nom, rm);  table.tbody.append(baris(patient, sel(`${q.penerima_nama} (${P.hubunganLabel[q.hubungan]})`), sel(P.bentukLabel[q.bentuk]), sel(q.bukti_persetujuan ?? '-'), sel(q.petugas_nama ?? '-'), sel(formatWaktu(q.waktu)))); }
     vide.hidden = !!h.data.length; vide.textContent = h.data.length ? '' : P.kosong; vide.style.padding = token.jarak.md; pages.replaceChildren(); const p = paginasi(terapan.halaman, h.total, h.ukuran, n => { terapan = { ...terapan, halaman: n }; void muat(); }); if (p) pages.append(p);
-  } catch (e) { if (actif && saat === version) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : REKAM_MEDIS.dok.gagalMuat)); } }
+  } catch (e) { if (actif && saat === version) status.replaceChildren(peringatan(pesanGalat(e, REKAM_MEDIS.dok.gagalMuat))); } }
   el.tutup = () => { actif = false; version++; modal?.tutup(); }; void muat(); return el;
 }

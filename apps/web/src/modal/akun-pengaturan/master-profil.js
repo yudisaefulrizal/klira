@@ -1,7 +1,7 @@
 import { MASTER, MODAL } from '@klira/shared';
 import { cariTerminologi } from '../../api-klien/klinis.js';
 import { buatMaster, opsiMaster, ubahMaster } from '../../api-klien/master.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { PencarianKode } from '../../komponen/pencarian/kode/pencarian-kode.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
@@ -53,8 +53,8 @@ export function bukaModalMasterProfil({ jenis, baris, awalan, tetap = [], ringka
     e.preventDefault(); dicoba = true; perbarui(); if (memproses || Object.keys(galatMaster(jenis, nilai, ubah)).length || ubah && !masterBerubah(awal, nilai)) return;
     memproses = true; pesan.replaceChildren(); perbarui();
     try { const masukan = bentukMasukan(jenis, nilai, ubah); if (baris) await ubahMaster(jenis, baris.id, masukan); else await buatMaster(jenis, masukan); if (aktif) onSelesai(); }
-    catch (e) { if (aktif) { pesan.append(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalSimpan)); memproses = false; perbarui(); } }
+    catch (e) { if (aktif) { pesan.append(peringatan(pesanGalat(e, MASTER.gagalSimpan))); memproses = false; perbarui(); } }
   });
-  for (const sumber of new Set(definisi.flatMap(b => b.rujukan ? [b.rujukan] : []))) opsiMaster(sumber).then(o => { if (aktif) { opsi[sumber] = o; perbarui(); } }).catch(e => { if (aktif) pesan.replaceChildren(peringatan(e instanceof GalatApi ? e.message : MASTER.gagalMuatPilihan)); });
+  for (const sumber of new Set(definisi.flatMap(b => b.rujukan ? [b.rujukan] : []))) opsiMaster(sumber).then(o => { if (aktif) { opsi[sumber] = o; perbarui(); } }).catch(e => { if (aktif) pesan.replaceChildren(peringatan(pesanGalat(e, MASTER.gagalMuatPilihan))); });
   perbarui(); modal.fokus(); return () => { aktif = false; for (const c of controls.values()) c.tutup(); modal.tutup(); };
 }

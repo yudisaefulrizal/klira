@@ -1,6 +1,6 @@
 import { AKSI_AUDIT, AUDIT, KEAMANAN, MODAL } from '@klira/shared';
 import { daftarAudit, eksporAudit } from '../../api-klien/audit.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { BAWAAN_AUDIT, bacaPenyaring, formatWaktu, penggunaIdSah, queryPenyaring, rentangTerbalik, saringanAudit, saringanEkspor, ubahPenyaring, totalHalaman } from '../../util/tab/penyaring-tab.js';
 import { unduhTeks } from '../../util/unduh.js';
 import { teksHtml as aman } from '../../util/teks-html.js';
@@ -42,14 +42,14 @@ export function pasangLogAudit(wadah, search, ubahAlamat) {
   async function muat() {
     const versi = ++permintaan;
     try { const baru = await daftarAudit(saringanAudit(keadaan, UKURAN)); if (!aktif || versi !== permintaan) return; hasil = baru; galat = null; daftar(); pesan(); }
-    catch (e) { if (aktif && versi === permintaan) { galat = e instanceof GalatApi ? e.message : AUDIT.gagalMuat; pesan(); } }
+    catch (e) { if (aktif && versi === permintaan) { galat = pesanGalat(e, AUDIT.gagalMuat); pesan(); } }
   }
   const pasang = nilai => ubahAlamat(queryPenyaring('audit', nilai, BAWAAN_AUDIT));
   async function ekspor() {
     if (mengekspor) return;
     mengekspor = true; galat = null; info = null; pesan();
     try { const csv = await eksporAudit(saringanEkspor(keadaan)); if (aktif) { unduhTeks(AUDIT.namaBerkas, csv); info = AUDIT.eksporBerhasil; } }
-    catch (e) { if (aktif) galat = e instanceof GalatApi ? e.message : AUDIT.eksporGagal; }
+    catch (e) { if (aktif) galat = pesanGalat(e, AUDIT.eksporGagal); }
     finally { mengekspor = false; if (aktif) pesan(); }
   }
   function detail(c) {

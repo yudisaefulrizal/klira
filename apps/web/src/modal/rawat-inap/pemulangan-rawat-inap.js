@@ -1,6 +1,6 @@
 import { DISPOSISI_PULANG, RAWAT_INAP, TOMBOL } from '@klira/shared';
 import { pulangkanPasien } from '../../api-klien/rawat-inap.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
@@ -91,7 +91,7 @@ export function bukaPemulanganRawatInap({ kunjunganId, pasien, onTutup, onSelesa
       modal.aksi.replaceChildren(...aksi);
       modal.setLebar('modalKecil');
     } catch (e) {
-      if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : P.gagal));
+      if (aktif) status.replaceChildren(peringatan(pesanGalat(e, P.gagal)));
     } finally {
       proses = false;
       if (aktif && !hasil) perbarui();

@@ -1,8 +1,8 @@
 import { batasAjukanUlang, batasPengajuan, berkasKurang, KLAIM, kodeKlaimBeda, sisaHariBatas, STATUS_KLAIM, statusAwalKlaim, statusKlaimEfektif, TRANSISI_KLAIM, unikPerKode, } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
 import { GalatKlaim } from '../data-access/repositori.js';
+import { awalHariWib } from '../../../umum/nilai.js';
 const G = KLAIM.galat;
-const tglDb = (t) => new Date(`${t}T00:00:00.000+07:00`);
 /**
  * Klaim JKN/BPJS FKTP (4.5, 7): siapkan klaim dari kunjungan JKN yang sudah ditutup (kode disalin dari rekam medis), kelola SEP dan berkas, dan ubah status
  * (ajukan, dikembalikan, ajukan ulang, ditolak, dibayar) dengan pagar batas 6 bulan dan batas ajukan ulang bulan berikutnya. Semua tercatat di audit dan riwayat status.
@@ -137,7 +137,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
             if (m.aksi === 'ditolak')
                 d.alasan = m.alasan;
             if (m.aksi === 'dibayar')
-                Object.assign(d, { jumlah_dibayar: m.jumlah_dibayar, dibayar_pada: tglDb(m.dibayar_pada) });
+                Object.assign(d, { jumlah_dibayar: m.jumlah_dibayar, dibayar_pada: awalHariWib(m.dibayar_pada) });
             try {
                 await repo.ubahStatus(id, k.status, t.ke, d, p.id, m.alasan ?? m.berita_acara ?? null);
                 if (m.aksi === 'dibayar' && keuangan?.catatJurnal && Number(m.jumlah_dibayar) > 0) {

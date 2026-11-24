@@ -1,8 +1,7 @@
 import * as db from '@klira/db';
 import { tulisPengesahanDalam } from './repositori.js';
-const tglIso = (d) => d.toISOString().slice(0, 10);
+import { tglIso, awalHariWib } from '../../../umum/nilai.js';
 const awalHariUtc = () => new Date(`${tglIso(new Date())}T00:00:00.000Z`);
-const rentangWib = (tanggal) => new Date(`${tanggal}T00:00:00.000+07:00`);
 /** Akses data dokumen Rekam medis: resume, surat, pembukaan, penyampaian, laporan. Hanya INSERT, dan UPDATE terkontrol atas resume dan keputusan pembukaan; tidak ada hapus. */
 export class RepositoriDokumenMysql {
     async pasien(id) {
@@ -102,13 +101,13 @@ export class RepositoriDokumenMysql {
         const sampai = f.sampai ?? tglIso(new Date(Date.now() + 7 * 3_600_000));
         const dari = f.dari ?? tglIso(new Date(new Date(`${sampai}T00:00:00Z`).getTime() - 29 * 86_400_000));
         if (f.jenis === 'kunjungan_per_poli') {
-            const g = await db.kelompokKunjunganUntukLaporan('ditutup', rentangWib(dari), new Date(rentangWib(sampai).getTime() + 86_400_000));
+            const g = await db.kelompokKunjunganUntukLaporan('ditutup', awalHariWib(dari), new Date(awalHariWib(sampai).getTime() + 86_400_000));
             const lokasi = new Map((await db.daftarLokasiUntukLaporan(g.flatMap((x) => (x.lokasi_id ? [x.lokasi_id] : [])))).map((l) => [l.id, l.nama]));
             const baris = g.map((x) => [x.lokasi_id ? lokasi.get(x.lokasi_id) ?? '-' : 'Tanpa poli', x._count._all]).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
             return { jenis: f.jenis, dari, sampai, kolom: ['Poli', 'Kunjungan'], baris, total: baris.reduce((s, b) => s + b[1], 0) };
         }
         // Diagnosis terbanyak: diagnosis utama dokter versi terakhir.
-        const ditutup = await db.daftarKunjunganUntukLaporan('ditutup', rentangWib(dari), new Date(rentangWib(sampai).getTime() + 86_400_000));
+        const ditutup = await db.daftarKunjunganUntukLaporan('ditutup', awalHariWib(dari), new Date(awalHariWib(sampai).getTime() + 86_400_000));
         const ids = ditutup.map((k) => k.id);
         const diag = await db.daftarDiagnosisUntukLaporan(ids, 'utama');
         const terakhir = new Map(diag.map((d) => [d.kunjungan_id, { kode: d.kode_icd10, nama: d.nama }]));

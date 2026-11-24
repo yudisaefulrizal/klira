@@ -1,6 +1,6 @@
 import { ATUR_IZIN, MODAL } from '@klira/shared';
 import { akhiriIzinAkun, akhiriPenugasan, aksesEfektif, beriIzinAkun, daftarIzin, daftarIzinAkun, daftarJenisAkun, daftarPenugasan, tugaskanJenis } from '../../api-klien/izin.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bukaPanelDetail } from '../../komponen/panel/panel-detail.js';
@@ -39,7 +39,7 @@ export function bukaAturIzin({ pengguna, onTutup }) {
     else { tertunda?.tutup(); tertunda = undefined; try { await muatData(); } catch { galat = ATUR_IZIN.gagalMuat; } berubah = true; sesudah(); }
     memproses = false; tertunda?.perbarui({ memproses: false, labelLanjut: MODAL.lanjutkanDenganAlasan }); tampil();
   }
-  async function bukaAkses() { try { const data = await aksesEfektif(pengguna.id); if (!aktif) return; akses?.tutup(); akses = bukaPanelDetail({ judul: ATUR_IZIN.aksesJudul, bagian: bagianAkses(data), onTutup() { akses.tutup(); akses = undefined; } }); } catch (e) { if (aktif) { galat = e instanceof GalatApi ? e.message : ATUR_IZIN.gagalMuat; tampil(); } } }
-  tampil(); modal.fokus(); muatData().catch(e => { if (aktif) galat = e instanceof GalatApi ? e.message : ATUR_IZIN.gagalMuat; }).finally(() => { if (aktif) { memuat = false; tampil(); } });
+  async function bukaAkses() { try { const data = await aksesEfektif(pengguna.id); if (!aktif) return; akses?.tutup(); akses = bukaPanelDetail({ judul: ATUR_IZIN.aksesJudul, bagian: bagianAkses(data), onTutup() { akses.tutup(); akses = undefined; } }); } catch (e) { if (aktif) { galat = pesanGalat(e, ATUR_IZIN.gagalMuat); tampil(); } } }
+  tampil(); modal.fokus(); muatData().catch(e => { if (aktif) galat = pesanGalat(e, ATUR_IZIN.gagalMuat); }).finally(() => { if (aktif) { memuat = false; tampil(); } });
   return () => { aktif = false; akses?.tutup(); tertunda?.tutup(); modal.tutup(); };
 }

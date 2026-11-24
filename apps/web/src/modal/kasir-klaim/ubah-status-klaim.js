@@ -1,5 +1,5 @@
 import { aksiKlaimTersedia, KLAIM, STATUS_KLAIM, TOMBOL } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { ubahStatusKlaim } from '../../api-klien/klaim.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
@@ -49,7 +49,7 @@ export function bukaUbahStatusKlaim({ klaim, onTutup, onSelesai }) {
     dicoba = true; tampilGalat(); if (sibuk || Object.keys(galatStatusKlaim(k)).length) return;
     sibuk = true; simpan.disabled = true; simpan.textContent = T.memproses; status.replaceChildren();
     try { await ubahStatusKlaim(klaim.id, bentukStatusKlaim(k)); if (!aktif) return; selesai = true; modal.isi.replaceChildren(peringatan(T.tersimpan, 'biru')); modal.aksi.replaceChildren(tombol(TOMBOL.tutup, tutup)); modal.setLebar('modalKecil'); }
-    catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : T.gagal)); }
+    catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, T.gagal))); }
     finally { sibuk = false; simpan.disabled = false; simpan.textContent = T.simpan; }
   }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); form.append(detail, pilihan, isian, riwayat); modal.isi.append(status, form); modal.aksi.append(batal); if (aksi.length) modal.aksi.append(simpan); gantiIsian(); modal.fokus();

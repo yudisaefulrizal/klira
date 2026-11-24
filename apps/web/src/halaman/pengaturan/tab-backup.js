@@ -1,5 +1,5 @@
 import { KEAMANAN, STATUS_BACKUP, formatUkuranByte } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { alamatUnduhBackup, daftarRiwayatBackup, resetSistem, unggahBackup } from '../../api-klien/keamanan.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
@@ -27,11 +27,11 @@ export function pasangTabBackup(wadah) {
     aturLewatWeb = (hidup) => { unggah.hidden = reset.hidden = !hidup; info.textContent = hidup ? KEAMANAN.sistemPetunjuk : KEAMANAN.sistemPetunjukServer; }; aturLewatWeb(false);
   }
   function sistem() { pesanSistem.replaceChildren(); if (galatSistem) pesanSistem.append(peringatan(galatSistem)); if (sistemMemproses) pesanSistem.append(peringatan(KEAMANAN.memproses, 'biru')); tombolSistem.forEach(b => { b.disabled = sistemMemproses; }); }
-  async function jalankanSistem(f, gagal) { sistemMemproses = true; galatSistem = null; sistem(); konfirmasi?.perbarui({ memproses: true }); try { await f(); if (aktif) window.location.assign('/'); } catch (e) { if (aktif) { galatSistem = e instanceof GalatApi ? e.message : gagal; sistemMemproses = false; tutupKonfirmasi(); sistem(); } } }
+  async function jalankanSistem(f, gagal) { sistemMemproses = true; galatSistem = null; sistem(); konfirmasi?.perbarui({ memproses: true }); try { await f(); if (aktif) window.location.assign('/'); } catch (e) { if (aktif) { galatSistem = pesanGalat(e, gagal); sistemMemproses = false; tutupKonfirmasi(); sistem(); } } }
   function tampil() {
     aturLewatWeb?.(backup?.pulihkan_lewat_web === true);
     ui.tbody.replaceChildren(...(backup?.data.map(b => { const lokasi = sel(b.lokasi ?? KEAMANAN.tanpaLokasi); lokasi.style.overflowWrap = 'anywhere'; return baris(sel(formatWaktu(b.waktu)), sel(b.status in STATUS_BACKUP.peta ? lencana(STATUS_BACKUP.label(b.status), STATUS_BACKUP.warna(b.status)) : b.status), sel(formatUkuranByte(b.ukuran_byte)), lokasi); }) ?? [])); ui.kosongkan(backup && !backup.data.length, KEAMANAN.backupKosong); ui.nav.replaceChildren(); if (backup) { const nav = paginasi(halaman, backup.total, backup.ukuran, n => { halaman = n; void muat(); }); if (nav) ui.nav.append(nav); }
   }
-  async function muat() { const saat = ++versi; try { const h = await daftarRiwayatBackup(halaman, 10); if (aktif && saat === versi) { backup = h; ui.galat(null); tampil(); } } catch (e) { if (aktif && saat === versi) ui.galat(e instanceof GalatApi ? e.message : KEAMANAN.backupGagalMuat); } }
+  async function muat() { const saat = ++versi; try { const h = await daftarRiwayatBackup(halaman, 10); if (aktif && saat === versi) { backup = h; ui.galat(null); tampil(); } } catch (e) { if (aktif && saat === versi) ui.galat(pesanGalat(e, KEAMANAN.backupGagalMuat)); } }
   void muat(); return { tutup() { aktif = false; versi++; tutupKonfirmasi(); wadah.replaceChildren(); } };
 }

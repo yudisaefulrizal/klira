@@ -1,6 +1,6 @@
 import { DISPOSISI_PULANG, RAWAT_INAP } from '@klira/shared';
 import { daftarCatatanHarian, ambilRawatInap } from '../../api-klien/rawat-inap.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { kartu, lencana, peringatan, tombol } from '../../komponen/ui/primitif.js';
 import { bukaCatatanHarian } from '../../modal/rawat-inap/catatan-harian.js';
@@ -9,7 +9,6 @@ import { bukaUbahPenempatan } from '../../modal/rawat-inap/ubah-penempatan.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { ringkasTandaVital } from './keadaan-histori-rawat-jalan.js';
 
-const pesanGalat = (e, bawaan) => (e instanceof GalatApi ? e.message : bawaan);
 
 /** Tabel histori pemeriksaan Rawat Inap (CPPT) bergaya spreadsheet/Excel di bawah formulir Pemeriksaan. */
 export function TabelHistoriCppt({ kunjunganId }) {

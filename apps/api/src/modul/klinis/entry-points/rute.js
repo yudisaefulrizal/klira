@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, GALAT, idParam, punyaIzin, keluargaMasukan, kiaMasukan, odontogramMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, ugdMasukan, } from '@klira/shared';
+import { kamusTerminologiMasukan, bagianParam, cariTerminologiMasukan, drafMasukan, drafParam, favoritMasukan, filterFavorit, filterTemplat, idParam, punyaIzin, keluargaMasukan, kiaMasukan, odontogramMasukan, selesaiPemeriksaanMasukan, simpanBagianMasukan, templatMasukan, ubahFavoritMasukan, ubahKeluargaMasukan, ugdMasukan, } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 const idSumber = z.object({ id: z.coerce.number().int().positive(), sumber_id: z.coerce.number().int().positive() });
 const idAnak = z.object({ id: z.coerce.number().int().positive(), anak_id: z.coerce.number().int().positive() });
 const queryRiwayat = z.object({ kecuali: z.coerce.number().int().positive().optional(), batas: z.coerce.number().int().min(1).max(200).default(20) });
@@ -17,9 +18,6 @@ export function buatRuteKlinis(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzinSalahSatu } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     const lihatKlinis = wajibIzinSalahSatu(['klinis', 'lihat'], ['rekam-medis', 'lihat']);
     const tulisKlinis = wajibIzinSalahSatu(['klinis', 'input'], ['klinis', 'perbaikan']);
     // Draf pribadi alur bertahap lain (hasil lab, persetujuan tindakan) dibuka juga oleh pemilik izin alur itu.

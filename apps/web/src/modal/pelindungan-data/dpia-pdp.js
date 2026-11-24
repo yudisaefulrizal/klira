@@ -1,6 +1,6 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { daftarRopa, simpanDpia } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -44,7 +44,7 @@ export function bukaDpiaPdp({ dpia = null, onTutup, onSelesai }) {
     dicoba = true; if (memproses) return; const g = validasi(), masalah = langkahBermasalahDpia(g); if (masalah >= 0) { modal.ke(masalah); return; }
     memproses = true; modal.perbarui({ labelKirim: PDP.menyimpan, nonaktif: true, galat: '' });
     try { await simpanDpia(dpia?.id ?? null, bentukDpia(k)); if (!aktif) return; selesai = true; const p = document.createElement('p'); p.style.margin = '0'; p.textContent = D.hasilPesan; modal.hasil({ judul: D.hasilJudul, isi: p, aksi: [tombol(TOMBOL.tutup, onSelesai)] }); }
-    catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : D.gagal }); }
+    catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, D.gagal)}); }
     finally { if (aktif) { memproses = false; modal.perbarui({ labelKirim: D.simpan, nonaktif: false }); } }
   }
   return () => { aktif = false; modal.tutup(); };

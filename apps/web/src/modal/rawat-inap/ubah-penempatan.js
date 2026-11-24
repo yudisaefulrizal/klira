@@ -1,6 +1,6 @@
 import { RAWAT_INAP, TOMBOL } from '@klira/shared';
 import { ambilOpsiRawatInap, ambilRawatInap, ubahPenempatan } from '../../api-klien/rawat-inap.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -73,8 +73,8 @@ export function bukaUbahPenempatan({ kunjunganId, onTutup, onSelesai }) {
     champ('dpjp_id', A.dpjpUtama, (opsi?.dpjp ?? []).map(d => ({ nilai: String(d.id), label: `${d.nama}${d.profesi ? ` (${d.profesi})` : ''}` }))); bersama.setAttribute('role', 'group'); bersama.setAttribute('aria-label', A.dpjpBersama); rekan(); form.append(bersama); perbarui();
     riwayat.replaceChildren(); if (data?.penempatan.length) { const h = document.createElement('strong'); h.textContent = P.riwayat; riwayat.append(h); for (const x of [...data.penempatan].reverse()) riwayat.append(kecil(`${[x.ruang_nama, x.bed_nama].filter(Boolean).join(' · ')} · ${formatWaktu(x.mulai)}${x.selesai ? ` - ${formatWaktu(x.selesai)}` : ''}`)); }
   }
-  async function kirim() { dicoba = true; perbarui(); rekan(); if (!data || proses || Object.keys(galatBidang()).length) return; proses = true; simpan.disabled = true; simpan.textContent = P.menyimpan; status.replaceChildren(); try { await ubahPenempatan(kunjunganId, bentukPenempatan(k)); if (!hidup) return; tersimpan = true; modal.isi.replaceChildren(peringatan(P.tersimpan, 'biru')); modal.aksi.replaceChildren(tombol(TOMBOL.tutup, tutup)); modal.setLebar('modalKecil'); } catch (e) { if (hidup) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : P.gagal)); } finally { proses = false; simpan.disabled = !data; simpan.textContent = P.simpan; } }
+  async function kirim() { dicoba = true; perbarui(); rekan(); if (!data || proses || Object.keys(galatBidang()).length) return; proses = true; simpan.disabled = true; simpan.textContent = P.menyimpan; status.replaceChildren(); try { await ubahPenempatan(kunjunganId, bentukPenempatan(k)); if (!hidup) return; tersimpan = true; modal.isi.replaceChildren(peringatan(P.tersimpan, 'biru')); modal.aksi.replaceChildren(tombol(TOMBOL.tutup, tutup)); modal.setLebar('modalKecil'); } catch (e) { if (hidup) status.replaceChildren(peringatan(pesanGalat(e, P.gagal))); } finally { proses = false; simpan.disabled = !data; simpan.textContent = P.simpan; } }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); }); modal.isi.append(status, form, riwayat); modal.aksi.append(tombol(TOMBOL.batal, modal.mintaTutup, 'sekunder'), simpan); tampil(); modal.fokus();
-  Promise.all([ambilRawatInap(kunjunganId), ambilOpsiRawatInap()]).then(([d, o]) => { if (!hidup) return; data = d; opsi = o; awal = awalPenempatan(d); k = { ...awal }; modal.konteks.replaceChildren(KepalaPasien({ nama: d.kunjungan.pasien_nama, nomorRm: d.kunjungan.pasien_nomor_rm })); tampil(); simpan.disabled = proses; }).catch(e => { if (hidup) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : P.gagal)); });
+  Promise.all([ambilRawatInap(kunjunganId), ambilOpsiRawatInap()]).then(([d, o]) => { if (!hidup) return; data = d; opsi = o; awal = awalPenempatan(d); k = { ...awal }; modal.konteks.replaceChildren(KepalaPasien({ nama: d.kunjungan.pasien_nama, nomorRm: d.kunjungan.pasien_nomor_rm })); tampil(); simpan.disabled = proses; }).catch(e => { if (hidup) status.replaceChildren(peringatan(pesanGalat(e, P.gagal))); });
   return { tutup() { hidup = false; modal.tutup(); } };
 }

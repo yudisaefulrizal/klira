@@ -1,5 +1,5 @@
 import { UJI_ENDPOINT as U, butuhBadan } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { ambilKonfigurasiPcare } from '../../api-klien/pcare.js';
 import { ambilKatalogUji, kirimUji } from '../../api-klien/uji-endpoint.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
@@ -77,7 +77,7 @@ function panelLayanan(layanan, { bolehKirim }) {
     if (!endpoint || mengirim) return; dicoba = true; periksa(); if (Object.keys(galatForm(endpoint, form)).length) return;
     mengirim = true; galatKirim = null; periksa(); const saat = ++versi;
     try { const h = await kirimUji(bentukKirim(layanan, endpoint, form)); if (hidup && saat === versi) { hasil = h; tampilHasil(); } }
-    catch (e) { if (hidup && saat === versi) { galatKirim = e instanceof GalatApi ? e.message : H.gagalKirim; if (e instanceof GalatApi) for (const r of e.rincian ?? []) kontrolParam.get(r.jalur.replace(/^parameter\./, ''))?.setGalat(r.pesan); } }
+    catch (e) { if (hidup && saat === versi) { galatKirim = pesanGalat(e, H.gagalKirim); if (e instanceof GalatApi) for (const r of e.rincian ?? []) kontrolParam.get(r.jalur.replace(/^parameter\./, ''))?.setGalat(r.pesan); } }
     finally { mengirim = false; if (hidup) periksa(); }
   });
   async function muat() {
@@ -85,7 +85,7 @@ function panelLayanan(layanan, { bolehKirim }) {
       const h = await ambilKatalogUji(layanan); if (!hidup) return; data = h; spanduk.replaceChildren(); const k = ringkasKoneksi(data.koneksi); spanduk.append(peringatan(k.teks, k.nada));
       pilih.replaceChildren(); for (const g of kelompokkan(data.katalog)) { const og = document.createElement('optgroup'); og.label = g.kelompok; for (const x of g.isi) { const o = document.createElement('option'); o.value = x.id; o.textContent = `${x.metode} · ${x.label}`; og.append(o); } pilih.append(og); }
       endpoint = data.katalog[0] ?? null; form = endpoint ? formAwal(endpoint, konteks()) : null; bangunForm();
-    } catch (e) { if (hidup) { spanduk.replaceChildren(peringatan(e instanceof GalatApi ? e.message : H.gagalMuat)); } }
+    } catch (e) { if (hidup) { spanduk.replaceChildren(peringatan(pesanGalat(e, H.gagalMuat))); } }
   }
   void muat();
   return { el, tutup() { hidup = false; versi++; el.replaceChildren(); } };
@@ -101,7 +101,7 @@ function bagianKoneksiPcare({ bolehUbah, onUbah }) {
       const d = await ambilKonfigurasiPcare(); if (!hidup) return; banner.replaceChildren(); if (!bolehUbah) banner.append(peringatan('Anda hanya dapat melihat konfigurasi.', 'biru'));
       for (const l of d.lingkungan) kartuPer[l.environment].terapkan(l, { resetForm: resetForm && (env === undefined || env === l.environment) });
       onUbah?.();
-    } catch (e) { if (hidup) banner.replaceChildren(peringatan(e instanceof GalatApi ? e.message : 'Konfigurasi PCare tidak dapat dimuat.')); }
+    } catch (e) { if (hidup) banner.replaceChildren(peringatan(pesanGalat(e, 'Konfigurasi PCare tidak dapat dimuat.'))); }
   }
   for (const env of ['sandbox', 'produksi']) { kartuPer[env] = kartuPcare(env, { bolehUbah, muat }); isi.append(kartuPer[env].el); }
   details.append(ringkas, banner, isi); void muat();

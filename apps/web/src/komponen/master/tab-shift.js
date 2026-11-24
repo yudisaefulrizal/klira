@@ -1,5 +1,5 @@
 import { SHIFT as S } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { daftarShift, ubahShift } from '../../api-klien/master.js';
 import { token } from '../../gaya/token.js';
 import { izinSaatIni } from '../izin/izin-saja.js';
@@ -32,7 +32,7 @@ export function TabShift() {
                 if (!JAM.test(mulai.value) || !JAM.test(selesai.value) || selesai.value === mulai.value) { galat = `${s.nama}: jam selesai tidak boleh sama dengan jam mulai.`; return tampilkan(); }
                 simpan.disabled = true;
                 try { await ubahShift(s.id, { jam_mulai: mulai.value, jam_selesai: selesai.value }); if (!aktif) return; pesan = `${S.tersimpan} (${s.nama})`; }
-                catch (e) { if (!aktif) return; galat = e instanceof GalatApi ? e.message : S.gagal; }
+                catch (e) { if (!aktif) return; galat = pesanGalat(e, S.gagal); }
                 finally { simpan.disabled = false; }
                 tampilkan();
             });
@@ -41,7 +41,7 @@ export function TabShift() {
         return r;
     }
     daftarShift().then((d) => { if (!aktif) return; for (const s of d) t.tbody.append(barisShift(s)); })
-        .catch((e) => { if (!aktif) return; galat = e instanceof GalatApi ? e.message : S.gagalMuat; tampilkan(); });
+        .catch((e) => { if (!aktif) return; galat = pesanGalat(e, S.gagalMuat); tampilkan(); });
     el.perbaruiAlamat = () => {}; el.tutup = () => { aktif = false; };
     return el;
 }

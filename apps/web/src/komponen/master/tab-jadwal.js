@@ -1,6 +1,6 @@
 import { JADWAL_PRAKTIK as J, MASTER, teksSelMaster } from '@klira/shared';
 import { daftarMaster, daftarShift, hapusJadwal, opsiMaster } from '../../api-klien/master.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModalMasterProfil } from '../../modal/akun-pengaturan/master-profil.js';
 import { izinSaatIni } from '../izin/izin-saja.js';
@@ -32,7 +32,7 @@ export function TabJadwal() {
     function mintaHapus(b) {
         let k; const tutupK = () => { k?.tutup(); k = undefined; };
         k = bukaKonfirmasi({ judul: J.hapusJudul, pesan: J.hapusPesan(b), labelYa: J.hapusYa, labelTidak: MASTER.batal, onTidak: tutupK,
-            async onYa() { k?.perbarui({ memproses: true }); try { await hapusJadwal(b.id); tutupK(); tutupModal(); pesan = null; await muat(); } catch (e) { tutupK(); pesan = e instanceof GalatApi ? e.message : J.gagalHapus; lukisIsi(); } } });
+            async onYa() { k?.perbarui({ memproses: true }); try { await hapusJadwal(b.id); tutupK(); tutupModal(); pesan = null; await muat(); } catch (e) { tutupK(); pesan = pesanGalat(e, J.gagalHapus); lukisIsi(); } } });
     }
 
     async function muat() {
@@ -46,7 +46,7 @@ export function TabJadwal() {
             }
             const d = await muatSemua('jadwal'); if (!aktif || saat !== versi) return; data = d;
         }
-        catch (e) { if (!aktif || saat !== versi) return; galat = e instanceof GalatApi ? e.message : MASTER.gagalMuat; }
+        catch (e) { if (!aktif || saat !== versi) return; galat = pesanGalat(e, MASTER.gagalMuat); }
         lukisIsi();
     }
 

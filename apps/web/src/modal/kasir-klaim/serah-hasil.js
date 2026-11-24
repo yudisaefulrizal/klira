@@ -1,6 +1,6 @@
 import { KASIR, TOMBOL } from '@klira/shared';
 import { serahHasil } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
@@ -22,7 +22,7 @@ export function bukaSerahHasil({ kunjunganId, pasienNama, onTutup, onSelesai }) 
     dicoba = true; perbarui(); if (proses || !k.penerima.trim()) return;
     proses = true; simpan.disabled = true; simpan.textContent = S.menyerahkan; status.replaceChildren();
     try { const g = await serahHasil(kunjunganId, { penerima_nama: k.penerima.trim(), ...(k.hubungan.trim() ? { hubungan: k.hubungan.trim() } : {}) }); if (aktif) { aktif = false; modal.tutup(); onSelesai?.(g); } }
-    catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KASIR.bayar.gagal)); }
+    catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, KASIR.bayar.gagal))); }
     finally { proses = false; simpan.disabled = false; simpan.textContent = S.serahkan; }
   }
   form.addEventListener('submit', e => { e.preventDefault(); void kirim(); });

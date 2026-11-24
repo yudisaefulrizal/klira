@@ -2,11 +2,11 @@
 // serta jembatan fetch ke aplikasi Express tanpa membuka port.
 import { kodeAntrean, tanggalWib } from '@klira/shared';
 import { panggilTanpaPort } from '../../umum/panggil-tanpa-port.js';
+import { tglDb } from '../../umum/nilai.js';
 
 /** Jam sungguhan: simulator Mobile JKN di service-dummy memakai tanggal hari ini. */
 export const SEKARANG = () => new Date();
 export const TANGGAL = tanggalWib(SEKARANG());
-const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);
 
 /** fetch tiruan yang meneruskan permintaan ke aplikasi Express di memori. */
 export const jembatan = (app) => async (url, { method = 'GET', headers = {}, body } = {}) => {

@@ -2,14 +2,12 @@ import * as db from '@klira/db';
 import { ambilWilayah } from '../../wilayah/data-access/data.js';
 import { pilihRuangPanggil } from '../../kunjungan/data-access/ruang-panggil.js';
 import { ANTREAN_LAB, TAHAP_BERJALAN, rentangHariWib, tanggalWib, formatNomorRm, kodeAntrean, statusHasilLabDari, umurTahun } from '@klira/shared';
+import { tglIso, tglDb, iso } from '../../../umum/nilai.js';
 export class WaliTidakSahError extends Error {
 }
 /** NIK sudah dipakai pasien lain di fasyankes ini (pelanggaran keunikan saat menyimpan). */
 export class NikKembarError extends Error {
 }
-const tgl = (d) => d.toISOString().slice(0, 10);
-const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);
-const iso = (d) => d.toISOString();
 const tingkatUrutanKunjungan = (k) => {
     if (k.antrean?.status === 'batal')
         return 4;
@@ -200,7 +198,7 @@ export class RepositoriPasienMysql {
                 ada_resep: resepAda.has(k.id),
             };
             return {
-                id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, jenis_kelamin: p.jenis_kelamin, umur_tahun: umurTahun(tgl(p.tanggal_lahir)),
+                id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, jenis_kelamin: p.jenis_kelamin, umur_tahun: umurTahun(tglIso(p.tanggal_lahir)),
                 status_identitas: p.status_identitas,
                 // Nama desa/kelurahan dari kode wilayah, untuk membedakan pasien bernama sama di hasil pencarian.
                 desa_nama: p.kode_wilayah ? ambilWilayah(p.kode_wilayah)?.nama ?? null : null,
@@ -215,7 +213,7 @@ export class RepositoriPasienMysql {
         if (!p)
             return null;
         return {
-            id: p.id, nomor_rm: p.nomor_rm, nik: p.nik, nama: p.nama, nomor_hp: p.nomor_hp, ibu_kandung: p.ibu_kandung, tempat_lahir: p.tempat_lahir, tanggal_lahir: tgl(p.tanggal_lahir),
+            id: p.id, nomor_rm: p.nomor_rm, nik: p.nik, nama: p.nama, nomor_hp: p.nomor_hp, ibu_kandung: p.ibu_kandung, tempat_lahir: p.tempat_lahir, tanggal_lahir: tglIso(p.tanggal_lahir),
             jenis_kelamin: p.jenis_kelamin, agama: p.agama, suku: p.suku, bahasa: p.bahasa, pekerjaan: p.pekerjaan, pendidikan: p.pendidikan, status_kawin: p.status_kawin,
             alamat: p.alamat, kode_wilayah: p.kode_wilayah, nomor_paspor: p.nomor_paspor, nomor_kitas: p.nomor_kitas, jkn_nomor_kartu: p.jkn_nomor_kartu,
             asuransi_nama: p.asuransi_nama, asuransi_nomor_polis: p.asuransi_nomor_polis, status_identitas: p.status_identitas, jalur_identitas: p.jalur_identitas,
@@ -224,7 +222,7 @@ export class RepositoriPasienMysql {
     }
     async duplikat(k) {
         const hasil = new Map();
-        const ke = (p, alasan) => hasil.set(p.id, { id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, tanggal_lahir: tgl(p.tanggal_lahir), alasan });
+        const ke = (p, alasan) => hasil.set(p.id, { id: p.id, nomor_rm: p.nomor_rm, nama: p.nama, tanggal_lahir: tglIso(p.tanggal_lahir), alasan });
         if (k.nik) {
             for (const p of await db.daftarPasienUntukDuplikat(k.nik, 5))
                 ke(p, 'nik');

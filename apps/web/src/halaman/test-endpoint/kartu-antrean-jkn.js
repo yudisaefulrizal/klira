@@ -1,5 +1,5 @@
 import { ANTREAN_JKN as A } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { ambilPengaturanAntreanJkn, simpanPengaturanAntreanJkn, tarikPendaftaranJkn } from '../../api-klien/antrean-jkn.js';
 import { formatWaktu } from '../../util/tab/penyaring-tab.js';
 import { bidang, kartu, peringatan, tombol } from '../../komponen/ui/primitif.js';
@@ -42,7 +42,7 @@ export function bagianAntreanJkn({ bolehUbah }) {
   tarik.addEventListener('click', async () => {
     if (memproses) return; memproses = true; galatServer = info = null; tampil();
     try { const t = await tarikPendaftaranJkn(true); if (hidup) tampilTarik(t); }
-    catch (e) { if (hidup) galatServer = e instanceof GalatApi ? e.message : A.tarik.gagal; }
+    catch (e) { if (hidup) galatServer = pesanGalat(e, A.tarik.gagal); }
     finally { memproses = false; if (hidup) tampil(); }
   }); details.append(ringkas, isi);
 
@@ -68,14 +68,14 @@ export function bagianAntreanJkn({ bolehUbah }) {
   }
   async function muat() {
     try { const d = await ambilPengaturanAntreanJkn(); if (hidup) terapkan(d); }
-    catch (e) { if (hidup) { galatServer = e instanceof GalatApi ? e.message : H.gagalMuat; tampil(); } }
+    catch (e) { if (hidup) { galatServer = pesanGalat(e, H.gagalMuat); tampil(); } }
   }
   formulir.addEventListener('submit', async (e) => {
     e.preventDefault(); if (!form || memproses) return;
     memproses = true; galatServer = info = null; tampil();
     try { const d = await simpanPengaturanAntreanJkn(bentukAntreanJkn(form)); if (!hidup) return; memproses = false; info = H.tersimpan; terapkan(d); }
     catch (galat) {
-      memproses = false; galatServer = galat instanceof GalatApi ? galat.message : H.gagalSimpan; tampil();
+      memproses = false; galatServer = pesanGalat(galat, H.gagalSimpan); tampil();
       if (galat instanceof GalatApi) for (const r of galat.rincian ?? []) (kontrol[r.jalur] ?? galatPer.get(r.jalur))?.setGalat(r.pesan);
     }
   });

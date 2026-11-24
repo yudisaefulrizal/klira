@@ -2,9 +2,9 @@ import * as db from '@klira/db';
 import { statusStokDari } from '@klira/shared';
 import { gantiItemObatResepDalam, totalTagihan } from '../../kasir/data-access/repositori.js';
 import { ambilKatalogKfa, cariKatalogKfa } from './katalog-kfa.js';
+import { tglIso } from '../../../umum/nilai.js';
 /** Daftar item sama persis (urutan, obat, jumlah, aturan, bentuk, rute): item dan tagihan tidak perlu diganti. */
 export const samaItemResep = (a, b) => a.length === b.length && a.every((x, n) => x.master_obat_id === b[n].master_obat_id && x.jumlah === b[n].jumlah && x.aturan_pakai === b[n].aturan_pakai && (x.bentuk ?? null) === (b[n].bentuk ?? null) && (x.rute ?? null) === (b[n].rute ?? null));
-const tglIso = (d) => d.toISOString().slice(0, 10);
 const awalHariUtc = () => new Date(`${tglIso(new Date())}T00:00:00.000Z`);
 export class RepositoriFarmasiMysql {
     // ---- Serah terima obat ----

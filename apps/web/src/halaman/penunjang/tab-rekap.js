@@ -1,5 +1,5 @@
 import { INTERPRETASI_HASIL, NILAI_STATUS_ORDER, PENUNJANG, STATUS_ORDER_PENUNJANG } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { rekapLab } from '../../api-klien/penunjang.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan } from '../../komponen/ui/primitif.js';
@@ -102,7 +102,7 @@ export function pasangTabRekap(wadah) {
       kosong.hidden = !!jumlahDimuat;
       kosong.textContent = jumlahDimuat ? '' : R.kosong;
     } catch (e) {
-      if (aktif && id === urut) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : R.gagalMuat));
+      if (aktif && id === urut) status.replaceChildren(peringatan(pesanGalat(e, R.gagalMuat)));
     } finally {
       if (aktif && id === urut) {
         memuat = false;

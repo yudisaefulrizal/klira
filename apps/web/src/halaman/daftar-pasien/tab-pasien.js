@@ -1,6 +1,6 @@
 import { dengarAntreanBerubah } from '../../util/panggilan/peristiwa-antrean.js';
 import { CARA_PEMBAYARAN, DAFTAR_PASIEN, JENIS_KUNJUNGAN, PROFIL_PASIEN, RAWAT_INAP, STATUS_IDENTITAS, STATUS_LAYANAN, STATUS_PERAN_DIAGNOSIS, TAHAP_LAYANAN, aksiAntreanTersedia, statusLayananDari, tanggalWib } from '@klira/shared';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { riwayatKunjungan } from '../../api-klien/klinis.js';
 import { bukaKonfirmasi } from '../../komponen/modal-1/modal-1.js';
 import { aksiAntrean } from '../../api-klien/kunjungan.js';
@@ -21,7 +21,6 @@ import { TabelHistoriRawatJalan } from './histori-rawat-jalan.js';
 
 const T = PROFIL_PASIEN, UKURAN = 20, BATAS_RIWAYAT = 200;
 const buat = (tag, kelas, teks) => { const el = document.createElement(tag); if (kelas) el.className = kelas; if (teks !== undefined) el.textContent = teks; return el; };
-const pesanGalat = (e, bawaan) => (e instanceof GalatApi ? e.message : bawaan);
 const picuMasuk = (el) => { if (!el) return; el.classList.remove('profil-masuk'); void el.offsetWidth; el.classList.add('profil-masuk'); };
 
 /**

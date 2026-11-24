@@ -3,19 +3,13 @@ import { GALAT, filterRiwayatBackup, profilKlinikMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-function galatValidasi(res, e) {
-    const badan = {
-        galat: { kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: e.issues.map((i) => ({ jalur: i.path.join('.'), pesan: i.message })) },
-    };
-    res.status(400).json(badan);
-}
+import { bungkus, pengguna } from '../../../umum/rute.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 /** Rute tab Profil klinik: lihat butuh `profil-klinik` lihat, simpan butuh `profil-klinik` perbaikan. */
 export function buatRuteFasyankes(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     rute.get('/fasyankes/profil', masuk, wajibIzin('profil-klinik', 'lihat'), bungkus(async (_req, res) => {
         const data = await layanan.ambil(pengguna(res));
         if (!data)

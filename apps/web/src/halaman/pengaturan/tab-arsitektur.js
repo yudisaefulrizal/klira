@@ -1,4 +1,4 @@
-import { panggilApi, GalatApi } from '../../api-klien/klien.js';
+import { panggilApi, pesanGalat } from '../../api-klien/klien.js';
 import { kartu, tombol, lencana, peringatan, tab, tabel, baris, sel } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
 
@@ -2464,7 +2464,7 @@ export function TabArsitektur() {
             if (!aktif) return;
             lukis();
         } catch (e) {
-            if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : 'Gagal memuat metadata arsitektur sistem.'));
+            if (aktif) status.replaceChildren(peringatan(pesanGalat(e, 'Gagal memuat metadata arsitektur sistem.')));
         } finally {
             btnMuat.disabled = false;
         }

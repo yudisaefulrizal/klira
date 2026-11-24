@@ -3,13 +3,13 @@ import { GALAT, GANTI_KREDENSIAL, MASUK } from '@klira/shared';
 import { opsiCookieSesi } from '../../../config/cookie.js';
 import { galat401, idSesiDariPermintaan } from '../../../middleware/auth.js';
 import { NAMA_COOKIE_SESI, skemaGantiKredensial, skemaMasuk } from '../domain/skema.js';
+import { alamatDari } from '../../../middleware/audit.js';
 const GALAT_GANTI = {
     kata_sandi_lama_salah: { jalur: 'kata_sandi_lama', pesan: GANTI_KREDENSIAL.kataSandiLamaSalah },
     username_sama_awal: { jalur: 'username', pesan: GANTI_KREDENSIAL.usernameSamaAwal },
     kata_sandi_sama_lama: { jalur: 'kata_sandi', pesan: GANTI_KREDENSIAL.kataSandiSamaLama },
     kata_sandi_sama_awal: { jalur: 'kata_sandi', pesan: GANTI_KREDENSIAL.kataSandiSamaAwal },
 };
-const alamatDari = (req) => req.ip ?? 'tidak-diketahui';
 export function buatRuteAkses(layanan, baseUrl) {
     const rute = Router();
     rute.post('/masuk', async (req, res, next) => {

@@ -1,15 +1,10 @@
 import { Router } from 'express';
-import { GALAT, filterPeringatan, idAnakParam, idPenggunaParam, izinAkunBaru, jenisAkunBaru, jenisAkunUbah, akhiriPeriode, penugasanBaru, terimaPeringatan } from '@klira/shared';
+import { filterPeringatan, idAnakParam, idPenggunaParam, izinAkunBaru, jenisAkunBaru, jenisAkunUbah, akhiriPeriode, penugasanBaru, terimaPeringatan } from '@klira/shared';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { wajibMasuk } from '../../../middleware/auth.js';
-const pengguna = (res) => res.locals.pengguna;
-const alamatDari = (req) => req.ip ?? 'tidak-diketahui';
-function galatValidasi(res, e) {
-    const badan = {
-        galat: { kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: e.issues.map((i) => ({ jalur: i.path.join('.'), pesan: i.message })) },
-    };
-    res.status(400).json(badan);
-}
+import { bungkus, pengguna } from '../../../umum/rute.js';
+import { alamatDari } from '../../../middleware/audit.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 const STATUS = { tidak_ditemukan: 404, konflik: 409, tidak_valid: 400, perlu_konfirmasi_peringatan: 409 };
 function kirim(res, hasil, sukses = 200) {
     if (hasil.ok)
@@ -24,7 +19,6 @@ export function buatRuteIzin(layananAkses, layanan) {
     const rute = Router();
     const { wajibIzin, wajibIzinSalahSatu } = buatWajibIzin(layanan);
     const masuk = wajibMasuk(layananAkses);
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     const param = (skema, req, res) => {
         const h = skema.safeParse(req.params);
         if (h.success)

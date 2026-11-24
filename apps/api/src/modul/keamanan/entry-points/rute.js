@@ -4,19 +4,13 @@ import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { BATAS_UNGGAH_CADANGAN, CadanganLewatWebMati, GalatCadangan } from '../domain/layanan-cadangan.js';
-function galatValidasi(res, e) {
-    const badan = {
-        galat: { kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: e.issues.map((i) => ({ jalur: i.path.join('.'), pesan: i.message })) },
-    };
-    res.status(400).json(badan);
-}
+import { bungkus, pengguna } from '../../../umum/rute.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 /** Rute tab Keamanan: lihat butuh `akses` lihat, simpan butuh `akses` perbaikan; riwayat backup hanya baca. `cadangan`: layanan cadangan sistem. */
 export function buatRuteKeamanan(layananAkses, layananIzin, layanan, cadangan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     rute.get('/pengaturan-keamanan', masuk, wajibIzin('akses', 'lihat'), bungkus(async (_req, res) => {
         res.json({ data: await layanan.ambil(pengguna(res)) });
     }));

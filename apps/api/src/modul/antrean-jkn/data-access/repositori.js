@@ -1,6 +1,6 @@
 import * as db from '@klira/db';
 import { formatNomorRm } from '@klira/shared';
-const tglDb = (t) => new Date(`${t}T00:00:00.000Z`);
+import { tglDb } from '../../../umum/nilai.js';
 /** NIK sudah dipakai pasien lain di fasyankes ini. */
 export class NikDipakaiError extends Error {
 }

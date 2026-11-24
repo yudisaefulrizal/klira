@@ -1,7 +1,7 @@
 import { AKUN_BARU, MODAL } from '@klira/shared';
 import { buatPengguna } from '../../api-klien/pengguna.js';
 import { daftarIzin, daftarJenisAkun } from '../../api-klien/izin.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { FormPeringatan, dariIsian, isianPeringatanAwal, isianPeringatanSiap } from '../../komponen/izin/peringatan-izin.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { peringatan as kotak, tombol } from '../../komponen/ui/primitif.js';
@@ -53,6 +53,6 @@ export function bukaPembuatanAkun({ onTutup, onSelesai }) {
     if (h.jenis === 'berhasil') { draf.hapus(); hasil = h.data; modal.hasil({ judul: AKUN_BARU.berhasilJudul, isi: IsiHasilAkun({ username: hasil.username, kataSandi: hasil.kata_sandi_awal, jumlahPeringatan: hasil.peringatan.length }), aksi: [tombol(AKUN_BARU.tombolSelesai, onSelesai)] }); }
     else if (h.jenis === 'peringatan') { peringatan = h.peringatan; segarkanIsi(); } else { galat = h.pesan; status(); }
   }
-  Promise.all([daftarJenisAkun(), daftarIzin()]).then(([j, i]) => { if (aktif) { katalog = { jenis: j, izin: i }; segarkanIsi(); } }).catch(e => { if (aktif) { galatKatalog = e instanceof GalatApi ? e.message : AKUN_BARU.gagalMuatKatalog; segarkanIsi(); } });
+  Promise.all([daftarJenisAkun(), daftarIzin()]).then(([j, i]) => { if (aktif) { katalog = { jenis: j, izin: i }; segarkanIsi(); } }).catch(e => { if (aktif) { galatKatalog = pesanGalat(e, AKUN_BARU.gagalMuatKatalog); segarkanIsi(); } });
   simpanDraf(); status(); return () => { aktif = false; draf.tutup(); modal.tutup(); };
 }

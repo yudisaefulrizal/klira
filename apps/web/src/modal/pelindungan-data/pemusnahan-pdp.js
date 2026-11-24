@@ -1,6 +1,6 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { opsiProsesor, prosesPemusnahan, rencanaPemusnahan } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { bukaModalBertahap } from '../../komponen/modal-bertahap/modal-bertahap.js';
 import { PemilihPasien } from '../../komponen/pencarian/pemilih-pasien.js';
 import { KotakCentang } from '../../komponen/ui/kotak-centang.js';
@@ -42,7 +42,7 @@ export function bukaPemusnahanPdp({ musnah = null, onTutup, onSelesai }) {
     dicoba = true; if (memproses || !baru && !tahap) return; const g = baru ? fR.perbarui() : fP.perbarui(); if (Object.keys(g).length) { modal.ke(baru ? 0 : indeksTahapMusnah(tahap)); return; }
     memproses = true; modal.perbarui({ labelKirim: PDP.menyimpan, nonaktif: true, galat: '' });
     try { if (baru) await rencanaPemusnahan(bentukRencanaMusnah(r)); else await prosesPemusnahan(musnah.id, bentukProsesMusnah(tahap, p)); if (!aktif) return; selesai = true; const text = document.createElement('p'); text.style.margin = '0'; text.textContent = M.hasilPesan; modal.hasil({ judul: M.hasilJudul, isi: text, aksi: [tombol(TOMBOL.tutup, onSelesai)] }); }
-    catch (e) { if (aktif) modal.perbarui({ galat: e instanceof GalatApi ? e.message : M.gagal }); }
+    catch (e) { if (aktif) modal.perbarui({ galat: pesanGalat(e, M.gagal)}); }
     finally { if (aktif) { memproses = false; modal.perbarui({ labelKirim, nonaktif: !baru && !tahap }); } }
   }
   return () => { aktif = false; bersihkan(); modal.tutup(); };

@@ -1,17 +1,15 @@
 import { Router } from 'express';
-import { filterKlaim, GALAT, idParam, siapkanKlaimMasukan, ubahBerkasKlaimMasukan, ubahStatusKlaimMasukan } from '@klira/shared';
+import { filterKlaim, idParam, siapkanKlaimMasukan, ubahBerkasKlaimMasukan, ubahStatusKlaimMasukan } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
 import { galatValidasi, kirimHasil } from '../../../umum/hasil.js';
+import { bungkus, pengguna, tidakAda } from '../../../umum/rute.js';
 /** Rute Klaim JKN/BPJS (3.1, 4.5): lihat (izin klaim lihat), siapkan (input), ubah berkas dan status (perbaikan). Dibatasi pada fasyankes akun; tidak ada rute hapus. */
 export function buatRuteKlaim(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
-    const tidakAda = (res) => void res.status(404).json({ galat: { kode: 'tidak_ditemukan', pesan: GALAT.tidakDitemukan } });
     rute.get('/klaim', masuk, wajibIzin('klaim', 'lihat'), bungkus(async (req, res) => {
         const f = filterKlaim.safeParse(req.query);
         if (!f.success)

@@ -1,6 +1,6 @@
 import { AMBANG_BATAS_DEKAT_HARI, aksiKlaimTersedia, KLAIM, STATUS_KLAIM } from '@klira/shared';
 import { daftarKlaim } from '../../api-klien/klaim.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -20,6 +20,6 @@ export function TabKlaim() {
   async function muat() { const saat = ++versi; try { const h = await daftarKlaim({ status: terapan.status || undefined, cari: terapan.cari, halaman: terapan.halaman, ukuran: 20 }); if (!aktif || saat !== versi) return; status.replaceChildren(); ringkas.replaceChildren(); for (const s of STATUS_KLAIM.nilai.filter(s => h.ringkasan[s] > 0)) ringkas.append(lencana(`${STATUS_KLAIM.label(s)}: ${h.ringkasan[s]}`, STATUS_KLAIM.warna(s))); table.tbody.replaceChildren();
     for (const k of h.data) { const patient = sel(), nom = document.createElement('div'), rm = document.createElement('small'); nom.textContent = k.pasien_nama; nom.style.fontWeight = token.huruf.berat.tebal; rm.textContent = `${k.pasien_nomor_rm}${k.jenis === 'IMP' ? ' · rawat inap' : ''}`; rm.style.color = token.warna.teksRedup; patient.append(nom, rm); const batas = sel(k.sisa_hari === null ? '-' : KLAIM.batas.sisa(k.sisa_hari)); if (k.sisa_hari !== null && k.sisa_hari <= AMBANG_BATAS_DEKAT_HARI) batas.style.color = token.warna.status.merah.teks; const statut = sel(lencana(STATUS_KLAIM.label(k.status), STATUS_KLAIM.warna(k.status))); if (k.kode_beda) statut.append(' ', lencana('Kode beda', 'kuning')); const actions = sel(); actions.style.textAlign = 'right'; if (boleh('klaim', 'perbaikan') && ['menunggu_sep', 'siap_diajukan', 'dikembalikan'].includes(k.status)) actions.append(tombol(KLAIM.berkas, () => ouvre(k), 'teks')); actions.append(tombol(boleh('klaim', 'perbaikan') && aksiKlaimTersedia(k.status).length ? KLAIM.ubahStatus : KLAIM.rincian, () => ouvre(k, true), 'teks')); table.tbody.append(baris(patient, sel(k.nomor_sep ?? '-'), sel(formatWaktu(k.tanggal_selesai)), batas, statut, actions)); }
     kosong.textContent = h.data.length ? '' : KLAIM.kosong; kosong.hidden = !!h.data.length; kosong.style.padding = token.jarak.md; pages.replaceChildren(); const p = paginasi(terapan.halaman, h.total, h.ukuran, n => { terapan = { ...terapan, halaman: n }; void muat(); }); if (p) pages.append(p);
-  } catch (e) { if (aktif && saat === versi) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KLAIM.gagalMuat)); } }
+  } catch (e) { if (aktif && saat === versi) status.replaceChildren(peringatan(pesanGalat(e, KLAIM.gagalMuat))); } }
   el.tutup = () => { aktif = false; versi++; modal?.tutup(); }; void muat(); return el;
 }

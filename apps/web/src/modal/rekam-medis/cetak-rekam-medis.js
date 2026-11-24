@@ -1,6 +1,6 @@
 import { KLINIS } from '@klira/shared';
 import { ambilRekamMedisCetak } from '../../api-klien/klinis.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { bukaTabCetak } from '../../util/cetak-tab.js';
 import { Lembar } from './lembar-rekam-medis.js';
@@ -19,5 +19,5 @@ export function bukaCetakRekamMedis({ kunjunganId, onTutup }) {
   const close = tombol(C.tutup, fermer, 'sekunder'), print = tombol(C.cetak, () => (tabCetak ? tabCetak.cetak() : window.print())); print.disabled = true; outils.append(title, espace, close, print); const loading = document.createElement('p'); loading.className = 'crm-memuat'; loading.textContent = C.memuat; contenu.append(loading); el.append(outils, contenu);
   if (tabCetak) tabCetak.body.append(el);
   else { document.body.append(el); document.addEventListener('keydown', clavier); close.focus(); }
-  ambilRekamMedisCetak(kunjunganId).then(async d => { const inap = d.klinis.kunjungan.jenis === 'IMP' ? await muatDataRawatInap(kunjunganId) : null; if (aktif) { contenu.replaceChildren(Lembar({ d, inap })); print.disabled = false; } }).catch(e => { if (aktif) contenu.replaceChildren(peringatan(e instanceof GalatApi ? e.message : C.gagal)); }); return { tutup: detruire };
+  ambilRekamMedisCetak(kunjunganId).then(async d => { const inap = d.klinis.kunjungan.jenis === 'IMP' ? await muatDataRawatInap(kunjunganId) : null; if (aktif) { contenu.replaceChildren(Lembar({ d, inap })); print.disabled = false; } }).catch(e => { if (aktif) contenu.replaceChildren(peringatan(pesanGalat(e, C.gagal))); }); return { tutup: detruire };
 }

@@ -1,6 +1,6 @@
 import { FARMASI, STATUS_RESEP } from '@klira/shared';
 import { riwayatObat } from '../../api-klien/farmasi.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, lencana, peringatan, paginasi } from '../../komponen/ui/primitif.js';
 import { bukaSerahTerimaObat } from '../../modal/farmasi/serah-terima-obat.js';
@@ -31,7 +31,7 @@ export function pasangTabRiwayat(wadah) {
         table.tbody.append(baris(nomor, pasien, sel(r.dpjp_nama ?? '-'), item, sel(lencana(STATUS_RESEP.label(r.status), STATUS_RESEP.warna(r.status))), sel(formatWaktu(r.dibuat_pada)), aksi));
       }
       kosong.textContent = h.data.length ? '' : R.kosong; kosong.hidden = !!h.data.length; pages.replaceChildren(); const p = paginasi(terapan.halaman, h.total, h.ukuran, n => { terapan = { ...terapan, halaman: n }; void muat(); }); if (p) pages.append(p);
-    } catch (e) { if (aktif && id === urut) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : R.gagalMuat)); }
+    } catch (e) { if (aktif && id === urut) status.replaceChildren(peringatan(pesanGalat(e, R.gagalMuat))); }
   }
   void muat(); return { tutup() { aktif = false; urut++; modal?.tutup(); el.remove(); } };
 }

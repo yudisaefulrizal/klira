@@ -13,7 +13,7 @@ import { ANTREAN_JKN, CARA_PEMBAYARAN, DAFTAR_PASIEN, FITUR_AKSES_PASIEN, JENIS_
 import { HalamanRawatInap } from '../rawat-inap/rawat-inap.js';
 import { daftarPasien } from '../../api-klien/pasien.js';
 import { bukaAntrean, tutupAntrean } from '../../api-klien/kunjungan.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { penggunaSaatIni } from '../../util/sesi/konteks-pengguna.js';
 import { navigasiSaatIni } from '../../util/navigasi/navigasi.js';
@@ -66,7 +66,7 @@ export function HalamanDaftarPasien() {
         bukaAntrean().then(() => { if (actif) { sesiMemproses = false; void muat(); } }).catch((e) => {
             if (actif) {
                 sesiMemproses = false;
-                galat = e instanceof GalatApi ? e.message : 'Gagal membuka antrean.';
+                galat = pesanGalat(e, 'Gagal membuka antrean.');
                 paint();
             }
         });
@@ -96,7 +96,7 @@ export function HalamanDaftarPasien() {
                 catch (e) {
                     if (actif) {
                         sesiMemproses = false;
-                        galat = e instanceof GalatApi ? e.message : 'Gagal menutup antrean.';
+                        galat = pesanGalat(e, 'Gagal menutup antrean.');
                         paint();
                     }
                 }
@@ -213,7 +213,7 @@ export function HalamanDaftarPasien() {
         }
         catch (e) {
             if (actif && saat === version) {
-                galat = e instanceof GalatApi ? e.message : DAFTAR_PASIEN.gagalMuat;
+                galat = pesanGalat(e, DAFTAR_PASIEN.gagalMuat);
                 paint();
             }
         }

@@ -1,6 +1,6 @@
 import { BERANDA, punyaIzin } from '@klira/shared';
 import { ambilRingkasanPdp } from '../../api-klien/beranda.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { tugasPdp } from '../../util/tugas-beranda.js';
 import { pasangKesiapan, lencanaBeranda } from '../../komponen/klinis/kesiapan-klinik.js';
 import { teksHtml as aman } from '../../util/teks-html.js';
@@ -17,7 +17,7 @@ export function pasangBerandaTugas(wadah, pengguna, ganti) {
       wadah.querySelector('[data-tugas]').innerHTML = `<div class="beranda-kartu" aria-label="${aman(BERANDA.pdp.judul)}"><strong style="font-size:16px">${aman(BERANDA.pdp.judul)}</strong>${!tugas.length ? `<span class="beranda-redup">${aman(BERANDA.kosong)}</span>` : ''}${tugas.map(t => `<div class="beranda-baris"><span style="flex-grow:1">${aman(t.teks)}</span>${t.mendesak ? lencanaBeranda('!', 'merah') : ''}<button class="beranda-tombol" type="button" data-tab="${aman(t.tab)}">${aman(BERANDA.buka)}</button></div>`).join('')}</div>`;
     }).catch(e => {
       if (!aktif) return;
-      wadah.querySelector('[data-galat-beranda]').innerHTML = `<div class="beranda-peringatan" role="alert">${aman(e instanceof GalatApi ? e.message : BERANDA.gagal)}</div>`;
+      wadah.querySelector('[data-galat-beranda]').innerHTML = `<div class="beranda-peringatan" role="alert">${aman(pesanGalat(e, BERANDA.gagal))}</div>`;
       wadah.querySelector('[data-tugas]').replaceChildren();
     });
   }

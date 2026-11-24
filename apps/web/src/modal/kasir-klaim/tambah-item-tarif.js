@@ -1,6 +1,6 @@
 import { KASIR } from '@klira/shared';
 import { tambahItemTagihan } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bidang, tombol, peringatan } from '../../komponen/ui/primitif.js';
 import { galatTambahItem } from './keadaan-kasir.js';
@@ -25,7 +25,7 @@ export function TambahItemTarif({ kunjunganId, gambaran, onUbah, ringkas = false
     if (proses) return; const g = galatTambahItem(tarifId, jumlah); if (g) { status.replaceChildren(peringatan(g)); return; }
     proses = true; tarif.kontrol.disabled = angka.kontrol.disabled = simpan.disabled = true; simpan.textContent = T.menyimpan; status.replaceChildren();
     try { const h = await tambahItemTagihan(kunjunganId, Number(tarifId), Number(jumlah)); if (aktif) { tarifId = ''; jumlah = '1'; tarif.kontrol.value = ''; angka.kontrol.value = '1'; onUbah(h); } }
-    catch (e) { if (aktif) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KASIR.bayar.gagal)); }
+    catch (e) { if (aktif) status.replaceChildren(peringatan(pesanGalat(e, KASIR.bayar.gagal))); }
     finally { proses = false; tarif.kontrol.disabled = angka.kontrol.disabled = false; simpan.disabled = !tarifId; simpan.textContent = labelSimpan; }
   }
   el.tutup = () => { aktif = false; }; return el;

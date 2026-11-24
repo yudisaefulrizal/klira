@@ -1,6 +1,6 @@
 import { PDP, TOMBOL } from '@klira/shared';
 import { tarikPersetujuan } from '../../api-klien/pdp.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { bukaModal1 } from '../../komponen/modal-1/modal-1.js';
 import { bidang, peringatan, tombol } from '../../komponen/ui/primitif.js';
@@ -24,7 +24,7 @@ export function bukaTarikPersetujuan({ persetujuan, onTutup, onSelesai }) {
     try {
       const hasil = await tarikPersetujuan({ persetujuan_id: persetujuan.id, alasan }); if (!aktif) return; batas = hasil.batas_henti;
       modal.setLebar('modalKecil'); modal.isi.replaceChildren(peringatan(`${T.tersimpan} ${T.batasHenti(formatWaktu(batas))}`, 'biru')); modal.aksi.replaceChildren(tombol(TOMBOL.tutup, onSelesai));
-    } catch (e) { if (aktif) pesan.replaceChildren(peringatan(e instanceof GalatApi ? e.message : T.gagal)); }
+    } catch (e) { if (aktif) pesan.replaceChildren(peringatan(pesanGalat(e, T.gagal))); }
     finally { if (aktif) { memproses = false; simpan.disabled = false; simpan.textContent = T.tombol; } }
   });
   validasi(); modal.fokus(); return () => { aktif = false; modal.tutup(); };

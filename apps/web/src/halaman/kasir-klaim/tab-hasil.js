@@ -1,6 +1,6 @@
 import { KASIR, PENUNJANG, STATUS_HASIL_LAB } from '@klira/shared';
 import { hasilBelumDiserahkan } from '../../api-klien/kasir.js';
-import { GalatApi } from '../../api-klien/klien.js';
+import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { kartu, tombol, tabel, baris, sel, lencana, peringatan } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
@@ -31,7 +31,7 @@ export function TabHasil() {
         tbl.tbody.append(baris(sel(r.pasien_nama), sel(r.pasien_nomor_rm), sel(formatWaktu(r.mulai)), sel(r.perujuk ?? '-'), hasil, aksi));
       }
       box.append(tbl.el); isi.append(box);
-    } catch (e) { if (aktif && saat === versi) status.replaceChildren(peringatan(e instanceof GalatApi ? e.message : KASIR.rekap.gagalMuat)); }
+    } catch (e) { if (aktif && saat === versi) status.replaceChildren(peringatan(pesanGalat(e, KASIR.rekap.gagalMuat))); }
   }
   void muat();
   el.tutup = () => { aktif = false; versi++; modal?.tutup(); };

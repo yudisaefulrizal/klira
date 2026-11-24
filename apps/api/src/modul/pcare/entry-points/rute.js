@@ -1,19 +1,16 @@
 import { Router } from 'express';
-import { GALAT, konfigurasiPcareMasukan, lingkunganParam } from '@klira/shared';
+import { konfigurasiPcareMasukan, lingkunganParam } from '@klira/shared';
 import { wajibMasuk } from '../../../middleware/auth.js';
 import { alamatDari } from '../../../middleware/audit.js';
 import { buatWajibIzin } from '../../../middleware/izin.js';
-function galatValidasi(res, e) {
-    res.status(400).json({ galat: { kode: 'tidak_valid', pesan: GALAT.tidakValid, rincian: e.issues.map((i) => ({ jalur: i.path.join('.'), pesan: i.message })) } });
-}
+import { bungkus, pengguna } from '../../../umum/rute.js';
+import { galatValidasi } from '../../../umum/hasil.js';
 const status = { tidak_valid: 400, belum_lengkap: 409 };
 /** Rute koneksi PCare memakai izin fitur `satusehat` (admin integrasi): lihat untuk membaca; perbaikan untuk simpan, aktifkan, uji. Rahasia tidak pernah dikembalikan. */
 export function buatRutePcare(layananAkses, layananIzin, layanan) {
     const rute = Router();
     const masuk = wajibMasuk(layananAkses);
     const { wajibIzin } = buatWajibIzin(layananIzin);
-    const pengguna = (res) => res.locals.pengguna;
-    const bungkus = (f) => (req, res, next) => void f(req, res).catch(next);
     const jawab = (res, h) => {
         if (h.ok)
             return void res.json({ data: h.data });
