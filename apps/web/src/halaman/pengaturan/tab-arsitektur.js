@@ -12,8 +12,8 @@ const WARNA_METODE = {
 
 const KARTU_L = 216;
 const KARTU_T = 128;
-const JARAK_MIN_X = 64;
-const JARAK_MIN_Y = 52;
+const JARAK_MIN_X = 84;
+const JARAK_MIN_Y = 68;
 const PAD_KANVAS = 64;
 
 function gayaInput(el) {
@@ -265,14 +265,30 @@ function hitungTataLetakPeta(tabelList, relasiList) {
         slotSimpul.set(`${bestC},${bestR}`, s);
     }
 
-    // Optimasi pertukaran berpasangan (2-opt) untuk meminimalkan total panjang garis relasi di grid
-    const panjangKabelNode = (node, col, row) => {
-        let total = 0;
+    // Optimasi keterbacaan jalur (2-opt): beri ruang napas antar-hub berderajat tinggi dan kurangi jalur menyilang
+    const skorKeterbacaanNode = (node, col, row) => {
+        const dNode = derajat.get(node.tabel.nama) ?? 0;
+        let skor = 0;
         for (const nbNama of tetangga.get(node.tabel.nama) || []) {
             const nb = simpul.get(nbNama);
-            if (nb) total += Math.abs(col - nb.col) + Math.abs(row - nb.row);
+            if (!nb) continue;
+            const dx = Math.abs(col - nb.col);
+            const dy = Math.abs(row - nb.row);
+            // Penalti lebih besar untuk garis yang melompati banyak baris/kolom, namun tetap beri jarak bagi hub padat
+            skor += dx + dy + (dx > 0 && dy > 0 ? 1.5 : 0);
         }
-        return total;
+        if (dNode >= 6) {
+            for (const lain of daftarSimpul) {
+                if (lain === node) continue;
+                const dLain = derajat.get(lain.tabel.nama) ?? 0;
+                if (dLain >= 6) {
+                    const dist = Math.abs(col - lain.col) + Math.abs(row - lain.row);
+                    if (dist <= 1) skor += 14;
+                    else if (dist === 2) skor += 5;
+                }
+            }
+        }
+        return skor;
     };
     for (let putaran = 0; putaran < 3; putaran += 1) {
         let adaTukar = false;
@@ -281,9 +297,9 @@ function hitungTataLetakPeta(tabelList, relasiList) {
             for (let j = i + 1; j < n; j += 1) {
                 const b = daftarSimpul[j];
                 if (Math.abs(a.col - b.col) + Math.abs(a.row - b.row) > 4) continue;
-                const sebelum = panjangKabelNode(a, a.col, a.row) + panjangKabelNode(b, b.col, b.row);
-                const sesudah = panjangKabelNode(a, b.col, b.row) + panjangKabelNode(b, a.col, a.row);
-                if (sesudah < sebelum) {
+                const sebelum = skorKeterbacaanNode(a, a.col, a.row) + skorKeterbacaanNode(b, b.col, b.row);
+                const sesudah = skorKeterbacaanNode(a, b.col, b.row) + skorKeterbacaanNode(b, a.col, a.row);
+                if (sesudah + 0.1 < sebelum) {
                     const tc = a.col;
                     const tr = a.row;
                     a.col = b.col;
@@ -353,8 +369,8 @@ function hitungTataLetakPeta(tabelList, relasiList) {
  * agar garis relasi memutari kartu dan tidak pernah menembus tabel lain.
  */
 function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
-    const CELL = 18;
-    const PAD_OBS = 8;
+    const CELL = 14;
+    const PAD_OBS = 10;
     const cols = Math.max(4, Math.ceil(lebarKanvas / CELL));
     const rows = Math.max(4, Math.ceil(tinggiKanvas / CELL));
     const total = cols * rows;
@@ -495,7 +511,7 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
 
         let ketemu = false;
         let ekspansi = 0;
-        while (heapSize > 0 && ekspansi < 14000) {
+        while (heapSize > 0 && ekspansi < 22000) {
             const cur = pop();
             if (closedStamp[cur] === stamp) continue;
             closedStamp[cur] = stamp;
@@ -517,8 +533,8 @@ function buatRouterGarisErd(posisiTabel, lebarKanvas, tinggiKanvas) {
                 if (closedStamp[nIdx] === stamp) continue;
                 if (blocked[nIdx] && nIdx !== endIdx) continue;
 
-                const belok = curDir !== -1 && curDir !== d ? 18 : 0;
-                const padat = Math.min(14, usage[nIdx] * 4);
+                const belok = curDir !== -1 && curDir !== d ? 26 : 0;
+                const padat = Math.min(44, usage[nIdx] * 22);
                 const ng = curG + 10 + belok + padat;
                 if (seenStamp[nIdx] !== stamp || ng < gScore[nIdx]) {
                     seenStamp[nIdx] = stamp;
