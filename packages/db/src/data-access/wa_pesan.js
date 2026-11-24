@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function hitungWaPesanUntukBersihkanDalam(status, koneksi = pool) {
     const [baris] = await baca("SELECT COUNT(*) AS jumlah FROM `wa_pesan` t WHERE (EXISTS (SELECT 1 FROM `wa_percakapan` r1 WHERE t.`percakapan_id` = r1.`id`)) AND ((? OR t.`status` IN (?)))", [status === undefined, (status)?.length ? (status) : [null]], koneksi);
     return Number(baris.jumlah);
@@ -43,32 +44,17 @@ export async function ubahWaPesanUntukHubungkan(status, wa_id, status2, status3,
 }
 export async function cariWaPesanUntukKirim(arah, status, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, jid: baris[0].t1__jid, nama: baris[0].t1__nama, foto_profil: baris[0].t1__foto_profil, foto_periksa_setelah: baris[0].t1__foto_periksa_setelah, pasien_id: baris[0].t1__pasien_id, status: baris[0].t1__status, penanggung_jawab: baris[0].t1__penanggung_jawab, diperbarui_pada: baris[0].t1__diperbarui_pada }));
+        return kelompokkan(semua, 't1', [
+            'id', 'jid', 'nama', 'foto_profil', 'foto_periksa_setelah', 'pasien_id', 'status', 'penanggung_jawab',
+            'diperbarui_pada',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, percakapan_id: baris[0].t0__percakapan_id, wa_id: baris[0].t0__wa_id, arah: baris[0].t0__arah, isi: baris[0].t0__isi, jenis: baris[0].t0__jenis, media_id: baris[0].t0__media_id, status: baris[0].t0__status, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, percakapan: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'percakapan_id', 'wa_id', 'arah', 'isi', 'jenis', 'media_id', 'status', 'dibuat_oleh',
+            'dibuat_pada',
+            ['percakapan', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`percakapan_id` AS `t0__percakapan_id`, t0.`wa_id` AS `t0__wa_id`, t0.`arah` AS `t0__arah`, t0.`isi` AS `t0__isi`, t0.`jenis` AS `t0__jenis`, t0.`media_id` AS `t0__media_id`, t0.`status` AS `t0__status`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`jid` AS `t1__jid`, t1.`nama` AS `t1__nama`, t1.`foto_profil` AS `t1__foto_profil`, t1.`foto_periksa_setelah` AS `t1__foto_periksa_setelah`, t1.`pasien_id` AS `t1__pasien_id`, t1.`status` AS `t1__status`, t1.`penanggung_jawab` AS `t1__penanggung_jawab`, t1.`diperbarui_pada` AS `t1__diperbarui_pada`\nFROM (SELECT t0.* FROM `wa_pesan` t0 WHERE ((? OR t0.`arah` <=> ?)) AND ((? OR t0.`status` <=> ?)) AND (EXISTS (SELECT 1 FROM `wa_percakapan` r1 WHERE t0.`percakapan_id` = r1.`id`)) ORDER BY t0.`id` ASC LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `wa_percakapan` b1 WHERE TRUE) t1 ON t0.`percakapan_id` = t1.`id`\nORDER BY t0.`id` ASC, t1.`id` ASC", [arah === undefined, arah ?? null, status === undefined, status ?? null], koneksi);
     const hasil = petakt0(baris);

@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function simpanTagihanUntukTambahItemTagihanDalam(kunjungan_id, dibuat_oleh, koneksi = pool) {
     const hasil = await tulis("INSERT INTO `tagihan` (`kunjungan_id`, `dibuat_oleh`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `id` = `id`, `id` = LAST_INSERT_ID(`id`)", [(kunjungan_id === undefined ? null : kunjungan_id) ?? null, (dibuat_oleh === undefined ? null : dibuat_oleh) ?? null], koneksi);
     return { id: hasil.insertId, count: hasil.affectedRows };
@@ -29,32 +30,18 @@ export async function cariTagihanUntukGantiItemObatResepDalam(kunjungan_id, kone
 }
 export async function cariTagihanUntukAmbil(kunjungan_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, tagihan_id: baris[0].t1__tagihan_id, jenis: baris[0].t1__jenis, tarif_layanan_id: baris[0].t1__tarif_layanan_id, kode: baris[0].t1__kode, nama: baris[0].t1__nama, jumlah: baris[0].t1__jumlah, harga: baris[0].t1__harga, order_penunjang_id: baris[0].t1__order_penunjang_id, item_resep_id: baris[0].t1__item_resep_id, manual: baris[0].t1__manual, tindakan_sumber: baris[0].t1__tindakan_sumber, harga_acuan: baris[0].t1__harga_acuan, alasan_ubah_harga: baris[0].t1__alasan_ubah_harga, dibuat_oleh: baris[0].t1__dibuat_oleh, dibuat_pada: baris[0].t1__dibuat_pada }));
+        return kelompokkan(semua, 't1', [
+            'id', 'tagihan_id', 'jenis', 'tarif_layanan_id', 'kode', 'nama', 'jumlah', 'harga', 'order_penunjang_id',
+            'item_resep_id', 'manual', 'tindakan_sumber', 'harga_acuan', 'alasan_ubah_harga', 'dibuat_oleh',
+            'dibuat_pada',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, status_tagihan: baris[0].t0__status_tagihan, status_pembayaran: baris[0].t0__status_pembayaran, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, alasan_tutup_belum_lunas: baris[0].t0__alasan_tutup_belum_lunas, item: petakt1(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'status_tagihan', 'status_pembayaran', 'dibuat_oleh', 'dibuat_pada',
+            'alasan_tutup_belum_lunas',
+            ['item', (baris) => petakt1(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`status_tagihan` AS `t0__status_tagihan`, t0.`status_pembayaran` AS `t0__status_pembayaran`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t0.`alasan_tutup_belum_lunas` AS `t0__alasan_tutup_belum_lunas`, t1.`id` AS `t1__id`, t1.`tagihan_id` AS `t1__tagihan_id`, t1.`jenis` AS `t1__jenis`, t1.`tarif_layanan_id` AS `t1__tarif_layanan_id`, t1.`kode` AS `t1__kode`, t1.`nama` AS `t1__nama`, t1.`jumlah` AS `t1__jumlah`, t1.`harga` AS `t1__harga`, t1.`order_penunjang_id` AS `t1__order_penunjang_id`, t1.`item_resep_id` AS `t1__item_resep_id`, t1.`manual` AS `t1__manual`, t1.`tindakan_sumber` AS `t1__tindakan_sumber`, t1.`harga_acuan` AS `t1__harga_acuan`, t1.`alasan_ubah_harga` AS `t1__alasan_ubah_harga`, t1.`dibuat_oleh` AS `t1__dibuat_oleh`, t1.`dibuat_pada` AS `t1__dibuat_pada`\nFROM (SELECT t0.* FROM `tagihan` t0 WHERE ((? OR t0.`kunjungan_id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `item_tagihan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`tagihan_id`\nORDER BY t1.`id` ASC", [kunjungan_id === undefined, kunjungan_id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -66,32 +53,16 @@ export async function ambilTagihanUntukTeruskanDariRawatJalan(kunjungan_id, kone
 }
 export async function cariTagihanUntukBuatResep(kunjungan_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jumlah: baris[0].t1__jumlah, harga: baris[0].t1__harga }));
+        return kelompokkan(semua, 't1', [
+            'jumlah', 'harga',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, status_tagihan: baris[0].t0__status_tagihan, status_pembayaran: baris[0].t0__status_pembayaran, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, alasan_tutup_belum_lunas: baris[0].t0__alasan_tutup_belum_lunas, item: petakt1(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'status_tagihan', 'status_pembayaran', 'dibuat_oleh', 'dibuat_pada',
+            'alasan_tutup_belum_lunas',
+            ['item', (baris) => petakt1(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`status_tagihan` AS `t0__status_tagihan`, t0.`status_pembayaran` AS `t0__status_pembayaran`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t0.`alasan_tutup_belum_lunas` AS `t0__alasan_tutup_belum_lunas`, t1.`id` AS `t1__id`, t1.`jumlah` AS `t1__jumlah`, t1.`harga` AS `t1__harga`\nFROM (SELECT t0.* FROM `tagihan` t0 WHERE ((? OR t0.`kunjungan_id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `item_tagihan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`tagihan_id`\nORDER BY t1.`id` ASC", [kunjungan_id === undefined, kunjungan_id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -99,46 +70,24 @@ export async function cariTagihanUntukBuatResep(kunjungan_id, koneksi = pool) {
 }
 export async function cariTagihanUntukTagihan(kunjungan_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, tagihan_id: baris[0].t1__tagihan_id, jenis: baris[0].t1__jenis, tarif_layanan_id: baris[0].t1__tarif_layanan_id, kode: baris[0].t1__kode, nama: baris[0].t1__nama, jumlah: baris[0].t1__jumlah, harga: baris[0].t1__harga, order_penunjang_id: baris[0].t1__order_penunjang_id, item_resep_id: baris[0].t1__item_resep_id, manual: baris[0].t1__manual, tindakan_sumber: baris[0].t1__tindakan_sumber, harga_acuan: baris[0].t1__harga_acuan, alasan_ubah_harga: baris[0].t1__alasan_ubah_harga, dibuat_oleh: baris[0].t1__dibuat_oleh, dibuat_pada: baris[0].t1__dibuat_pada }));
+        return kelompokkan(semua, 't1', [
+            'id', 'tagihan_id', 'jenis', 'tarif_layanan_id', 'kode', 'nama', 'jumlah', 'harga', 'order_penunjang_id',
+            'item_resep_id', 'manual', 'tindakan_sumber', 'harga_acuan', 'alasan_ubah_harga', 'dibuat_oleh',
+            'dibuat_pada',
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t2__id, tagihan_id: baris[0].t2__tagihan_id, shift_id: baris[0].t2__shift_id, metode: baris[0].t2__metode, jumlah: baris[0].t2__jumlah, waktu: baris[0].t2__waktu, kasir_id: baris[0].t2__kasir_id }));
+        return kelompokkan(semua, 't2', [
+            'id', 'tagihan_id', 'shift_id', 'metode', 'jumlah', 'waktu', 'kasir_id',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, status_tagihan: baris[0].t0__status_tagihan, status_pembayaran: baris[0].t0__status_pembayaran, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, alasan_tutup_belum_lunas: baris[0].t0__alasan_tutup_belum_lunas, item: petakt1(baris), pembayaran: petakt2(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'status_tagihan', 'status_pembayaran', 'dibuat_oleh', 'dibuat_pada',
+            'alasan_tutup_belum_lunas',
+            ['item', (baris) => petakt1(baris)],
+            ['pembayaran', (baris) => petakt2(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`status_tagihan` AS `t0__status_tagihan`, t0.`status_pembayaran` AS `t0__status_pembayaran`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t0.`alasan_tutup_belum_lunas` AS `t0__alasan_tutup_belum_lunas`, t1.`id` AS `t1__id`, t1.`tagihan_id` AS `t1__tagihan_id`, t1.`jenis` AS `t1__jenis`, t1.`tarif_layanan_id` AS `t1__tarif_layanan_id`, t1.`kode` AS `t1__kode`, t1.`nama` AS `t1__nama`, t1.`jumlah` AS `t1__jumlah`, t1.`harga` AS `t1__harga`, t1.`order_penunjang_id` AS `t1__order_penunjang_id`, t1.`item_resep_id` AS `t1__item_resep_id`, t1.`manual` AS `t1__manual`, t1.`tindakan_sumber` AS `t1__tindakan_sumber`, t1.`harga_acuan` AS `t1__harga_acuan`, t1.`alasan_ubah_harga` AS `t1__alasan_ubah_harga`, t1.`dibuat_oleh` AS `t1__dibuat_oleh`, t1.`dibuat_pada` AS `t1__dibuat_pada`, t2.`id` AS `t2__id`, t2.`tagihan_id` AS `t2__tagihan_id`, t2.`shift_id` AS `t2__shift_id`, t2.`metode` AS `t2__metode`, t2.`jumlah` AS `t2__jumlah`, t2.`waktu` AS `t2__waktu`, t2.`kasir_id` AS `t2__kasir_id`\nFROM (SELECT t0.* FROM `tagihan` t0 WHERE ((? OR t0.`kunjungan_id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `item_tagihan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`tagihan_id`\nLEFT JOIN (SELECT b2.* FROM `pembayaran` b2 WHERE TRUE) t2 ON t0.`id` = t2.`tagihan_id`\nORDER BY t1.`id` ASC, t2.`id` ASC", [kunjungan_id === undefined, kunjungan_id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -146,46 +95,22 @@ export async function cariTagihanUntukTagihan(kunjungan_id, koneksi = pool) {
 }
 export async function wajibTagihanUntukBayar(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jumlah: baris[0].t1__jumlah, harga: baris[0].t1__harga }));
+        return kelompokkan(semua, 't1', [
+            'jumlah', 'harga',
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jumlah: baris[0].t2__jumlah }));
+        return kelompokkan(semua, 't2', [
+            'jumlah',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, status_tagihan: baris[0].t0__status_tagihan, status_pembayaran: baris[0].t0__status_pembayaran, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, alasan_tutup_belum_lunas: baris[0].t0__alasan_tutup_belum_lunas, item: petakt1(baris), pembayaran: petakt2(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'status_tagihan', 'status_pembayaran', 'dibuat_oleh', 'dibuat_pada',
+            'alasan_tutup_belum_lunas',
+            ['item', (baris) => petakt1(baris)],
+            ['pembayaran', (baris) => petakt2(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`status_tagihan` AS `t0__status_tagihan`, t0.`status_pembayaran` AS `t0__status_pembayaran`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t0.`alasan_tutup_belum_lunas` AS `t0__alasan_tutup_belum_lunas`, t1.`id` AS `t1__id`, t1.`jumlah` AS `t1__jumlah`, t1.`harga` AS `t1__harga`, t2.`id` AS `t2__id`, t2.`jumlah` AS `t2__jumlah`\nFROM (SELECT t0.* FROM `tagihan` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `item_tagihan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`tagihan_id`\nLEFT JOIN (SELECT b2.* FROM `pembayaran` b2 WHERE TRUE) t2 ON t0.`id` = t2.`tagihan_id`\nORDER BY t1.`id` ASC, t2.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -203,46 +128,22 @@ export async function ubahTagihanUntukHitungUlang(status_tagihan, status_pembaya
 }
 export async function ambilTagihanUntukTutup(kunjungan_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jumlah: baris[0].t1__jumlah, harga: baris[0].t1__harga }));
+        return kelompokkan(semua, 't1', [
+            'jumlah', 'harga',
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jumlah: baris[0].t2__jumlah }));
+        return kelompokkan(semua, 't2', [
+            'jumlah',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, status_tagihan: baris[0].t0__status_tagihan, status_pembayaran: baris[0].t0__status_pembayaran, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, alasan_tutup_belum_lunas: baris[0].t0__alasan_tutup_belum_lunas, item: petakt1(baris), pembayaran: petakt2(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'status_tagihan', 'status_pembayaran', 'dibuat_oleh', 'dibuat_pada',
+            'alasan_tutup_belum_lunas',
+            ['item', (baris) => petakt1(baris)],
+            ['pembayaran', (baris) => petakt2(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`status_tagihan` AS `t0__status_tagihan`, t0.`status_pembayaran` AS `t0__status_pembayaran`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t0.`alasan_tutup_belum_lunas` AS `t0__alasan_tutup_belum_lunas`, t1.`id` AS `t1__id`, t1.`jumlah` AS `t1__jumlah`, t1.`harga` AS `t1__harga`, t2.`id` AS `t2__id`, t2.`jumlah` AS `t2__jumlah`\nFROM (SELECT t0.* FROM `tagihan` t0 WHERE ((? OR t0.`kunjungan_id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `item_tagihan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`tagihan_id`\nLEFT JOIN (SELECT b2.* FROM `pembayaran` b2 WHERE TRUE) t2 ON t0.`id` = t2.`tagihan_id`\nORDER BY t1.`id` ASC, t2.`id` ASC", [kunjungan_id === undefined, kunjungan_id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -254,32 +155,16 @@ export async function ubahTagihanUntukTutup(alasan_tutup_belum_lunas, id, koneks
 }
 export async function wajibTagihanUntukBuatOrder(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ harga: baris[0].t1__harga, jumlah: baris[0].t1__jumlah }));
+        return kelompokkan(semua, 't1', [
+            'harga', 'jumlah',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, status_tagihan: baris[0].t0__status_tagihan, status_pembayaran: baris[0].t0__status_pembayaran, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, alasan_tutup_belum_lunas: baris[0].t0__alasan_tutup_belum_lunas, item: petakt1(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'status_tagihan', 'status_pembayaran', 'dibuat_oleh', 'dibuat_pada',
+            'alasan_tutup_belum_lunas',
+            ['item', (baris) => petakt1(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`status_tagihan` AS `t0__status_tagihan`, t0.`status_pembayaran` AS `t0__status_pembayaran`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t0.`alasan_tutup_belum_lunas` AS `t0__alasan_tutup_belum_lunas`, t1.`id` AS `t1__id`, t1.`harga` AS `t1__harga`, t1.`jumlah` AS `t1__jumlah`\nFROM (SELECT t0.* FROM `tagihan` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `item_tagihan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`tagihan_id`\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);

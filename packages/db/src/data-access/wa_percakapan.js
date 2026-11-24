@@ -1,22 +1,15 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function hapusWaPercakapanUntukBersihkanDalam(koneksi = pool) {
     const hasil = await tulis("DELETE t FROM `wa_percakapan` t WHERE TRUE", [], koneksi);
     return { count: hasil.affectedRows };
 }
 export async function daftarWaPercakapanUntukBuatRuteWhatsapp(jid, jid2, batas, lewati, pesan_batas, pengguna_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, percakapan_id: baris[0].t1__percakapan_id, wa_id: baris[0].t1__wa_id, arah: baris[0].t1__arah, isi: baris[0].t1__isi, jenis: baris[0].t1__jenis, media_id: baris[0].t1__media_id, status: baris[0].t1__status, dibuat_oleh: baris[0].t1__dibuat_oleh, dibuat_pada: baris[0].t1__dibuat_pada }));
+        return kelompokkan(semua, 't1', [
+            'id', 'percakapan_id', 'wa_id', 'arah', 'isi', 'jenis', 'media_id', 'status', 'dibuat_oleh',
+            'dibuat_pada',
+        ]);
     }
     function petakt2(semua) {
         const grup = new Map();
@@ -33,18 +26,12 @@ export async function daftarWaPercakapanUntukBuatRuteWhatsapp(jid, jid2, batas, 
         return [...grup.values()].map(baris => ({ percakapan_id: baris[0].t2__percakapan_id, pengguna_id: baris[0].t2__pengguna_id, pesan_id: baris[0].t2__pesan_id }));
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, jid: baris[0].t0__jid, nama: baris[0].t0__nama, foto_profil: baris[0].t0__foto_profil, foto_periksa_setelah: baris[0].t0__foto_periksa_setelah, pasien_id: baris[0].t0__pasien_id, status: baris[0].t0__status, penanggung_jawab: baris[0].t0__penanggung_jawab, diperbarui_pada: baris[0].t0__diperbarui_pada, pesan: petakt1(baris), baca: petakt2(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'jid', 'nama', 'foto_profil', 'foto_periksa_setelah', 'pasien_id', 'status', 'penanggung_jawab',
+            'diperbarui_pada',
+            ['pesan', (baris) => petakt1(baris)],
+            ['baca', (baris) => petakt2(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`jid` AS `t0__jid`, t0.`nama` AS `t0__nama`, t0.`foto_profil` AS `t0__foto_profil`, t0.`foto_periksa_setelah` AS `t0__foto_periksa_setelah`, t0.`pasien_id` AS `t0__pasien_id`, t0.`status` AS `t0__status`, t0.`penanggung_jawab` AS `t0__penanggung_jawab`, t0.`diperbarui_pada` AS `t0__diperbarui_pada`, t1.`id` AS `t1__id`, t1.`percakapan_id` AS `t1__percakapan_id`, t1.`wa_id` AS `t1__wa_id`, t1.`arah` AS `t1__arah`, t1.`isi` AS `t1__isi`, t1.`jenis` AS `t1__jenis`, t1.`media_id` AS `t1__media_id`, t1.`status` AS `t1__status`, t1.`dibuat_oleh` AS `t1__dibuat_oleh`, t1.`dibuat_pada` AS `t1__dibuat_pada`, t2.`percakapan_id` AS `t2__percakapan_id`, t2.`pengguna_id` AS `t2__pengguna_id`, t2.`pesan_id` AS `t2__pesan_id`\nFROM (SELECT t0.* FROM `wa_percakapan` t0 WHERE ((((? OR t0.`jid` LIKE ? ESCAPE '!'))) OR (((? OR t0.`jid` LIKE ? ESCAPE '!')))) ORDER BY t0.`diperbarui_pada` DESC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.*, ROW_NUMBER() OVER (PARTITION BY b1.`percakapan_id` ORDER BY b1.`id` DESC) AS _urutan FROM `wa_pesan` b1 WHERE TRUE) t1 ON t0.`id` = t1.`percakapan_id` AND t1._urutan <= ?\nLEFT JOIN (SELECT b2.* FROM `wa_baca` b2 WHERE ((? OR b2.`pengguna_id` <=> ?))) t2 ON t0.`id` = t2.`percakapan_id`\nORDER BY t0.`diperbarui_pada` DESC, t1.`id` DESC, t2.`percakapan_id` ASC, t2.`pengguna_id` ASC", [jid === undefined, '%' + String(jid ?? '').replace(/[!%_]/g, teken => '!' + teken), jid2 === undefined, '%' + String(jid2 ?? '').replace(/[!%_]/g, teken => '!' + teken), batas ?? 2147483647, lewati ?? 0, (pesan_batas ?? 2147483647) + (0), pengguna_id === undefined, pengguna_id ?? null], koneksi);
     const hasil = petakt0(baris);

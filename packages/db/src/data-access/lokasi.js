@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function daftarLokasiUntukBacaKlinikPublik(jenis, status_operasional, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `lokasi` t WHERE ((? OR t.`jenis` <=> ?)) AND ((? OR t.`status_operasional` <=> ?)) ORDER BY t.`nama` ASC", [jenis === undefined, jenis ?? null, status_operasional === undefined, status_operasional ?? null], koneksi);
     return baris;
@@ -13,32 +14,15 @@ export async function hitungLokasiUntukDaftar(jenis, status_operasional, nama, i
 }
 export async function daftarLokasiUntukDaftar(jenis, status_operasional, nama, ihs_location_id, pakai, batas, lewati, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, nama: baris[0].t0__nama, jenis: baris[0].t0__jenis, induk_id: baris[0].t0__induk_id, status_operasional: baris[0].t0__status_operasional, ihs_location_id: baris[0].t0__ihs_location_id, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, induk: petakt1(baris)[0] ?? null }));
+        return kelompokkan(semua, 't0', [
+            'id', 'nama', 'jenis', 'induk_id', 'status_operasional', 'ihs_location_id', 'dibuat_oleh', 'dibuat_pada',
+            ['induk', (baris) => petakt1(baris)[0] ?? null],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t0.`jenis` AS `t0__jenis`, t0.`induk_id` AS `t0__induk_id`, t0.`status_operasional` AS `t0__status_operasional`, t0.`ihs_location_id` AS `t0__ihs_location_id`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`\nFROM (SELECT t0.* FROM `lokasi` t0 WHERE ((? OR t0.`jenis` <=> ?)) AND ((? OR t0.`status_operasional` <=> ?)) AND ((? OR ((((? OR t0.`nama` LIKE ? ESCAPE '!'))) OR (((? OR t0.`ihs_location_id` LIKE ? ESCAPE '!'))) OR ((EXISTS (SELECT 1 FROM `lokasi` r1 WHERE t0.`induk_id` = r1.`id` AND (((? OR r1.`nama` LIKE ? ESCAPE '!'))))))))) ORDER BY t0.`nama` ASC, t0.`id` ASC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.* FROM `lokasi` b1 WHERE TRUE) t1 ON t0.`induk_id` = t1.`id`\nORDER BY t0.`nama` ASC, t0.`id` ASC, t1.`id` ASC", [jenis === undefined, jenis ?? null, status_operasional === undefined, status_operasional ?? null, !pakai, nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', ihs_location_id === undefined, '%' + String(ihs_location_id ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', batas ?? 2147483647, lewati ?? 0], koneksi);
     const hasil = petakt0(baris);
@@ -46,32 +30,15 @@ export async function daftarLokasiUntukDaftar(jenis, status_operasional, nama, i
 }
 export async function cariLokasiUntukAmbil(id, jenis, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, nama: baris[0].t0__nama, jenis: baris[0].t0__jenis, induk_id: baris[0].t0__induk_id, status_operasional: baris[0].t0__status_operasional, ihs_location_id: baris[0].t0__ihs_location_id, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, induk: petakt1(baris)[0] ?? null }));
+        return kelompokkan(semua, 't0', [
+            'id', 'nama', 'jenis', 'induk_id', 'status_operasional', 'ihs_location_id', 'dibuat_oleh', 'dibuat_pada',
+            ['induk', (baris) => petakt1(baris)[0] ?? null],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t0.`jenis` AS `t0__jenis`, t0.`induk_id` AS `t0__induk_id`, t0.`status_operasional` AS `t0__status_operasional`, t0.`ihs_location_id` AS `t0__ihs_location_id`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`\nFROM (SELECT t0.* FROM `lokasi` t0 WHERE ((? OR t0.`id` <=> ?)) AND ((? OR t0.`jenis` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `lokasi` b1 WHERE TRUE) t1 ON t0.`induk_id` = t1.`id`\nORDER BY t1.`id` ASC", [id === undefined, id ?? null, jenis === undefined, jenis ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -83,32 +50,15 @@ export async function tambahLokasiUntukBuat(nama, jenis, induk_id, status_operas
 }
 export async function tambahLokasiUntukBuatHasil(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, nama: baris[0].t0__nama, jenis: baris[0].t0__jenis, induk_id: baris[0].t0__induk_id, status_operasional: baris[0].t0__status_operasional, ihs_location_id: baris[0].t0__ihs_location_id, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, induk: petakt1(baris)[0] ?? null }));
+        return kelompokkan(semua, 't0', [
+            'id', 'nama', 'jenis', 'induk_id', 'status_operasional', 'ihs_location_id', 'dibuat_oleh', 'dibuat_pada',
+            ['induk', (baris) => petakt1(baris)[0] ?? null],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t0.`jenis` AS `t0__jenis`, t0.`induk_id` AS `t0__induk_id`, t0.`status_operasional` AS `t0__status_operasional`, t0.`ihs_location_id` AS `t0__ihs_location_id`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`\nFROM (SELECT t0.* FROM `lokasi` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `lokasi` b1 WHERE TRUE) t1 ON t0.`induk_id` = t1.`id`\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);

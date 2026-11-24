@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function daftarPenggunaUntukNamaPengguna(id, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`nama` FROM `pengguna` t WHERE ((? OR t.`id` IN (?)))", [id === undefined, (id)?.length ? (id) : [null]], koneksi);
     return baris;
@@ -9,116 +10,53 @@ export async function hitungPenggunaUntukPenggunaAda(id, koneksi = pool) {
 }
 export async function ambilPenggunaUntukAmbilSnapshot(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ profesi: baris[0].t1__profesi, nomor_sip: baris[0].t1__nomor_sip, masa_berlaku_sip: baris[0].t1__masa_berlaku_sip }));
+        return kelompokkan(semua, 't1', [
+            'profesi', 'nomor_sip', 'masa_berlaku_sip',
+        ]);
     }
     function petakt5(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t5__id === null)
-                continue;
-            const kunci = String(baris.t5__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t5__id, fitur: baris[0].t5__fitur, aksi: baris[0].t5__aksi, cakupan: baris[0].t5__cakupan, dibuat_oleh: baris[0].t5__dibuat_oleh, dibuat_pada: baris[0].t5__dibuat_pada }));
+        return kelompokkan(semua, 't5', [
+            'id', 'fitur', 'aksi', 'cakupan', 'dibuat_oleh', 'dibuat_pada',
+        ]);
     }
     function petakt4(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t4__id === null)
-                continue;
-            const kunci = String(baris.t4__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t4__id, jenis_akun_id: baris[0].t4__jenis_akun_id, izin_id: baris[0].t4__izin_id, dibuat_oleh: baris[0].t4__dibuat_oleh, dibuat_pada: baris[0].t4__dibuat_pada, izin: petakt5(baris)[0] }));
+        return kelompokkan(semua, 't4', [
+            'id', 'jenis_akun_id', 'izin_id', 'dibuat_oleh', 'dibuat_pada',
+            ['izin', (baris) => petakt5(baris)[0]],
+        ]);
     }
     function petakt3(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t3__id === null)
-                continue;
-            const kunci = String(baris.t3__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t3__id, nama: baris[0].t3__nama, syarat_profesi: baris[0].t3__syarat_profesi, aktif: baris[0].t3__aktif, diubah_oleh: baris[0].t3__diubah_oleh, alasan_perubahan: baris[0].t3__alasan_perubahan, dibuat_oleh: baris[0].t3__dibuat_oleh, dibuat_pada: baris[0].t3__dibuat_pada, izin: petakt4(baris) }));
+        return kelompokkan(semua, 't3', [
+            'id', 'nama', 'syarat_profesi', 'aktif', 'diubah_oleh', 'alasan_perubahan', 'dibuat_oleh', 'dibuat_pada',
+            ['izin', (baris) => petakt4(baris)],
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t2__id, pengguna_id: baris[0].t2__pengguna_id, jenis_akun_id: baris[0].t2__jenis_akun_id, mulai: baris[0].t2__mulai, selesai: baris[0].t2__selesai, ditetapkan_oleh: baris[0].t2__ditetapkan_oleh, dibuat_oleh: baris[0].t2__dibuat_oleh, dibuat_pada: baris[0].t2__dibuat_pada, jenis_akun: petakt3(baris)[0] }));
+        return kelompokkan(semua, 't2', [
+            'id', 'pengguna_id', 'jenis_akun_id', 'mulai', 'selesai', 'ditetapkan_oleh', 'dibuat_oleh',
+            'dibuat_pada',
+            ['jenis_akun', (baris) => petakt3(baris)[0]],
+        ]);
     }
     function petakt7(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t7__id === null)
-                continue;
-            const kunci = String(baris.t7__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t7__id, fitur: baris[0].t7__fitur, aksi: baris[0].t7__aksi, cakupan: baris[0].t7__cakupan, dibuat_oleh: baris[0].t7__dibuat_oleh, dibuat_pada: baris[0].t7__dibuat_pada }));
+        return kelompokkan(semua, 't7', [
+            'id', 'fitur', 'aksi', 'cakupan', 'dibuat_oleh', 'dibuat_pada',
+        ]);
     }
     function petakt6(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t6__id === null)
-                continue;
-            const kunci = String(baris.t6__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t6__id, pengguna_id: baris[0].t6__pengguna_id, izin_id: baris[0].t6__izin_id, tipe: baris[0].t6__tipe, alasan: baris[0].t6__alasan, mulai: baris[0].t6__mulai, selesai: baris[0].t6__selesai, ditetapkan_oleh: baris[0].t6__ditetapkan_oleh, dibuat_oleh: baris[0].t6__dibuat_oleh, dibuat_pada: baris[0].t6__dibuat_pada, izin: petakt7(baris)[0] }));
+        return kelompokkan(semua, 't6', [
+            'id', 'pengguna_id', 'izin_id', 'tipe', 'alasan', 'mulai', 'selesai', 'ditetapkan_oleh', 'dibuat_oleh',
+            'dibuat_pada',
+            ['izin', (baris) => petakt7(baris)[0]],
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, aktif: baris[0].t0__aktif, profil_profesi: petakt1(baris), penugasan_jenis: petakt2(baris), izin_per_akun: petakt6(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'aktif',
+            ['profil_profesi', (baris) => petakt1(baris)],
+            ['penugasan_jenis', (baris) => petakt2(baris)],
+            ['izin_per_akun', (baris) => petakt6(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`aktif` AS `t0__aktif`, t1.`id` AS `t1__id`, t1.`profesi` AS `t1__profesi`, t1.`nomor_sip` AS `t1__nomor_sip`, t1.`masa_berlaku_sip` AS `t1__masa_berlaku_sip`, t2.`id` AS `t2__id`, t2.`pengguna_id` AS `t2__pengguna_id`, t2.`jenis_akun_id` AS `t2__jenis_akun_id`, t2.`mulai` AS `t2__mulai`, t2.`selesai` AS `t2__selesai`, t2.`ditetapkan_oleh` AS `t2__ditetapkan_oleh`, t2.`dibuat_oleh` AS `t2__dibuat_oleh`, t2.`dibuat_pada` AS `t2__dibuat_pada`, t3.`id` AS `t3__id`, t3.`nama` AS `t3__nama`, t3.`syarat_profesi` AS `t3__syarat_profesi`, t3.`aktif` AS `t3__aktif`, t3.`diubah_oleh` AS `t3__diubah_oleh`, t3.`alasan_perubahan` AS `t3__alasan_perubahan`, t3.`dibuat_oleh` AS `t3__dibuat_oleh`, t3.`dibuat_pada` AS `t3__dibuat_pada`, t4.`id` AS `t4__id`, t4.`jenis_akun_id` AS `t4__jenis_akun_id`, t4.`izin_id` AS `t4__izin_id`, t4.`dibuat_oleh` AS `t4__dibuat_oleh`, t4.`dibuat_pada` AS `t4__dibuat_pada`, t5.`id` AS `t5__id`, t5.`fitur` AS `t5__fitur`, t5.`aksi` AS `t5__aksi`, t5.`cakupan` AS `t5__cakupan`, t5.`dibuat_oleh` AS `t5__dibuat_oleh`, t5.`dibuat_pada` AS `t5__dibuat_pada`, t6.`id` AS `t6__id`, t6.`pengguna_id` AS `t6__pengguna_id`, t6.`izin_id` AS `t6__izin_id`, t6.`tipe` AS `t6__tipe`, t6.`alasan` AS `t6__alasan`, t6.`mulai` AS `t6__mulai`, t6.`selesai` AS `t6__selesai`, t6.`ditetapkan_oleh` AS `t6__ditetapkan_oleh`, t6.`dibuat_oleh` AS `t6__dibuat_oleh`, t6.`dibuat_pada` AS `t6__dibuat_pada`, t7.`id` AS `t7__id`, t7.`fitur` AS `t7__fitur`, t7.`aksi` AS `t7__aksi`, t7.`cakupan` AS `t7__cakupan`, t7.`dibuat_oleh` AS `t7__dibuat_oleh`, t7.`dibuat_pada` AS `t7__dibuat_pada`\nFROM (SELECT t0.* FROM `pengguna` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `profil_profesi` b1 WHERE TRUE) t1 ON t0.`id` = t1.`pengguna_id`\nLEFT JOIN (SELECT b2.* FROM `penugasan_jenis` b2 WHERE TRUE) t2 ON t0.`id` = t2.`pengguna_id`\nLEFT JOIN (SELECT b3.* FROM `jenis_akun` b3 WHERE TRUE) t3 ON t2.`jenis_akun_id` = t3.`id`\nLEFT JOIN (SELECT b4.* FROM `izin_jenis_akun` b4 WHERE TRUE) t4 ON t3.`id` = t4.`jenis_akun_id`\nLEFT JOIN (SELECT b5.* FROM `izin` b5 WHERE TRUE) t5 ON t4.`izin_id` = t5.`id`\nLEFT JOIN (SELECT b6.* FROM `izin_per_akun` b6 WHERE TRUE) t6 ON t0.`id` = t6.`pengguna_id`\nLEFT JOIN (SELECT b7.* FROM `izin` b7 WHERE TRUE) t7 ON t6.`izin_id` = t7.`id`\nORDER BY t1.`id` ASC, t2.`id` ASC, t3.`id` ASC, t4.`id` ASC, t5.`id` ASC, t6.`id` ASC, t7.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -162,32 +100,15 @@ export async function hitungPenggunaUntukDpjpSah(id, aktif, koneksi = pool) {
 }
 export async function daftarPenggunaUntukOpsi3(aktif, batas, profil_profesi_batas, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ profesi: baris[0].t1__profesi }));
+        return kelompokkan(semua, 't1', [
+            'profesi',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, nama: baris[0].t0__nama, profil_profesi: petakt1(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'nama',
+            ['profil_profesi', (baris) => petakt1(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`profesi` AS `t1__profesi`\nFROM (SELECT t0.* FROM `pengguna` t0 WHERE ((? OR t0.`aktif` <=> ?)) AND (EXISTS (SELECT 1 FROM `profil_profesi` r1 WHERE t0.`id` = r1.`pengguna_id` AND (((? OR r1.`aktif` <=> ?))))) ORDER BY t0.`nama` ASC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.*, ROW_NUMBER() OVER (PARTITION BY b1.`pengguna_id` ORDER BY b1.`id` ASC) AS _urutan FROM `profil_profesi` b1 WHERE ((? OR b1.`aktif` <=> ?))) t1 ON t0.`id` = t1.`pengguna_id` AND t1._urutan <= ?\nORDER BY t0.`nama` ASC, t1.`id` ASC", [aktif === undefined, aktif ?? null, aktif === undefined, aktif ?? null, batas ?? 2147483647, 0, aktif === undefined, aktif ?? null, (profil_profesi_batas ?? 2147483647) + (0)], koneksi);
     const hasil = petakt0(baris);
@@ -223,74 +144,32 @@ export async function hitungPenggunaUntukDaftar(nama, pakai, aktif, pakai2, jeni
 }
 export async function daftarPenggunaUntukDaftar(nama, pakai, aktif, pakai2, jenis_akun_id, aktif2, mulai, selesai, selesai2, pakai3, batas, lewati, tipe, diterima_untuk_akun, sumber, koneksi = pool) {
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t2__nama }));
+        return kelompokkan(semua, 't2', [
+            'nama',
+        ]);
     }
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jenis_akun: petakt2(baris)[0] }));
+        return kelompokkan(semua, 't1', [
+            ['jenis_akun', (baris) => petakt2(baris)[0]],
+        ]);
     }
     function petakt3(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t3__id === null)
-                continue;
-            const kunci = String(baris.t3__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t3__id }));
+        return kelompokkan(semua, 't3', [
+            'id',
+        ]);
     }
     function petakt4(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t4__id === null)
-                continue;
-            const kunci = String(baris.t4__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t4__id }));
+        return kelompokkan(semua, 't4', [
+            'id',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, nama: baris[0].t0__nama, username: baris[0].t0__username, aktif: baris[0].t0__aktif, penugasan_jenis: petakt1(baris), izin_per_akun: petakt3(baris), peringatan_izin: petakt4(baris) }));
+        return kelompokkan(semua, 't0', [
+            'id', 'nama', 'username', 'aktif',
+            ['penugasan_jenis', (baris) => petakt1(baris)],
+            ['izin_per_akun', (baris) => petakt3(baris)],
+            ['peringatan_izin', (baris) => petakt4(baris)],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t0.`username` AS `t0__username`, t0.`aktif` AS `t0__aktif`, t1.`id` AS `t1__id`, t2.`id` AS `t2__id`, t2.`nama` AS `t2__nama`, t3.`id` AS `t3__id`, t4.`id` AS `t4__id`\nFROM (SELECT t0.* FROM `pengguna` t0 WHERE (((? OR (((((? OR t0.`nama` LIKE ? ESCAPE '!'))) OR (((? OR t0.`username` LIKE ? ESCAPE '!'))))))) AND ((? OR (((? OR t0.`aktif` <=> ?))))) AND ((? OR ((EXISTS (SELECT 1 FROM `penugasan_jenis` r1 WHERE t0.`id` = r1.`pengguna_id` AND (((? OR r1.`jenis_akun_id` <=> ?)) AND (EXISTS (SELECT 1 FROM `jenis_akun` r2 WHERE r1.`jenis_akun_id` = r2.`id` AND (((? OR r2.`aktif` <=> ?))))) AND ((? OR r1.`mulai` <= ?)) AND ((((? OR r1.`selesai` <=> ?))) OR (((? OR r1.`selesai` > ?))))))))))) ORDER BY t0.`nama` ASC, t0.`id` ASC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.* FROM `penugasan_jenis` b1 WHERE (EXISTS (SELECT 1 FROM `jenis_akun` r3 WHERE b1.`jenis_akun_id` = r3.`id` AND (((? OR r3.`aktif` <=> ?))))) AND ((? OR b1.`mulai` <= ?)) AND ((((? OR b1.`selesai` <=> ?))) OR (((? OR b1.`selesai` > ?))))) t1 ON t0.`id` = t1.`pengguna_id`\nLEFT JOIN (SELECT b2.* FROM `jenis_akun` b2 WHERE TRUE) t2 ON t1.`jenis_akun_id` = t2.`id`\nLEFT JOIN (SELECT b3.* FROM `izin_per_akun` b3 WHERE ((? OR b3.`tipe` <=> ?)) AND ((? OR b3.`mulai` <= ?)) AND ((((? OR b3.`selesai` <=> ?))) OR (((? OR b3.`selesai` > ?))))) t3 ON t0.`id` = t3.`pengguna_id`\nLEFT JOIN (SELECT b4.* FROM `peringatan_izin` b4 WHERE ((? OR b4.`diterima_untuk_akun` <=> ?)) AND ((? OR NOT (b4.`sumber` <=> ?)))) t4 ON t0.`id` = t4.`pengguna_id`\nORDER BY t0.`nama` ASC, t0.`id` ASC, t1.`id` ASC, t2.`id` ASC, t3.`id` ASC, t4.`id` ASC", [!pakai, nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', !pakai2, aktif === undefined, aktif ?? null, !pakai3, jenis_akun_id === undefined, jenis_akun_id ?? null, aktif2 === undefined, aktif2 ?? null, mulai === undefined, mulai ?? null, selesai === undefined, selesai ?? null, selesai2 === undefined, selesai2 ?? null, batas ?? 2147483647, lewati ?? 0, aktif2 === undefined, aktif2 ?? null, mulai === undefined, mulai ?? null, selesai === undefined, selesai ?? null, selesai2 === undefined, selesai2 ?? null, tipe === undefined, tipe ?? null, mulai === undefined, mulai ?? null, selesai === undefined, selesai ?? null, selesai2 === undefined, selesai2 ?? null, diterima_untuk_akun === undefined, diterima_untuk_akun ?? null, sumber === undefined, sumber ?? null], koneksi);
     const hasil = petakt0(baris);

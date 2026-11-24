@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function daftarPenugasanJenisUntukDaftarJenisAkun(mulai, selesai, selesai2, koneksi = pool) {
     const baris = await baca("SELECT DISTINCT t.`jenis_akun_id`, t.`pengguna_id` FROM `penugasan_jenis` t WHERE ((? OR t.`mulai` <= ?)) AND ((((? OR t.`selesai` <=> ?))) OR (((? OR t.`selesai` > ?))))", [mulai === undefined, mulai ?? null, selesai === undefined, selesai ?? null, selesai2 === undefined, selesai2 ?? null], koneksi);
     return baris;
@@ -27,32 +28,14 @@ export async function ubahPenugasanJenisUntukAkhiriPenugasan(selesai, id, koneks
 }
 export async function daftarPenugasanJenisUntukJenisAkunPemberiHak(pengguna_id, mulai, selesai, selesai2, aktif, fitur, aksi, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'id', 'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ jenis_akun: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            ['jenis_akun', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`\nFROM (SELECT t0.* FROM `penugasan_jenis` t0 WHERE ((? OR t0.`pengguna_id` <=> ?)) AND ((? OR t0.`mulai` <= ?)) AND ((((? OR t0.`selesai` <=> ?))) OR (((? OR t0.`selesai` > ?)))) AND (EXISTS (SELECT 1 FROM `jenis_akun` r1 WHERE t0.`jenis_akun_id` = r1.`id` AND (((? OR r1.`aktif` <=> ?)) AND (EXISTS (SELECT 1 FROM `izin_jenis_akun` r2 WHERE r1.`id` = r2.`jenis_akun_id` AND ((EXISTS (SELECT 1 FROM `izin` r3 WHERE r2.`izin_id` = r3.`id` AND (((? OR r3.`fitur` <=> ?)) AND ((? OR r3.`aksi` <=> ?))))))))))) ORDER BY t0.`jenis_akun_id` ASC) t0\nLEFT JOIN (SELECT b1.* FROM `jenis_akun` b1 WHERE TRUE) t1 ON t0.`jenis_akun_id` = t1.`id`\nORDER BY t0.`jenis_akun_id` ASC, t1.`id` ASC", [pengguna_id === undefined, pengguna_id ?? null, mulai === undefined, mulai ?? null, selesai === undefined, selesai ?? null, selesai2 === undefined, selesai2 ?? null, aktif === undefined, aktif ?? null, fitur === undefined, fitur ?? null, aksi === undefined, aksi ?? null], koneksi);
     const hasil = petakt0(baris);

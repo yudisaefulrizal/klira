@@ -1,32 +1,16 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function daftarJadwalPraktikUntukBacaKlinikPublik(aktif, lokasi_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ hari: baris[0].t0__hari, shift_id: baris[0].t0__shift_id, lokasi_id: baris[0].t0__lokasi_id, pengguna: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'hari', 'shift_id', 'lokasi_id',
+            ['pengguna', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`hari` AS `t0__hari`, t0.`shift_id` AS `t0__shift_id`, t0.`lokasi_id` AS `t0__lokasi_id`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`\nFROM (SELECT t0.* FROM `jadwal_praktik` t0 WHERE ((? OR t0.`lokasi_id` IN (?))) AND (EXISTS (SELECT 1 FROM `pengguna` r1 WHERE t0.`pengguna_id` = r1.`id` AND (((? OR r1.`aktif` <=> ?)) AND (EXISTS (SELECT 1 FROM `profil_profesi` r2 WHERE r1.`id` = r2.`pengguna_id` AND (((? OR r2.`aktif` <=> ?)))))))) ORDER BY t0.`hari` ASC, t0.`shift_id` ASC) t0\nLEFT JOIN (SELECT b1.* FROM `pengguna` b1 WHERE TRUE) t1 ON t0.`pengguna_id` = t1.`id`\nORDER BY t0.`hari` ASC, t0.`shift_id` ASC, t1.`id` ASC", [lokasi_id === undefined, (lokasi_id)?.length ? (lokasi_id) : [null], aktif === undefined, aktif ?? null, aktif === undefined, aktif ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -38,46 +22,21 @@ export async function hitungJadwalPraktikUntukDaftar(nama, pakai, koneksi = pool
 }
 export async function daftarJadwalPraktikUntukDaftar(nama, pakai, batas, lewati, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t2__nama }));
+        return kelompokkan(semua, 't2', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, pengguna_id: baris[0].t0__pengguna_id, lokasi_id: baris[0].t0__lokasi_id, hari: baris[0].t0__hari, shift_id: baris[0].t0__shift_id, kuota: baris[0].t0__kuota, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, pengguna: petakt1(baris)[0], lokasi: petakt2(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'pengguna_id', 'lokasi_id', 'hari', 'shift_id', 'kuota', 'dibuat_oleh', 'dibuat_pada',
+            ['pengguna', (baris) => petakt1(baris)[0]],
+            ['lokasi', (baris) => petakt2(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`pengguna_id` AS `t0__pengguna_id`, t0.`lokasi_id` AS `t0__lokasi_id`, t0.`hari` AS `t0__hari`, t0.`shift_id` AS `t0__shift_id`, t0.`kuota` AS `t0__kuota`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`, t2.`id` AS `t2__id`, t2.`nama` AS `t2__nama`\nFROM (SELECT t0.* FROM `jadwal_praktik` t0 WHERE ((? OR (((EXISTS (SELECT 1 FROM `pengguna` r1 WHERE t0.`pengguna_id` = r1.`id` AND (((? OR r1.`nama` LIKE ? ESCAPE '!')))))) OR ((EXISTS (SELECT 1 FROM `lokasi` r2 WHERE t0.`lokasi_id` = r2.`id` AND (((? OR r2.`nama` LIKE ? ESCAPE '!'))))))))) ORDER BY t0.`hari` ASC, t0.`shift_id` ASC, t0.`id` ASC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.* FROM `pengguna` b1 WHERE TRUE) t1 ON t0.`pengguna_id` = t1.`id`\nLEFT JOIN (SELECT b2.* FROM `lokasi` b2 WHERE TRUE) t2 ON t0.`lokasi_id` = t2.`id`\nORDER BY t0.`hari` ASC, t0.`shift_id` ASC, t0.`id` ASC, t1.`id` ASC, t2.`id` ASC", [!pakai, nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', nama === undefined, '%' + String(nama ?? '').replace(/[!%_]/g, teken => '!' + teken) + '%', batas ?? 2147483647, lewati ?? 0], koneksi);
     const hasil = petakt0(baris);
@@ -85,46 +44,21 @@ export async function daftarJadwalPraktikUntukDaftar(nama, pakai, batas, lewati,
 }
 export async function cariJadwalPraktikUntukAmbil(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t2__nama }));
+        return kelompokkan(semua, 't2', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, pengguna_id: baris[0].t0__pengguna_id, lokasi_id: baris[0].t0__lokasi_id, hari: baris[0].t0__hari, shift_id: baris[0].t0__shift_id, kuota: baris[0].t0__kuota, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, pengguna: petakt1(baris)[0], lokasi: petakt2(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'pengguna_id', 'lokasi_id', 'hari', 'shift_id', 'kuota', 'dibuat_oleh', 'dibuat_pada',
+            ['pengguna', (baris) => petakt1(baris)[0]],
+            ['lokasi', (baris) => petakt2(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`pengguna_id` AS `t0__pengguna_id`, t0.`lokasi_id` AS `t0__lokasi_id`, t0.`hari` AS `t0__hari`, t0.`shift_id` AS `t0__shift_id`, t0.`kuota` AS `t0__kuota`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`, t2.`id` AS `t2__id`, t2.`nama` AS `t2__nama`\nFROM (SELECT t0.* FROM `jadwal_praktik` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `pengguna` b1 WHERE TRUE) t1 ON t0.`pengguna_id` = t1.`id`\nLEFT JOIN (SELECT b2.* FROM `lokasi` b2 WHERE TRUE) t2 ON t0.`lokasi_id` = t2.`id`\nORDER BY t1.`id` ASC, t2.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -136,46 +70,21 @@ export async function tambahJadwalPraktikUntukBuat(pengguna_id, lokasi_id, hari,
 }
 export async function tambahJadwalPraktikUntukBuatHasil(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama }));
+        return kelompokkan(semua, 't1', [
+            'nama',
+        ]);
     }
     function petakt2(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t2__id === null)
-                continue;
-            const kunci = String(baris.t2__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t2__nama }));
+        return kelompokkan(semua, 't2', [
+            'nama',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, pengguna_id: baris[0].t0__pengguna_id, lokasi_id: baris[0].t0__lokasi_id, hari: baris[0].t0__hari, shift_id: baris[0].t0__shift_id, kuota: baris[0].t0__kuota, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, pengguna: petakt1(baris)[0], lokasi: petakt2(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'pengguna_id', 'lokasi_id', 'hari', 'shift_id', 'kuota', 'dibuat_oleh', 'dibuat_pada',
+            ['pengguna', (baris) => petakt1(baris)[0]],
+            ['lokasi', (baris) => petakt2(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`pengguna_id` AS `t0__pengguna_id`, t0.`lokasi_id` AS `t0__lokasi_id`, t0.`hari` AS `t0__hari`, t0.`shift_id` AS `t0__shift_id`, t0.`kuota` AS `t0__kuota`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`, t2.`id` AS `t2__id`, t2.`nama` AS `t2__nama`\nFROM (SELECT t0.* FROM `jadwal_praktik` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `pengguna` b1 WHERE TRUE) t1 ON t0.`pengguna_id` = t1.`id`\nLEFT JOIN (SELECT b2.* FROM `lokasi` b2 WHERE TRUE) t2 ON t0.`lokasi_id` = t2.`id`\nORDER BY t1.`id` ASC, t2.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);

@@ -1,32 +1,16 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function cariKeluargaPasienUntukDataCetak(anggota_pasien_id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t1__nama, nomor_rm: baris[0].t1__nomor_rm }));
+        return kelompokkan(semua, 't1', [
+            'nama', 'nomor_rm',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, pasien_id: baris[0].t0__pasien_id, anggota_pasien_id: baris[0].t0__anggota_pasien_id, hubungan: baris[0].t0__hubungan, dibatasi: baris[0].t0__dibatasi, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, pasien: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'pasien_id', 'anggota_pasien_id', 'hubungan', 'dibatasi', 'dibuat_oleh', 'dibuat_pada',
+            ['pasien', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`pasien_id` AS `t0__pasien_id`, t0.`anggota_pasien_id` AS `t0__anggota_pasien_id`, t0.`hubungan` AS `t0__hubungan`, t0.`dibatasi` AS `t0__dibatasi`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`, t1.`nomor_rm` AS `t1__nomor_rm`\nFROM (SELECT t0.* FROM `keluarga_pasien` t0 WHERE ((? OR t0.`anggota_pasien_id` <=> ?)) ORDER BY t0.`id` ASC LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `pasien` b1 WHERE TRUE) t1 ON t0.`pasien_id` = t1.`id`\nORDER BY t0.`id` ASC, t1.`id` ASC", [anggota_pasien_id === undefined, anggota_pasien_id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -34,32 +18,15 @@ export async function cariKeluargaPasienUntukDataCetak(anggota_pasien_id, koneks
 }
 export async function daftarKeluargaPasienUntukFolderKeluarga(pasien_id, batas, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, nama: baris[0].t1__nama, nomor_rm: baris[0].t1__nomor_rm }));
+        return kelompokkan(semua, 't1', [
+            'id', 'nama', 'nomor_rm',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, pasien_id: baris[0].t0__pasien_id, anggota_pasien_id: baris[0].t0__anggota_pasien_id, hubungan: baris[0].t0__hubungan, dibatasi: baris[0].t0__dibatasi, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, anggota: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'pasien_id', 'anggota_pasien_id', 'hubungan', 'dibatasi', 'dibuat_oleh', 'dibuat_pada',
+            ['anggota', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`pasien_id` AS `t0__pasien_id`, t0.`anggota_pasien_id` AS `t0__anggota_pasien_id`, t0.`hubungan` AS `t0__hubungan`, t0.`dibatasi` AS `t0__dibatasi`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`, t1.`nomor_rm` AS `t1__nomor_rm`\nFROM (SELECT t0.* FROM `keluarga_pasien` t0 WHERE ((? OR t0.`pasien_id` <=> ?)) ORDER BY t0.`id` ASC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.* FROM `pasien` b1 WHERE TRUE) t1 ON t0.`anggota_pasien_id` = t1.`id`\nORDER BY t0.`id` ASC, t1.`id` ASC", [pasien_id === undefined, pasien_id ?? null, batas ?? 2147483647, 0], koneksi);
     const hasil = petakt0(baris);
@@ -71,32 +38,15 @@ export async function tambahKeluargaPasienUntukTautkanKeluarga(pasien_id, anggot
 }
 export async function tambahKeluargaPasienUntukTautkanKeluargaHasil(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t1__id, nama: baris[0].t1__nama, nomor_rm: baris[0].t1__nomor_rm }));
+        return kelompokkan(semua, 't1', [
+            'id', 'nama', 'nomor_rm',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, pasien_id: baris[0].t0__pasien_id, anggota_pasien_id: baris[0].t0__anggota_pasien_id, hubungan: baris[0].t0__hubungan, dibatasi: baris[0].t0__dibatasi, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, anggota: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'pasien_id', 'anggota_pasien_id', 'hubungan', 'dibatasi', 'dibuat_oleh', 'dibuat_pada',
+            ['anggota', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`pasien_id` AS `t0__pasien_id`, t0.`anggota_pasien_id` AS `t0__anggota_pasien_id`, t0.`hubungan` AS `t0__hubungan`, t0.`dibatasi` AS `t0__dibatasi`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`nama` AS `t1__nama`, t1.`nomor_rm` AS `t1__nomor_rm`\nFROM (SELECT t0.* FROM `keluarga_pasien` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `pasien` b1 WHERE TRUE) t1 ON t0.`anggota_pasien_id` = t1.`id`\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);

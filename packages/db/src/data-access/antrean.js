@@ -1,4 +1,5 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function daftarAntreanUntukBuatRuteLayarPanggilan(sesi_id, lokasi_id, status, koneksi = pool) {
     const baris = await baca("SELECT t.`id`, t.`lokasi_id`, t.`ruang_id`, t.`nomor`, t.`awalan`, t.`jenis_poli`, t.`status`, t.`waktu_panggil`, (SELECT k.`tahap_layanan` FROM `kunjungan` k WHERE k.`id` = t.`kunjungan_id`) AS `tahap_layanan` FROM `antrean` t WHERE ((? OR t.`sesi_id` <=> ?)) AND ((? OR t.`lokasi_id` IN (?) OR t.`lokasi_id` IS NULL)) AND ((? OR t.`status` IN (?))) ORDER BY t.`waktu_panggil` DESC, t.`id` DESC", [sesi_id === undefined, sesi_id ?? null, lokasi_id === undefined, (lokasi_id)?.length ? (lokasi_id) : [null], status === undefined, (status)?.length ? (status) : [null]], koneksi);
     return baris;
@@ -50,32 +51,16 @@ export async function hitungAntreanUntukDaftarAntrean(tanggal, lokasi_id, status
 }
 export async function daftarAntreanUntukPetakanAntrean(id, tanggal, lokasi_id, status, batas, lewati, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ pasien_id: baris[0].t1__pasien_id }));
+        return kelompokkan(semua, 't1', [
+            'pasien_id',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ id: baris[0].t0__id, kunjungan_id: baris[0].t0__kunjungan_id, lokasi_id: baris[0].t0__lokasi_id, ruang_id: baris[0].t0__ruang_id, tanggal: baris[0].t0__tanggal, nomor: baris[0].t0__nomor, awalan: baris[0].t0__awalan, jenis_poli: baris[0].t0__jenis_poli, status: baris[0].t0__status, waktu_daftar: baris[0].t0__waktu_daftar, waktu_panggil: baris[0].t0__waktu_panggil, waktu_mulai: baris[0].t0__waktu_mulai, waktu_selesai: baris[0].t0__waktu_selesai, dibuat_oleh: baris[0].t0__dibuat_oleh, dibuat_pada: baris[0].t0__dibuat_pada, kunjungan: petakt1(baris)[0] }));
+        return kelompokkan(semua, 't0', [
+            'id', 'kunjungan_id', 'lokasi_id', 'ruang_id', 'tanggal', 'nomor', 'awalan', 'jenis_poli', 'status',
+            'waktu_daftar', 'waktu_panggil', 'waktu_mulai', 'waktu_selesai', 'dibuat_oleh', 'dibuat_pada',
+            ['kunjungan', (baris) => petakt1(baris)[0]],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`kunjungan_id` AS `t0__kunjungan_id`, t0.`lokasi_id` AS `t0__lokasi_id`, t0.`ruang_id` AS `t0__ruang_id`, t0.`tanggal` AS `t0__tanggal`, t0.`nomor` AS `t0__nomor`, t0.`awalan` AS `t0__awalan`, t0.`jenis_poli` AS `t0__jenis_poli`, t0.`status` AS `t0__status`, t0.`waktu_daftar` AS `t0__waktu_daftar`, t0.`waktu_panggil` AS `t0__waktu_panggil`, t0.`waktu_mulai` AS `t0__waktu_mulai`, t0.`waktu_selesai` AS `t0__waktu_selesai`, t0.`dibuat_oleh` AS `t0__dibuat_oleh`, t0.`dibuat_pada` AS `t0__dibuat_pada`, t1.`id` AS `t1__id`, t1.`pasien_id` AS `t1__pasien_id`\nFROM (SELECT t0.* FROM `antrean` t0 WHERE ((? OR t0.`id` <=> ?)) AND ((? OR t0.`tanggal` <=> ?)) AND ((? OR t0.`lokasi_id` <=> ?)) AND ((? OR t0.`status` <=> ?)) ORDER BY t0.`lokasi_id` ASC, t0.`nomor` ASC LIMIT ? OFFSET ?) t0\nLEFT JOIN (SELECT b1.* FROM `kunjungan` b1 WHERE TRUE) t1 ON t0.`kunjungan_id` = t1.`id`\nORDER BY t0.`lokasi_id` ASC, t0.`nomor` ASC, t1.`id` ASC", [id === undefined, id ?? null, tanggal === undefined, tanggal ?? null, lokasi_id === undefined, lokasi_id ?? null, status === undefined, status ?? null, batas ?? 2147483647, lewati ?? 0], koneksi);
     const hasil = petakt0(baris);

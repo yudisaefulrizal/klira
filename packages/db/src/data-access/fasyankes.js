@@ -1,32 +1,17 @@
 import { baca, tulis, pool } from '../koneksi.js';
+import { kelompokkan } from '../pemeta.js';
 export async function ambilFasyankesUntukPengaturanWebsite(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ aktif: baris[0].t1__aktif, slug: baris[0].t1__slug, domain: baris[0].t1__domain, judul: baris[0].t1__judul, ringkasan: baris[0].t1__ringkasan, tentang: baris[0].t1__tentang, alamat: baris[0].t1__alamat, whatsapp: baris[0].t1__whatsapp, telepon: baris[0].t1__telepon, email: baris[0].t1__email, jam_operasional: baris[0].t1__jam_operasional, warna_utama: baris[0].t1__warna_utama, logo_url: baris[0].t1__logo_url, hero_url: baris[0].t1__hero_url, tampilkan_jadwal: baris[0].t1__tampilkan_jadwal, tampilkan_nama_praktisi: baris[0].t1__tampilkan_nama_praktisi }));
+        return kelompokkan(semua, 't1', [
+            'aktif', 'slug', 'domain', 'judul', 'ringkasan', 'tentang', 'alamat', 'whatsapp', 'telepon', 'email',
+            'jam_operasional', 'warna_utama', 'logo_url', 'hero_url', 'tampilkan_jadwal', 'tampilkan_nama_praktisi',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t0__nama, website_klinik: petakt1(baris)[0] ?? null }));
+        return kelompokkan(semua, 't0', [
+            'nama',
+            ['website_klinik', (baris) => petakt1(baris)[0] ?? null],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`aktif` AS `t1__aktif`, t1.`slug` AS `t1__slug`, t1.`domain` AS `t1__domain`, t1.`judul` AS `t1__judul`, t1.`ringkasan` AS `t1__ringkasan`, t1.`tentang` AS `t1__tentang`, t1.`alamat` AS `t1__alamat`, t1.`whatsapp` AS `t1__whatsapp`, t1.`telepon` AS `t1__telepon`, t1.`email` AS `t1__email`, t1.`jam_operasional` AS `t1__jam_operasional`, t1.`warna_utama` AS `t1__warna_utama`, t1.`logo_url` AS `t1__logo_url`, t1.`hero_url` AS `t1__hero_url`, t1.`tampilkan_jadwal` AS `t1__tampilkan_jadwal`, t1.`tampilkan_nama_praktisi` AS `t1__tampilkan_nama_praktisi`\nFROM (SELECT t0.* FROM `fasyankes` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `website_klinik` b1 LIMIT 1) t1 ON TRUE\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
@@ -34,32 +19,15 @@ export async function ambilFasyankesUntukPengaturanWebsite(id, koneksi = pool) {
 }
 export async function ambilFasyankesUntukBuatRuteLayarPanggilan(id, koneksi = pool) {
     function petakt1(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t1__id === null)
-                continue;
-            const kunci = String(baris.t1__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ logo_url: baris[0].t1__logo_url }));
+        return kelompokkan(semua, 't1', [
+            'logo_url',
+        ]);
     }
     function petakt0(semua) {
-        const grup = new Map();
-        for (const baris of semua) {
-            if (baris.t0__id === null)
-                continue;
-            const kunci = String(baris.t0__id);
-            const isi = grup.get(kunci);
-            if (isi)
-                isi.push(baris);
-            else
-                grup.set(kunci, [baris]);
-        }
-        return [...grup.values()].map(baris => ({ nama: baris[0].t0__nama, website_klinik: petakt1(baris)[0] ?? null }));
+        return kelompokkan(semua, 't0', [
+            'nama',
+            ['website_klinik', (baris) => petakt1(baris)[0] ?? null],
+        ]);
     }
     const baris = await baca("SELECT t0.`id` AS `t0__id`, t0.`nama` AS `t0__nama`, t1.`id` AS `t1__id`, t1.`logo_url` AS `t1__logo_url`\nFROM (SELECT t0.* FROM `fasyankes` t0 WHERE ((? OR t0.`id` <=> ?)) LIMIT 1) t0\nLEFT JOIN (SELECT b1.* FROM `website_klinik` b1 LIMIT 1) t1 ON TRUE\nORDER BY t1.`id` ASC", [id === undefined, id ?? null], koneksi);
     const hasil = petakt0(baris);
