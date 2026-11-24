@@ -19,7 +19,7 @@ export function buatLayananPengesahan({ repo, audit, sekarang = () => new Date()
             return { status: 'belum_disahkan', pengesahan: null };
         if (!fn)
             return { status: 'berubah', pengesahan: terakhir };
-        return { status: hashIsi(await (entitasId)) === terakhir.hash ? 'sah' : 'berubah', pengesahan: terakhir };
+        return { status: hashIsi(await fn(entitasId)) === terakhir.hash ? 'sah' : 'berubah', pengesahan: terakhir };
     }
     return {
         daftarkanPenyedia(entitas, fn) {
