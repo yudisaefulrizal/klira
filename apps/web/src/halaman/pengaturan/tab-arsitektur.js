@@ -214,65 +214,126 @@ function hitungTataLetakPeta(tabelList, relasiList) {
         }
     };
 
-    selesaikanTabrakan();
+    // Penempatan ke slot grid rata-kiri & atas yang terkompaksi + optimasi panjang kabel global
+    let minCx = Infinity;
+    let maxCx = -Infinity;
+    let minCy = Infinity;
+    let maxCy = -Infinity;
+    for (const s of daftarSimpul) {
+        minCx = Math.min(minCx, s.cx);
+        maxCx = Math.max(maxCx, s.cx);
+        minCy = Math.min(minCy, s.cy);
+        maxCy = Math.max(maxCy, s.cy);
+    }
+    const spanX = Math.max(1, maxCx - minCx);
+    const spanY = Math.max(1, maxCy - minCy);
 
-    // Pemolesan lokal: tarik simpul berderajat rendah lebih dekat ke rata-rata tetangganya tanpa menabrak
-    for (let polish = 0; polish < 14; polish += 1) {
-        for (const s of daftarSimpul) {
-            const nb = tetangga.get(s.tabel.nama) || [];
-            if (!nb.length) continue;
-            let sx = 0;
-            let sy = 0;
-            for (const namaNb of nb) {
-                const p = simpul.get(namaNb);
-                if (p) {
-                    sx += p.cx;
-                    sy += p.cy;
+    const kolTotal = Math.max(4, Math.min(13, Math.ceil(Math.sqrt(n * 1.45))));
+    const brsTotal = Math.max(2, Math.ceil(n / kolTotal));
+    const slotTerisi = new Set();
+    const slotSimpul = new Map();
+
+    // Hub berderajat tertinggi ditempatkan lebih dulu agar mendapat posisi paling optimal
+    const urutSlot = daftarSimpul.slice().sort((a, b) => {
+        const dB = derajat.get(b.tabel.nama) ?? 0;
+        const dA = derajat.get(a.tabel.nama) ?? 0;
+        if (dB !== dA) return dB - dA;
+        return a.tabel.nama.localeCompare(b.tabel.nama);
+    });
+
+    for (const s of urutSlot) {
+        const tx = ((s.cx - minCx) / spanX) * (kolTotal - 1);
+        const ty = ((s.cy - minCy) / spanY) * (brsTotal - 1);
+        let bestC = 0;
+        let bestR = 0;
+        let bestSkor = Infinity;
+        for (let r = 0; r < brsTotal; r += 1) {
+            for (let c = 0; c < kolTotal; c += 1) {
+                const key = `${c},${r}`;
+                if (slotTerisi.has(key)) continue;
+                const dist2 = (c - tx) * (c - tx) + (r - ty) * (r - ty) + 0.015 * (c + r);
+                if (dist2 < bestSkor) {
+                    bestSkor = dist2;
+                    bestC = c;
+                    bestR = r;
                 }
             }
-            s.cx += (sx / nb.length - s.cx) * 0.14;
-            s.cy += (sy / nb.length - s.cy) * 0.14;
         }
-        selesaikanTabrakan();
+        slotTerisi.add(`${bestC},${bestR}`);
+        s.col = bestC;
+        s.row = bestR;
+        slotSimpul.set(`${bestC},${bestR}`, s);
     }
 
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const s of daftarSimpul) {
-        const x = s.cx - KARTU_L / 2;
-        const y = s.cy - KARTU_T / 2;
-        minX = Math.min(minX, x);
-        minY = Math.min(minY, y);
-        maxX = Math.max(maxX, x + KARTU_L);
-        maxY = Math.max(maxY, y + KARTU_T);
+    // Optimasi pertukaran berpasangan (2-opt) untuk meminimalkan total panjang garis relasi di grid
+    const panjangKabelNode = (node, col, row) => {
+        let total = 0;
+        for (const nbNama of tetangga.get(node.tabel.nama) || []) {
+            const nb = simpul.get(nbNama);
+            if (nb) total += Math.abs(col - nb.col) + Math.abs(row - nb.row);
+        }
+        return total;
+    };
+    for (let putaran = 0; putaran < 3; putaran += 1) {
+        let adaTukar = false;
+        for (let i = 0; i < n; i += 1) {
+            const a = daftarSimpul[i];
+            for (let j = i + 1; j < n; j += 1) {
+                const b = daftarSimpul[j];
+                if (Math.abs(a.col - b.col) + Math.abs(a.row - b.row) > 4) continue;
+                const sebelum = panjangKabelNode(a, a.col, a.row) + panjangKabelNode(b, b.col, b.row);
+                const sesudah = panjangKabelNode(a, b.col, b.row) + panjangKabelNode(b, a.col, a.row);
+                if (sesudah < sebelum) {
+                    const tc = a.col;
+                    const tr = a.row;
+                    a.col = b.col;
+                    a.row = b.row;
+                    b.col = tc;
+                    b.row = tr;
+                    adaTukar = true;
+                }
+            }
+        }
+        if (!adaTukar) break;
     }
 
-    const geserX = PAD_KANVAS - minX;
-    const geserY = PAD_KANVAS - minY;
+    let minCol = Infinity;
+    let minRow = Infinity;
+    let maxCol = 0;
+    let maxRow = 0;
     for (const s of daftarSimpul) {
+        minCol = Math.min(minCol, s.col);
+        minRow = Math.min(minRow, s.row);
+        maxCol = Math.max(maxCol, s.col);
+        maxRow = Math.max(maxRow, s.row);
+    }
+
+    for (const s of daftarSimpul) {
+        const col = s.col - minCol;
+        const row = s.row - minRow;
         posisiTabel.set(s.tabel.nama, {
             tabel: s.tabel,
-            x: Math.round(s.cx - KARTU_L / 2 + geserX),
-            y: Math.round(s.cy - KARTU_T / 2 + geserY),
+            x: PAD_KANVAS + col * butuhX,
+            y: PAD_KANVAS + row * butuhY,
             w: KARTU_L,
             h: KARTU_T,
         });
     }
 
-    let lebarTotal = Math.max(960, Math.round(maxX - minX + PAD_KANVAS * 2));
-    let tinggiTotal = Math.max(560, Math.round(maxY - minY + PAD_KANVAS * 2));
+    const jmlKolAktif = Math.max(1, maxCol - minCol + 1);
+    const jmlBrsAktif = Math.max(1, maxRow - minRow + 1);
+    let lebarTotal = Math.max(960, PAD_KANVAS * 2 + (jmlKolAktif - 1) * butuhX + KARTU_L);
+    let tinggiTotal = Math.max(560, PAD_KANVAS * 2 + (jmlBrsAktif - 1) * butuhY + KARTU_T);
 
-    // Jika ada tabel terisolasi (tanpa relasi), susun rapi di baris bawah kanvas
+    // Jika ada tabel terisolasi (tanpa relasi), susun rata kiri di baris bawah kanvas
     if (tabelTerhubung.length && tabelTerisolasi.length) {
-        const perBaris = Math.max(4, Math.floor((lebarTotal - PAD_KANVAS * 2 + JARAK_MIN_X) / butuhX));
-        const awalY = tinggiTotal;
+        const perBaris = Math.max(4, jmlKolAktif);
+        const awalBrs = jmlBrsAktif;
         tabelTerisolasi.forEach((t, idx) => {
             const kol = idx % perBaris;
-            const brs = Math.floor(idx / perBaris);
+            const brs = awalBrs + Math.floor(idx / perBaris);
             const x = PAD_KANVAS + kol * butuhX;
-            const y = awalY + brs * butuhY;
+            const y = PAD_KANVAS + brs * butuhY;
             posisiTabel.set(t.nama, { tabel: t, x, y, w: KARTU_L, h: KARTU_T });
             lebarTotal = Math.max(lebarTotal, x + KARTU_L + PAD_KANVAS);
             tinggiTotal = Math.max(tinggiTotal, y + KARTU_T + PAD_KANVAS);
@@ -983,8 +1044,8 @@ export function TabArsitektur() {
             const vw = (kanvasBox.clientWidth || 900) - 24;
             const vh = (kanvasBox.clientHeight || 540) - 24;
             skala = Math.max(0.24, Math.min(1.05, Math.min(vw / peta.lebarKanvas, vh / peta.tinggiKanvas)));
-            panX = Math.round((kanvasBox.clientWidth - peta.lebarKanvas * skala) / 2);
-            panY = Math.round(Math.max(12, (kanvasBox.clientHeight - peta.tinggiKanvas * skala) / 2));
+            panX = 12;
+            panY = 12;
             terapkanTransform();
         };
 
