@@ -49,6 +49,7 @@ describe('transisi dan kelengkapan', () => {
     it('status awal: siap hanya bila SEP dan berkas wajib lengkap (rawat inap butuh SPRI dan ringkasan)', () => {
         const lengkapRj = ['fpk', 'rekapitulasi', 'kuitansi', 'surat_tanggung_jawab'];
         expect(statusAwalKlaim({ nomor_sep: 'SEP1', berkas: lengkapRj, jenis: 'AMB', resume_ada: false })).toBe('siap_diajukan');
+        expect(statusAwalKlaim({ nomor_sep: null, pcare_no_kunjungan: '0114A0262411Y000001', berkas: lengkapRj, jenis: 'AMB', resume_ada: false })).toBe('siap_diajukan');
         expect(statusAwalKlaim({ nomor_sep: null, berkas: lengkapRj, jenis: 'AMB', resume_ada: false })).toBe('menunggu_sep');
         expect(statusAwalKlaim({ nomor_sep: ' ', berkas: lengkapRj, jenis: 'AMB', resume_ada: false })).toBe('menunggu_sep');
         expect(statusAwalKlaim({ nomor_sep: 'SEP1', berkas: lengkapRj.slice(1), jenis: 'AMB', resume_ada: false })).toBe('menunggu_sep');

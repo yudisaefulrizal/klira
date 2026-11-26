@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import { kabarkanLayarPanggilan } from '../../layar-panggilan/domain/kanal.js';
 import { BAGIAN_NARASI, BAGIAN_KLINIS, GALAT, KEDALUWARSA_DRAF_KLINIS_JAM, KLINIS, SKEMA_BAGIAN } from '@klira/shared';
 import { gagal } from '../../../umum/hasil.js';
@@ -44,11 +45,25 @@ export function buatLayananKlinis({ repo, audit, pengesahan, kunjungan, sekarang
                 return gagal('tidak_ditemukan', KLINIS.galat.kunjunganTidakAda);
             const daftar = await Promise.all(BAGIAN_KLINIS.map((b) => bagianDto(kunjunganId, b)));
             await catatLihat(p, 'catatan_klinis', kunjunganId, 'Mencetak rekam medis rawat jalan kunjungan', alamat);
+            const pengesahDokter = daftar
+                .filter((x) => x.pengesahan && x.pengesahan.jenis_akun === 'Dokter/DPJP')
+                .map((x) => x.pengesahan)
+                .sort((a, b) => b.waktu.localeCompare(a.waktu))[0] ?? null;
+            const teksQr = [
+                `Dikeluarkan oleh ${data.fasyankes?.nama ?? 'Klira'}`,
+                `Ditandatangani secara elektronik oleh ${pengesahDokter?.pengguna_nama ?? data.kepala?.dokter ?? '-'}`,
+                `Pasien: ${data.pasien?.nama ?? '-'} (${data.pasien?.nomor_rm ?? '-'})`,
+                `Kunjungan: ${k.id_layanan ?? k.id}`,
+                ...(pengesahDokter ? [`Waktu Sah: ${pengesahDokter.waktu}`, `Hash: ${String(pengesahDokter.hash ?? '').slice(0, 16)}`] : []),
+            ].join('\n');
+            const tte_qr = await QRCode.toDataURL(teksQr, { width: 112, margin: 1 });
             return {
                 ok: true,
                 data: {
                     ...data, klinis: { kunjungan: k, bagian: Object.fromEntries(daftar.map((d) => [d.bagian, d])) },
                     dicetak_oleh: await repo.namaPengguna(p.id), dicetak_pada: sekarang().toISOString(),
+                    tte_qr,
+                    tte_pengesah: pengesahDokter ? { nama: pengesahDokter.pengguna_nama, waktu: pengesahDokter.waktu, hash: pengesahDokter.hash } : null,
                 },
             };
         },

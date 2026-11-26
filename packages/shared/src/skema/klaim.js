@@ -10,6 +10,7 @@ const tglIso = z.preprocess(kosongJadiTiada, z.string().regex(/^\d{4}-\d{2}-\d{2
 export const siapkanKlaimMasukan = z.object({
     kunjungan_id: idPositif,
     nomor_sep: teksNull(50),
+    pcare_no_kunjungan: teksNull(50),
     berkas: z.array(z.enum(BERKAS_KLAIM)).max(BERKAS_KLAIM.length).default([]),
     catatan: teksNull(300),
 });

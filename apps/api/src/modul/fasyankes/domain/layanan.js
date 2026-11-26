@@ -3,14 +3,14 @@ import { kosongJadiNull } from '../../../umum/nilai.js';
 const tgl = (v) => (v ? new Date(v).toISOString().slice(0, 10) : null);
 const LABEL = {
     nama: PROFIL_KLINIK.nama, jenis: PROFIL_KLINIK.jenis, bentuk_usaha: PROFIL_KLINIK.bentukUsaha, kode_registrasi: PROFIL_KLINIK.kodeRegistrasi,
-    organization_id: PROFIL_KLINIK.organizationId, status_akreditasi: PROFIL_KLINIK.statusAkreditasi, tanggal_akreditasi: PROFIL_KLINIK.tanggalAkreditasi,
+    status_akreditasi: PROFIL_KLINIK.statusAkreditasi, tanggal_akreditasi: PROFIL_KLINIK.tanggalAkreditasi,
     puskesmas_wilayah: PROFIL_KLINIK.puskesmasWilayah,
 };
 const AKREDITASI = new Set(['status_akreditasi', 'tanggal_akreditasi']);
 /** Nilai profil dari masukan tervalidasi: string kosong menjadi null, tanggal menjadi YYYY-MM-DD. */
 export const normalkanProfil = (id, m) => ({
     id, nama: m.nama.trim(), jenis: m.jenis, bentuk_usaha: kosongJadiNull(m.bentuk_usaha), kode_registrasi: kosongJadiNull(m.kode_registrasi),
-    organization_id: kosongJadiNull(m.organization_id), status_akreditasi: kosongJadiNull(m.status_akreditasi), tanggal_akreditasi: tgl(m.tanggal_akreditasi),
+    status_akreditasi: kosongJadiNull(m.status_akreditasi), tanggal_akreditasi: tgl(m.tanggal_akreditasi),
     puskesmas_wilayah: kosongJadiNull(m.puskesmas_wilayah),
 });
 /** Riwayat per jenis: perubahan akreditasi (status/tanggal) dipisah dari perubahan profil lain. */

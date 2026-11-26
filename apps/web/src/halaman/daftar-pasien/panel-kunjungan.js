@@ -92,7 +92,6 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     function setelKeadaan() {
         modePerbaiki = false;
         const s = server();
-        awal = s;
         // Isi otomatis alergi, GCS (15), dan kesadaran (Compos mentis) bila masih kosong dan dapat diubah.
         const alergiSebelumnya = konteks?.alergi;
         k = mode().ubahVital && klinis.bagian.keperawatan?.verifikasi !== 'sah' && !s.keperawatan.alergi.trim() && alergiSebelumnya
@@ -850,7 +849,6 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
             const alergi = k.keperawatan.alergi, diagnosis = k.diagnosis;
             k = { ...server(), subjek: '', objek: '', asesmen: '', plan: '', instruksi: '', evaluasi: '', keperawatan: { ...server().keperawatan, alergi }, diagnosis };
             tensiTeks = '';
-            awal = { ...k };
             awalDraf = bentukDraf(k, tensiTeks);
             draf?.hapus();
             tampilGalat = false;
@@ -1131,10 +1129,34 @@ export function PanelKunjungan({ kunjunganId, pasien, ringkas, sub: subAwal, onS
     /** Ada isian pemeriksaan yang belum disimpan (selain yang sudah ada di server). */
     el.adaDraf = () => !!klinis && bisaDraf() && JSON.stringify(bentukDraf(k, tensiTeks)) !== JSON.stringify(awalDraf);
     el.buangDraf = () => draf?.hapus();
+    /** Segarkan data kunjungan dari server di latar belakang bila tidak ada draf yang sedang diedit. */
+    let menyegarkan = false;
+    el.segarkan = async () => {
+        if (!aktif || menyegarkan || memproses || el.adaDraf() || modal) return;
+        if (terbatas) {
+            lukis(); lukisKepala();
+            return;
+        }
+        menyegarkan = true;
+        try {
+            const [hasilKlinis, ctx] = await Promise.all([ambilKlinis(kunjunganId), ambilKonteksKlinis(kunjunganId).catch(() => null)]);
+            if (!aktif || el.adaDraf() || memproses) return;
+            const berubah = hasilKlinis.kunjungan.tahap_layanan !== klinis?.kunjungan?.tahap_layanan
+                || hasilKlinis.kunjungan.antrean?.status !== klinis?.kunjungan?.antrean?.status;
+            klinis = hasilKlinis; konteks = ctx; galatMuat = null;
+            if (berubah || sub === 'penutup') {
+                setelKeadaan(); mulaiDraf(); data.resep = data.penunjang = null; kasirKepala = null; cetakSiap = false; resepSinkron = false; tindakanSinkron = false; telaahSinkron = false;
+                lukis(); lukisKepala();
+            }
+        }
+        catch { /* penyegaran latar belakang tidak mengganggu tampilan aktif */ }
+        finally { menyegarkan = false; }
+    };
     el.pilihSub = (baru) => {
         if (!subSah.includes(baru) || baru === sub) return;
         sub = baru; tabs.pilih(`kunjungan-${sub}`); lukis(); lukisKepala();
         isi.classList.remove('profil-masuk'); void isi.offsetWidth; isi.classList.add('profil-masuk');
+        if (baru === 'penutup') void el.segarkan();
     };
     el.tutup = () => { aktif = false; tutupMenuCetak(); penutup?.tutup(); bangsalPanel?.tutup(); draf?.tutup(); tutupModal(); };
     lukis(); void muat();

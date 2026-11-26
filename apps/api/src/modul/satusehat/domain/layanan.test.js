@@ -1,47 +1,21 @@
 import { GalatIntegrasi } from '@klira/integrasi';
 
-const { buatLayananSatusehat, periksaAlamat, URL_RESMI } = await import("./layanan.js");
+const { bacaKonfigurasi, buatLayananSatusehat, periksaAlamat, URL_RESMI } = await import("./layanan.js");
 
-const P = { id: 9 };
+const ENV = { SATUSEHAT_ORGANIZATION_ID: 'org-1', SATUSEHAT_CLIENT_ID: 'cid', SATUSEHAT_CLIENT_SECRET: 'sangat-rahasia' };
 
-/** Repositori memori: satu baris per lingkungan, organization_id dapat dikosongkan. */
-function buat(opsi = {}) {
-    const baris = new Map();
-    let urut = 0;
-    const catatan = [];
-    const repo = {
-        organizationId: async () => (opsi.organizationId === undefined ? 'org-1' : opsi.organizationId),
-        daftar: async () => [...baris.values()],
-        ambil: async (e) => baris.get(e) ?? null,
-        ambilAktif: async () => [...baris.values()].find((k) => k.aktif) ?? null,
-        tambah: async (d, oleh) => { urut += 1; baris.set(d.environment, { id: urut, aktif: false, diuji_pada: null, hasil_uji: null, dibuat_oleh: oleh, ...d }); },
-        ubah: async (id, d) => {
-            const k = [...baris.values()].find((x) => x.id === id);
-            Object.assign(k, { client_id: d.client_id, base_url: d.base_url, diuji_pada: null, hasil_uji: null });
-            if (d.client_secret_terenkripsi) k.client_secret_terenkripsi = d.client_secret_terenkripsi;
-        },
-        aktifkan: async (id) => { for (const k of baris.values()) k.aktif = k.id === id; },
-        catatUji: async (id, hasil, waktu) => { const k = [...baris.values()].find((x) => x.id === id); k.hasil_uji = hasil; k.diuji_pada = waktu; },
-    };
+function buat({ env = ENV, uji } = {}) {
     const klienDibuat = [];
-    const buatKlien = (konfig) => {
-        klienDibuat.push(konfig);
-        return { uji: opsi.uji ?? (async () => ({ ok: true, organisasi: { id: 'org-1', nama: 'Klinik Contoh' } })) };
-    };
     const l = buatLayananSatusehat({
-        repo,
-        audit: { catat: async (e) => void catatan.push(e) },
-        buatKlien,
-        enkripsi: (t) => `enc(${t})`,
-        dekripsi: (t) => t.replace(/^enc\((.*)\)$/, '$1'),
-        nodeEnv: opsi.nodeEnv ?? 'development',
-        izinUrlKustom: opsi.izinUrlKustom ?? false,
+        env,
+        buatKlien: (konfig) => {
+            klienDibuat.push(konfig);
+            return { uji: uji ?? (async () => ({ ok: true, organisasi: { id: 'org-1', nama: 'Klinik Contoh' } })) };
+        },
         sekarang: () => new Date('2026-11-14T08:00:00Z'),
     });
-    return { l, baris, catatan, klienDibuat };
+    return { l, klienDibuat };
 }
-
-const masukan = (ubah = {}) => ({ environment: 'sandbox', client_id: 'cid', client_secret: 'rahasia', base_url: null, ...ubah });
 
 describe('periksaAlamat', () => {
     it('kosong berarti alamat resmi', () => {
@@ -67,144 +41,64 @@ describe('periksaAlamat', () => {
     });
 });
 
+describe('bacaKonfigurasi', () => {
+    it('alamat kosong memakai sandbox resmi; spasi dipangkas', () => {
+        expect(bacaKonfigurasi({ ...ENV, SATUSEHAT_BASE_URL: '  ', SATUSEHAT_CLIENT_ID: ' cid ' }))
+            .toMatchObject({ environment: 'sandbox', baseUrl: URL_RESMI.sandbox, clientId: 'cid', lengkap: true, kurang: [] });
+    });
+    it('host resmi produksi dikenali sebagai produksi dan wajib https', () => {
+        expect(bacaKonfigurasi({ ...ENV, SATUSEHAT_BASE_URL: `${URL_RESMI.produksi}/` })).toMatchObject({ environment: 'produksi', lengkap: true });
+        expect(bacaKonfigurasi({ ...ENV, SATUSEHAT_BASE_URL: 'http://api-satusehat.kemkes.go.id' })).toMatchObject({ environment: 'produksi', lengkap: false });
+    });
+    it('menyebut variabel yang kosong; alamat tidak sah membuat tidak lengkap', () => {
+        expect(bacaKonfigurasi({ SATUSEHAT_CLIENT_ID: 'cid' })).toMatchObject({ lengkap: false, kurang: ['SATUSEHAT_ORGANIZATION_ID', 'SATUSEHAT_CLIENT_SECRET'] });
+        expect(bacaKonfigurasi({ ...ENV, SATUSEHAT_BASE_URL: 'bukan url' }).lengkap).toBe(false);
+    });
+});
+
 describe('ambil', () => {
-    it('belum ada kredensial: dua lingkungan kosong, tanpa lingkungan aktif', async () => {
-        const { l } = buat();
-        const h = await l.ambil(P);
-        expect(h.aktif).toBeNull();
-        expect(h.organization_id).toBe('org-1');
-        expect(h.lingkungan.map((x) => [x.environment, x.client_secret_terisi, x.base_url_efektif])).toEqual([
-            ['sandbox', false, URL_RESMI.sandbox], ['produksi', false, URL_RESMI.produksi],
-        ]);
+    it('lengkap: lingkungan aktif tanpa membocorkan rahasia', async () => {
+        const h = await buat().l.ambil();
+        expect(h).toMatchObject({ aktif: 'sandbox', organization_id: 'org-1', client_id: 'cid', client_secret_terisi: true, masalah: null });
+        expect(JSON.stringify(h)).not.toContain('sangat-rahasia');
     });
-
-    it('tidak pernah membocorkan rahasia, terenkripsi maupun tidak', async () => {
-        const { l } = buat();
-        await l.simpan(P, masukan({ client_secret: 'sangat-rahasia' }), '::1');
-        const json = JSON.stringify(await l.ambil(P));
-        expect(json).not.toContain('sangat-rahasia');
-        expect(json).not.toContain('enc(');
-        expect(json).not.toContain('client_secret_terenkripsi');
-    });
-});
-
-describe('simpan', () => {
-    it('lingkungan baru wajib rahasia', async () => {
-        const { l, baris } = buat();
-        const h = await l.simpan(P, masukan({ client_secret: undefined }), '::1');
-        expect(h).toMatchObject({ ok: false, kode: 'tidak_valid', bidang: 'client_secret' });
-        expect(baris.size).toBe(0);
-    });
-
-    it('menyimpan rahasia terenkripsi, mencatat audit tanpa rahasia', async () => {
-        const { l, baris, catatan } = buat();
-        const h = await l.simpan(P, masukan(), '::1');
-        expect(h).toMatchObject({ ok: true, data: { environment: 'sandbox', client_id: 'cid', client_secret_terisi: true, aktif: false } });
-        expect(baris.get('sandbox').client_secret_terenkripsi).toBe('enc(rahasia)');
-        expect(catatan).toHaveLength(1);
-        expect(catatan[0]).toMatchObject({ aksi: 'perbaikan', entitas: 'kredensial_satusehat', pengguna_id: 9 });
-        expect(JSON.stringify(catatan)).not.toContain('rahasia)');
-    });
-
-    it('rahasia kosong saat mengubah tetap memakai rahasia lama', async () => {
-        const { l, baris } = buat();
-        await l.simpan(P, masukan(), '::1');
-        const h = await l.simpan(P, masukan({ client_id: 'baru', client_secret: undefined }), '::1');
-        expect(h.ok).toBe(true);
-        expect(baris.get('sandbox')).toMatchObject({ client_id: 'baru', client_secret_terenkripsi: 'enc(rahasia)' });
-    });
-
-    it('mengganti rahasia menghapus hasil uji lama', async () => {
-        const { l, baris } = buat();
-        await l.simpan(P, masukan(), '::1');
-        await l.uji(P, 'sandbox');
-        expect(baris.get('sandbox').hasil_uji).not.toBeNull();
-        await l.simpan(P, masukan({ client_secret: 'lain' }), '::1');
-        expect(baris.get('sandbox')).toMatchObject({ hasil_uji: null, diuji_pada: null, client_secret_terenkripsi: 'enc(lain)' });
-    });
-
-    it('alamat tidak sah ditolak sebelum menyentuh data', async () => {
-        const { l, baris } = buat();
-        const h = await l.simpan(P, masukan({ base_url: 'ftp://x' }), '::1');
-        expect(h).toMatchObject({ ok: false, kode: 'tidak_valid', bidang: 'base_url' });
-        expect(baris.size).toBe(0);
-    });
-});
-
-describe('aktifkan', () => {
-    it('hanya satu lingkungan aktif', async () => {
-        const { l } = buat();
-        await l.simpan(P, masukan(), '::1');
-        await l.simpan(P, masukan({ environment: 'produksi' }), '::1');
-        await l.aktifkan(P, 'sandbox', '::1');
-        await l.aktifkan(P, 'produksi', '::1');
-        const h = await l.ambil(P);
-        expect(h.aktif).toBe('produksi');
-        expect(h.lingkungan.filter((x) => x.aktif)).toHaveLength(1);
-    });
-
-    it('menolak bila kredensial belum ada atau Organization ID kosong', async () => {
-        const a = buat();
-        expect(await a.l.aktifkan(P, 'sandbox', '::1')).toMatchObject({ ok: false, kode: 'belum_lengkap' });
-        const b = buat({ organizationId: null });
-        await b.l.simpan(P, masukan(), '::1');
-        expect(await b.l.aktifkan(P, 'sandbox', '::1')).toMatchObject({ ok: false, kode: 'belum_lengkap', pesan: expect.stringMatching(/Organization ID/) });
+    it('belum lengkap: tidak aktif dan menyebut variabelnya', async () => {
+        const h = await buat({ env: {} }).l.ambil();
+        expect(h).toMatchObject({ aktif: null, organization_id: null, client_secret_terisi: false });
+        expect(h.masalah).toContain('SATUSEHAT_CLIENT_SECRET');
     });
 });
 
 describe('uji', () => {
-    it('berhasil: klien dibuat dengan rahasia terdekripsi dan alamat resmi, hasil tersimpan', async () => {
-        const { l, klienDibuat, baris } = buat();
-        await l.simpan(P, masukan(), '::1');
-        const h = await l.uji(P, 'sandbox');
-        expect(klienDibuat[0]).toEqual({ baseUrl: URL_RESMI.sandbox, clientId: 'cid', clientSecret: 'rahasia', organizationId: 'org-1' });
-        expect(h).toMatchObject({ ok: true, data: { berhasil: true, pesan: 'Terhubung ke Klinik Contoh.' } });
-        expect(baris.get('sandbox').hasil_uji).toBe('Terhubung ke Klinik Contoh.');
-        expect(baris.get('sandbox').diuji_pada).toEqual(new Date('2026-11-14T08:00:00Z'));
-    });
-
-    it('memakai alamat kustom bila diisi', async () => {
+    it('berhasil: klien dibuat dari env dan hasilnya diingat', async () => {
         const { l, klienDibuat } = buat();
-        await l.simpan(P, masukan({ base_url: 'http://localhost:8076' }), '::1');
-        await l.uji(P, 'sandbox');
-        expect(klienDibuat[0].baseUrl).toBe('http://localhost:8076');
+        const h = await l.uji();
+        expect(klienDibuat[0]).toEqual({ baseUrl: URL_RESMI.sandbox, clientId: 'cid', clientSecret: 'sangat-rahasia', organizationId: 'org-1' });
+        expect(h).toMatchObject({ ok: true, data: { berhasil: true, pesan: 'Terhubung ke Klinik Contoh.' } });
+        expect(await l.ambil()).toMatchObject({ hasil_uji: 'Terhubung ke Klinik Contoh.', diuji_pada: '2026-11-14T08:00:00.000Z' });
+        expect(JSON.stringify(h)).not.toContain('sangat-rahasia');
     });
-
-    it('gagal: pesan layanan disimpan, tetapi galat tak terduga tidak membocorkan rincian', async () => {
+    it('gagal: pesan layanan diteruskan, galat tak terduga tidak membocorkan rincian', async () => {
         const gagal = buat({ uji: async () => { throw new GalatIntegrasi('Invalid client id or secret', { layanan: 'satusehat', status: 401 }); } });
-        await gagal.l.simpan(P, masukan(), '::1');
-        const h = await gagal.l.uji(P, 'sandbox');
-        expect(h).toMatchObject({ ok: true, data: { berhasil: false, pesan: 'Uji koneksi gagal: Invalid client id or secret' } });
-
+        expect(await gagal.l.uji()).toMatchObject({ ok: true, data: { berhasil: false, pesan: 'Uji koneksi gagal: Invalid client id or secret' } });
         const aneh = buat({ uji: async () => { throw new Error('ECONNREFUSED 10.0.0.5:443 secret=abc'); } });
-        await aneh.l.simpan(P, masukan(), '::1');
-        const h2 = await aneh.l.uji(P, 'sandbox');
-        expect(h2.data.pesan).toBe('Uji koneksi gagal: kesalahan tak terduga');
-        expect(JSON.stringify(h2)).not.toContain('10.0.0.5');
+        const h = await aneh.l.uji();
+        expect(h.data.pesan).toBe('Uji koneksi gagal: kesalahan tak terduga');
+        expect(JSON.stringify(h)).not.toContain('10.0.0.5');
     });
-
-    it('menolak bila kredensial belum ada atau Organization ID kosong', async () => {
-        expect(await buat().l.uji(P, 'sandbox')).toMatchObject({ ok: false, kode: 'belum_lengkap' });
-        const b = buat({ organizationId: null });
-        await b.l.simpan(P, masukan(), '::1');
-        expect(await b.l.uji(P, 'sandbox')).toMatchObject({ ok: false, kode: 'belum_lengkap' });
+    it('menolak bila variabel belum lengkap', async () => {
+        expect(await buat({ env: {} }).l.uji()).toMatchObject({ ok: false, kode: 'belum_lengkap', pesan: expect.stringMatching(/SATUSEHAT_/) });
     });
 });
 
 describe('klienAktif (untuk modul lain)', () => {
-    it('null sebelum ada lingkungan aktif, lalu klien lingkungan aktif', async () => {
-        const { l } = buat();
-        await l.simpan(P, masukan(), '::1');
-        expect(await l.klienAktif(1)).toBeNull();
-        await l.aktifkan(P, 'sandbox', '::1');
-        const aktif = await l.klienAktif(1);
+    it('klien dari env, dengan opsi tambahan', async () => {
+        const { l, klienDibuat } = buat();
+        const aktif = await l.klienAktif({ batasWaktuMs: 5 });
         expect(aktif).toMatchObject({ environment: 'sandbox', organizationId: 'org-1' });
-        expect(typeof aktif.klien.uji).toBe('function');
+        expect(klienDibuat[0].batasWaktuMs).toBe(5);
     });
-    it('null bila Organization ID kosong', async () => {
-        const { l, baris } = buat({ organizationId: null });
-        await l.simpan(P, masukan(), '::1');
-        baris.get('sandbox').aktif = true;
-        expect(await l.klienAktif(1)).toBeNull();
+    it('null bila belum lengkap', async () => {
+        expect(await buat({ env: { ...ENV, SATUSEHAT_ORGANIZATION_ID: '' } }).l.klienAktif()).toBeNull();
     });
 });

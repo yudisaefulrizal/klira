@@ -41,9 +41,11 @@ import { RepositoriFasyankesMysql } from './modul/fasyankes/data-access/reposito
 import { buatRuteFasyankes } from './modul/fasyankes/entry-points/rute.js';
 import { buatLayananSatusehat } from './modul/satusehat/domain/layanan.js';
 import { buatSinkronIhs } from './modul/satusehat/domain/pasien.js';
+import { buatLayananKirimSatusehat } from './modul/satusehat/domain/kunjungan.js';
 import { RepositoriSatusehatMysql } from './modul/satusehat/data-access/repositori.js';
 import { buatRuteSatusehat } from './modul/satusehat/entry-points/rute.js';
 import { buatLayananPcare } from './modul/pcare/domain/layanan.js';
+import { buatLayananPelayananPcare } from './modul/pcare/domain/pelayanan.js';
 import { RepositoriPcareMysql } from './modul/pcare/data-access/repositori.js';
 import { buatRutePcare } from './modul/pcare/entry-points/rute.js';
 import { buatLayananUjiEndpoint } from './modul/uji-endpoint/domain/layanan.js';
@@ -178,13 +180,17 @@ export function buatApp(direktoriWeb = direktoriWebBawaan, opsi = {}) {
     app.use('/api', buatRuteKeamanan(layananAkses, layananIzin, buatLayananKeamanan({ repo: repoKeamanan, audit: new PenampungAuditMysql() }), layananCadangan));
     app.use('/api', buatRuteMaster(layananAkses, layananIzin, buatLayananMaster({ repo: new RepositoriMasterMysql(), audit: new PenampungAuditMysql() })));
     app.use('/api', buatRuteFasyankes(layananAkses, layananIzin, buatLayananFasyankes({ repo: new RepositoriFasyankesMysql(), audit: new PenampungAuditMysql() })));
-    const layananSatusehat = opsi.layananSatusehat ?? buatLayananSatusehat({ repo: new RepositoriSatusehatMysql(), audit: new PenampungAuditMysql() });
+    const layananSatusehat = opsi.layananSatusehat ?? buatLayananSatusehat();
     app.locals.layananSatusehat = layananSatusehat;
     const sinkronIhs = buatSinkronIhs({ repo: opsi.repoSatusehat ?? new RepositoriSatusehatMysql(), klienAktif: (o) => layananSatusehat.klienAktif(o), audit: new PenampungAuditMysql() });
-    app.use('/api', buatRuteSatusehat(layananAkses, layananIzin, layananSatusehat, sinkronIhs));
+    const kirimSatusehat = opsi.kirimSatusehat ?? buatLayananKirimSatusehat({ klienAktif: (o) => layananSatusehat.klienAktif(o), audit: new PenampungAuditMysql() });
+    app.locals.kirimSatusehat = kirimSatusehat;
     const layananPcare = opsi.layananPcare ?? buatLayananPcare({ repo: new RepositoriPcareMysql(), audit: new PenampungAuditMysql() });
     app.locals.layananPcare = layananPcare;
-    app.use('/api', buatRutePcare(layananAkses, layananIzin, layananPcare));
+    const layananPelayananPcare = opsi.layananPelayananPcare ?? buatLayananPelayananPcare({ layananPcare, audit: new PenampungAuditMysql() });
+    app.locals.layananPelayananPcare = layananPelayananPcare;
+    app.use('/api', buatRutePcare(layananAkses, layananIzin, layananPcare, layananPelayananPcare));
+    app.use('/api', buatRuteSatusehat(layananAkses, layananIzin, layananSatusehat, sinkronIhs, kirimSatusehat, layananPelayananPcare));
     app.use('/api', buatRuteUjiEndpoint(layananAkses, layananIzin, opsi.layananUjiEndpoint ?? buatLayananUjiEndpoint({ layananSatusehat, layananPcare, audit: new PenampungAuditMysql() })));
     app.use('/api', buatRutePasien(layananAkses, layananIzin, buatLayananPasien({ repo: new RepositoriPasienMysql(), audit: new PenampungAuditMysql(), sinkronIhs })));
     // Pengesahan, addendum, dan penunjang dibangun lebih dulu: pendaftaran penunjang saja membuat order lab lewat layanan penunjang.

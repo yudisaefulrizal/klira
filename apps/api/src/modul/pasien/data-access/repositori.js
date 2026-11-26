@@ -8,18 +8,35 @@ export class WaliTidakSahError extends Error {
 /** NIK sudah dipakai pasien lain di fasyankes ini (pelanggaran keunikan saat menyimpan). */
 export class NikKembarError extends Error {
 }
-const tingkatUrutanKunjungan = (k) => {
+export const tingkatUrutanKunjungan = (k) => {
     if (k.antrean?.status === 'batal')
-        return 4;
+        return 8;
     if (k.tahap_layanan === 'ditutup')
-        return 3;
+        return 7;
     if (k.antrean?.status === 'dilayani')
         return 0;
     if (k.antrean?.status === 'dipanggil')
         return 1;
-    return 2;
+    if (k.jenis === 'IMP')
+        return 6;
+    if (k.tahap_layanan === 'pemeriksaan' && (!k.antrean || k.antrean.status === 'menunggu'))
+        return 2;
+    if (k.tahap_layanan === 'menunggu_skrining')
+        return 3;
+    if (k.antrean?.status === 'dilewati')
+        return 4;
+    if (k.tahap_layanan === 'resep' || k.tahap_layanan === 'kasir')
+        return 5;
+    return 4;
 };
-const urutkanKunjungan = (a, b) => tingkatUrutanKunjungan(a) - tingkatUrutanKunjungan(b) || (b.mulai.getTime() - a.mulai.getTime()) || (b.id - a.id);
+export const urutkanKunjungan = (a, b) => {
+    const tA = tingkatUrutanKunjungan(a);
+    const tB = tingkatUrutanKunjungan(b);
+    if (tA !== tB)
+        return tA - tB;
+    const arah = tA >= 7 ? -1 : 1;
+    return arah * (a.mulai.getTime() - b.mulai.getTime()) || arah * (a.id - b.id);
+};
 export class RepositoriPasienMysql {
     async cari(f) {
         const { awal, akhir } = rentangHariWib(f.tanggal ?? tanggalWib(new Date()), f.tanggal ?? tanggalWib(new Date()));
@@ -183,6 +200,7 @@ export class RepositoriPasienMysql {
         return isi.map(({ pasien: p, kunjungan: k }) => {
             const kunjungan = k && {
                 id: k.id, id_layanan: k.id_layanan ?? null, jenis: k.jenis, status: k.status, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran,
+                pcare_no_kunjungan: k.pcare_no_kunjungan ?? null, pcare_status: k.pcare_status ?? null, pcare_pesan: k.pcare_pesan ?? null, encounter_id: k.encounter_id ?? null,
                 poli_nama: k.lokasi_id ? namaPoli.get(k.lokasi_id) ?? null : null,
                 ruang_nama: k.antrean?.ruang_id ? namaPoli.get(k.antrean.ruang_id) ?? null : null,
                 dpjp_id: k.peserta[0]?.pengguna_id ?? null,

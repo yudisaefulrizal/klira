@@ -19,11 +19,11 @@ const dariDb = (k) => ({
 export class RepositoriKlaimMysql {
     async kunjungan(id) {
         const k = await db.cariKunjunganUntukKunjungan2(id);
-        return k && { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, nomor_sep: k.nomor_sep, spri: k.spri, waktu_tutup: k.waktu_tutup };
+        return k && { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, nomor_sep: k.nomor_sep, pcare_no_kunjungan: k.pcare_no_kunjungan, pcare_status: k.pcare_status, pcare_pesan: k.pcare_pesan, non_kapitasi: k.non_kapitasi, spri: k.spri, waktu_tutup: k.waktu_tutup };
     }
     async kunjunganBanyak(ids) {
         const baris = await db.daftarKunjunganUntukKunjunganBanyak(ids);
-        return new Map(baris.map((k) => [k.id, { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, nomor_sep: k.nomor_sep, spri: k.spri, waktu_tutup: k.waktu_tutup }]));
+        return new Map(baris.map((k) => [k.id, { id: k.id, pasien_id: k.pasien_id, pasien_nama: k.pasien.nama, pasien_nomor_rm: k.pasien.nomor_rm, jenis: k.jenis, tahap_layanan: k.tahap_layanan, cara_pembayaran: k.cara_pembayaran, nomor_sep: k.nomor_sep, pcare_no_kunjungan: k.pcare_no_kunjungan, pcare_status: k.pcare_status, pcare_pesan: k.pcare_pesan, non_kapitasi: k.non_kapitasi, spri: k.spri, waktu_tutup: k.waktu_tutup }]));
     }
     /** Kunjungan JKN yang sudah ditutup dan belum punya klaim, terbaru lebih dulu. */
     async kandidat(batas = 200) {
@@ -56,7 +56,7 @@ export class RepositoriKlaimMysql {
     async buat(d) {
         try {
             return await db.transaksi(async (tx) => {
-                const k = await (async () => { const _hasil = await db.tambahKlaimUntukBuat(d.kunjunganId, d.nomorSep, d.status, d.tanggalSelesai, d.batas, d.diagnosis, d.tindakan, d.berkas, d.catatan, d.oleh, tx); return db.tambahKlaimUntukBuatHasil(_hasil.id, tx); })();
+                const k = await (async () => { const _hasil = await db.tambahKlaimUntukBuat(d.kunjunganId, d.nomorSep, d.pcareNoKunjungan, d.status, d.tanggalSelesai, d.batas, d.diagnosis, d.tindakan, d.berkas, d.catatan, d.oleh, tx); return db.tambahKlaimUntukBuatHasil(_hasil.id, tx); })();
                 await db.tambahRiwayatKlaimUntukBuat(k.id, null, d.status, d.oleh, tx);
                 return k.id;
             });
@@ -70,7 +70,7 @@ export class RepositoriKlaimMysql {
     /** Ubah SEP, berkas, dan catatan (status ikut bila berubah) hanya bila status tersimpan masih `dari`. */
     async ubahBerkas(id, dari, d) {
         await db.transaksi(async (tx) => {
-            const n = await db.ubahKlaimUntukUbahBerkas(d.nomorSep, d.status, d.berkas, d.catatan, new Date(), id, dari, tx);
+            const n = await db.ubahKlaimUntukUbahBerkas(d.nomorSep, d.pcareNoKunjungan, d.status, d.berkas, d.catatan, new Date(), id, dari, tx);
             if (n.count !== 1)
                 throw new GalatKlaim('bentrok');
             if (d.status !== dari)

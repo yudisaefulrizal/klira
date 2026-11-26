@@ -12,7 +12,7 @@ export class RepositoriFasyankesMysql {
     }
     async simpan(id, n, oleh, riwayat) {
         const f = await db.transaksi(async (tx) => {
-            const baru = await (async () => { (await db.ubahFasyankesUntukSimpan(n.nama, n.jenis, n.bentuk_usaha, n.kode_registrasi, n.organization_id, n.status_akreditasi, n.tanggal_akreditasi ? new Date(n.tanggal_akreditasi) : null, n.puskesmas_wilayah, id, tx)); return db.ubahFasyankesUntukSimpanHasil(id, tx); })();
+            const baru = await (async () => { (await db.ubahFasyankesUntukSimpan(n.nama, n.jenis, n.bentuk_usaha, n.kode_registrasi, n.status_akreditasi, n.tanggal_akreditasi ? new Date(n.tanggal_akreditasi) : null, n.puskesmas_wilayah, id, tx)); return db.ubahFasyankesUntukSimpanHasil(id, tx); })();
             if (riwayat.length) {
                 await db.tambahBanyakRiwayatProfilUntukSimpan(riwayat.map((r) => ({ jenis: r.jenis, ringkasan: r.ringkasan.slice(0, 2000), dibuat_oleh: oleh })), tx);
             }

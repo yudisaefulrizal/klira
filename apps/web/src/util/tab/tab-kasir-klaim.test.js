@@ -1,10 +1,10 @@
 import { tabKasirKlaimDiizinkan } from './tab-kasir-klaim.js';
 const ids = (izin) => tabKasirKlaimDiizinkan({ izin }).map((t) => t.id);
 describe('tab Kasir dan klaim menurut izin', () => {
-    it('kasir shift, hasil lab, dan keuangan; klaim hanya klaim; keduanya semua; tanpa izin kosong', () => {
+    it('kasir shift, hasil lab, dan keuangan; klaim hanya sinkronisasi; keduanya semua; tanpa izin kosong', () => {
         expect(ids([{ fitur: 'kasir', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['shift', 'hasil', 'keuangan']);
-        expect(ids([{ fitur: 'klaim', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['klaim']);
-        expect(ids([{ fitur: 'kasir', aksi: 'lihat', cakupan: 'unit' }, { fitur: 'klaim', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['shift', 'hasil', 'klaim', 'keuangan']);
+        expect(ids([{ fitur: 'klaim', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['sinkronisasi']);
+        expect(ids([{ fitur: 'kasir', aksi: 'lihat', cakupan: 'unit' }, { fitur: 'klaim', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['shift', 'hasil', 'sinkronisasi', 'keuangan']);
         expect(ids([{ fitur: 'master', aksi: 'lihat', cakupan: 'unit' }])).toEqual(['tarif']);
         expect(ids([{ fitur: 'pasien', aksi: 'lihat', cakupan: 'unit' }])).toEqual([]);
     });

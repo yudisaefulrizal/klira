@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { daftarPasienNyata } from '../../skrip/data-referensi/pasien-nyata.js';
 
 const dataApi = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'apps', 'api', 'data');
 const baca = (nama) => JSON.parse(readFileSync(join(dataApi, nama), 'utf8'));
@@ -59,6 +60,29 @@ export const buatNakes = (id, nik, nm, gender = 'male') => ({
   qualification: [{ code: { coding: [{ system: 'http://terminology.kemkes.go.id/CodeSystem/clinical-speciality', code: 'STR-DUMMY', display: 'Dokter umum' }] } }],
 });
 
+const PASIEN_DEMO = [
+  ['P32730100001', '3273015501800101', 'Siti Aminah', 'female', '1980-01-15'],
+  ['P32730100002', '3273011006750102', 'Bambang Supriyadi', 'male', '1975-06-10'],
+  ['P32730100003', '3273016203920103', 'Nur Halimah', 'female', '1992-03-22'],
+  ['P32730100004', '3273010911880104', 'Yohanes Saputra', 'male', '1988-11-09'],
+  ['P32730100005', '3273014408600105', 'Ratna Sari Dewi', 'female', '1960-08-04'],
+  ['P32730100006', '3273012512010106', 'Rizky Ramadhan', 'male', '2001-12-25'],
+  ['P32730100007', '3273015707950107', 'Putu Ayu Lestari', 'female', '1995-07-17'],
+  ['P32730100008', '3273010302680108', 'Hasan Basri', 'male', '1968-02-03'],
+  ['P32730100009', '3273014110990109', 'Melati Kusuma', 'female', '1999-10-01'],
+  ['P32730100010', '3273011504830110', 'Teguh Wibowo', 'male', '1983-04-15'],
+  ['P32730100011', '3273016612970111', 'Anisa Fitriani', 'female', '1997-12-26'],
+  ['P32730100012', '3273010707550112', 'Darmawan Hadi', 'male', '1955-07-07'],
+  ['P32730100013', '3273010505200113', 'Kevin Pratama', 'male', '2020-05-05'],
+];
+
+const NAKES_DEMO = [
+  ['N32730100001', '3273011203850001', 'dr. Ahmad', 'male'],
+  ['N32730100002', '3273014507880002', 'drg. Mahmud', 'male'],
+  ['N32730100003', '3273016108920003', 'Ns. Rina', 'female'],
+  ['N32730100004', '3273015203900004', 'Bd. Dewi', 'female'],
+];
+
 /** Isi awal: pasien, nakes, Organization fasyankes, satu Location. */
 export function isiAwal(organizationId) {
   const toko = new Map();
@@ -68,6 +92,12 @@ export function isiAwal(organizationId) {
   };
   ID_PASIEN.forEach((id, i) => taruh(buatPasien(id, `9999${String(i + 1).padStart(12, '0')}`, nama[i], i % 2 ? 'female' : 'male')));
   ID_NAKES.forEach((id, i) => taruh(buatNakes(id, `8888${String(i + 1).padStart(12, '0')}`, namaNakes[i], i % 2 ? 'female' : 'male')));
+  for (const [id, nik, nm, gender, lahir] of PASIEN_DEMO)
+    taruh(buatPasien(id, nik, nm, gender, lahir));
+  for (const p of daftarPasienNyata(1000))
+    taruh(buatPasien(p.ihs_id, p.nik, p.nama, p.gender_fhir, p.tanggal_lahir));
+  for (const [id, nik, nm, gender] of NAKES_DEMO)
+    taruh(buatNakes(id, nik, nm, gender));
   taruh({
     resourceType: 'Organization',
     id: organizationId,

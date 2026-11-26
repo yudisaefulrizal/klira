@@ -1,5 +1,4 @@
 import { buatKlienSatusehat } from '@klira/integrasi';
-import { dekripsiRahasia, enkripsiRahasia } from '@klira/db';
 import { PENGATURAN_SATUSEHAT as S } from '@klira/shared';
 
 export const URL_RESMI = {
@@ -33,95 +32,92 @@ export function periksaAlamat(alamat, environment, { nodeEnv = 'development', iz
     return { ok: true, alamat: bersih };
 }
 
-/** Bentuk keluaran tanpa rahasia: hanya penanda bahwa rahasia tersimpan. */
-const keDto = (k) => ({
-    environment: k.environment,
-    client_id: k.client_id,
-    client_secret_terisi: Boolean(k.client_secret_terenkripsi),
-    base_url: k.base_url ?? null,
-    base_url_efektif: k.base_url ?? URL_RESMI[k.environment],
-    aktif: Boolean(k.aktif),
-    diuji_pada: k.diuji_pada ? new Date(k.diuji_pada).toISOString() : null,
-    hasil_uji: k.hasil_uji ?? null,
-});
+/** Nama variabel .env yang wajib terisi; alamat boleh kosong (memakai sandbox resmi). */
+export const VARIABEL_WAJIB = ['SATUSEHAT_ORGANIZATION_ID', 'SATUSEHAT_CLIENT_ID', 'SATUSEHAT_CLIENT_SECRET'];
+const HOST_PRODUKSI = new URL(URL_RESMI.produksi).hostname;
 
-export function buatLayananSatusehat({ repo, audit, buatKlien = buatKlienSatusehat, enkripsi = enkripsiRahasia, dekripsi = dekripsiRahasia, nodeEnv = process.env.NODE_ENV, izinUrlKustom = process.env.SATUSEHAT_IZINKAN_URL_KUSTOM === '1', sekarang = () => new Date() }) {
-    const pilihan = { nodeEnv: nodeEnv || 'development', izinKustom: izinUrlKustom };
-    const klienDari = (k, organizationId, tambahan = {}) => buatKlien({
-        baseUrl: k.base_url ?? URL_RESMI[k.environment],
-        clientId: k.client_id,
-        clientSecret: dekripsi(k.client_secret_terenkripsi),
-        organizationId,
+/**
+ * Konfigurasi SATUSEHAT hanya dibaca dari variabel lingkungan server (.env), tidak pernah disimpan di database.
+ * Lingkungan ditentukan alamatnya: host resmi produksi berarti produksi, selain itu sandbox.
+ */
+export function bacaKonfigurasi(env) {
+    const nilai = (nama) => String(env[nama] ?? '').trim();
+    const alamat = alamatBersih(nilai('SATUSEHAT_BASE_URL')) ?? URL_RESMI.sandbox;
+    let environment = 'sandbox';
+    try {
+        if (new URL(alamat).hostname === HOST_PRODUKSI)
+            environment = 'produksi';
+    }
+    catch {
+        // Alamat tidak sah ditangani periksaAlamat di bawah.
+    }
+    const kurang = VARIABEL_WAJIB.filter((nama) => !nilai(nama));
+    const cek = periksaAlamat(alamat, environment);
+    return {
+        environment,
+        baseUrl: alamat,
+        organizationId: nilai('SATUSEHAT_ORGANIZATION_ID') || null,
+        clientId: nilai('SATUSEHAT_CLIENT_ID'),
+        clientSecret: nilai('SATUSEHAT_CLIENT_SECRET'),
+        kurang,
+        galatAlamat: cek.ok ? null : cek.pesan,
+        lengkap: kurang.length === 0 && cek.ok,
+    };
+}
+
+export function buatLayananSatusehat({ env = process.env, buatKlien = buatKlienSatusehat, sekarang = () => new Date() } = {}) {
+    // Hasil uji terakhir hanya disimpan di memori; hilang saat server dimulai ulang.
+    let ujiTerakhir = null;
+    const klienDari = (k, tambahan = {}) => buatKlien({
+        baseUrl: k.baseUrl,
+        clientId: k.clientId,
+        clientSecret: k.clientSecret,
+        organizationId: k.organizationId,
         ...tambahan,
     });
+    const masalah = (k) => (k.kurang.length ? S.galat.envKurang(k.kurang) : k.galatAlamat);
+    /** Bentuk keluaran tanpa rahasia: hanya penanda bahwa rahasia terisi. */
+    const keDto = () => {
+        const k = bacaKonfigurasi(env);
+        return {
+            organization_id: k.organizationId,
+            aktif: k.lengkap ? k.environment : null,
+            environment: k.environment,
+            client_id: k.clientId,
+            client_secret_terisi: Boolean(k.clientSecret),
+            base_url: k.baseUrl,
+            kurang: k.kurang,
+            masalah: masalah(k),
+            diuji_pada: ujiTerakhir?.waktu.toISOString() ?? null,
+            hasil_uji: ujiTerakhir?.ringkas ?? null,
+        };
+    };
     return {
-        async ambil(p) {
-            const [daftar, organizationId] = await Promise.all([repo.daftar(), repo.organizationId()]);
-            const urut = new Map(daftar.map((k) => [k.environment, keDto(k)]));
-            return {
-                organization_id: organizationId,
-                aktif: daftar.find((k) => k.aktif)?.environment ?? null,
-                lingkungan: ['sandbox', 'produksi'].map((e) => urut.get(e) ?? { environment: e, client_id: '', client_secret_terisi: false, base_url: null, base_url_efektif: URL_RESMI[e], aktif: false, diuji_pada: null, hasil_uji: null }),
-            };
+        async ambil() {
+            return keDto();
         },
-        async simpan(p, m, alamat) {
-            const cek = periksaAlamat(m.base_url, m.environment, pilihan);
-            if (!cek.ok)
-                return { ok: false, kode: 'tidak_valid', pesan: cek.pesan, bidang: 'base_url' };
-            const ada = await repo.ambil(m.environment);
-            if (!ada && !m.client_secret)
-                return { ok: false, kode: 'tidak_valid', pesan: S.galat.rahasiaWajib, bidang: 'client_secret' };
-            const rahasia = m.client_secret ? enkripsi(m.client_secret) : null;
-            if (ada)
-                await repo.ubah(ada.id, { client_id: m.client_id, client_secret_terenkripsi: rahasia, base_url: cek.alamat });
-            else
-                await repo.tambah({ environment: m.environment, client_id: m.client_id, client_secret_terenkripsi: rahasia, base_url: cek.alamat }, p.id);
-            const baru = await repo.ambil(m.environment);
-            await audit.catat({
-                pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kredensial_satusehat', entitas_id: baru.id,
-                keterangan: `Kredensial SATUSEHAT ${m.environment} ${ada ? 'diubah' : 'disimpan'}${m.client_secret ? ' (rahasia diganti)' : ''}`, alamat,
-            });
-            return { ok: true, data: keDto(baru) };
-        },
-        async aktifkan(p, environment, alamat) {
-            const k = await repo.ambil(environment);
-            if (!k)
-                return { ok: false, kode: 'belum_lengkap', pesan: S.galat.belumAda };
-            if (!(await repo.organizationId()))
-                return { ok: false, kode: 'belum_lengkap', pesan: S.galat.organisasiKosong };
-            await repo.aktifkan(k.id);
-            await audit.catat({
-                pengguna_id: p.id, aksi: 'perbaikan', entitas: 'kredensial_satusehat', entitas_id: k.id,
-                keterangan: `Lingkungan SATUSEHAT aktif: ${environment}`, alamat,
-            });
-            return { ok: true, data: keDto({ ...k, aktif: true }) };
-        },
-        /** Uji koneksi satu lingkungan: ambil token lalu baca Organization klinik. Hasilnya disimpan agar terlihat di layar. */
-        async uji(p, environment) {
-            const k = await repo.ambil(environment);
-            if (!k)
-                return { ok: false, kode: 'belum_lengkap', pesan: S.galat.belumAda };
-            const organizationId = await repo.organizationId();
-            if (!organizationId)
-                return { ok: false, kode: 'belum_lengkap', pesan: S.galat.organisasiKosong };
+        /** Uji koneksi: ambil token lalu baca Organization klinik. */
+        async uji() {
+            const k = bacaKonfigurasi(env);
+            if (!k.lengkap)
+                return { ok: false, kode: 'belum_lengkap', pesan: masalah(k) };
             let hasil;
             try {
-                const r = await klienDari(k, organizationId).uji();
+                const r = await klienDari(k).uji();
                 hasil = { ok: true, ringkas: S.ujiBerhasil(r.organisasi.nama) };
             }
             catch (galat) {
                 hasil = { ok: false, ringkas: S.ujiGagal(galat?.name === 'GalatIntegrasi' ? galat.message : 'kesalahan tak terduga') };
             }
-            await repo.catatUji(k.id, hasil.ringkas, sekarang());
-            const baru = await repo.ambil(environment);
-            return { ok: true, data: { berhasil: hasil.ok, pesan: hasil.ringkas, konfigurasi: keDto(baru) } };
+            ujiTerakhir = { ringkas: hasil.ringkas, waktu: sekarang() };
+            return { ok: true, data: { berhasil: hasil.ok, pesan: hasil.ringkas, konfigurasi: keDto() } };
         },
-        /** Untuk modul lain (mis. pencarian pasien): klien lingkungan aktif, atau null bila belum dikonfigurasi. */
+        /** Untuk modul lain (mis. pencarian pasien): klien dari .env, atau null bila belum lengkap. */
         async klienAktif(tambahan = {}) {
-            const [k, organizationId] = await Promise.all([repo.ambilAktif(), repo.organizationId()]);
-            if (!k || !organizationId)
+            const k = bacaKonfigurasi(env);
+            if (!k.lengkap)
                 return null;
-            return { environment: k.environment, organizationId, klien: klienDari(k, organizationId, tambahan) };
+            return { environment: k.environment, organizationId: k.organizationId, klien: klienDari(k, tambahan) };
         },
     };
 }

@@ -552,9 +552,14 @@ export function TabPasien({ search, pindah, ganti }) {
     window.addEventListener('resize', sesuaikanTinggiPanel);
     // Antrean dimuat ulang berkala selama menunya terbuka dan tidak ada modal: pendaftaran dari Mobile JKN masuk tanpa tindakan petugas.
     const bolehMuatAntrean = () => aktif && modeAntrean() && !cariKiri && !modal && !document.hidden;
-    // Sinyal WebSocket dari server memuat antrean seketika; pemuatan berkala (60 detik) jaring pengaman bila sambungan putus.
-    antInterval = setInterval(() => { if (bolehMuatAntrean()) void muatAntrean(true); }, 60000);
-    const lepasSinyal = dengarAntreanBerubah(() => { if (bolehMuatAntrean()) void muatAntrean(true); });
+    const segarkanDaftarDanPanel = (sertakanPanel = false) => {
+        if (menuKiri === 'pasien') void muatKiri();
+        else if (bolehMuatAntrean()) void muatAntrean(true);
+        if (sertakanPanel && aktif && !modal && !document.hidden) void panel?.segarkan?.();
+    };
+    // Sinyal WebSocket dari server memuat antrean dan panel kunjungan seketika; pemuatan berkala (60 detik) jaring pengaman bila sambungan putus.
+    antInterval = setInterval(() => { if (bolehMuatAntrean()) segarkanDaftarDanPanel(false); }, 60000);
+    const lepasSinyal = dengarAntreanBerubah(() => segarkanDaftarDanPanel(true));
     bangun();
     return el;
 }

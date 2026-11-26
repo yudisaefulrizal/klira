@@ -36,10 +36,8 @@ let l;
 beforeAll(async () => {
     serverSs = await mulaiDummy(buatAplikasiSatusehat(), PORT_SATUSEHAT);
     serverPc = await mulaiDummy(buatAplikasiPcare(), PORT_PCARE);
-    const layananSatusehat = buatLayananSatusehat({ repo: repoMemori(SS.organizationId), audit, ...identitas });
+    const layananSatusehat = buatLayananSatusehat({ env: { SATUSEHAT_BASE_URL: URL_SATUSEHAT, SATUSEHAT_ORGANIZATION_ID: SS.organizationId, SATUSEHAT_CLIENT_ID: SS.clientId, SATUSEHAT_CLIENT_SECRET: SS.clientSecret } });
     const layananPcare = buatLayananPcare({ repo: repoMemori(null), audit, ...identitas });
-    await layananSatusehat.simpan(P, { environment: 'sandbox', client_id: SS.clientId, client_secret: SS.clientSecret, base_url: URL_SATUSEHAT }, '::1');
-    await layananSatusehat.aktifkan(P, 'sandbox', '::1');
     await layananPcare.simpan(P, { environment: 'sandbox', cons_id: PC.consId, secret_key: PC.secretKey, user_key: PC.userKey, username: PC.username, password: PC.password, app_code: PC.appCode, service_name: PC.serviceName, base_url: URL_PCARE }, '::1');
     await layananPcare.aktifkan(P, 'sandbox', '::1');
     l = buatLayananUjiEndpoint({ layananSatusehat, layananPcare, audit });

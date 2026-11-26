@@ -1,6 +1,6 @@
 /** Aturan murni siklus klaim JKN/BPJS FKTP (bagian 4.5 dan 7): batas pengajuan, pengajuan ulang, transisi status, kelengkapan berkas. */
 /** Berkas klaim FKTP (Perbpjs 7/2018 P12) dan tambahan klaim rawat inap (P14). */
-export const BERKAS_KLAIM = ['fpk', 'rekapitulasi', 'kuitansi', 'surat_tanggung_jawab', 'spri', 'ringkasan_rm'];
+export const BERKAS_KLAIM = ['fpk', 'rekapitulasi', 'kuitansi', 'surat_tanggung_jawab', 'spri', 'ringkasan_rm', 'spp', 'fkpp', 'partograf', 'surat_rujukan'];
 export const BERKAS_WAJIB_RAWAT_JALAN = ['fpk', 'rekapitulasi', 'kuitansi', 'surat_tanggung_jawab'];
 export const BERKAS_WAJIB_RAWAT_INAP = [...BERKAS_WAJIB_RAWAT_JALAN, 'spri', 'ringkasan_rm'];
 export const berkasWajib = (jenis) => (jenis === 'IMP' ? BERKAS_WAJIB_RAWAT_INAP : BERKAS_WAJIB_RAWAT_JALAN);
@@ -54,10 +54,10 @@ export const TRANSISI_KLAIM = {
     dibayar: { dari: ['diajukan', 'diajukan_ulang'], ke: 'dibayar' },
 };
 export const aksiKlaimTersedia = (status) => AKSI_KLAIM.filter((a) => TRANSISI_KLAIM[a].dari.includes(status));
-/** Status awal klaim: siap diajukan hanya bila nomor SEP ada, semua berkas wajib lengkap (rawat inap juga butuh resume medis); selain itu menunggu SEP atau berkas. */
+/** Status awal klaim: siap diajukan hanya bila nomor SEP atau nomor kunjungan PCare ada dan semua berkas wajib lengkap (rawat inap juga butuh resume medis). */
 export function statusAwalKlaim(d) {
     const lengkap = berkasWajib(d.jenis).every((b) => d.berkas.includes(b)) && (d.jenis !== 'IMP' || d.resume_ada);
-    return d.nomor_sep?.trim() && lengkap ? 'siap_diajukan' : 'menunggu_sep';
+    return (d.nomor_sep?.trim() || d.pcare_no_kunjungan?.trim()) && lengkap ? 'siap_diajukan' : 'menunggu_sep';
 }
 /** Berkas wajib yang belum lengkap. */
 export const berkasKurang = (jenis, berkas) => berkasWajib(jenis).filter((b) => !berkas.includes(b));

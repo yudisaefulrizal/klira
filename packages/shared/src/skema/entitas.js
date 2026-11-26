@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { AKSI_IZIN, CAKUPAN_IZIN } from '../administrasi/izin.js';
 import { alasan, idPositif, jejak, nik, tanggal, teksOpsional, teksWajib } from './umum.js';
 export const jenisFasyankes = z.enum(['klinik_pratama_rawat_jalan', 'klinik_pratama_rawat_inap']);
-export const environmentSatusehat = z.enum(['sandbox', 'produksi']);
 export const jenisLokasi = z.enum(['poli', 'ruang_periksa', 'ruang', 'bed']);
 export const statusOperasional = z.enum(['U', 'O']);
 export const jenisKelamin = z.enum(['laki_laki', 'perempuan']);
@@ -16,16 +15,10 @@ export const fasyankesMasukan = z.object({
     jenis: jenisFasyankes,
     bentuk_usaha: teksOpsional(100),
     kode_registrasi: teksOpsional(50),
-    organization_id: teksOpsional(100),
     status_akreditasi: teksOpsional(100),
     puskesmas_wilayah: teksOpsional(200),
 });
 export const fasyankes = id.extend(fasyankesMasukan.shape).extend(jejak.shape);
-export const kredensialSatusehatMasukan = z.object({
-    environment: environmentSatusehat,
-    client_id: teksWajib(),
-    client_secret: z.string().min(1),
-});
 // Lokasi
 export const lokasiMasukan = z.object({
     nama: teksWajib(),

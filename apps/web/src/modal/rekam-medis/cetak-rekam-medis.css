@@ -28,3 +28,25 @@
   .crm-lembar { box-shadow: none; margin: 0; }
   .crm-pita, .crm-sah { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+.crm-kh { background: #fff; color: #111; font-family: Arial, Helvetica, sans-serif; font-size: 11px; line-height: 1.45; }
+.crm-kh-kop { text-align: center; border-bottom: 3px double #111; padding-bottom: 8px; margin-bottom: 10px; }
+.crm-kh-kop h1 { margin: 0; font-size: 15px; letter-spacing: 0.4px; }
+.crm-kh-kop p { margin: 2px 0 0; font-size: 10px; color: #333; }
+.crm-kh-judul { text-align: center; font-size: 13px; font-weight: 700; text-decoration: underline; margin: 10px 0 12px; letter-spacing: 0.5px; }
+.crm-kh-id { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid #333; }
+.crm-kh-id td { padding: 4px 7px; vertical-align: top; border-bottom: 1px solid #ddd; }
+.crm-kh-lbl { width: 17%; font-weight: 700; color: #222; }
+.crm-kh-sep { width: 2%; }
+.crm-kh-val { width: 31%; }
+.crm-kh-blok { border: 1px solid #333; margin-bottom: 8px; break-inside: avoid; }
+.crm-kh-bjudul { background: #ececec; font-weight: 700; padding: 4px 8px; border-bottom: 1px solid #333; font-size: 10.5px; text-transform: uppercase; }
+.crm-kh-bisi { padding: 6px 8px; white-space: pre-line; }
+.crm-kh-kode { width: 100%; border-collapse: collapse; margin-top: 2px; }
+.crm-kh-kode th, .crm-kh-kode td { border: 1px solid #888; padding: 4px 6px; text-align: left; font-size: 10.5px; }
+.crm-kh-kode th { background: #f6f6f6; }
+.crm-kh-ttd { display: grid; grid-template-columns: 1fr 1fr; margin-top: 22px; text-align: center; font-size: 11px; break-inside: avoid; }
+.crm-kh-spasi { height: 62px; }
+.crm-kh-kaki { margin-top: 14px; font-size: 9px; color: #555; border-top: 1px solid #ccc; padding-top: 4px; display: flex; justify-content: space-between; }
+.crm-kh-qr { width: 68px; height: 68px; display: block; margin: 6px auto; }
+.crm-kh-tte { font-size: 9px; color: #444; margin-bottom: 2px; }

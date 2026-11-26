@@ -11,7 +11,7 @@ npm run service-dummy                     # atau: node dummy-intergrasi/server.m
 npm test -- dummy-intergrasi              # 53 uji
 ```
 
-Satu proses, dua port. Ubah dengan `DUMMY_PORT_PCARE` dan `DUMMY_PORT_SATUSEHAT`.
+Satu proses, dua port. Ubah dengan `DUMMY_PORT_PCARE` dan `DUMMY_PORT_SATUSEHAT`. Untuk memakai dummy SATUSEHAT dari klira, isi variabel `SATUSEHAT_*` di `.env` dengan alamat dan kredensial di bawah, lalu mulai ulang server. Kredensial PCare diisi dari halamannya di aplikasi.
 
 | Layanan | Alamat | Kredensial bawaan (dicetak saat mulai) |
 |---|---|---|

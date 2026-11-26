@@ -4,14 +4,14 @@
  * Bersihkan: `node skrip/dengan-env.mjs node skrip/data-performa.mjs --bersih`
  */
 import crypto from 'node:crypto';
+import { formatNomorRm } from '@klira/shared';
 import { pool, baca, tulis } from '../packages/db/src/koneksi.js';
+import { buatProfilPasienNyata } from './data-referensi/pasien-nyata.js';
 
-const JUMLAH_PASIEN = Number(process.env.PERF_PASIEN ?? 2000);
-const JUMLAH_KUNJUNGAN = Number(process.env.PERF_KUNJUNGAN ?? 5000);
+const JUMLAH_PASIEN = Number(process.env.PERF_PASIEN ?? 1000);
+const JUMLAH_KUNJUNGAN = Number(process.env.PERF_KUNJUNGAN ?? 0);
 const UKURAN_BATCH = 500;
 
-const NAMA_DEPAN = ['Budi', 'Siti', 'Agus', 'Dewi', 'Eko', 'Ratna', 'Hendra', 'Putri', 'Rizki', 'Anisa', 'Wahyu', 'Maya', 'Fajar', 'Lestari', 'Dedi', 'Nur'];
-const NAMA_BELAKANG = ['Santoso', 'Aminah', 'Pratama', 'Kusuma', 'Wibowo', 'Sari', 'Hidayat', 'Wulandari', 'Saputra', 'Permata', 'Nugroho', 'Rahayu'];
 const KELUHAN = ['Demam 2 hari disertai batuk', 'Nyeri ulu hati sejak kemarin', 'Kontrol tekanan darah tinggi', 'Pusing dan lemas', 'Batuk berdahak 4 hari'];
 const DIAGNOSA = [
   ['I10', 'Essential (primary) hypertension'],
@@ -20,6 +20,15 @@ const DIAGNOSA = [
   ['E11.9', 'Type 2 diabetes mellitus without complications'],
 ];
 
+function buatDataPasienNyata(i, urutanRm, dokterId) {
+  const p = buatProfilPasienNyata(i);
+  return [
+    formatNomorRm(urutanRm), p.nik, p.nama, p.nomor_hp, p.tanggal_lahir, p.jenis_kelamin,
+    p.tempat_lahir, p.pekerjaan, p.agama, p.bahasa, p.status_kawin, p.pendidikan, p.alamat, p.jkn_nomor_kartu,
+    'lengkap', 'nik', 0, dokterId,
+  ];
+}
+
 async function sisipBatch(tabel, kolom, baris) {
   for (let i = 0; i < baris.length; i += UKURAN_BATCH) {
     const potong = baris.slice(i, i + UKURAN_BATCH);
@@ -27,6 +36,8 @@ async function sisipBatch(tabel, kolom, baris) {
     await tulis(`INSERT INTO \`${tabel}\` (${daftarKolom}) VALUES ?`, [potong]);
   }
 }
+
+const SYARAT_PASIEN_PERF = "(nomor_rm LIKE 'PF-%' OR (nomor_rm REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{3}$' AND CAST(REPLACE(nomor_rm, '-', '') AS UNSIGNED) > 13))";
 
 async function bersihkan() {
   const kIds = (await baca("SELECT id FROM kunjungan WHERE id_layanan LIKE 'PERF-%'")).map((r) => r.id);
@@ -39,7 +50,8 @@ async function bersihkan() {
       await tulis('DELETE FROM kunjungan WHERE id IN (?)', [slice]);
     }
   }
-  await tulis("DELETE FROM pasien WHERE nomor_rm LIKE 'PF-%'");
+  await tulis(`DELETE FROM pasien WHERE ${SYARAT_PASIEN_PERF}`);
+  await tulis("UPDATE urutan_nomor_rm SET terakhir = COALESCE((SELECT MAX(CAST(REPLACE(nomor_rm, '-', '') AS UNSIGNED)) FROM pasien WHERE nomor_rm REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{3}$'), 0)");
   console.log(`Data performa dibersihkan (${kIds.length} kunjungan).`);
 }
 
@@ -50,9 +62,9 @@ async function jalankan() {
   }
 
   const t0 = performance.now();
-  const ada = await baca("SELECT COUNT(*) AS c FROM pasien WHERE nomor_rm LIKE 'PF-%'");
+  const ada = await baca(`SELECT COUNT(*) AS c FROM pasien WHERE ${SYARAT_PASIEN_PERF}`);
   if (Number(ada[0].c) > 0) {
-    console.log(`Data performa sudah ada (${ada[0].c} pasien PF-*). Jalankan dengan --bersih dulu jika ingin mengulang.`);
+    console.log(`Data performa sudah ada (${ada[0].c} pasien). Jalankan dengan --bersih dulu jika ingin mengulang.`);
     return;
   }
 
@@ -61,27 +73,34 @@ async function jalankan() {
   const dokterId = pengguna[0]?.id ?? 1;
   const poliId = poli[0]?.id ?? null;
 
+  const urutRows = await baca('SELECT terakhir FROM urutan_nomor_rm LIMIT 1');
+  let awalUrutan = Number(urutRows[0]?.terakhir ?? 0);
+  if (!urutRows.length) {
+    const maks = await baca("SELECT COALESCE(MAX(CAST(REPLACE(nomor_rm, '-', '') AS UNSIGNED)), 0) AS m FROM pasien WHERE nomor_rm REGEXP '^[0-9]{2}-[0-9]{2}-[0-9]{3}$'");
+    awalUrutan = Number(maks[0]?.m ?? 0);
+    await tulis('INSERT INTO urutan_nomor_rm (terakhir) VALUES (?)', [awalUrutan]);
+  }
+
   // 1. Pasien
   const pasienBaris = [];
-  for (let i = 1; i <= JUMLAH_PASIEN; i++) {
-    const nama = `${NAMA_DEPAN[i % NAMA_DEPAN.length]} ${NAMA_BELAKANG[(i * 7) % NAMA_BELAKANG.length]} ${i}`;
-    const rm = `PF-${String(i).padStart(6, '0')}`;
-    const nik = `327301${String(1000000000 + i).slice(-10)}`;
-    const tahun = 1955 + (i % 60);
-    const bulan = String(1 + (i % 12)).padStart(2, '0');
-    const hari = String(1 + (i % 28)).padStart(2, '0');
-    pasienBaris.push([
-      rm, nik, nama, `62819${String(10000000 + i).slice(-8)}`,
-      `${tahun}-${bulan}-${hari}`, i % 2 === 0 ? 'laki_laki' : 'perempuan',
-      'lengkap', 'loket', 0, dokterId,
-    ]);
-  }
+  for (let i = 1; i <= JUMLAH_PASIEN; i++)
+    pasienBaris.push(buatDataPasienNyata(i, awalUrutan + i, dokterId));
   await sisipBatch(
     'pasien',
-    ['nomor_rm', 'nik', 'nama', 'nomor_hp', 'tanggal_lahir', 'jenis_kelamin', 'status_identitas', 'jalur_identitas', 'tidak_cakap', 'dibuat_oleh'],
+    [
+      'nomor_rm', 'nik', 'nama', 'nomor_hp', 'tanggal_lahir', 'jenis_kelamin',
+      'tempat_lahir', 'pekerjaan', 'agama', 'bahasa', 'status_kawin', 'pendidikan', 'alamat', 'jkn_nomor_kartu',
+      'status_identitas', 'jalur_identitas', 'tidak_cakap', 'dibuat_oleh',
+    ],
     pasienBaris,
   );
-  const pasienIds = (await baca("SELECT id FROM pasien WHERE nomor_rm LIKE 'PF-%' ORDER BY id ASC")).map((r) => r.id);
+  await tulis('UPDATE urutan_nomor_rm SET terakhir = ?', [awalUrutan + JUMLAH_PASIEN]);
+  const pasienIds = (await baca(`SELECT id FROM pasien WHERE ${SYARAT_PASIEN_PERF} ORDER BY id ASC`)).map((r) => r.id);
+
+  if (JUMLAH_KUNJUNGAN <= 0) {
+    console.log(`Selesai dalam ${Math.round(performance.now() - t0)} ms: ${JUMLAH_PASIEN} pasien siap.`);
+    return;
+  }
 
   // 2. Kunjungan (90% AMB ditutup historis, 10% IMP in-progress/finished)
   const sekarang = Date.now();

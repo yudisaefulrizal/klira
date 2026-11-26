@@ -103,3 +103,62 @@ describe('kripto', () => {
         expect(() => dekripsiRespons(response, K.consId, K.secretKey, String(Number(t) + 1))).toThrow();
     });
 });
+
+describe('layanan pcare (peserta, referensi, dan alur pelayanan)', () => {
+    it('cekPeserta berdasarkan noka dan nik, serta 204 saat tidak ditemukan', async () => {
+        const k = klien();
+        const byNoka = await k.cekPeserta('0000039043765');
+        expect(byNoka.ok).toBe(true);
+        expect(byNoka.data.nama).toBe('BUDI CONTOH');
+
+        const byNik = await k.cekPeserta('3201010101800001', 'nik');
+        expect(byNik.ok).toBe(true);
+        expect(byNik.data.noKartu).toBe('0000039043765');
+
+        const kosong = await k.cekPeserta('9999999999999');
+        expect(kosong).toMatchObject({ ok: true, kode: 204, data: null });
+    });
+
+    it('referensi poli, dokter, tindakan, diagnosa, obat, statusPulang, kesadaran', async () => {
+        const k = klien();
+        const [poli, dokter, tindakan, diag, obat, pulang, sadar] = await Promise.all([
+            k.referensiPoli(), k.referensiDokter(), k.referensiTindakan('10'),
+            k.referensiDiagnosa('A09'), k.referensiObat('Paracetamol'),
+            k.referensiStatusPulang(false), k.referensiKesadaran(),
+        ]);
+        expect(poli.ok && poli.data.list.length > 0).toBe(true);
+        expect(dokter.ok && dokter.data.list.length > 0).toBe(true);
+        expect(tindakan.ok && tindakan.data.list.length > 0).toBe(true);
+        expect(diag.ok && diag.data.list.length > 0).toBe(true);
+        expect(obat.ok && obat.data.list.length > 0).toBe(true);
+        expect(pulang.ok && pulang.data.list.length > 0).toBe(true);
+        expect(sadar.ok && sadar.data.list.length > 0).toBe(true);
+    });
+
+    it('alur lengkap: kirimPendaftaran -> kirimKunjungan -> kirimTindakan -> kirimObat', async () => {
+        const k = klien();
+        const tgl = '24-11-2026';
+        const daftar = await k.kirimPendaftaran({
+            noKartu: '0000039043765', tglDaftar: tgl, kdPoli: '001', keluhan: 'Demam 2 hari',
+            kunjSakit: true, sistole: 120, diastole: 80, beratBadan: 65, tinggiBadan: 170, respRate: 20, heartRate: 80, kdTkp: '10',
+        });
+        expect(daftar.ok).toBe(true);
+        expect(daftar.noUrut).toBeTruthy();
+
+        const kunj = await k.kirimKunjungan({
+            noKunjungan: null, noKartu: '0000039043765', tglDaftar: tgl, kdPoli: '001', keluhan: 'Demam 2 hari',
+            kdSadar: '01', sistole: 120, diastole: 80, beratBadan: 65, tinggiBadan: 170, respRate: 20, heartRate: 80,
+            lingkarPerut: 80, kdStatusPulang: '4', tglPulang: tgl, kdDokter: '123123', kdDiag1: 'J06.9', kdTkp: '10',
+        });
+        expect(kunj.ok).toBe(true);
+        expect(kunj.noKunjungan).toMatch(/Y\d{6}$/);
+
+        const tind = await k.kirimTindakan({ kdKunjungan: kunj.noKunjungan, kdTindakan: '10102', biaya: 50000, keterangan: 'Rawat luka', hasil: 0 });
+        expect(tind.ok).toBe(true);
+        expect(tind.kdTindakanSK).toBeTruthy();
+
+        const obt = await k.kirimObat({ kdKunjungan: kunj.noKunjungan, racikan: false, kdObat: '00000001', signa1: 3, signa2: 1, jmlObat: 10 });
+        expect(obt.ok).toBe(true);
+        expect(obt.kdObatSK).toBeTruthy();
+    });
+});

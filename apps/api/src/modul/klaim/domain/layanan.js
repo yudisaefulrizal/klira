@@ -20,7 +20,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
         const kini = await kodeRm(k.kunjungan_id);
         const jenis = kunj?.jenis ?? 'AMB';
         return {
-            id: k.id, kunjungan_id: k.kunjungan_id, pasien_nama: kunj?.pasien_nama ?? '-', pasien_nomor_rm: kunj?.pasien_nomor_rm ?? '-', jenis, nomor_sep: k.nomor_sep, status: statusKlaimEfektif(dasar, now), tanggal_selesai: k.tanggal_selesai.toISOString(),
+            id: k.id, kunjungan_id: k.kunjungan_id, pasien_nama: kunj?.pasien_nama ?? '-', pasien_nomor_rm: kunj?.pasien_nomor_rm ?? '-', jenis, nomor_sep: k.nomor_sep, pcare_no_kunjungan: k.pcare_no_kunjungan ?? kunj?.pcare_no_kunjungan ?? null, pcare_status: kunj?.pcare_status ?? null, pcare_pesan: kunj?.pcare_pesan ?? null, status: statusKlaimEfektif(dasar, now), tanggal_selesai: k.tanggal_selesai.toISOString(),
             batas_pengajuan: k.batas_pengajuan.toISOString(), batas_ajukan_ulang: k.batas_ajukan_ulang?.toISOString() ?? null, sisa_hari: sisaHariBatas(dasar, now), diagnosis: k.diagnosis, tindakan: k.tindakan, berkas: k.berkas,
             berkas_kurang: berkasKurang(jenis, k.berkas), catatan: k.catatan, diajukan_pada: k.diajukan_pada?.toISOString() ?? null, dikembalikan_pada: k.dikembalikan_pada?.toISOString() ?? null, berita_acara: k.berita_acara, alasan: k.alasan,
             jumlah_dibayar: k.jumlah_dibayar, dibayar_pada: k.dibayar_pada?.toISOString() ?? null, kode_beda: kodeKlaimBeda(k, kini), resume_ada: resume.has(k.kunjungan_id), spri: kunj?.spri ?? null,
@@ -46,7 +46,7 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
             const resume = await rm.resumeAda(k.map((x) => x.id));
             const out = [];
             for (const x of k) {
-                out.push({ kunjungan_id: x.id, pasien_nama: x.pasien_nama, pasien_nomor_rm: x.pasien_nomor_rm, jenis: x.jenis, waktu_tutup: (x.waktu_tutup ?? new Date(0)).toISOString(), nomor_sep: x.nomor_sep, resume_ada: resume.has(x.id) });
+                out.push({ kunjungan_id: x.id, pasien_nama: x.pasien_nama, pasien_nomor_rm: x.pasien_nomor_rm, jenis: x.jenis, waktu_tutup: (x.waktu_tutup ?? new Date(0)).toISOString(), nomor_sep: x.nomor_sep, pcare_no_kunjungan: x.pcare_no_kunjungan ?? null, pcare_status: x.pcare_status ?? null, resume_ada: resume.has(x.id) });
             }
             return out;
         },
@@ -77,10 +77,11 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
                 return gagal('konflik', G.belumDitutup);
             const [kode, resume] = await Promise.all([kodeRm(k.id), rm.resumeAda([k.id])]);
             const sep = m.nomor_sep ?? k.nomor_sep;
+            const pcareNo = m.pcare_no_kunjungan ?? k.pcare_no_kunjungan ?? null;
             let id;
             try {
                 id = await repo.buat({
-                    kunjunganId: k.id, nomorSep: sep, status: statusAwalKlaim({ nomor_sep: sep, berkas: m.berkas, jenis: k.jenis, resume_ada: resume.has(k.id) }), tanggalSelesai: k.waktu_tutup, batas: batasPengajuan(k.waktu_tutup),
+                    kunjunganId: k.id, nomorSep: sep, pcareNoKunjungan: pcareNo, status: statusAwalKlaim({ nomor_sep: sep, pcare_no_kunjungan: pcareNo, berkas: m.berkas, jenis: k.jenis, resume_ada: resume.has(k.id) }), tanggalSelesai: k.waktu_tutup, batas: batasPengajuan(k.waktu_tutup),
                     diagnosis: kode.diagnosis, tindakan: kode.tindakan, berkas: m.berkas, catatan: m.catatan, oleh: p.id,
                 });
             }
@@ -105,9 +106,10 @@ export function buatLayananKlaim({ repo, rm, baca, audit, keuangan = null, sekar
                 return gagal('konflik', G.tidakBisaUbah);
             const kunj = await repo.kunjungan(k.kunjungan_id);
             const resume = await rm.resumeAda([k.kunjungan_id]);
-            const status = efektif === 'dikembalikan' ? efektif : statusAwalKlaim({ nomor_sep: m.nomor_sep, berkas: m.berkas, jenis: kunj?.jenis ?? 'AMB', resume_ada: resume.has(k.kunjungan_id) });
+            const pcareNo = m.pcare_no_kunjungan ?? k.pcare_no_kunjungan ?? kunj?.pcare_no_kunjungan ?? null;
+            const status = efektif === 'dikembalikan' ? efektif : statusAwalKlaim({ nomor_sep: m.nomor_sep, pcare_no_kunjungan: pcareNo, berkas: m.berkas, jenis: kunj?.jenis ?? 'AMB', resume_ada: resume.has(k.kunjungan_id) });
             try {
-                await repo.ubahBerkas(id, k.status, { nomorSep: m.nomor_sep, berkas: m.berkas, catatan: m.catatan, status, oleh: p.id });
+                await repo.ubahBerkas(id, k.status, { nomorSep: m.nomor_sep, pcareNoKunjungan: pcareNo, berkas: m.berkas, catatan: m.catatan, status, oleh: p.id });
             }
             catch (e) {
                 const g = bentrok(e);

@@ -1,5 +1,5 @@
 import { bentukProfil, formDariProfil, galatProfil, labelJenisRiwayat, profilBerubah } from './keadaan-profil.js';
-const dto = { id: 1, nama: 'Klinik', jenis: 'klinik_pratama_rawat_jalan', bentuk_usaha: null, kode_registrasi: 'K-1', organization_id: null, status_akreditasi: 'Dasar', tanggal_akreditasi: '2025-01-02', puskesmas_wilayah: null };
+const dto = { id: 1, nama: 'Klinik', jenis: 'klinik_pratama_rawat_jalan', bentuk_usaha: null, kode_registrasi: 'K-1', status_akreditasi: 'Dasar', tanggal_akreditasi: '2025-01-02', puskesmas_wilayah: null };
 describe('keadaan profil klinik', () => {
     it('form dari dto: null menjadi kosong', () => {
         expect(formDariProfil(dto)).toMatchObject({ bentuk_usaha: '', tanggal_akreditasi: '2025-01-02', jenis: 'klinik_pratama_rawat_jalan' });

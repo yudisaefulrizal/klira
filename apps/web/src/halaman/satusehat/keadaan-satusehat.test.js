@@ -1,65 +1,22 @@
-import { aksiTersedia, bentukKonfigurasi, formDariLingkungan, galatKonfigurasi, konfigurasiBerubah, ringkasStatusIhs, ujiBerhasil } from './keadaan-satusehat.js';
+import { barisKoneksi, ringkasStatusIhs, ujiBerhasil } from './keadaan-satusehat.js';
 
-const kosong = { environment: 'sandbox', client_id: '', client_secret_terisi: false, base_url: null, base_url_efektif: 'https://stg', aktif: false, diuji_pada: null, hasil_uji: null };
-const tersimpan = { ...kosong, client_id: 'cid', client_secret_terisi: true, base_url: 'http://localhost:8076' };
+const dto = { environment: 'sandbox', base_url: 'https://stg', organization_id: 'org-1', client_id: 'cid', client_secret_terisi: true };
 
-describe('form dan bentuk permintaan', () => {
-    it('form dari DTO: null menjadi kosong dan rahasia selalu kosong', () => {
-        expect(formDariLingkungan(kosong)).toEqual({ environment: 'sandbox', client_id: '', client_secret: '', base_url: '' });
-        expect(formDariLingkungan(tersimpan)).toEqual({ environment: 'sandbox', client_id: 'cid', client_secret: '', base_url: 'http://localhost:8076' });
+describe('barisKoneksi', () => {
+    it('menampilkan penanda rahasia, bukan nilainya', () => {
+        expect(barisKoneksi(dto).map(([, v]) => v)).toEqual(['Sandbox (uji coba)', 'https://stg', 'org-1', 'cid', 'Terisi']);
     });
-    it('bentuk: dipangkas, rahasia dan alamat kosong dihilangkan', () => {
-        expect(bentukKonfigurasi({ environment: 'produksi', client_id: ' cid ', client_secret: '  ', base_url: '' }))
-            .toEqual({ environment: 'produksi', client_id: 'cid', client_secret: undefined, base_url: undefined });
-        expect(bentukKonfigurasi({ environment: 'sandbox', client_id: 'c', client_secret: ' s ', base_url: ' http://x.test ' }))
-            .toMatchObject({ client_secret: 's', base_url: 'http://x.test' });
+    it('isian kosong ditandai belum diisi', () => {
+        const kosong = { ...dto, organization_id: null, client_id: '', client_secret_terisi: false };
+        expect(barisKoneksi(kosong).slice(2).map(([, v]) => v)).toEqual(['Belum diisi', 'Belum diisi', 'Belum diisi']);
     });
 });
 
-describe('validasi', () => {
-    it('client ID wajib', () => {
-        expect(galatKonfigurasi({ environment: 'sandbox', client_id: '', client_secret: 's', base_url: '' }, true).client_id).toBeDefined();
-    });
-    it('lingkungan baru wajib rahasia; yang sudah tersimpan boleh kosong', () => {
-        const f = { environment: 'sandbox', client_id: 'cid', client_secret: '', base_url: '' };
-        expect(galatKonfigurasi(f, false).client_secret).toMatch(/wajib/i);
-        expect(galatKonfigurasi(f, true)).toEqual({});
-        expect(galatKonfigurasi({ ...f, client_secret: 'rahasia' }, false)).toEqual({});
-    });
-    it('alamat harus URL', () => {
-        expect(galatKonfigurasi({ environment: 'sandbox', client_id: 'c', client_secret: 's', base_url: 'bukan url' }, true).base_url).toBeDefined();
-        expect(galatKonfigurasi({ environment: 'sandbox', client_id: 'c', client_secret: 's', base_url: 'http://localhost:8076' }, true)).toEqual({});
-    });
-});
-
-describe('perubahan dan hasil uji', () => {
-    it('konfigurasiBerubah mengabaikan spasi', () => {
-        const f = formDariLingkungan(tersimpan);
-        expect(konfigurasiBerubah(f, { ...f, client_id: 'cid ' })).toBe(false);
-        expect(konfigurasiBerubah(f, { ...f, client_secret: 'baru' })).toBe(true);
-        expect(konfigurasiBerubah(f, { ...f, base_url: '' })).toBe(true);
-    });
-    it('ujiBerhasil menurut awalan teks', () => {
+describe('ujiBerhasil', () => {
+    it('menurut awalan teks', () => {
         expect(ujiBerhasil('Terhubung ke Klinik X.')).toBe(true);
         expect(ujiBerhasil('Uji koneksi gagal: Invalid client id or secret')).toBe(false);
         expect(ujiBerhasil(null)).toBe(false);
-    });
-});
-
-describe('aksiTersedia', () => {
-    const ada = { bolehUbah: true, organisasiAda: true };
-    it('belum tersimpan: hanya simpan', () => {
-        expect(aksiTersedia(kosong, ada)).toEqual({ simpan: true, uji: false, aktifkan: false });
-    });
-    it('tersimpan: simpan, uji, dan aktifkan; yang sudah aktif tidak bisa diaktifkan lagi', () => {
-        expect(aksiTersedia(tersimpan, ada)).toEqual({ simpan: true, uji: true, aktifkan: true });
-        expect(aksiTersedia({ ...tersimpan, aktif: true }, ada)).toEqual({ simpan: true, uji: true, aktifkan: false });
-    });
-    it('Organization ID kosong: uji dan aktifkan tidak tersedia', () => {
-        expect(aksiTersedia(tersimpan, { bolehUbah: true, organisasiAda: false })).toEqual({ simpan: true, uji: false, aktifkan: false });
-    });
-    it('hanya lihat: tidak ada tombol', () => {
-        expect(aksiTersedia(tersimpan, { bolehUbah: false, organisasiAda: true })).toEqual({ simpan: false, uji: false, aktifkan: false });
     });
 });
 

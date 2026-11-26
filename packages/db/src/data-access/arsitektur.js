@@ -6,7 +6,7 @@ const ATURAN_DOMAIN = [
     { id: 'klinis', label: 'Klinis & Rekam Medis', warna: 'biru', pola: /^(pemeriksaan|diagnosis|narasi_klinis|observasi|odontogram_pasien|kia_kunjungan|ugd_kunjungan|resume_medis|addendum|surat|pengesahan_catatan|tindak_lanjut|riwayat_tahap_layanan|draf|favorit_dokter|templat_catatan)$/ },
     { id: 'penunjang', label: 'Lab & Rawat Inap', warna: 'kuning', pola: /^(master_pemeriksaan|order_penunjang|spesimen|hasil_penunjang|penyerahan_hasil|penempatan|pemulangan|tarif_layanan|ruang|bed)$/ },
     { id: 'pasien', label: 'Pasien & Antrean', warna: 'biru', pola: /^(pasien|keluarga_pasien|kunjungan|peserta_kunjungan|antrean|sesi|sesi_antrean|lokasi|jadwal_praktik|pengaturan_antrean_jkn|antrean_sementara_jkn)$/ },
-    { id: 'integrasi', label: 'Integrasi & Eksternal', warna: 'abu', pola: /^(kredensial_satusehat|kredensial_pcare|pemetaan_bpjs|ig_|event_panggilan|kode_terminologi|wilayah)/ },
+    { id: 'integrasi', label: 'Integrasi & Eksternal', warna: 'abu', pola: /^(kredensial_pcare|pemetaan_bpjs|ig_|event_panggilan|kode_terminologi|wilayah)/ },
 ];
 
 function tebakDomain(namaTabel) {

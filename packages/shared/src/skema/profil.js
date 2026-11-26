@@ -7,7 +7,6 @@ export const profilKlinikMasukan = z.object({
     jenis: jenisFasyankes,
     bentuk_usaha: teksOpsional(100),
     kode_registrasi: teksOpsional(50),
-    organization_id: teksOpsional(100),
     status_akreditasi: teksOpsional(100),
     tanggal_akreditasi: tanggal.nullish(),
     puskesmas_wilayah: teksOpsional(200),

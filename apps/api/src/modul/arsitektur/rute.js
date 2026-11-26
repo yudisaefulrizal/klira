@@ -83,7 +83,7 @@ const ALUR_SISTEM = [
         judul: 'SATUSEHAT & BPJS PCare',
         ringkas: 'Sinkronisasi FHIR (Patient, Encounter, Immunization, Observation) & Antrean JKN.',
         domain: 'integrasi',
-        tabel_utama: ['kredensial_satusehat', 'kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
+        tabel_utama: ['kredensial_pcare', 'pemetaan_bpjs', 'log_audit'],
         endpoint_kunci: ['GET /api/satusehat/status', 'GET /api/pcare/status'],
     },
 ];

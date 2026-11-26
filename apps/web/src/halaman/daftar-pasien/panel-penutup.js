@@ -1,5 +1,7 @@
 import { KASIR, MAKS_BARIS_BAYAR, METODE_BAYAR, NILAI_METODE_BAYAR } from '@klira/shared';
 import { catatPembayaran, hapusItemTagihan, kasirKunjungan, tutupKunjungan } from '../../api-klien/kasir.js';
+import { kirimKunjunganPcare } from '../../api-klien/pcare.js';
+import { kirimKunjunganSatusehat } from '../../api-klien/satusehat.js';
 import { GalatApi, pesanGalat } from '../../api-klien/klien.js';
 import { token } from '../../gaya/token.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
@@ -248,6 +250,40 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     return daftar;
   }
 
+  function integrasiCard() {
+    const kj = g?.kunjungan ?? klinis()?.kunjungan;
+    if (!kj) return null;
+    const barisIntegrasi = [];
+    if (kj.cara_pembayaran === 'jkn') {
+      const statusPcare = kj.pcare_status === 'terkirim' ? `Terkirim (${kj.pcare_no_kunjungan ?? '-'})` : kj.pcare_status === 'gagal' ? `Gagal: ${kj.pcare_pesan ?? 'Periksa data'}` : 'Belum dikirim';
+      barisIntegrasi.push({ label: 'BPJS PCare', nilai: statusPcare });
+    }
+    barisIntegrasi.push({ label: 'SATUSEHAT', nilai: kj.encounter_id ? `Terkirim (Encounter/${kj.encounter_id})` : 'Belum dikirim' });
+    const wadahAksi = document.createElement('div');
+    barisFleks(wadahAksi, 'sm', { bungkus: true });
+    if (kj.cara_pembayaran === 'jkn') {
+      const bPc = tombol(kj.pcare_no_kunjungan ? 'Sinkron Ulang PCare' : 'Kirim ke PCare', () => void jalankan(async () => {
+        const h = await kirimKunjunganPcare(kunjunganId, { perbarui: Boolean(kj.pcare_no_kunjungan) });
+        if (g?.kunjungan) Object.assign(g.kunjungan, { pcare_no_kunjungan: h.no_kunjungan, pcare_status: 'terkirim', pcare_pesan: null });
+        info = `Kunjungan berhasil dikirim ke PCare (${h.no_kunjungan}).`;
+        onBerubah();
+      }), 'sekunder');
+      bPc.disabled = memproses;
+      wadahAksi.append(bPc);
+    }
+    if (!kj.encounter_id) {
+      const bSs = tombol('Kirim ke SATUSEHAT', () => void jalankan(async () => {
+        const h = await kirimKunjunganSatusehat(kunjunganId);
+        if (g?.kunjungan) g.kunjungan.encounter_id = h.encounter_id;
+        info = `Kunjungan berhasil dikirim ke SATUSEHAT (Encounter/${h.encounter_id}).`;
+        onBerubah();
+      }), 'sekunder');
+      bSs.disabled = memproses;
+      wadahAksi.append(bSs);
+    }
+    return bagian('Status Integrasi (PCare & SATUSEHAT)', ringkas(barisIntegrasi), wadahAksi.childElementCount ? wadahAksi : null);
+  }
+
   function lukis() {
     if (!aktif) return;
     const fokus = document.activeElement, id = el.contains(fokus) ? fokus.id : '', mulai = fokus?.selectionStart, akhir = fokus?.selectionEnd;
@@ -258,7 +294,7 @@ export function PanelPenutup({ kunjunganId, pasien, ringkas: kjRingkas, klinis, 
     if (ditutup) bagianTampil.push(peringatan(ditutup, 'biru'));
     if (info) bagianTampil.push(peringatan(info, 'biru'));
     if (galat) bagianTampil.push(peringatan(galat));
-    el.replaceChildren(...[...(klinis().bagian.diagnosis ? [ringkasan()] : []), ...bagianTampil, ...(bolehKasir ? [tagihan(), ...(bolehBayar ? [pembayaran()] : [])] : []), ...(bolehObat ? [serahObat()] : []), ...(bolehKasir && bolehTutup ? [tutup()] : [])].filter(Boolean));
+    el.replaceChildren(...[...(klinis().bagian.diagnosis ? [ringkasan()] : []), ...bagianTampil, ...(bolehKasir ? [tagihan(), ...(bolehBayar ? [pembayaran()] : [])] : []), ...(bolehObat ? [serahObat()] : []), ...(bolehKasir && bolehTutup ? [tutup()] : []), integrasiCard()].filter(Boolean));
     if (!bolehKasir && !bolehObat) el.append(peringatan(P.tanpaIzin, 'biru'));
     if (id) { const f = document.getElementById(id); f?.focus({ preventScroll: true }); if (mulai != null && f?.setSelectionRange) { try { f.setSelectionRange(mulai, akhir); } catch { /* tipe isian tanpa seleksi */ } } }
   }

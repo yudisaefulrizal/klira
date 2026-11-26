@@ -168,7 +168,7 @@ async function siapkanWebsite() {
   if (profil?.nama !== 'Klinik Bhakti Rahayu') {
     await wajib('profil klinik: Klinik Bhakti Rahayu', 'admin', 'PATCH', '/fasyankes/profil', {
       nama: 'Klinik Bhakti Rahayu', jenis: profil?.jenis ?? 'klinik_pratama_rawat_jalan', bentuk_usaha: profil?.bentuk_usaha ?? null,
-      kode_registrasi: profil?.kode_registrasi ?? 'KLINIK-CONTOH', organization_id: null, status_akreditasi: null, tanggal_akreditasi: null, puskesmas_wilayah: null,
+      kode_registrasi: profil?.kode_registrasi ?? 'KLINIK-CONTOH', status_akreditasi: null, tanggal_akreditasi: null, puskesmas_wilayah: null,
     });
   }
   const web = (await api('admin', 'GET', '/fasyankes/website')).data ?? {};

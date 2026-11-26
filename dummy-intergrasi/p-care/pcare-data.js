@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { daftarPasienNyata } from '../../skrip/data-referensi/pasien-nyata.js';
 
 const dataApi = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'apps', 'api', 'data');
 
@@ -42,6 +43,16 @@ export const PESERTA = [
   peserta('0000039043768', '3201010404950004', 'DEWI PROVIDER LAIN', 'P', '04-04-1995', {
     kdProviderPst: { kdProvider: '0114A099', nmProvider: 'KLINIK LAIN' },
   }),
+  // Pasien JKN dari skrip/data-demo.mjs (noKartu = '000' + 10 digit terakhir NIK)
+  peserta('0001006750102', '3273011006750102', 'BAMBANG SUPRIYADI', 'L', '10-06-1975', { noHP: '081234560102' }),
+  peserta('0006203920103', '3273016203920103', 'NUR HALIMAH', 'P', '22-03-1992', { noHP: '081234560103' }),
+  peserta('0004408600105', '3273014408600105', 'RATNA SARI DEWI', 'P', '04-08-1960', { noHP: '081234560105' }),
+  peserta('0000302680108', '3273010302680108', 'HASAN BASRI', 'L', '03-02-1968', { noHP: '081234560108' }),
+  peserta('0001504830110', '3273011504830110', 'TEGUH WIBOWO', 'L', '15-04-1983', { noHP: '081234560110' }),
+  peserta('0000707550112', '3273010707550112', 'DARMAWAN HADI', 'L', '07-07-1955', { noHP: '081234560112' }),
+  ...daftarPasienNyata(1000)
+    .filter((p) => p.jkn_nomor_kartu)
+    .map((p) => peserta(p.jkn_nomor_kartu, p.nik, p.nama.toUpperCase(), p.sex, p.tgl_pcare, { noHP: p.nomor_hp })),
 ];
 
 const diagnosaSemua = JSON.parse(readFileSync(join(dataApi, 'icd10-2010.json'), 'utf8')).kode;

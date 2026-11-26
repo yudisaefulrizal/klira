@@ -5,9 +5,9 @@ import { pesanGalat } from '../../api-klien/klien.js';
 import { izinSaatIni } from '../../komponen/izin/izin-saja.js';
 import { bidang, kartu, tombol, tabel, baris, sel, peringatan, tab, bantuanKecil } from '../../komponen/ui/primitif.js';
 import { token } from '../../gaya/token.js';
-import { TabKlaim } from './tab-klaim.js';
 import { TabHasil } from './tab-hasil.js';
 import { TabKeuangan } from './tab-keuangan.js';
+import { PanelPantauIntegrasi } from '../../komponen/klinis/panel-pantau-integrasi.js';
 import { bukaShiftKasir } from '../../modal/kasir-klaim/shift-kasir.js';
 import { rupiah } from '../../modal/penunjang/keadaan-order-lab.js';
 import { bacaTabTerakhir, pilihTab, simpanTabTerakhir } from '../../util/tab/ingatan-tab.js';
@@ -35,6 +35,6 @@ export function HalamanKasirKlaim() {
     'Pembayaran kasir & pelunasan klaim JKN otomatis tercatat ke Jurnal Umum.',
     'Gunakan tab Keuangan & Akuntansi untuk pengeluaran, piutang, hutang supplier, jasa medis, dan Laba Rugi.',
   ])); el.append(header, isi);
-  function perbaruiAlamat(alamat) { const param = new URLSearchParams(alamat).get('tab'), choisi = ids.length ? pilihTab(ids, param, bacaTabTerakhir('kasir-klaim', ids, sessionStorage)) : undefined; if (!choisi) return; simpanTabTerakhir('kasir-klaim', choisi, sessionStorage); tabs.pilih(choisi); if (aktif === choisi) page?.perbaruiAlamat?.(alamat); else { page?.tutup(); isi.replaceChildren(); aktif = choisi; page = choisi === 'shift' ? TabShift() : choisi === 'hasil' ? TabHasil() : choisi === 'klaim' ? TabKlaim() : choisi === 'keuangan' ? TabKeuangan() : KelolaMasterTab({ jenis: 'tarif' }); isi.append(page); if (choisi === 'tarif') page.perbaruiAlamat(alamat); } if (param !== choisi) ganti(`/kasir-klaim?tab=${choisi}`); }
+  function perbaruiAlamat(alamat) { const param = new URLSearchParams(alamat).get('tab'), choisi = ids.length ? pilihTab(ids, param, bacaTabTerakhir('kasir-klaim', ids, sessionStorage)) : undefined; if (!choisi) return; simpanTabTerakhir('kasir-klaim', choisi, sessionStorage); tabs.pilih(choisi); if (aktif === choisi) page?.perbaruiAlamat?.(alamat); else { page?.tutup(); isi.replaceChildren(); aktif = choisi; page = choisi === 'shift' ? TabShift() : choisi === 'hasil' ? TabHasil() : choisi === 'sinkronisasi' ? PanelPantauIntegrasi({ bolehKirim: izinSaatIni()('klaim', 'perbaikan') || izinSaatIni()('satusehat', 'perbaikan') }) : choisi === 'keuangan' ? TabKeuangan() : KelolaMasterTab({ jenis: 'tarif' }); isi.append(page); if (choisi === 'tarif') page.perbaruiAlamat(alamat); } if (param !== choisi) ganti(`/kasir-klaim?tab=${choisi}`); }
   el.perbaruiAlamat = perbaruiAlamat; el.tutup = () => { page?.tutup(); el.replaceChildren(); }; perbaruiAlamat(search); return el;
 }

@@ -94,7 +94,7 @@ export async function batalkanAntreanSementaraJkn(id, waktu = new Date(), koneks
 /** Seluruh kunjungan dalam satu sesi antrean (beserta pasien, antrean, dan DPJP utama). */
 export async function daftarKunjunganDalamSesi(sesi_id, koneksi = pool) {
     const baris = await baca(
-        "SELECT t0.`id` AS `t0__id`, t0.`id_layanan` AS `t0__id_layanan`, t0.`pasien_id` AS `t0__pasien_id`, t0.`jenis` AS `t0__jenis`, t0.`status` AS `t0__status`, t0.`tahap_layanan` AS `t0__tahap_layanan`, t0.`lokasi_id` AS `t0__lokasi_id`, t0.`cara_pembayaran` AS `t0__cara_pembayaran`, t0.`mulai` AS `t0__mulai`, t0.`waktu_tutup` AS `t0__waktu_tutup`, " +
+        "SELECT t0.`id` AS `t0__id`, t0.`id_layanan` AS `t0__id_layanan`, t0.`pasien_id` AS `t0__pasien_id`, t0.`jenis` AS `t0__jenis`, t0.`status` AS `t0__status`, t0.`tahap_layanan` AS `t0__tahap_layanan`, t0.`lokasi_id` AS `t0__lokasi_id`, t0.`cara_pembayaran` AS `t0__cara_pembayaran`, t0.`mulai` AS `t0__mulai`, t0.`waktu_tutup` AS `t0__waktu_tutup`, t0.`pcare_no_kunjungan` AS `t0__pcare_no_kunjungan`, t0.`pcare_status` AS `t0__pcare_status`, t0.`pcare_pesan` AS `t0__pcare_pesan`, t0.`encounter_id` AS `t0__encounter_id`, " +
         "t1.`id` AS `t1__id`, t1.`sesi_id` AS `t1__sesi_id`, t1.`lokasi_id` AS `t1__lokasi_id`, t1.`ruang_id` AS `t1__ruang_id`, t1.`nomor` AS `t1__nomor`, t1.`awalan` AS `t1__awalan`, t1.`jenis_poli` AS `t1__jenis_poli`, t1.`status` AS `t1__status`, " +
         "t2.`pengguna_id` AS `t2__pengguna_id`, " +
         "t3.`id` AS `t3__id`, t3.`nomor_rm` AS `t3__nomor_rm`, t3.`nama` AS `t3__nama`, t3.`tanggal_lahir` AS `t3__tanggal_lahir`, t3.`jenis_kelamin` AS `t3__jenis_kelamin`, t3.`status_identitas` AS `t3__status_identitas`, t3.`kode_wilayah` AS `t3__kode_wilayah`, t3.`jkn_nomor_kartu` AS `t3__jkn_nomor_kartu` " +
@@ -115,6 +115,7 @@ export async function daftarKunjunganDalamSesi(sesi_id, koneksi = pool) {
             id: r.t0__id, id_layanan: r.t0__id_layanan, pasien_id: r.t0__pasien_id,
             jenis: r.t0__jenis, status: r.t0__status, tahap_layanan: r.t0__tahap_layanan, lokasi_id: r.t0__lokasi_id,
             cara_pembayaran: r.t0__cara_pembayaran, mulai: r.t0__mulai, waktu_tutup: r.t0__waktu_tutup,
+            pcare_no_kunjungan: r.t0__pcare_no_kunjungan, pcare_status: r.t0__pcare_status, pcare_pesan: r.t0__pcare_pesan, encounter_id: r.t0__encounter_id,
             antrean: { id: r.t1__id, sesi_id: r.t1__sesi_id, lokasi_id: r.t1__lokasi_id, ruang_id: r.t1__ruang_id, nomor: r.t1__nomor, awalan: r.t1__awalan, jenis_poli: r.t1__jenis_poli, status: r.t1__status },
             peserta: r.t2__pengguna_id ? [{ pengguna_id: r.t2__pengguna_id }] : [],
             pasien: { id: r.t3__id, nomor_rm: r.t3__nomor_rm, nama: r.t3__nama, tanggal_lahir: r.t3__tanggal_lahir, jenis_kelamin: r.t3__jenis_kelamin, status_identitas: r.t3__status_identitas, kode_wilayah: r.t3__kode_wilayah, jkn_nomor_kartu: r.t3__jkn_nomor_kartu },
